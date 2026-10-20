@@ -7,6 +7,8 @@ from __future__ import annotations
 
 import math
 import re
+
+from . import sidefx
 import time
 from dataclasses import dataclass, field
 from typing import Optional
@@ -189,8 +191,20 @@ def build_ctx(tool: str, args: dict, st: GateState) -> ActionCtx:
     return ActionCtx(tool, args, t, _signature(tool, t, args), risk, steps, level, handoff)
 
 
+def _newest_obs_blob(st: GateState, pid) -> str:
+    """Text of the newest read of any window of this process (a dialog that just opened, usually)."""
+    if pid is None:
+        return ""
+    obs = [o for k, o in st.latest_by_window.items() if k.split(":")[0] == str(pid)]
+    if not obs:
+        return ""
+    o = max(obs, key=lambda x: x.t)
+    return " ".join(e.label for e in o.elements.values())[:6000]
+
+
 def assess_risk(tool: str, args: dict, t: Target, steps: list, st: GateState):
-    """(reason, level, handoff) from what the action touches. Rules only."""
+    """(reason, level, handoff) from what the action touches. Rules only, plus file-system checks
+    (sidefx) for commands typed into a terminal."""
     best = [None, None]  # reason, level
 
     def bump(level, reason):
@@ -225,6 +239,20 @@ def assess_risk(tool: str, args: dict, t: Target, steps: list, st: GateState):
                 typed = st.last_typed.get(int(tg.pid), "") if hasattr(st, "last_typed") else ""
                 if typed and _SHELL_HIGH.search(typed):
                     bump("high", f"Enter would run: {typed[:60]}")
+                _shell_check(typed, tg.pid, bump)
+            if tg.pid is not None and sidefx.overwrite_dialog(_newest_obs_blob(st, tg.pid), "", ks):
+                bump("high", "confirms replacing an existing file")
+        if tl in ("type_text", "set_value") and tg.pid is not None and "\n" in text:
+            # a newline submits the line: check what it runs
+            prev = st.last_typed.get(int(tg.pid), "") if hasattr(st, "last_typed") else ""
+            _shell_check(prev + text.split("\n")[0], tg.pid, bump)
+        if tl in ("click", "double_click") and label and tg.pid is not None:
+            blob = " ".join(e.label for e in tg.obs.elements.values())[:6000] if tg.obs else _newest_obs_blob(st, tg.pid)
+            if sidefx.overwrite_dialog(blob, label, set()):
+                bump("high", f'"{label[:30]}" confirms replacing an existing file')
+        if tl in ("click", "double_click") and not label and tg.pid is not None and tg.kind == "pixel":
+            if sidefx.OVERWRITE_CTX.search(_newest_obs_blob(st, tg.pid)):
+                bump("medium", "pixel click inside a dialog that asks to replace an existing file")
     if tool == "kill_app":
         bump("medium", "kill_app")
     if tool in ("browser_download", "browser_set_input_files"):
@@ -241,6 +269,14 @@ def assess_risk(tool: str, args: dict, t: Target, steps: list, st: GateState):
             handoff = "the window shows a human-verification (captcha) step"
     return best[0], best[1], handoff
 
+
+
+def _shell_check(cmd: str, pid, bump) -> None:
+    if not cmd or not sidefx.is_terminal(pid):
+        return
+    r = sidefx.shell_effects(cmd, sidefx.shell_cwd(pid))
+    if r:
+        bump(r[0], r[1])
 
 
 FEATURE_NAMES = [
