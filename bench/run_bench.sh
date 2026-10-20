@@ -7,7 +7,7 @@ OUT=${1:-/data/workspace/runs/osworld1}
 CONDS=${2:-"direct full gate"}
 LIST=${3:-$(dirname "$0")/tasks/order.txt}
 SEEDS=${4:-"0"}
-THINK=${PI_THINK:-low}
+THINK=${PI_THINK:-medium}
 TMO=${PI_TIMEOUT:-480}
 MAXT=${PI_MAX_TURNS:-30}
 HERE=$(cd "$(dirname "$0")" && pwd)
@@ -39,6 +39,10 @@ J
   local PROMPT="You are operating a Linux desktop (Debian 13, XFCE, screen 1440x900) through the gui tools only. The user's home directory is /home/user. Apps the task needs may already be open.
 Task: $instr
 When the task is complete, reply DONE and one line on what you did. If the task is impossible, reply FAIL."
+  # a VNC viewer with "remote resize" can shrink the desktop mid-run; pin it to the size the prompt states
+  xrandr -s 1440x900 >/dev/null 2>&1 || { xrandr --newmode 1440x900_60 106.50 1440 1528 1672 1904 900 903 909 934 -hsync +vsync; \
+    xrandr --addmode VNC-0 1440x900_60; xrandr --output VNC-0 --mode 1440x900_60; } >/dev/null 2>&1
+  local scr=$(xdpyinfo | awk '/dimensions/{print $2}')
   $PY $HERE/osworld_native.py setup $HERE/tasks/$task --out $OUT/eval/$tag.setup.json > /dev/null 2>&1
   local setup_ok=$($PY -c "import json;print(json.load(open('$OUT/eval/$tag.setup.json')).get('ok'))" 2>/dev/null)
   if [ "$setup_ok" != "True" ]; then
@@ -53,7 +57,7 @@ When the task is complete, reply DONE and one line on what you did. If the task 
   if grep -q 'thinking must be passed back\|"stopReason":"error"' $OUT/pi/$tag.jsonl 2>/dev/null; then
     infra='"relay_error"'
   fi
-  echo "{\"tag\":\"$tag\",\"task\":\"$name\",\"cond\":\"$c\",\"seed\":$s,\"attempt\":$att,\"infra\":$infra,\"pi\":$st}" >> $OUT/runs.jsonl
+  echo "{\"tag\":\"$tag\",\"task\":\"$name\",\"cond\":\"$c\",\"seed\":$s,\"attempt\":$att,\"infra\":$infra,\"screen\":\"$scr\",\"think\":\"$THINK\",\"pi\":$st}" >> $OUT/runs.jsonl
   [ "$infra" = '"relay_error"' ] && return 9
   return 0
 }
@@ -62,8 +66,8 @@ for s in $SEEDS; do
     [ -z "$task" ] && continue
     for c in $CONDS; do
       if grep -q "\"tag\":\"$(basename $task .json)-$c-s$s\"" $OUT/runs.jsonl 2>/dev/null; then continue; fi  # resume
-      run_one $task $c $s 1
-      if [ $? -eq 9 ]; then run_one $task $c $s 2; fi
+      run_one $task $c $s 1; rc=$?; att=1
+      while [ $rc -eq 9 ] && [ $att -lt ${PI_ATTEMPTS:-3} ]; do att=$((att+1)); run_one $task $c $s $att; rc=$?; done
       echo "$(date +%T) $task $c" >> $OUT/progress.log
     done
   done < $LIST
