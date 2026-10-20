@@ -1,0 +1,9 @@
+{"tag":"direct-s0","cond":"direct","seed":0,"wall_s":116.9}
+{"tag":"full-s0","cond":"full","seed":0,"wall_s":71.5}
+{"tag":"gate-s0","cond":"gate","seed":0,"wall_s":46.6}
+{"tag":"direct-s1","cond":"direct","seed":1,"wall_s":65.9}
+{"tag":"full-s1","cond":"full","seed":1,"wall_s":69.4}
+{"tag":"gate-s1","cond":"gate","seed":1,"wall_s":46.2}
+{"tag":"direct-s2","cond":"direct","seed":2,"wall_s":77.1}
+{"tag":"full-s2","cond":"full","seed":2,"wall_s":72.7}
+{"tag":"gate-s2","cond":"gate","seed":2,"wall_s":161.6}

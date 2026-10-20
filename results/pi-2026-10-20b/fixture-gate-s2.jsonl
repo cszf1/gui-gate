@@ -1,0 +1,3 @@
+{"t": 1792510230.092, "seed": 2, "ev": "start", "sequence": ["Apple", "Banana", "Banana", "Lemon", "Cherry", "Kiwi", "Kiwi", "Grape"]}
+{"t": 1792510241.004, "seed": 2, "ev": "click", "caption": "Apple", "expected": "Apple", "correct": true, "k": 0}
+{"t": 1792510246.607, "seed": 2, "ev": "click", "caption": "Banana", "expected": "Banana", "correct": true, "k": 1}
