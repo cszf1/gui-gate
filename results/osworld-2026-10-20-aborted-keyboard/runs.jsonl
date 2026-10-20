@@ -1,0 +1,6 @@
+{"tag":"ow01-libreoffice_calc-7efeb4b1-direct-s0","task":"ow01-libreoffice_calc-7efeb4b1","cond":"direct","seed":0,"attempt":1,"infra":"relay_error","pi":{"turns": 11, "stop": "agent", "rc": 0, "wall_s": 50.5}}
+{"tag":"ow01-libreoffice_calc-7efeb4b1-direct-s0-try2","task":"ow01-libreoffice_calc-7efeb4b1","cond":"direct","seed":0,"attempt":2,"infra":"relay_error","pi":{"turns": 13, "stop": "agent", "rc": 0, "wall_s": 65.0}}
+{"tag":"ow01-libreoffice_calc-7efeb4b1-full-s0","task":"ow01-libreoffice_calc-7efeb4b1","cond":"full","seed":0,"attempt":1,"infra":null,"pi":{"turns": 30, "stop": "max_turns", "rc": 143, "wall_s": 159.6}}
+{"tag":"ow01-libreoffice_calc-7efeb4b1-gate-s0","task":"ow01-libreoffice_calc-7efeb4b1","cond":"gate","seed":0,"attempt":1,"infra":"relay_error","pi":{"turns": 10, "stop": "agent", "rc": 0, "wall_s": 40.4}}
+{"tag":"ow01-libreoffice_calc-7efeb4b1-gate-s0-try2","task":"ow01-libreoffice_calc-7efeb4b1","cond":"gate","seed":0,"attempt":2,"infra":null,"pi":{"turns": 24, "stop": "agent", "rc": 0, "wall_s": 151.8}}
+{"tag":"ow02-libreoffice_writer-0810415c-direct-s0","task":"ow02-libreoffice_writer-0810415c","cond":"direct","seed":0,"attempt":1,"infra":null,"pi":{"turns": 30, "stop": "max_turns", "rc": 143, "wall_s": 167.4}}
