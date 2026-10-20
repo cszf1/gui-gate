@@ -62,6 +62,9 @@ open(p, 'w', encoding='utf-8').write(s)
 PY
   touch $OSW/state/lo_profile_ready
 fi
+# 6b. VLC: skip the first-run privacy/network dialog (preset in the OSWorld image)
+mkdir -p $HOME/.config/vlc
+[ -f $HOME/.config/vlc/vlcrc ] || printf '[qt]\nqt-privacy-ask=0\n' > $HOME/.config/vlc/vlcrc
 # 7. pristine snapshot of everything a task may touch, restored before every task.
 if [ ! -f $OSW/state/baseline_ready ]; then
   mkdir -p $OSW/baseline

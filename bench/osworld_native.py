@@ -37,7 +37,7 @@ OSW = os.environ.get("OSW", "/data/workspace/osworld")
 HOME = os.path.expanduser("~")
 STATE = os.path.join(OSW, "state")
 APPS = ["soffice.bin", "soffice", "oosplash", "gimp", "gimp-2.10", "gimp-3.0", "chrome", "chromium", "vlc",
-        "xfce4-terminal", "socat", "code", "thunderbird", "eog", "evince", "mousepad", "ristretto", "Thunar"]
+        "xfce4-terminal", "socat", "code", "thunderbird", "eog", "evince", "mousepad", "ristretto", "Thunar", "xfce4-mime-helper", "exo-open"]
 KEEP_HOME = {".gui-gate", ".cache", ".pi", ".local", ".config", ".bashrc", ".profile", ".npm"}
 
 
@@ -134,7 +134,7 @@ def setup(task: dict) -> dict:
         st["protect"].setdefault(succ["target"], sha(succ["target"]))
         st["listing"] = {p: sha(p) for p in glob.glob(succ["glob"])}
     json.dump(st, open(os.path.join(STATE, "task_state.json"), "w"))
-    time.sleep(float(og.get("settle", 2)))
+    time.sleep(float(og.get("settle", 4)))
     return {"setup_s": round(time.time() - t0, 1), "protected": st["protect"]}
 
 
