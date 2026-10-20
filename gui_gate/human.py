@@ -5,6 +5,7 @@ Channels, tried in this order when channel="auto":
            `elicitation` capability show a native prompt to their user)
   desktop  a small always-on-top GTK dialog on the machine's own display
            (whoever watches the desktop answers it)
+  deny     unattended runs (benchmarks): every request is answered "deny" at once
   chat     nothing the gate can show itself: the refusal tells the agent to ask
            its user and come back with a one-time confirm code
 
@@ -83,6 +84,8 @@ class Human:
             else:
                 c = r.get("content") or {}
                 ans = str(c.get("answer") or "allow") if want_text else ("allow" if c.get("allow") else "deny")
+        elif ch == "deny":  # unattended benchmark runs: nobody is there, answer "deny" at once
+            ans = "deny"
         elif ch == "desktop":
             q = {"text": text, "want_text": want_text, "timeout": self.timeout,
                  "title": title or "gui-gate: a person is needed"}

@@ -289,5 +289,15 @@ class PolicyTests(unittest.TestCase):
             c.close()
 
 
+class HumanDenyTests(unittest.TestCase):
+    def test_deny_channel_answers_at_once(self):
+        from gui_gate.human import Human
+        h = Human("deny", 30)
+        r = h.ask("approve?")
+        self.assertEqual(r["answer"], "deny")
+        self.assertEqual(r["channel"], "deny")
+        self.assertLess(r["ms"], 1000)
+
+
 if __name__ == "__main__":
     unittest.main()

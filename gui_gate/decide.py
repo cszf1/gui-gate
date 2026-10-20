@@ -69,7 +69,7 @@ class GateConfig:
                                   # model: all risk -> main model | human: all risk -> person
     decider: str = "formula"      # formula | model  (who settles the grey zone)
     collect: bool = False         # shadow-label every action
-    human_channel: str = "auto"   # auto | elicit | desktop | chat  (how a person is reached)
+    human_channel: str = "auto"   # auto | elicit | desktop | chat | deny  (how a person is reached)
     human_timeout: float = 120.0  # seconds to wait for a person before treating it as "no"
     toolset: str = "core"         # core: expose only the tools a GUI task needs | all
     auto_observe: bool = True     # after an action, return the window's fresh tree (no extra model turn)

@@ -799,7 +799,7 @@ def main(argv=None) -> None:
     ap.add_argument("--decider", choices=["formula", "model"], help="who settles the grey zone (model = the main model)")
     ap.add_argument("--risk-mode", choices=["auto", "model", "human"],
                     help="auto (default): high risk -> person, medium -> main model; model: all -> model; human: all -> person")
-    ap.add_argument("--human", dest="human_channel", choices=["auto", "elicit", "desktop", "chat"],
+    ap.add_argument("--human", dest="human_channel", choices=["auto", "elicit", "desktop", "chat", "deny"],
                     help="how to reach a person (default auto: MCP elicitation, else desktop dialog, else via the agent)")
     ap.add_argument("--human-timeout", type=float, help="seconds to wait for a person (default 120)")
     ap.add_argument("--toolset", choices=["core", "all"], help="core (default): only the tools a GUI task needs")
