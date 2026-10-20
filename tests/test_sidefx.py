@@ -60,3 +60,19 @@ class SideEffectTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class MenuRiskTests(unittest.TestCase):
+    def risk(self, role, label):
+        from gui_gate.features import Target, assess_risk
+        from gui_gate.state import Element, GateState
+        t = Target(kind="token", pid=999999, element=Element(1, role, label))
+        return assess_risk("click", {}, t, [], GateState())[:2]
+
+    def test_menu_openers_are_not_risky(self):
+        self.assertEqual(self.risk("menu", "Format"), (None, None))
+        self.assertEqual(self.risk("menu", "Edit"), (None, None))
+        self.assertEqual(self.risk("button", "Format"), (None, None))
+        self.assertEqual(self.risk("menu item", "Delete Rows")[1], "medium")
+        self.assertEqual(self.risk("button", "Delete")[1], "high")
+        self.assertEqual(self.risk("button", "Format Disk")[1], "high")

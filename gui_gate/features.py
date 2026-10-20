@@ -34,7 +34,7 @@ KEY_TOOLS = {"type_text", "press_key", "hotkey", "set_value"}
 #   medium consequential but usually recoverable   -> the agent must re-think and re-send with gate_ack
 RISK_HIGH = [
     "delete", "erase", "wipe", "pay", "pay now", "purchase", "buy now", "place order", "checkout", "confirm payment",
-    "transfer", "uninstall", "format", "factory reset", "empty trash", "permanently", "delete account",
+    "transfer", "uninstall", "format disk", "format drive", "format partition", "format volume", "factory reset", "empty trash", "permanently", "delete account",
     "close account", "remove account", "reset password",
     "删除", "清空", "支付", "付款", "购买", "立即购买", "下单", "转账", "卸载", "格式化", "永久", "注销账号", "恢复出厂",
 ]
@@ -54,6 +54,7 @@ _SHELL_HIGH = re.compile(r"(\brm\s+-[a-z]*[rf]|\bmkfs\b|\bdd\s+if=|\bshutdown\b|
 _SECRET_FIELD = re.compile(r"(password|passcode|passwd|\bpin\b|密码|口令|cvv|cvc|security code|card number|卡号|验证码"
                            r"|one-time code|otp|2fa|verification code)", re.I)
 _CAPTCHA = re.compile(r"(captcha|recaptcha|hcaptcha|i'?m not a robot|verify you are human|人机验证|滑块验证|安全验证)", re.I)
+_OPENER_ROLE = re.compile(r"^(menu|menu ?bar|menubar|menu bar item|tab|page tab|tab list|combo ?box|heading|label|static text|text)$")
 _ENTER_KEYS = {"return", "enter", "kp_enter"}
 
 RISK_WORDS = RISK_HIGH + RISK_MED  # back-compat
@@ -219,6 +220,11 @@ def assess_risk(tool: str, args: dict, t: Target, steps: list, st: GateState):
         role = (tg.element.role if tg.element else tg.role) or ""
         if tl in ("click", "double_click", "browser_click", "invoke_menu", "set_value") or tg.kind in ("token", "index", "name"):
             lv, w = risk_of_label(label)
+            rl = role.lower()
+            if lv and _OPENER_ROLE.search(rl):
+                lv = None  # opening a menu, tab or list shows choices; it changes nothing
+            elif lv == "high" and "menu" in rl:
+                lv = "medium"  # an app command from a menu (Delete Rows, ...) is usually undoable
             if lv and tl not in ("type_text",):
                 bump(lv, f'"{label[:40]}" ({w})')
         text = str(a.get("text") or a.get("value") or "")
