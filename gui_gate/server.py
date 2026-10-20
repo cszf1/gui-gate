@@ -39,6 +39,7 @@ CORE_TOOLS = {"list_apps", "list_windows", "get_window_state", "launch_app", "br
 RARE_PARAMS = {"session", "capture_mode", "screenshot_out_file", "verbose", "full_output", "display_only", "cursor_id",
                "delivery_mode", "scope", "from_zoom", "capture_id", "timeout_ms", "max_image_dimension", "target"}
 AUTO_OBS_TOOLS = {"click", "double_click", "right_click", "press_key", "hotkey", "scroll", "invoke_menu", "drag"}
+_BG_UNAVAILABLE = re.compile(r"background delivery is not available|no focus-free input backend|background_unavailable", re.I)
 _LOADING_RX = re.compile(r"(loading|busy|please wait|加载|正在|请稍候)", re.I)
 MAX_TREE_LINES = 120
 
@@ -121,6 +122,9 @@ class Gate:
         self.aid = 0
         self._want_shot: set = set()  # pids whose next read must carry a screenshot
         self._seen_pids: set = set()
+        self._delivery_tools: set = {"click", "double_click", "right_click", "drag", "type_text", "press_key",
+                                     "hotkey", "set_value", "scroll"}
+        self._fg_sticky = False
         self._probe_el = None
         self.child_cmd = child_cmd
         self.init_params: Optional[dict] = None
@@ -151,6 +155,24 @@ class Gate:
         log_err("driver restarted")
 
     def _tool(self, name: str, args: dict, timeout: float = 60.0) -> dict:
+        # input delivery: background (no focus steal) when the desktop supports it, else foreground.
+        # cfg.delivery auto: try background, and on "no focus-free input backend" retry in foreground
+        # and stay in foreground for the rest of the session (sticky).
+        if name in self._delivery_tools and "delivery_mode" not in args:
+            mode = self.cfg.delivery
+            if mode == "foreground" or (mode == "auto" and self._fg_sticky):
+                args = dict(args, delivery_mode="foreground")
+        r = self._tool_raw(name, args, timeout)
+        if (self.cfg.delivery == "auto" and r.get("isError") and name in self._delivery_tools
+                and args.get("delivery_mode") != "foreground" and _BG_UNAVAILABLE.search(text_of(r))):
+            if not self._fg_sticky:
+                self._fg_sticky = True
+                self.log.write({"ev": "delivery_fallback", "tool": name, "to": "foreground"})
+            self.stats["delivery_fallbacks"] = self.stats.get("delivery_fallbacks", 0) + 1  # (caller may hold self.lock)
+            r = self._tool_raw(name, dict(args, delivery_mode="foreground"), timeout)
+        return r
+
+    def _tool_raw(self, name: str, args: dict, timeout: float = 60.0) -> dict:
         if self.child.p.poll() is not None:
             self._respawn()
         try:
@@ -202,6 +224,8 @@ class Gate:
             if not isinstance(sch.get("required"), list):
                 sch["required"] = []
             sch.setdefault("properties", {})
+            if "delivery_mode" in (sch.get("properties") or {}):
+                self._delivery_tools.add(t.get("name"))
             if self.cfg.toolset == "core":
                 t["description"] = _short(t.get("description") or "", 600)
                 props0 = sch.get("properties") or {}
@@ -802,6 +826,9 @@ def main(argv=None) -> None:
     ap.add_argument("--human", dest="human_channel", choices=["auto", "elicit", "desktop", "chat", "deny"],
                     help="how to reach a person (default auto: MCP elicitation, else desktop dialog, else via the agent)")
     ap.add_argument("--human-timeout", type=float, help="seconds to wait for a person (default 120)")
+    ap.add_argument("--delivery", choices=["auto", "background", "foreground"],
+                    help="input delivery: auto (default; background, falls back to foreground when the desktop "
+                         "has no focus-free backend), background, or foreground")
     ap.add_argument("--toolset", choices=["core", "all"], help="core (default): only the tools a GUI task needs")
     ap.add_argument("--no-auto-observe", dest="auto_observe", action="store_false", default=None,
                     help="do not return the fresh window tree after each action")
@@ -814,7 +841,8 @@ def main(argv=None) -> None:
     a = ap.parse_args(argv)
     cfg = GateConfig.from_env(policy=a.policy, lam=a.lam, collect=a.collect, risk_confirm=a.risk_confirm,
                               decider=a.decider, risk_mode=a.risk_mode, human_channel=a.human_channel,
-                              human_timeout=a.human_timeout, toolset=a.toolset, auto_observe=a.auto_observe)
+                              human_timeout=a.human_timeout, toolset=a.toolset, auto_observe=a.auto_observe,
+                              delivery=a.delivery)
     if a.weights:
         cfg.load_weights(a.weights)
     if a.child:

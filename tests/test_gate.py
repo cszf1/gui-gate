@@ -289,6 +289,31 @@ class PolicyTests(unittest.TestCase):
             c.close()
 
 
+class DeliveryTests(unittest.TestCase):
+    def test_auto_falls_back_to_foreground_and_sticks(self):
+        env = dict(os.environ, FAKE_NO_BG="1")
+        c = Client("--human", "deny", env=env)
+        try:
+            s = c.read()
+            r = c.call("press_key", pid=4242, key="a", gate_ack=True)
+            self.assertFalse(r.get("isError"), txt(r))
+            self.assertIn("delivery=foreground", txt(r))
+            r2 = c.call("type_text", pid=4242, text="x", gate_ack=True)
+            self.assertIn("delivery=foreground", txt(r2))
+        finally:
+            c.close()
+
+    def test_background_mode_keeps_driver_error(self):
+        env = dict(os.environ, FAKE_NO_BG="1")
+        c = Client("--human", "deny", "--delivery", "background", env=env)
+        try:
+            c.read()
+            r = c.call("press_key", pid=4242, key="a", gate_ack=True)
+            self.assertIn("Background delivery is not available", txt(r))
+        finally:
+            c.close()
+
+
 class HumanDenyTests(unittest.TestCase):
     def test_deny_channel_answers_at_once(self):
         from gui_gate.human import Human

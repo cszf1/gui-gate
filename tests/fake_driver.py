@@ -16,7 +16,8 @@ state = {
     "fail_next": 0,
     "count": 0,
 }
-TOOLS = [{"name": n, "inputSchema": {"type": "object", "properties": {"pid": {"type": "integer"}}}}
+TOOLS = [{"name": n, "inputSchema": {"type": "object", "properties": {"pid": {"type": "integer"},
+         **({"delivery_mode": {"type": "string"}} if n in ("click", "type_text", "press_key", "hotkey") else {})}}}
          for n in ["get_window_state", "click", "type_text", "press_key", "hotkey", "list_windows", "verify_state",
                    "run_steps", "fake_mutate", "launch_app", "fake_crash"]]
 
@@ -37,6 +38,11 @@ def text(t, err=False, sc=None, img=False):
 
 
 def call(name, a):
+    # FAKE_NO_BG=1: like a desktop without a focus-free input backend (no /dev/uinput)
+    if (os.environ.get("FAKE_NO_BG") and name in ("type_text", "press_key", "hotkey")
+            and a.get("delivery_mode") != "foreground"):
+        return text("Background delivery is not available: the requested target has no focus-free input backend",
+                    err=True)
     if name == "get_window_state":
         state["snap"] += 1
         sid = snap_id(state["snap"])
@@ -89,7 +95,7 @@ def call(name, a):
         if "fail_next" in a:
             state["fail_next"] = a["fail_next"]
         return text("mutated")
-    return text(f"{name} ok", sc={})
+    return text(f"{name} ok delivery={a.get('delivery_mode', 'background')}", sc={})
 
 
 def main():

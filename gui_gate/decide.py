@@ -73,6 +73,7 @@ class GateConfig:
     human_timeout: float = 120.0  # seconds to wait for a person before treating it as "no"
     toolset: str = "core"         # core: expose only the tools a GUI task needs | all
     auto_observe: bool = True     # after an action, return the window's fresh tree (no extra model turn)
+    delivery: str = "auto"        # auto (background, sticky fallback to foreground) | background | foreground
     costs: dict = field(default_factory=lambda: dict(DEFAULT_COSTS))
     weights: dict = field(default_factory=lambda: dict(PRIOR_WEIGHTS))
     gains: dict = field(default_factory=lambda: dict(PRIOR_GAINS))
@@ -91,6 +92,7 @@ class GateConfig:
         c.human_channel = os.environ.get("GUI_GATE_HUMAN", c.human_channel)
         c.toolset = os.environ.get("GUI_GATE_TOOLSET", c.toolset)
         c.auto_observe = os.environ.get("GUI_GATE_AUTO_OBSERVE", "1") not in ("0", "false", "no")
+        c.delivery = os.environ.get("GUI_GATE_DELIVERY", c.delivery)
         for k, v in over.items():
             if v is not None:
                 setattr(c, k, v)
