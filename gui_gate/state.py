@@ -92,11 +92,28 @@ class GateState:
     def record_observation(self, args: dict, result: dict, now: Optional[float] = None) -> Optional[Observation]:
         sc = (result or {}).get("structuredContent") or {}
         snap = sc.get("snapshot_id")
-        if not snap:
-            return None
         pid = sc.get("pid", args.get("pid"))
         wid = sc.get("window_id", args.get("window_id"))
-        with_shot = any(c.get("type") == "image" for c in result.get("content", [])) or bool(sc.get("capture_id"))
+        with_shot = any(c.get("type") == "image" for c in (result or {}).get("content", [])) or bool(sc.get("capture_id"))
+        if not snap:
+            if not with_shot or pid is None:
+                return None
+            # a screenshot-only read (no tree): still a fresh look at the window for pixel actions;
+            # earlier rows and tokens stay as they were
+            prev = self.latest_by_window.get(self.wkey(pid, wid))
+            self._shots = getattr(self, "_shots", 0) + 1
+            o = Observation(snapshot_id=(prev.snapshot_id if prev else f"shot{self._shots}"), pid=pid, window_id=wid,
+                            t=now or time.time(), with_screenshot=True,
+                            elements=dict(prev.elements) if prev else {}, window_bounds=sc.get("window_bounds")
+                            or (prev.window_bounds if prev else None),
+                            shot_w=sc.get("screenshot_width"), shot_h=sc.get("screenshot_height"),
+                            text=prev.text if prev else "")
+            self.latest_by_window[self.wkey(pid, wid)] = o
+            if prev is None:
+                self.obs_by_snapshot[o.snapshot_id] = o
+            if wid is not None:
+                self.window_of_pid[int(pid)] = int(wid)
+            return o
         els = parse_elements(sc)
         prev = self.latest_by_window.get(self.wkey(pid, wid))
         md = str(sc.get("tree_markdown") or "")

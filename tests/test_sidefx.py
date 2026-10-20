@@ -116,3 +116,15 @@ class FastPathTests(unittest.TestCase):
         ctx.target = Target(kind="pixel", pid=1)
         self.assertIsNotNone(_fast_path(ctx, {"obs_had_shot": 1.0, "acts_since_obs": 0.0}))
         self.assertIsNone(_fast_path(ctx, {"obs_had_shot": 0.0, "acts_since_obs": 0.0}))
+
+
+class ScreenshotOnlyReadTests(unittest.TestCase):
+    def test_screenshot_only_read_counts_as_observation(self):
+        from gui_gate.state import GateState
+        st = GateState()
+        res = {"structuredContent": {"pid": 77, "screenshot_width": 800, "screenshot_height": 600},
+               "content": [{"type": "image", "data": "x", "mimeType": "image/png"}]}
+        o = st.record_observation({"pid": 77, "include_screenshot": True}, res)
+        self.assertIsNotNone(o)
+        self.assertTrue(o.with_screenshot)
+        self.assertIs(st.latest_for(77, 5), o)
