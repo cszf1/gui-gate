@@ -314,6 +314,20 @@ class DeliveryTests(unittest.TestCase):
             c.close()
 
 
+class PixelFrameTests(unittest.TestCase):
+    def test_pixel_clicks_keep_screenshot_frame(self):
+        c = Client("--human", "deny", env=dict(os.environ, FAKE_NO_FRAME="1"))
+        try:
+            c.read()
+            r1 = c.call("click", pid=4242, window_id=777, x=20, y=30, gate_ack=True)
+            self.assertFalse(r1.get("isError"), txt(r1))
+            r2 = c.call("click", pid=4242, window_id=777, x=25, y=35, gate_ack=True)
+            self.assertFalse(r2.get("isError"), txt(r2))  # auto-observe kept the screenshot for this window
+            self.assertTrue(any(x.get("type") == "image" for x in r2["content"]))
+        finally:
+            c.close()
+
+
 class HumanDenyTests(unittest.TestCase):
     def test_deny_channel_answers_at_once(self):
         from gui_gate.human import Human

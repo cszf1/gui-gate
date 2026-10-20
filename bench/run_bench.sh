@@ -54,7 +54,8 @@ When the task is complete, reply DONE and one line on what you did. If the task 
   $PY -c "from PIL import ImageGrab; im=ImageGrab.grab(); im.resize((im.width//2, im.height//2)).save('$OUT/shots/$tag.png')" 2>/dev/null
   $PY $HERE/osworld_native.py eval $HERE/tasks/$task --final $OUT/pi/$tag.jsonl.final.txt --out $OUT/eval/$tag.eval.json > /dev/null 2>&1
   local infra=null
-  if grep -q 'thinking must be passed back\|"stopReason":"error"' $OUT/pi/$tag.jsonl 2>/dev/null; then
+  # a relay failure ends Pi itself (stop=agent); a run cut at max_turns/timeout is the agent's own outcome
+  if echo "$st" | grep -q '"stop": "agent"' && grep -q 'thinking must be passed back\|"stopReason":"error"' $OUT/pi/$tag.jsonl 2>/dev/null; then
     infra='"relay_error"'
   fi
   echo "{\"tag\":\"$tag\",\"task\":\"$name\",\"cond\":\"$c\",\"seed\":$s,\"attempt\":$att,\"infra\":$infra,\"screen\":\"$scr\",\"think\":\"$THINK\",\"pi\":$st}" >> $OUT/runs.jsonl

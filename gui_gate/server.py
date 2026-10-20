@@ -40,6 +40,7 @@ RARE_PARAMS = {"session", "capture_mode", "screenshot_out_file", "verbose", "ful
                "delivery_mode", "scope", "from_zoom", "capture_id", "timeout_ms", "max_image_dimension", "target"}
 AUTO_OBS_TOOLS = {"click", "double_click", "right_click", "press_key", "hotkey", "scroll", "invoke_menu", "drag"}
 _BG_UNAVAILABLE = re.compile(r"background delivery is not available|no focus-free input backend|background_unavailable", re.I)
+_NO_FRAME = re.compile(r"no screenshot frame", re.I)
 _LOADING_RX = re.compile(r"(loading|busy|please wait|加载|正在|请稍候)", re.I)
 MAX_TREE_LINES = 120
 
@@ -125,6 +126,10 @@ class Gate:
         self._delivery_tools: set = {"click", "double_click", "right_click", "drag", "type_text", "press_key",
                                      "hotkey", "set_value", "scroll"}
         self._fg_sticky = False
+        # windows the agent has to target by pixels (it clicked by x/y, or the element tree is partial,
+        # e.g. a spreadsheet grid): their reads keep the screenshot, since a read without one also
+        # drops the driver's pixel frame and the next x/y click fails
+        self._pixel_pids: set = set()
         self._probe_el = None
         self.child_cmd = child_cmd
         self.init_params: Optional[dict] = None
@@ -306,10 +311,12 @@ class Gate:
         trimmed = False
         if name == "get_window_state" and self.cfg.policy == "gate" and "include_screenshot" not in args:
             pid = args.get("pid")
-            if pid in self._seen_pids and pid not in self._want_shot:
+            if pid in self._seen_pids and pid not in self._want_shot and pid not in self._pixel_pids:
                 args = dict(args, include_screenshot=False)
                 trimmed = True
         res = self._tool(name, args, timeout=120)
+        if name == "get_window_state" and "PARTIAL TREE" in text_of(res) and args.get("pid") is not None:
+            self._pixel_pids.add(args.get("pid"))
         if trimmed:
             md = (res.get("structuredContent") or {}).get("tree_markdown") or text_of(res)
             if md.count("- [") < 2:  # tree too thin to act on: give the pixels after all
@@ -618,6 +625,15 @@ class Gate:
             rec.aid = self.aid
             self.state.record_action(rec)
             pid0 = ctx.target.pid
+            if pid0 is not None and "x" in args and "y" in args:
+                self._pixel_pids.add(pid0)
+            if pid0 is not None and rec.is_error and _NO_FRAME.search(txt):
+                # the driver lost its pixel frame: hand back a fresh screenshot + tree in this same result
+                self._pixel_pids.add(pid0)
+                res.setdefault("content", []).append({"type": "text", "text":
+                    "[gate] Here is a fresh screenshot of the window; re-aim your x/y on it and retry."})
+                self._auto_observe(pid0, ctx.target.window_id, res, force=True)
+                self.stats["frame_recoveries"] = self.stats.get("frame_recoveries", 0) + 1
             if pid0 is not None and not rec.is_error:
                 if name in ("type_text", "set_value"):
                     self.state.last_typed[int(pid0)] = self.state.last_typed.get(int(pid0), "") + str(args.get("text") or args.get("value") or "")
@@ -713,7 +729,8 @@ class Gate:
                 new = [w for w in now_ids if w not in prev_ids] if prev_ids else []
                 wid = int(new[-1]) if new else (int(window_id) if window_id else self.state.window_of_pid.get(pid))
                 note = f"A new window/dialog opened (window_id={wid}); this is its tree.\n" if new else ""
-                a = {"pid": pid, "include_screenshot": False}
+                shot = pid in self._pixel_pids
+                a = {"pid": pid, "include_screenshot": shot}
                 if wid:
                     a["window_id"] = wid
                 r = self._tool("get_window_state", a, timeout=20)
@@ -725,6 +742,15 @@ class Gate:
                     time.sleep(0.4)
                     continue
                 break
+            if "PARTIAL TREE" in text_of(r) and not shot:
+                # a grid/canvas the tree cannot show: the agent will aim by pixels, so give it the picture
+                self._pixel_pids.add(pid)
+                shot = True
+                a = dict(a, include_screenshot=True)
+                r2 = self._tool("get_window_state", a, timeout=20)
+                if not r2.get("isError") and (r2.get("structuredContent") or {}).get("snapshot_id"):
+                    r, sc = r2, r2.get("structuredContent") or {}
+                    md = str(sc.get("tree_markdown") or md)
             o = self.state.record_observation(a, r)
             if o is not None:
                 o.window_count = sig
@@ -738,10 +764,12 @@ class Gate:
             res.setdefault("content", []).append({"type": "text", "text":
                 f"[gate] Window right after the action (snapshot {sc.get('snapshot_id')}; tokens are "
                 f"{sc.get('snapshot_id')}:N, older tokens are stale).{busy}\n{note}" + "\n".join(lines) + more})
+            if shot:
+                res["content"].extend(c for c in (r.get("content") or []) if c.get("type") == "image")
             self.stats["auto_obs"] += 1
             self.log.write({"ev": "obs", "tool": "get_window_state", "auto": True, "ms": round((time.time() - t0) * 1000, 1),
-                            "screenshot": False, "px": 0, "snapshot": sc.get("snapshot_id"), "pid": pid,
-                            "trimmed": True, "new_window": bool(note)})
+                            "screenshot": shot, "px": 0, "snapshot": sc.get("snapshot_id"), "pid": pid,
+                            "trimmed": not shot, "new_window": bool(note)})
         except Exception as e:  # never break the action result
             log_err("auto-observe failed", repr(e))
 

@@ -49,6 +49,7 @@ def call(name, a):
         rows = "\n".join(f'    - [{i}] {r} "{l}" [actions=[click]]' for i, (r, l) in enumerate(state["elements"]))
         md = f'- frame = "Fixture"\n{rows}\n'
         shot = a.get("include_screenshot", True)
+        state["last_shot"] = shot
         sc = {"snapshot_id": sid, "pid": PID, "window_id": WID, "tree_markdown": md, "truncated": False,
               "screenshot_width": 500 if shot else None, "screenshot_height": 300 if shot else None}
         if shot:
@@ -74,6 +75,8 @@ def call(name, a):
                 state["elements"][2] = ("text", f"count={state['count']}")
             return text(f'Clicked element [{idx}] {role} "{lab}".', sc={"effect": "unverifiable", "route": "accessibility"})
         if "x" in a:
+            if os.environ.get("FAKE_NO_FRAME") and not state.get("last_shot", True):
+                return text(f"No screenshot frame for window {WID}: its latest read had no screenshot", err=True)
             return text(f"Clicked at {a['x']},{a['y']}", sc={"effect": "unverifiable", "route": "pixel"})
         return text("missing target", err=True)
     if name == "list_windows":
