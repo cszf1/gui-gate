@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gui-gate"
+version = "0.2.0"
+description = "Cua Driver behind a pre-action value gate, served as one MCP server"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+dependencies = []
+
+[project.scripts]
+gui-gate = "gui_gate.server:main"
+gui-gate-train = "gui_gate.train:main"
+gui-gate-compare = "gui_gate.compare:main"
+
+[tool.setuptools]
+packages = ["gui_gate"]

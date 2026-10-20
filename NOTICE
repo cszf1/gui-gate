@@ -1,0 +1,5 @@
+gui-gate drives Cua Driver (https://github.com/trycua/cua, libs/cua-driver),
+Copyright (c) trycua, released under the MIT License. gui-gate does not
+vendor Cua Driver's code; it runs the installed `cua-driver mcp` binary as a
+child process. Any modified Cua Driver sources added to this repository keep
+their original MIT copyright notice.
