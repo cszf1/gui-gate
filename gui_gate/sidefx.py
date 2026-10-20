@@ -18,8 +18,8 @@ import shlex
 import subprocess
 from typing import Optional
 
-OVERWRITE_CTX = re.compile(r"(already exists|overwrite|replace (it|the existing|the file)|do you want to replace"
-                           r"|file exists|已存在|覆盖|替换现有|是否替换)", re.I)
+OVERWRITE_CTX = re.compile(r"(already exists|do you want to (replace|overwrite)|replace the existing|overwrite the existing"
+                           r"|file exists|已存在|是否(替换|覆盖)|替换现有)", re.I)
 CONFIRM_LABELS = {"yes", "ok", "replace", "overwrite", "save", "continue", "use", "keep both", "&yes", "_yes",
                   "是", "确定", "替换", "覆盖", "保存", "继续"}
 _TERMINAL_COMM = re.compile(r"(term|konsole|tilix|alacritty|kitty|wezterm|guake|terminator|foot|sakura)", re.I)

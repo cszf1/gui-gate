@@ -37,6 +37,7 @@ class Observation:
     loading_cue: bool = False
     truncated: bool = False
     window_count: Optional[int] = None  # windows of this pid at read time
+    text: str = ""  # the read's text (tree incl. unindexed labels such as a dialog's message)
 
 
 @dataclass
@@ -116,6 +117,7 @@ class GateState:
             loading_cue=bool(_LOADING.search(sc.get("tree_markdown") or "")) or any(
                 _LOADING.search(e.role + " " + e.label) for e in els.values()),
             truncated=bool(sc.get("truncated")),
+            text=(prev.text if (prev is not None and "no change since" in alltext) else alltext)[:12000],
         )
         self.obs_by_snapshot[snap] = o
         self.latest_by_window[self.wkey(pid, wid)] = o

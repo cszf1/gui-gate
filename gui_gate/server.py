@@ -105,6 +105,41 @@ def _refusal(dec: Decision, text: str, extra: Optional[dict] = None) -> dict:
     return {"isError": True, "content": [{"type": "text", "text": text}], "structuredContent": sc}
 
 
+_OPENER = ("menu", "menu bar item", "menubar", "page tab", "tab", "combo box")
+
+
+def _fast_path(ctx, f) -> Optional[str]:
+    """Cases where any extra look costs more than a miss: (1) opening a menu or tab by its tree row
+    (a wrong one is closed with Escape, and the auto-observe shows what opened); (2) a pixel click
+    planned on a screenshot the model got right before it, with nothing done since."""
+    t = ctx.target
+    role = ((t.element.role if t.element else t.role) or "").lower()
+    if t.kind in ("token", "index", "name") and role in _OPENER and ctx.tool in ("click",):
+        return f"opens a {role}: harmless if wrong (Escape), the result is shown right after"
+    if (t.kind == "pixel" and f.get("obs_had_shot", 0) >= 1 and f.get("acts_since_obs", 1) == 0
+            and f.get("window_changed", 0) < 0.5 and f.get("last_err", 0) < 0.5 and f.get("repeat", 0) < 0.5):
+        return "pixel target planned on a fresh screenshot, nothing changed since"
+    return None
+
+
+def _nearest(old, cands):
+    """Several rows share the role+label: keep the one where the old row was (same place on screen,
+    else the nearest row index), when that choice is clear."""
+    def ctr(e):
+        fr = e.frame or {}
+        return (fr.get("x", 0) + fr.get("w", 0) / 2, fr.get("y", 0) + fr.get("h", 0) / 2) if fr else None
+    oc = ctr(old)
+    if oc is not None and all(ctr(c) is not None for c in cands):
+        d = sorted(((abs(ctr(c)[0] - oc[0]) + abs(ctr(c)[1] - oc[1]), i) for i, c in enumerate(cands)))
+        if d[0][0] <= 8 and (len(d) == 1 or d[1][0] > 30):
+            return [cands[d[0][1]]]
+        return cands
+    d = sorted(((abs(c.index - old.index), i) for i, c in enumerate(cands)))
+    if len(d) == 1 or d[1][0] > d[0][0] + 5:
+        return [cands[d[0][1]]]
+    return cands
+
+
 class Gate:
     def __init__(self, child_cmd: list[str], cfg: GateConfig, log_path: Optional[str]):
         self.cfg = cfg
@@ -442,6 +477,8 @@ class Gate:
         o.gate_read = True
         o.window_count = self._window_sig(o.pid) if o.pid is not None else None
         cands = [e for e in o.elements.values() if e.label == old.label and e.role == old.role]
+        if len(cands) > 1:
+            cands = _nearest(old, cands)
         if len(cands) != 1:
             return (None, None)
         return (f"{o.snapshot_id}:{cands[0].index}", cands[0])
@@ -491,6 +528,11 @@ class Gate:
                 dec = choose(ctx, f, self.cfg, self._check_available(ctx), check_done=False)
                 if ack and dec.option == "reason":
                     dec = Decision("direct", dec.p_direct, "agent acknowledged after double-check", "model", dec.scores)
+        if dec.option in ("look_light", "look_full", "reason", "check") and dec.tier not in ("rule", "policy") \
+                and f.get("token_stale", 0) < 0.5 and not ctx.risk_level:
+            fast = _fast_path(ctx, f)
+            if fast:
+                dec = Decision("direct", dec.p_direct, fast, "rule", dec.scores)
         # cheap options are resolved here and re-decided (each at most once)
         waited = checked = False
         for _ in range(5):

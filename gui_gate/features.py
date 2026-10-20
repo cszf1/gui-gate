@@ -196,11 +196,15 @@ def _newest_obs_blob(st: GateState, pid) -> str:
     """Text of the newest read of any window of this process (a dialog that just opened, usually)."""
     if pid is None:
         return ""
-    obs = [o for k, o in st.latest_by_window.items() if k.split(":")[0] == str(pid)]
+    cut = time.time() - 30  # an old dialog read says nothing about the window now
+    obs = [o for k, o in st.latest_by_window.items() if k.split(":")[0] == str(pid) and o.t >= cut]
     if not obs:
         return ""
-    o = max(obs, key=lambda x: x.t)
-    return " ".join(e.label for e in o.elements.values())[:6000]
+    return _obs_blob(max(obs, key=lambda x: x.t))
+
+
+def _obs_blob(o) -> str:
+    return (o.text or "")[:8000] + " " + " ".join(e.label for e in o.elements.values())[:4000]
 
 
 def assess_risk(tool: str, args: dict, t: Target, steps: list, st: GateState):
@@ -253,7 +257,7 @@ def assess_risk(tool: str, args: dict, t: Target, steps: list, st: GateState):
             prev = st.last_typed.get(int(tg.pid), "") if hasattr(st, "last_typed") else ""
             _shell_check(prev + text.split("\n")[0], tg.pid, bump)
         if tl in ("click", "double_click") and label and tg.pid is not None:
-            blob = " ".join(e.label for e in tg.obs.elements.values())[:6000] if tg.obs else _newest_obs_blob(st, tg.pid)
+            blob = _obs_blob(tg.obs) if tg.obs else _newest_obs_blob(st, tg.pid)
             if sidefx.overwrite_dialog(blob, label, set()):
                 bump("high", f'"{label[:30]}" confirms replacing an existing file')
         if tl in ("click", "double_click") and not label and tg.pid is not None and tg.kind == "pixel":

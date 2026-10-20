@@ -76,3 +76,43 @@ class MenuRiskTests(unittest.TestCase):
         self.assertEqual(self.risk("menu item", "Delete Rows")[1], "medium")
         self.assertEqual(self.risk("button", "Delete")[1], "high")
         self.assertEqual(self.risk("button", "Format Disk")[1], "high")
+
+
+class OverwriteDialogTests(unittest.TestCase):
+    def test_yes_in_replace_dialog_is_high(self):
+        from gui_gate.features import Target, assess_risk
+        from gui_gate.state import GateState
+        st = GateState()
+        md = ('- alert = "Question"\n  - label = "A file named "pre.pptx" already exists.\n\nDo you want to replace it?"\n'
+              '  - [0] button "No" [actions=[click]]\n  - [1] button "Yes" [actions=[click]]')
+        res = {"structuredContent": {"snapshot_id": "s00000009", "pid": 4242, "window_id": 7, "tree_markdown": md},
+               "content": [{"type": "text", "text": md}]}
+        o = st.record_observation({"pid": 4242, "window_id": 7}, res)
+        yes = o.elements.get(1)
+        self.assertIsNotNone(yes)
+        t = Target(kind="token", pid=4242, window_id=7, snapshot="s00000009", index=1, element=yes, obs=o)
+        self.assertEqual(assess_risk("click", {}, t, [], st)[1], "high")
+        no = Target(kind="token", pid=4242, window_id=7, snapshot="s00000009", index=0, element=o.elements.get(0), obs=o)
+        self.assertIsNone(assess_risk("click", {}, no, [], st)[1])
+        key = Target(kind="keyboard", pid=4242)
+        self.assertEqual(assess_risk("press_key", {"key": "Return"}, key, [], st)[1], "high")
+
+
+class FastPathTests(unittest.TestCase):
+    def test_nearest_and_opener(self):
+        from gui_gate.server import _nearest, _fast_path
+        from gui_gate.state import Element
+        from gui_gate.features import Target, ActionCtx
+        old = Element(5, "menu", "Insert", {"x": 100, "y": 10, "w": 40, "h": 20})
+        a = Element(7, "menu", "Insert", {"x": 101, "y": 10, "w": 40, "h": 20})
+        b = Element(90, "menu", "Insert", {"x": 600, "y": 300, "w": 40, "h": 20})
+        self.assertEqual(_nearest(old, [b, a]), [a])
+        self.assertEqual(len(_nearest(Element(5, "menu", "Insert"), [Element(6, "menu", "Insert"), Element(7, "menu", "Insert")])), 2)
+        self.assertEqual(_nearest(Element(5, "menu", "Insert"), [Element(6, "menu", "Insert"), Element(70, "menu", "Insert")])[0].index, 6)
+        t = Target(kind="token", pid=1, element=old)
+        ctx = ActionCtx.__new__(ActionCtx)
+        ctx.target, ctx.tool = t, "click"
+        self.assertIsNotNone(_fast_path(ctx, {}))
+        ctx.target = Target(kind="pixel", pid=1)
+        self.assertIsNotNone(_fast_path(ctx, {"obs_had_shot": 1.0, "acts_since_obs": 0.0}))
+        self.assertIsNone(_fast_path(ctx, {"obs_had_shot": 0.0, "acts_since_obs": 0.0}))
