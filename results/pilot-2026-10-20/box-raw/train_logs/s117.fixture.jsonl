@@ -1,0 +1,20 @@
+{"t": 1792501039.749, "seed": 117, "ev": "start", "sequence": ["Grape", "Cherry", "Cherry", "Grape", "Mango", "Cherry", "Mango", "Banana", "Lemon", "Lemon"]}
+{"t": 1792501040.377, "seed": 117, "ev": "click", "caption": "Grape", "expected": "Grape", "correct": true, "k": 0}
+{"t": 1792501041.232, "seed": 117, "ev": "click", "caption": "Cherry", "expected": "Cherry", "correct": true, "k": 1}
+{"t": 1792501041.232, "seed": 117, "ev": "loading"}
+{"t": 1792501042.037, "seed": 117, "ev": "click", "caption": "Cherry", "expected": "Cherry", "correct": true, "k": 2}
+{"t": 1792501042.922, "seed": 117, "ev": "click", "caption": "Grape", "expected": "Grape", "correct": true, "k": 3}
+{"t": 1792501042.922, "seed": 117, "ev": "loading"}
+{"t": 1792501044.259, "seed": 117, "ev": "click", "caption": "Mango", "expected": "Mango", "correct": true, "k": 4}
+{"t": 1792501044.259, "seed": 117, "ev": "loading"}
+{"t": 1792501045.579, "seed": 117, "ev": "click", "caption": "Cherry", "expected": "Cherry", "correct": true, "k": 5}
+{"t": 1792501046.449, "seed": 117, "ev": "click", "caption": "Mango", "expected": "Mango", "correct": true, "k": 6}
+{"t": 1792501046.454, "seed": 117, "ev": "popup_open"}
+{"t": 1792501047.077, "seed": 117, "ev": "ignored", "caption": "Banana", "why": "popup"}
+{"t": 1792501047.93, "seed": 117, "ev": "ignored", "caption": "Lemon", "why": "popup"}
+{"t": 1792501049.847, "seed": 117, "ev": "popup_closed"}
+{"t": 1792501050.505, "seed": 117, "ev": "click", "caption": "Banana", "expected": "Banana", "correct": true, "k": 7}
+{"t": 1792501050.506, "seed": 117, "ev": "loading"}
+{"t": 1792501051.825, "seed": 117, "ev": "click", "caption": "Lemon", "expected": "Lemon", "correct": true, "k": 8}
+{"t": 1792501052.164, "seed": 117, "ev": "click", "caption": "Lemon", "expected": "Lemon", "correct": true, "k": 9}
+{"t": 1792501052.164, "seed": 117, "ev": "done"}

@@ -1,0 +1,12 @@
+{"tag":"direct-s0","cond":"direct","seed":0,"wall_s":80.9}
+{"tag":"full-s0","cond":"full","seed":0,"wall_s":68.2}
+{"tag":"formula-s0","cond":"formula","seed":0,"wall_s":55.0}
+{"tag":"model-s0","cond":"model","seed":0,"wall_s":55.8}
+{"tag":"direct-s1","cond":"direct","seed":1,"wall_s":75.1}
+{"tag":"full-s1","cond":"full","seed":1,"wall_s":69.2}
+{"tag":"formula-s1","cond":"formula","seed":1,"wall_s":59.3}
+{"tag":"model-s1","cond":"model","seed":1,"wall_s":59.9}
+{"tag":"direct-s2","cond":"direct","seed":2,"wall_s":78.4}
+{"tag":"full-s2","cond":"full","seed":2,"wall_s":87.4}
+{"tag":"formula-s2","cond":"formula","seed":2,"wall_s":49.2}
+{"tag":"model-s2","cond":"model","seed":2,"wall_s":71.4}

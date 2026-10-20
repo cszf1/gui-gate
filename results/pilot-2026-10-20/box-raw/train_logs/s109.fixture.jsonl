@@ -1,0 +1,26 @@
+{"t": 1792500928.91, "seed": 109, "ev": "start", "sequence": ["Kiwi", "Grape", "Peach", "Peach", "Apple", "Banana", "Grape", "Peach", "Kiwi", "Banana"]}
+{"t": 1792500929.565, "seed": 109, "ev": "click", "caption": "Kiwi", "expected": "Kiwi", "correct": true, "k": 0}
+{"t": 1792500930.436, "seed": 109, "ev": "click", "caption": "Grape", "expected": "Grape", "correct": true, "k": 1}
+{"t": 1792500930.436, "seed": 109, "ev": "loading"}
+{"t": 1792500931.758, "seed": 109, "ev": "click", "caption": "Peach", "expected": "Peach", "correct": true, "k": 2}
+{"t": 1792500932.114, "seed": 109, "ev": "click", "caption": "Peach", "expected": "Peach", "correct": true, "k": 3}
+{"t": 1792500932.114, "seed": 109, "ev": "relabel", "labels": ["Grape", "Kiwi", "Mango", "Banana", "Peach", "Apple", "Lemon", "Cherry"]}
+{"t": 1792500932.999, "seed": 109, "ev": "click", "caption": "Grape", "expected": "Apple", "correct": false, "k": 4}
+{"t": 1792500933.853, "seed": 109, "ev": "click", "caption": "Kiwi", "expected": "Apple", "correct": false, "k": 4}
+{"t": 1792500933.853, "seed": 109, "ev": "relabel", "labels": ["Lemon", "Kiwi", "Mango", "Peach", "Banana", "Cherry", "Apple", "Grape"]}
+{"t": 1792500933.853, "seed": 109, "ev": "loading"}
+{"t": 1792500935.382, "seed": 109, "ev": "click", "caption": "Apple", "expected": "Apple", "correct": true, "k": 4}
+{"t": 1792500936.266, "seed": 109, "ev": "click", "caption": "Banana", "expected": "Banana", "correct": true, "k": 5}
+{"t": 1792500936.27, "seed": 109, "ev": "popup_open"}
+{"t": 1792500936.894, "seed": 109, "ev": "ignored", "caption": "Grape", "why": "popup"}
+{"t": 1792500938.795, "seed": 109, "ev": "popup_closed"}
+{"t": 1792500939.454, "seed": 109, "ev": "click", "caption": "Grape", "expected": "Grape", "correct": true, "k": 6}
+{"t": 1792500940.291, "seed": 109, "ev": "click", "caption": "Peach", "expected": "Peach", "correct": true, "k": 7}
+{"t": 1792500940.295, "seed": 109, "ev": "popup_open"}
+{"t": 1792500940.919, "seed": 109, "ev": "ignored", "caption": "Kiwi", "why": "popup"}
+{"t": 1792500942.787, "seed": 109, "ev": "popup_closed"}
+{"t": 1792500943.447, "seed": 109, "ev": "click", "caption": "Kiwi", "expected": "Kiwi", "correct": true, "k": 8}
+{"t": 1792500943.447, "seed": 109, "ev": "relabel", "labels": ["Apple", "Lemon", "Banana", "Cherry", "Grape", "Mango", "Peach", "Kiwi"]}
+{"t": 1792500944.318, "seed": 109, "ev": "click", "caption": "Grape", "expected": "Banana", "correct": false, "k": 9}
+{"t": 1792500945.236, "seed": 109, "ev": "click", "caption": "Banana", "expected": "Banana", "correct": true, "k": 9}
+{"t": 1792500945.236, "seed": 109, "ev": "done"}

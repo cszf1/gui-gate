@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "gui": {
+      "command": "/data/home/.local/bin/gui-gate",
+      "args": [
+        "--log",
+        "/data/workspace/runs/pi-mcp.jsonl"
+      ]
+    }
+  }
+}

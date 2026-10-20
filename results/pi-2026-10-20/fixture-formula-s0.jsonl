@@ -1,0 +1,4 @@
+{"t": 1792506814.702, "seed": 0, "ev": "start", "sequence": ["Mango", "Mango", "Apple", "Kiwi", "Peach", "Mango", "Kiwi", "Peach"]}
+{"t": 1792506833.938, "seed": 0, "ev": "click", "caption": "Mango", "expected": "Mango", "correct": true, "k": 0}
+{"t": 1792506845.572, "seed": 0, "ev": "click", "caption": "Mango", "expected": "Mango", "correct": true, "k": 1}
+{"t": 1792506845.574, "seed": 0, "ev": "relabel", "labels": ["Banana", "Lemon", "Grape", "Peach", "Kiwi", "Apple", "Mango", "Cherry"]}

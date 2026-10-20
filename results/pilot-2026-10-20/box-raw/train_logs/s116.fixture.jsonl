@@ -1,0 +1,20 @@
+{"t": 1792501028.324, "seed": 116, "ev": "start", "sequence": ["Kiwi", "Apple", "Banana", "Cherry", "Peach", "Peach", "Grape", "Kiwi", "Mango", "Mango"]}
+{"t": 1792501028.962, "seed": 116, "ev": "click", "caption": "Kiwi", "expected": "Kiwi", "correct": true, "k": 0}
+{"t": 1792501029.799, "seed": 116, "ev": "click", "caption": "Apple", "expected": "Apple", "correct": true, "k": 1}
+{"t": 1792501030.653, "seed": 116, "ev": "click", "caption": "Banana", "expected": "Banana", "correct": true, "k": 2}
+{"t": 1792501030.654, "seed": 116, "ev": "relabel", "labels": ["Apple", "Kiwi", "Cherry", "Peach", "Lemon", "Grape", "Mango", "Banana"]}
+{"t": 1792501030.654, "seed": 116, "ev": "loading"}
+{"t": 1792501032.197, "seed": 116, "ev": "click", "caption": "Cherry", "expected": "Cherry", "correct": true, "k": 3}
+{"t": 1792501033.067, "seed": 116, "ev": "click", "caption": "Peach", "expected": "Peach", "correct": true, "k": 4}
+{"t": 1792501033.389, "seed": 116, "ev": "click", "caption": "Peach", "expected": "Peach", "correct": true, "k": 5}
+{"t": 1792501033.39, "seed": 116, "ev": "loading"}
+{"t": 1792501034.934, "seed": 116, "ev": "click", "caption": "Grape", "expected": "Grape", "correct": true, "k": 6}
+{"t": 1792501034.934, "seed": 116, "ev": "relabel", "labels": ["Mango", "Kiwi", "Banana", "Apple", "Lemon", "Grape", "Cherry", "Peach"]}
+{"t": 1792501035.771, "seed": 116, "ev": "click", "caption": "Kiwi", "expected": "Kiwi", "correct": true, "k": 7}
+{"t": 1792501035.772, "seed": 116, "ev": "loading"}
+{"t": 1792501037.092, "seed": 116, "ev": "click", "caption": "Cherry", "expected": "Mango", "correct": false, "k": 8}
+{"t": 1792501037.978, "seed": 116, "ev": "click", "caption": "Mango", "expected": "Mango", "correct": true, "k": 8}
+{"t": 1792501037.978, "seed": 116, "ev": "loading"}
+{"t": 1792501038.783, "seed": 116, "ev": "click", "caption": "Mango", "expected": "Mango", "correct": true, "k": 9}
+{"t": 1792501038.783, "seed": 116, "ev": "done"}
+{"t": 1792501038.783, "seed": 116, "ev": "relabel", "labels": ["Kiwi", "Peach", "Lemon", "Apple", "Mango", "Banana", "Cherry", "Grape"]}
