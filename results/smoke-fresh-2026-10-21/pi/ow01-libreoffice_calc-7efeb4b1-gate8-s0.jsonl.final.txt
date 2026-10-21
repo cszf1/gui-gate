@@ -1,0 +1,1 @@
+DONE — Filled B2:B29 in the "Seq No." column of `/home/user/Order_Sales_Serial#.xlsx` with "No. 1" through "No. 28" (as static text, one per data row), leaving all other columns untouched, and saved the file.
