@@ -776,7 +776,7 @@ impl Gate {
                     None => {
                         let ca = self.check_available(inn, &ctx);
                         let c = choose(&ctx, &f, &inn.cfg, ca, false);
-                        if ack && c.option == "reason" {
+                        if ack && (c.option == "reason" || c.option == "ask_help") {
                             Decision::new("direct", c.p_direct, "agent acknowledged after double-check", "model").with_scores(&c.scores)
                         } else {
                             c
@@ -895,9 +895,11 @@ impl Gate {
             "risk_gate": inn.risk_info, "batch": inn.batch_ctx});
 
         // a person decides / acts, when the gate can reach one itself
-        if (opt == "ask_human" || opt == "handoff") && self.human.resolve_channel() != "chat" {
+        if (opt == "ask_human" || opt == "handoff" || opt == "ask_help") && self.human.resolve_channel() != "chat" {
             let what0 = if t.the_label().is_empty() { name.to_string() } else { t.the_label().to_string() };
-            let q = if opt == "ask_human" {
+            let q = if opt == "ask_help" {
+                format!("The agent is stuck: its last steps did not work ({}).\nIt is trying to {} \"{what0}\".\nPlease do this step yourself in the app window, then press Allow. Press Deny to let the agent try another way.", dec.reason, name.replace('_', " "))
+            } else if opt == "ask_human" {
                 format!("The agent wants to {} \"{what0}\".\nWhy the gate stopped it: {}.\nAllow it?", name.replace('_', " "), dec.reason)
             } else {
                 format!("The agent needs you: {}.\nPlease do this step yourself in the app window, then press Allow. Press Deny to stop the agent here.", dec.reason)
@@ -922,6 +924,11 @@ impl Gate {
                     self.auto_observe(inn, p, t.window_id, &mut res, true);
                 }
                 return res;
+            } else if opt == "ask_help" {
+                event["executed"] = json!(false);
+                event["gate_ms"] = json!(round_to(tg0.elapsed().as_secs_f64() * 1000.0, 1));
+                self.log.write(event);
+                return text_result(format!("[gate] Not executed: {}. No person took this step. Do not send the same action again; try a clearly different way (a keyboard shortcut, another menu path, or another element), or call again with gate_ack:true if you are sure this exact action is right now.", dec.reason), true);
             } else {
                 let verdict = if ans == "deny" { "declined".to_string() } else { format!("did not answer within {} s", inn.cfg.human_timeout as i64) };
                 event["executed"] = json!(false);
@@ -949,14 +956,17 @@ impl Gate {
                 window_key: if t.pid.is_some() { wkey(t.pid, t.window_id) } else { None },
                 is_error: err, unverifiable: s(&scv, "effect") == "unverifiable",
                 popup: truthy(scv.get("popup")) || txt.to_lowercase().contains("popup"), stale_error: stale, aid: inn.aid,
+                no_effect: s(&scv, "effect") == "none", retro: false,
             };
             if rec.is_error {
                 inn.inc("exec_errors");
             }
-            if let Some(prev) = inn.state.last_action() {
-                if prev.key == rec.key && !prev.is_error && rec.t - prev.t < 60.0 {
-                    // the agent sent the same action again: the previous one most likely did not do what it wanted
-                    self.log.write(json!({"ev": "retro_repeat", "aid": prev.aid}));
+            let retro_aid = inn.state.last_action().filter(|prev| prev.key == rec.key && !prev.is_error && rec.t - prev.t < 60.0).map(|p| p.aid);
+            if let Some(aid) = retro_aid {
+                // the agent sent the same action again: the previous one most likely did not do what it wanted
+                self.log.write(json!({"ev": "retro_repeat", "aid": aid}));
+                if let Some(p) = inn.state.actions.last_mut() {
+                    p.retro = true;
                 }
             }
             let popup = rec.popup;
@@ -1002,7 +1012,8 @@ impl Gate {
             if trail.iter().any(|x| x == "healed") {
                 push_text(&mut res, format!("[gate] your token was stale; re-bound to {} from a fresh tree read. Older tokens for this window are now stale.", pystr(args.get("element_token"))));
             }
-            if !err && AUTO_OBS_TOOLS.contains(&name) && inn.cfg.policy == "gate" && inn.cfg.auto_observe && !inn.in_batch {
+            // also after an error: the agent gets the fresh tree (and fresh tokens) in the same turn instead of spending one on a re-read
+            if AUTO_OBS_TOOLS.contains(&name) && inn.cfg.policy == "gate" && inn.cfg.auto_observe && !inn.in_batch {
                 if let Some(p) = t.pid {
                     self.auto_observe(inn, p, t.window_id, &mut res, false);
                 }
@@ -1058,6 +1069,10 @@ impl Gate {
                 inn.confirm_codes.insert(c.clone(), ctx.signature.clone());
                 extra.insert("confirm_code".into(), json!(c));
                 format!("[gate] Not executed: {} on {what}. Either ask the user to approve this exact action and, only after they approve, call the same tool again with the same arguments plus gate_confirm:\"{c}\"; or, without waiting for them: {alt}.", dec.reason)
+            }
+            "ask_help" => {
+                inn.inc("model_turns_requested");
+                format!("[gate] Not executed: {}. This keeps failing. Ask your user for help (say what you are trying to do and what happens instead), or try a clearly different way: a keyboard shortcut, another menu path, or another element. If you are sure this exact action is right now, call again with gate_ack:true.", dec.reason)
             }
             "deny" => self.deny_text(inn, &ctx, &dec, "refused"),
             _ => format!("[gate] Not executed: {}.", dec.reason),

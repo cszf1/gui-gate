@@ -9,7 +9,16 @@ use crate::util::*;
 use indexmap::IndexMap;
 use serde_json::Value;
 
+/// Built-in weights: fitted on 2,934 executed actions from 169 OSWorld/OSGuard sessions (2026-10-21 runs,
+/// `gui-gate train`, L2 towards the hand-set prior so rare signals such as stale tokens keep their prior),
+/// Platt-calibrated. Session-split held-out AUC about 0.76 (hand-set prior about 0.53). weights/osworld-v2.json.
 pub fn prior_weights() -> IndexMap<String, f64> {
+    [("bias", 0.753), ("is_pixel", -0.542), ("is_token", 0.049), ("is_name", 0.3), ("is_keyboard", 0.193), ("no_obs", -2.455), ("token_stale", -3.202), ("log_obs_age", 0.404), ("acts_since_obs", -0.312), ("obs_had_shot", 0.453), ("last_err", -1.01), ("last_unverif", 0.046), ("last_popup", -1.323), ("repeat", -0.821), ("edge_close", -0.796), ("small_target", -0.6), ("label_empty", -0.372), ("label_dup", -0.811), ("loading_cue", -1.216), ("window_changed", -1.172), ("window_added", -1.478), ("elem_unknown", -0.671), ("check_pass", 1.36), ("check_fail", -3.501), ("prev_none", -0.168), ("sess_fail", -0.198), ("consec_fail", -0.104), ("sig_failed", -0.189), ("role_menu", -0.282), ("role_cell", -0.096), ("role_toggle", -0.029)]
+        .iter().map(|(k, v)| (k.to_string(), *v)).collect()
+}
+
+/// The hand-set prior (v1), kept for comparison: GUI_GATE_WEIGHTS=prior_v1.
+pub fn prior_v1_weights() -> IndexMap<String, f64> {
     [("bias", 2.6), ("is_pixel", -0.9), ("is_token", 0.4), ("is_name", 0.3), ("is_keyboard", 0.2), ("no_obs", -2.5),
      ("token_stale", -3.2), ("log_obs_age", -0.15), ("acts_since_obs", -0.55), ("obs_had_shot", 0.1), ("last_err", -0.9),
      ("last_unverif", -0.3), ("last_popup", -1.2), ("repeat", -0.8), ("edge_close", -1.0), ("small_target", -0.6),
@@ -18,23 +27,73 @@ pub fn prior_weights() -> IndexMap<String, f64> {
         .iter().map(|(k, v)| (k.to_string(), *v)).collect()
 }
 
+pub const PRIOR_CALIB: (f64, f64) = (1.081, 0.04767);
+
+/// What an option fixes beyond the features it resets (see `after`): the residual chance it turns a
+/// would-be failure into a success. ask_help: a person does or explains the step.
 fn prior_gains() -> IndexMap<String, f64> {
-    [("check", 0.45), ("heal", 0.65), ("wait", 0.35), ("look_light", 0.75), ("look_full", 0.92), ("reason", 0.55)]
+    [("check", 0.03), ("heal", 0.65), ("wait", 0.2), ("look_light", 0.15), ("look_full", 0.3), ("reason", 0.25),
+     ("ask_help", 0.9)]
         .iter().map(|(k, v)| (k.to_string(), *v)).collect()
 }
 
 fn pixel_gain(o: &str) -> Option<f64> {
     match o {
-        "look_light" => Some(0.35),
-        "look_full" => Some(0.92),
+        "look_light" => Some(0.05),
+        "look_full" => Some(0.5),
         "check" => Some(0.0),
         _ => None,
     }
 }
 
+/// Seconds. Options the gate resolves itself (check, heal, wait) cost well under a second; options that hand
+/// the step back to the model cost a whole model turn (about 7 s measured, model + relay); a person ~45 s.
 fn default_costs() -> IndexMap<String, f64> {
-    [("direct", 0.0), ("check", 0.05), ("heal", 0.15), ("wait", 0.8), ("look_light", 3.0), ("look_full", 5.5),
-     ("reason", 4.0), ("ask_human", 30.0)].iter().map(|(k, v)| (k.to_string(), *v)).collect()
+    [("direct", 0.0), ("check", 0.2), ("heal", 0.3), ("wait", 1.0), ("look_light", 7.0), ("look_full", 9.0),
+     ("reason", 8.0), ("ask_human", 45.0), ("ask_help", 45.0)].iter().map(|(k, v)| (k.to_string(), *v)).collect()
+}
+
+/// Counterfactual features: the state this option leaves behind, scored by the same predictor.
+/// A fresh read clears staleness; waiting clears loading; re-thinking clears doubt about the target.
+pub fn after(f: &Feats, o: &str) -> Feats {
+    let mut g = f.clone();
+    let mut set = |ks: &[&'static str], v: f64| for k in ks { if let Some(x) = g.get_mut(*k) { *x = v; } };
+    match o {
+        "look_light" | "look_full" => {
+            set(&["no_obs", "token_stale", "log_obs_age", "acts_since_obs", "window_changed", "window_added", "last_popup",
+                  "elem_unknown", "last_unverif", "prev_none"], 0.0);
+            if o == "look_full" { set(&["obs_had_shot"], 1.0); }
+        }
+        "wait" => set(&["loading_cue", "last_popup"], 0.0),
+        "heal" => set(&["token_stale", "elem_unknown"], 0.0),
+        "reason" => set(&["label_dup", "repeat", "sig_failed"], 0.0),
+        // a probe only tells; it fixes nothing by itself (in 332 logged probes it flagged 2 of 82 later failures)
+        "check" => {}
+        _ => {}
+    }
+    g
+}
+
+/// What a failed step costs, in seconds: noticing it and redoing it takes about two model turns plus clean-up,
+/// scaled by how hard the step is to undo and by how stuck the run already is (consecutive known failures).
+pub fn fail_cost(ctx: &ActionCtx, f: &Feats, cfg: &GateConfig) -> f64 {
+    let base = 2.0 * cfg.turn_cost + cfg.side_cost;
+    let tool = ctx.tool.as_str();
+    let keys = ctx.args.get("keys").or(ctx.args.get("key")).map(|k| pystr(Some(k)).to_lowercase()).unwrap_or_default();
+    let label = ctx.target.the_label().to_lowercase();
+    let commit = regex::Regex::new(r"^(ok|save|apply|send|submit|replace|yes|finish|done|confirm|delete|remove)\b").unwrap();
+    let sev = if ctx.risk_level.is_some() {
+        3.0
+    } else if tool == "scroll" || (tool == "press_key" && regex::Regex::new(r"^(up|down|left|right|tab|escape|esc|page_?up|page_?down|home|end)$").unwrap().is_match(&keys)) {
+        0.5
+    } else if (tool == "press_key" && (keys == "return" || keys == "enter")) || (tool.contains("click") && commit.is_match(&label)) {
+        2.0
+    } else if matches!(tool, "type_text" | "set_value" | "hotkey") {
+        1.5
+    } else {
+        1.0
+    };
+    base * sev * (1.0 + fget(f, "consec_fail")).powf(1.5)
 }
 
 #[derive(Clone, Debug)]
@@ -42,6 +101,8 @@ pub struct GateConfig {
     pub policy: String,
     pub lam: f64,
     pub fail_cost: f64,
+    pub turn_cost: f64,
+    pub side_cost: f64,
     pub grey_lo: f64,
     pub grey_hi: f64,
     pub risk_confirm: bool,
@@ -67,11 +128,11 @@ pub struct GateConfig {
 impl Default for GateConfig {
     fn default() -> Self {
         GateConfig {
-            policy: "gate".into(), lam: 1.0, fail_cost: 12.0, grey_lo: 0.55, grey_hi: 0.9, risk_confirm: true,
+            policy: "gate".into(), lam: 1.0, fail_cost: 19.0, turn_cost: 7.0, side_cost: 5.0, grey_lo: 0.55, grey_hi: 0.9, risk_confirm: true,
             risk_mode: "auto".into(), decider: "formula".into(), collect: false, human_channel: "auto".into(),
             human_timeout: 120.0, toolset: "core".into(), auto_observe: true, delivery: "auto".into(), task: String::new(),
             batch: "auto".into(), deny_consecutive: 3, deny_total: 8, costs: default_costs(), weights: prior_weights(),
-            gains: prior_gains(), calib: None, model_name: "prior_v0".into(),
+            gains: prior_gains(), calib: Some(PRIOR_CALIB), model_name: "osworld_v2".into(),
         }
     }
 }
@@ -103,15 +164,23 @@ impl GateConfig {
             }
         }
         if let Some(v) = env("GUI_GATE_BATCH") { c.batch = v; }
+        if let Some(v) = env("GUI_GATE_TURN_COST").and_then(|v| v.parse().ok()) { c.turn_cost = v; }
         if let Some(w) = env("GUI_GATE_WEIGHTS") {
-            let _ = c.load_weights(&w);
+            if w == "prior_v1" {
+                c.weights = prior_v1_weights();
+                c.calib = None;
+                c.model_name = "prior_v1".into();
+            } else {
+                let _ = c.load_weights(&w);
+            }
         }
         c
     }
 
     pub fn load_weights(&mut self, path: &str) -> Result<(), String> {
         let d: Value = serde_json::from_str(&std::fs::read_to_string(path).map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
-        for (field, map) in [("weights", &mut self.weights), ("gains", &mut self.gains)] {
+        self.calib = None;
+        for (field, map) in [("weights", &mut self.weights), ("gains", &mut self.gains), ("costs", &mut self.costs)] {
             if let Some(o) = d.get(field).and_then(|x| x.as_object()) {
                 for (k, v) in o {
                     if let Some(f) = v.as_f64() { map.insert(k.clone(), f); }
@@ -203,7 +272,11 @@ pub fn hard_rules(ctx: &ActionCtx, f: &Feats, cfg: &GateConfig, confirmed: bool,
     None
 }
 
-/// Tier 1 (+ grey zone): minimise lam*cost + (1-P)*fail_cost.
+/// Tier 1 (+ grey zone): pick the option with the lowest expected cost in seconds,
+///   E[cost(o)] = lam * cost(o) + (1 - P_o) * fail_cost,
+/// where P_o is the predictor's success probability on the state option o leaves behind (`after`), plus that
+/// option's residual gain. One formula ranks acting now, cheap gate-side fixes, handing back to the model and
+/// asking a person; a person becomes the cheapest option only once the run is clearly stuck.
 pub fn choose(ctx: &ActionCtx, f: &Feats, cfg: &GateConfig, check_available: bool, check_done: bool) -> Decision {
     let p = p_direct(f, cfg);
     let pixel = ctx.target.kind == "pixel";
@@ -218,29 +291,33 @@ pub fn choose(ctx: &ActionCtx, f: &Feats, cfg: &GateConfig, check_available: boo
     if keyboard {
         avail.retain(|o| *o != "reason");
     }
+    if cfg.human_channel != "deny" && fget(f, "consec_fail") >= 2.0 {
+        avail.push("ask_help");
+    }
+    let cf = fail_cost(ctx, f, cfg);
     let mut scores: IndexMap<String, f64> = IndexMap::new();
     for o in &avail {
         let po = if *o == "direct" {
             p
         } else {
+            let pa = p_direct(&after(f, o), cfg).max(p);
             let g = if pixel { pixel_gain(o).unwrap_or_else(|| cfg.gains.get(*o).copied().unwrap_or(0.0)) } else { cfg.gains.get(*o).copied().unwrap_or(0.0) };
-            p + g * (1.0 - p)
+            pa + g * (1.0 - pa)
         };
-        scores.insert(o.to_string(), cfg.lam * cfg.costs.get(*o).copied().unwrap_or(0.0) + (1.0 - po) * cfg.fail_cost);
+        scores.insert(o.to_string(), cfg.lam * cfg.costs.get(*o).copied().unwrap_or(0.0) + (1.0 - po) * cf);
     }
     let mut best = scores.iter().fold((String::new(), f64::INFINITY), |acc, (k, v)| if *v < acc.1 { (k.clone(), *v) } else { acc }).0;
     let mut tier = "model";
-    if check_available && !check_done && best != "direct" && ["look_light", "look_full", "reason"].contains(&best.as_str()) {
-        best = "check".into();
-        tier = "grey";
-    } else if check_available && !check_done && best == "direct" && cfg.grey_lo <= p && p < cfg.grey_hi {
+    // before handing the step back to the model (a whole turn), try the cheap gate-side probe once
+    if check_available && !check_done && ["look_light", "look_full", "reason"].contains(&best.as_str()) {
         best = "check".into();
         tier = "grey";
     }
     let mut sorted: Vec<(&String, &f64)> = scores.iter().collect();
     sorted.sort_by(|a, b| a.1.partial_cmp(b.1).unwrap());
-    let top: Vec<String> = sorted.iter().take(3).map(|(k, v)| format!("{k}={v:.2}")).collect();
-    let reason = format!("P(direct)={p:.2}; expected cost {}", top.join(", "));
+    let top: Vec<String> = sorted.iter().take(3).map(|(k, v)| format!("{k}={v:.1}s")).collect();
+    let stuck = if fget(f, "consec_fail") >= 1.0 { format!("; {} failed in a row", fget(f, "consec_fail")) } else { String::new() };
+    let reason = format!("P(direct)={p:.2}{stuck}; expected cost {}", top.join(", "));
     Decision::new(&best, p, reason, tier).with_scores(&scores)
 }
 
@@ -264,4 +341,59 @@ pub fn policy_decision(ctx: &ActionCtx, f: &Feats, cfg: &GateConfig) -> Option<D
                                   format!("baseline {}: observe before every action", cfg.policy), "policy"));
     }
     None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::features::{history_feats, Target};
+
+    fn ctx(tool: &str, kind: &str, label: &str) -> ActionCtx {
+        ActionCtx { tool: tool.into(), args: serde_json::json!({}), target: Target { kind: kind.into(), label: label.into(), ..Default::default() },
+                    signature: format!("{tool}|{label}"), risk: None, steps: vec![], risk_level: None, handoff: None }
+    }
+    fn feats() -> Feats {
+        let mut f: Feats = FEATURE_NAMES.iter().map(|k| (*k, 0.0)).collect();
+        f["bias"] = 1.0;
+        f["is_token"] = 1.0;
+        f
+    }
+
+    #[test]
+    fn normal_step_goes_direct() {
+        let c = choose(&ctx("click", "token", "Bold"), &feats(), &GateConfig::default(), true, false);
+        assert_eq!(c.option, "direct", "{}", c.reason);
+    }
+
+    #[test]
+    fn stuck_run_asks_a_person_only_when_one_is_reachable() {
+        let mut f = feats();
+        let prev: Vec<(String, bool, bool)> = (0..4).map(|_| ("click|Bold".to_string(), true, true)).collect();
+        for (k, v) in history_feats(&prev, "click|Bold") {
+            f[k] = v;
+        }
+        f["repeat"] = 2.0;
+        f["last_err"] = 1.0;
+        let mut cfg = GateConfig::default();
+        cfg.human_channel = "auto".into();
+        assert_eq!(choose(&ctx("click", "token", "Bold"), &f, &cfg, false, false).option, "ask_help");
+        cfg.human_channel = "deny".into();
+        assert_ne!(choose(&ctx("click", "token", "Bold"), &f, &cfg, false, false).option, "ask_help");
+    }
+
+    #[test]
+    fn failing_commit_costs_more_than_scrolling() {
+        let cfg = GateConfig::default();
+        let f = feats();
+        assert!(fail_cost(&ctx("click", "token", "Save"), &f, &cfg) > fail_cost(&ctx("scroll", "token", "list"), &f, &cfg) * 3.0);
+    }
+
+    #[test]
+    fn a_fresh_read_clears_staleness() {
+        let mut f = feats();
+        f["window_added"] = 1.0;
+        f["acts_since_obs"] = 3.0;
+        let cfg = GateConfig::default();
+        assert!(p_direct(&after(&f, "look_light"), &cfg) > p_direct(&f, &cfg) + 0.1);
+    }
 }

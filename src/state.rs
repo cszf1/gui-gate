@@ -73,6 +73,15 @@ pub struct ActionRecord {
     pub popup: bool,
     pub stale_error: bool,
     pub aid: u64,
+    pub no_effect: bool, // the driver saw no change after it
+    pub retro: bool,     // the agent sent the same action again right after (it most likely did not work)
+}
+
+impl ActionRecord {
+    /// A failure the gate already knows about when the next action arrives.
+    pub fn known_fail(&self) -> bool {
+        self.is_error || self.stale_error || self.no_effect || self.retro
+    }
 }
 
 fn frame_of(v: Option<&Value>) -> Option<Frame> {

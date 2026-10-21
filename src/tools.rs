@@ -70,13 +70,38 @@ fn load(paths: &[String]) -> Vec<Row> {
                 env.insert((sess.clone(), aid), ok);
             }
         }
-        for e in evs {
+        // session history as the live gate saw it before each action (logs older than v2 lack these features)
+        let mut prev: Vec<(String, bool, bool)> = vec![];
+        let mut last: Option<(String, f64, bool)> = None;
+        for mut e in evs {
             if s(&e, "ev") == "retro_repeat" {
                 if let Some(a) = as_i64(e.get("aid")) {
                     retro.insert((s(&e, "session").to_string(), a));
                 }
-            } else if s(&e, "ev") == "action" && truthy(e.get("executed")) && s(&e, "decision") == "direct" {
-                rows.push(e);
+            } else if s(&e, "ev") == "action" && truthy(e.get("executed")) {
+                let sig = s(&e, "sig").to_string();
+                if e.get("features").and_then(|f| f.get("sess_fail")).is_none() {
+                    let role = e.get("target").map(|t| s(t, "role").to_string()).unwrap_or_default();
+                    if let Some(fm) = e.get_mut("features").and_then(|f| f.as_object_mut()) {
+                        for (k, v) in crate::features::history_feats(&prev, &sig).into_iter().chain(crate::features::role_feats(&role)) {
+                            fm.insert(k.to_string(), json!(v));
+                        }
+                    }
+                }
+                let ts = e["ts"].as_f64().unwrap_or(0.0);
+                let err = truthy(e.get("is_error"));
+                // the live gate flags the previous action as a repeat-failure when this one repeats it
+                if let (Some((lsig, lts, lerr)), Some(p)) = (&last, prev.last_mut()) {
+                    if *lsig == sig && !*lerr && ts - *lts < 60.0 {
+                        p.1 = true;
+                    }
+                }
+                let none = s(&e, "effect") == "none";
+                prev.push((sig.clone(), err || truthy(e.get("stale_error")) || none, none));
+                last = Some((sig, ts, err));
+                if s(&e, "decision") == "direct" {
+                    rows.push(e);
+                }
             }
         }
     }
@@ -105,7 +130,7 @@ fn logit(w: &IndexMap<String, f64>, f: &HashMap<String, f64>) -> f64 {
 fn fit(data: &[&Row], l2: f64, init: &IndexMap<String, f64>) -> IndexMap<String, f64> {
     let mut w: IndexMap<String, f64> = FEATURE_NAMES.iter().map(|k| (k.to_string(), init.get(*k).copied().unwrap_or(0.0))).collect();
     let n = data.len().max(1) as f64;
-    for _ in 0..400 {
+    for _ in 0..3000 {
         let mut g: HashMap<&str, f64> = HashMap::new();
         for (_, f, y) in data {
             let p = sigmoid(logit(&w, f));
@@ -118,7 +143,7 @@ fn fit(data: &[&Row], l2: f64, init: &IndexMap<String, f64>) -> IndexMap<String,
         }
         for k in FEATURE_NAMES {
             let reg = if *k == "bias" { 0.0 } else { l2 * (w[*k] - init.get(*k).copied().unwrap_or(0.0)) };
-            w[*k] -= 0.1 * (g.get(k).copied().unwrap_or(0.0) / n + reg);
+            w[*k] -= 0.5 * (g.get(k).copied().unwrap_or(0.0) / n + reg);
         }
     }
     w
@@ -312,5 +337,80 @@ pub fn compare_main(argv: &[String]) -> i32 {
             println!("   {k}: {}", d[k]);
         }
     }
+    0
+}
+
+/// gui-gate replay LOGS... [--weights FILE|prior_v1] [--human deny|auto] [--lambda X]
+/// Re-decide every executed action in old logs with the current formula and predictor (features rebuilt the way
+/// the live gate computes them) and score the decisions against what actually happened to those actions.
+pub fn replay_main(argv: &[String]) -> i32 {
+    let mut cfg = crate::decide::GateConfig::default();
+    cfg.human_channel = "deny".into();
+    let mut paths = vec![];
+    let mut i = 0;
+    while i < argv.len() {
+        match argv[i].as_str() {
+            "--weights" => {
+                let w = argv.get(i + 1).cloned().unwrap_or_default();
+                if w == "prior_v1" { cfg.weights = crate::decide::prior_v1_weights(); cfg.calib = None; cfg.model_name = w; }
+                else if let Err(e) = cfg.load_weights(&w) { eprintln!("{e}"); return 1; }
+                i += 1;
+            }
+            "--human" => { cfg.human_channel = argv.get(i + 1).cloned().unwrap_or_default(); i += 1; }
+            "--lambda" => { cfg.lam = argv.get(i + 1).and_then(|v| v.parse().ok()).unwrap_or(1.0); i += 1; }
+            "-h" | "--help" => { println!("usage: gui-gate replay LOGS... [--weights FILE|prior_v1] [--human deny|auto] [--lambda X]"); return 0; }
+            p => paths.push(p.to_string()),
+        }
+        i += 1;
+    }
+    let mut by: IndexMap<String, (f64, f64)> = IndexMap::new(); // option -> (n, n that actually failed)
+    let (mut n, mut fails): (f64, f64) = (0.0, 0.0);
+    for f in files_of(&paths) {
+        let evs = events(&f);
+        let retro: HashSet<i64> = evs.iter().filter(|e| s(e, "ev") == "retro_repeat").filter_map(|e| as_i64(e.get("aid"))).collect();
+        let mut prev: Vec<(String, bool, bool)> = vec![];
+        let mut last: Option<(String, f64, bool)> = None;
+        for e in evs.iter().filter(|e| s(e, "ev") == "action" && truthy(e.get("executed"))) {
+            let sig = s(e, "sig").to_string();
+            let tg = e.get("target").cloned().unwrap_or(json!({}));
+            let mut feats: crate::features::Feats = FEATURE_NAMES.iter().map(|k| (*k, as_f64(e.get("features").and_then(|f| f.get(*k))).unwrap_or(0.0))).collect();
+            for (k, v) in crate::features::history_feats(&prev, &sig).into_iter().chain(crate::features::role_feats(s(&tg, "role"))) {
+                feats[k] = v;
+            }
+            let keys = sig.rsplit('|').next().unwrap_or("").to_string();
+            let ctx = crate::features::ActionCtx {
+                tool: s(e, "tool").to_string(), args: json!({"keys": keys}),
+                target: crate::features::Target { kind: s(&tg, "kind").to_string(), role: s(&tg, "role").to_string(), label: s(&tg, "label").to_string(), ..Default::default() },
+                signature: sig.clone(), risk: None, steps: vec![], risk_level: e.get("risk_level").and_then(|v| v.as_str()).map(String::from), handoff: None,
+            };
+            let ca = matches!(ctx.target.kind.as_str(), "token" | "index" | "name");
+            let d = crate::decide::hard_rules(&ctx, &feats, &cfg, true, true).unwrap_or_else(|| crate::decide::choose(&ctx, &feats, &cfg, ca, false));
+            let aid = as_i64(e.get("aid")).unwrap_or(-1);
+            let failed = truthy(e.get("is_error")) || truthy(e.get("stale_error")) || retro.contains(&aid);
+            n += 1.0;
+            if failed { fails += 1.0; }
+            let ent = by.entry(d.option.clone()).or_default();
+            ent.0 += 1.0;
+            if failed { ent.1 += 1.0; }
+            // update history exactly as the live gate would
+            let ts = e["ts"].as_f64().unwrap_or(0.0);
+            let err = truthy(e.get("is_error"));
+            if let (Some((lsig, lts, lerr)), Some(p)) = (&last, prev.last_mut()) {
+                if *lsig == sig && !*lerr && ts - *lts < 60.0 { p.1 = true; }
+            }
+            let none = s(e, "effect") == "none";
+            prev.push((sig.clone(), err || truthy(e.get("stale_error")) || none, none));
+            last = Some((sig, ts, err));
+        }
+    }
+    let inter: f64 = by.iter().filter(|(k, _)| k.as_str() != "direct").map(|(_, v)| v.0).sum();
+    let caught: f64 = by.iter().filter(|(k, _)| k.as_str() != "direct").map(|(_, v)| v.1).sum();
+    let internal: f64 = by.iter().filter(|(k, _)| matches!(k.as_str(), "check" | "heal" | "wait")).map(|(_, v)| v.0).sum();
+    let opts: serde_json::Map<String, Value> = by.iter().map(|(k, v)| (k.clone(), json!({"n": v.0, "actually_failed": v.1}))).collect();
+    println!("{}", serde_json::to_string_pretty(&json!({
+        "model": cfg.model_name, "human": cfg.human_channel, "lambda": cfg.lam, "actions": n, "failed": fails,
+        "intervene_rate": round_to(inter / n.max(1.0), 3), "gate_side_rate": round_to(internal / n.max(1.0), 3),
+        "failures_caught": round_to(caught / fails.max(1.0), 3), "precision": round_to(caught / inter.max(1.0), 3),
+        "by_option": opts})).unwrap());
     0
 }
