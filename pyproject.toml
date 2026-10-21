@@ -4,15 +4,15 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "gui-gate"
-version = "0.4.1"
+version = "0.5.0"
 description = "Cua Driver behind a pre-action value gate, served as one MCP server"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = {text = "MIT"}
-dependencies = []
-
-[project.optional-dependencies]
-codemode = ["quickjs>=1.19"]  # enables the gui_script tool (QuickJS sandbox); run_actions needs nothing
+# Cua Driver's own prebuilt wheels (macOS universal2, Linux x86_64/aarch64 glibc>=2.31, Windows x64/arm64):
+# pip brings the driver in with gui-gate, nothing else is installed or compiled. Keep in step with
+# gui_gate/install.py DRIVER_VERSION.
+dependencies = ["cua-driver==0.37.0"]
 
 [project.scripts]
 gui-gate = "gui_gate.server:main"

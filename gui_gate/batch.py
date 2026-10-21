@@ -1,10 +1,9 @@
 """Server-side batching ("codemode inside the gate"), so every MCP client gets it, not only Pi.
 
-Two tools share one engine:
-  run_actions  JSON list of steps (zero dependencies, any client, any model).
-  gui_script   JavaScript in a QuickJS sandbox with Pi-codemode-style globals (tools.<name>(args), text(),
-               console.log, return, store/load). Optional: needs the `quickjs` Python package. The script
-               API follows Pi's codemode (earendil-works/pi, MIT); the implementation here is our own.
+run_actions takes a small JSON program instead of JavaScript: action steps plus four control steps
+(find / for_each / if / read). Same idea as Pi's codemode (several tool calls per model turn, only a
+compact result comes back) without a JS engine, so it needs nothing beyond the Python standard library
+and cannot run arbitrary code: it can only call the GUI tools, each through the gate.
 
 Gate semantics inside a batch (see docs/design-codemode-in-gate.md):
   * every GUI step goes through Gate.gated() exactly like a single call; a refusal stops the batch;
@@ -15,65 +14,46 @@ Gate semantics inside a batch (see docs/design-codemode-in-gate.md):
 """
 from __future__ import annotations
 
-import json
 import re
 import time
 from typing import Optional
 
-from .features import GATED_TOOLS, OBS_TOOLS
+from .features import GATED_TOOLS
 from .jsonrpc import text_of
 
-MAX_STEPS = 15
+MAX_STEPS = 20      # GUI actions per batch
+MAX_NODES = 200     # interpreted steps per batch (loops included)
+MAX_DEPTH = 3       # nesting of for_each / if
 NOT_IN_BATCH = {"run_steps", "run_script", "kill_app"}
+
+_SEL = {"type": "object", "description": "Which elements: {label} exact, {label_contains}, {label_regex}, "
+         "and/or {role}; searched in windows opened during the batch first, then the batch's window.",
+         "properties": {"label": {"type": "string"}, "label_contains": {"type": "string"},
+                        "label_regex": {"type": "string"}, "role": {"type": "string"}}}
 
 RUN_ACTIONS_TOOL = {
     "name": "run_actions",
     "description": (
-        "Run several GUI actions in ONE call when you can already see every target (e.g. open a menu, pick an "
-        "item, type a name, press Enter). Each step is checked by the gate like a single call. The batch stops "
-        "at the first refused or failed step, when a new window/dialog opens unexpectedly, or when an `expect` "
-        "fails; you get what ran plus one fresh read of the window at the end. x/y (pixel) targets are allowed "
-        "only in the first step. Name things that appear only after an earlier step (menu items, dialog buttons) with "
-        "args.target = {\"label\": \"Save As\", \"role\": \"menu item\"}: the gate finds it on screen when the step runs. "
-        "A popup menu opening is expected; any other new window stops the batch unless that step says "
-        "expect.new_window. Max 15 steps."),
+        "Batch mode: run several GUI steps in ONE call (single-step tools remain available). Each GUI step is "
+        "checked by the gate like a single call. Steps, in order:\n"
+        "  {tool, args, expect?}  a GUI action (click, type_text, press_key, hotkey, scroll, set_value, ...). "
+        "Name things that appear only after an earlier step with args.target = {label, role?}; the gate finds "
+        "them on screen when the step runs. x/y only in the first GUI step.\n"
+        "  {find: SELECTOR, as: \"rows\", max?: 20}  read the screen now and keep the matching elements.\n"
+        "  {for_each: \"rows\", do: [steps]}  repeat steps per element; inside, args.target = \"$item\" points at it "
+        "and \"$item.label\" in any string is its label.\n"
+        "  {if: {exists: SELECTOR} | {not_exists: SELECTOR}, then: [steps], else?: [steps]}\n"
+        "  {read: SELECTOR, as?: \"name\"}  report the matching elements' labels/values in the result.\n"
+        "The batch stops at the first refused or failed step, when a dialog opens unexpectedly (a popup menu is "
+        "fine), or when an expect fails ({title_contains} or {new_window: true}). You get what ran plus one fresh "
+        "read of the window at the end. Max 20 GUI actions."),
     "inputSchema": {"type": "object", "properties": {
         "pid": {"type": "integer", "description": "Default pid for steps that omit it."},
         "window_id": {"type": "integer", "description": "Default window_id for steps that omit it."},
-        "steps": {"type": "array", "description": "In order. Each: {tool, args, expect?}.", "items": {
-            "type": "object", "properties": {
-                "tool": {"type": "string", "description": "A GUI action tool: click, type_text, press_key, hotkey, "
-                                                          "scroll, set_value, double_click, right_click, drag, invoke_menu"},
-                "args": {"type": "object", "description": "That tool's arguments."},
-                "expect": {"type": "object", "description": "Optional check after this step: "
-                           "{\"title_contains\": \"Save\"} and/or {\"new_window\": true} when this step should open one."},
-            }, "required": ["tool", "args"]}},
+        "steps": {"type": "array", "description": "The program, see the tool description.",
+                  "items": {"type": "object"}},
     }, "required": ["steps"]},
 }
-
-GUI_SCRIPT_TOOL = {
-    "name": "gui_script",
-    "description": (
-        "Run a short JavaScript program that calls the GUI tools, for loops or decisions between steps "
-        "(read the tree, find rows, click several of them). The input is raw JavaScript, the body of an async "
-        "function: call tools as `await tools.click({...})` / `tools.get_window_state({...})` (results are the "
-        "tool's {text, structuredContent}); a refused or failed GUI call throws and ends the script. Use "
-        "text(v) / return v / console.log() for output; only that output comes back, plus one fresh read of the "
-        "window at the end. store(k,v)/load(k) keep small JSON across calls. No file system, network or timers. "
-        "Same gate rules as run_actions (max 15 GUI actions, pixel x/y only before the first executed action)."),
-    "inputSchema": {"type": "object", "properties": {
-        "script": {"type": "string", "description": "JavaScript source. Optional first line: "
-                   "// @options: {\"timeout_ms\": 60000, \"max_output_chars\": 20000}"},
-    }, "required": ["script"]},
-}
-
-
-def quickjs_available() -> bool:
-    try:
-        import quickjs  # noqa: F401
-        return True
-    except Exception:
-        return False
 
 
 def _titles(gate, pid) -> list[str]:
@@ -131,17 +111,8 @@ class Batch:
             o.window_count = self.g._window_sig(o.pid) if o.pid is not None else None
         return o
 
-    def resolve(self, a: dict) -> Optional[str]:
-        """`target: {label, role?}` -> a fresh element_token, read at the moment the step runs (so steps can name
-        things that only appear after earlier steps, such as menu items). Newest windows are searched first.
-        Returns an error string, or None when a["element_token"] was set."""
-        tgt = a.pop("target")
-        if not isinstance(tgt, dict) or not tgt.get("label"):
-            return "target needs {\"label\": ..., \"role\": optional}"
-        pid = a.get("pid")
-        if pid is None:
-            return "target needs a pid"
-        want, role = _norm_label(str(tgt["label"])), str(tgt.get("role") or "").lower()
+    def _windows(self, pid, base):
+        """Windows to search: ones opened during the batch (popups, menus) first, then the batch's own, then the rest."""
         wins = []
         try:
             r = self.g._tool("list_windows", {"pid": int(pid)}, timeout=10)
@@ -150,25 +121,59 @@ class Batch:
             wins = [w.get("window_id") for w in ws]
         except Exception:
             pass
-        # windows opened during the batch (popups, menus) first, then the batch's own window, then the rest
-        base = a.get("window_id")
         fresh = [w for w in wins if str(w) not in (self.seen or set()) and w != base]
-        order = fresh + ([base] if base else []) + [w for w in wins if w not in fresh and w != base]
-        seen_names = []
-        for wid in order[:4]:
+        return (fresh + ([base] if base else []) + [w for w in wins if w not in fresh and w != base])[:4]
+
+    def select(self, pid, base, sel: dict, first_window_only: bool = True):
+        """Elements matching a selector, read fresh now. Returns (obs, [elements], seen_labels)."""
+        if not isinstance(sel, dict) or not any(k in sel for k in ("label", "label_contains", "label_regex", "role")):
+            raise ValueError("a selector needs label, label_contains, label_regex or role")
+        want = _norm_label(str(sel["label"])) if sel.get("label") else None
+        sub = str(sel.get("label_contains") or "").lower()
+        rx = re.compile(str(sel["label_regex"]), re.I) if sel.get("label_regex") else None
+        role = str(sel.get("role") or "").lower()
+        seen = []
+        for wid in self._windows(pid, base):
             o = self._read(pid, wid)
             if o is None:
                 continue
-            hits = [e for e in o.elements.values() if _norm_label(e.label) == want and (not role or role in (e.role or ""))]
-            seen_names += [e.label for e in o.elements.values() if e.label][:12]
-            if len(hits) == 1:
-                a["element_token"] = f"{o.snapshot_id}:{hits[0].index}"
-                a["window_id"] = o.window_id or wid
-                a.pop("x", None), a.pop("y", None)
-                return None
-            if len(hits) > 1:
-                return f"\"{tgt['label']}\" matches {len(hits)} elements; add a role or use an element_token"
-        return f"no element named \"{tgt['label']}\" is on screen (seen: {', '.join(seen_names[:10])})"
+            els = sorted(o.elements.values(), key=lambda e: e.index)
+            seen += [e.label for e in els if e.label][:12]
+            hits = [e for e in els
+                    if (want is None or _norm_label(e.label) == want)
+                    and (not sub or sub in (e.label or "").lower())
+                    and (rx is None or rx.search(e.label or ""))
+                    and (not role or role in (e.role or "").lower())]
+            if hits:
+                return o, hits, seen
+        return None, [], seen
+
+    def resolve(self, a: dict) -> Optional[str]:
+        """`target: {label, role?}` -> a fresh element_token, read at the moment the step runs (so steps can name
+        things that only appear after earlier steps, such as menu items). Returns an error string or None."""
+        tgt = a.pop("target")
+        if isinstance(tgt, dict) and tgt.get("_token"):  # an element from find / for_each
+            a["element_token"] = tgt["_token"]
+            if tgt.get("_wid"):
+                a["window_id"] = tgt["_wid"]
+            a.pop("x", None), a.pop("y", None)
+            return None
+        if not isinstance(tgt, dict) or not tgt.get("label"):
+            return "target needs {\"label\": ..., \"role\": optional}"
+        if a.get("pid") is None:
+            return "target needs a pid"
+        try:
+            o, hits, seen = self.select(a["pid"], a.get("window_id"), {"label": tgt["label"], "role": tgt.get("role")})
+        except (ValueError, re.error) as e:
+            return str(e)
+        if len(hits) == 1:
+            a["element_token"] = f"{o.snapshot_id}:{hits[0].index}"
+            a["window_id"] = o.window_id or a.get("window_id")
+            a.pop("x", None), a.pop("y", None)
+            return None
+        if len(hits) > 1:
+            return f"\"{tgt['label']}\" matches {len(hits)} elements; add a role or use an element_token"
+        return f"no element named \"{tgt['label']}\" is on screen (seen: {', '.join(seen[:10])})"
 
     def fill(self, args: dict) -> dict:
         a = dict(args or {})
@@ -260,223 +265,120 @@ class Batch:
         return out
 
 
+def _line_of(o, idx: int) -> str:
+    m = re.search(r"\[" + str(idx) + r"\] ([^\n]{0,200})", getattr(o, "text", "") or "")
+    return m.group(1).strip() if m else ""
+
+
+def _subst(v, item: Optional[dict]):
+    """$item -> the element (as a target), "$item.label" inside strings -> its label."""
+    if item is None:
+        return v
+    if v == "$item":
+        return dict(item)
+    if isinstance(v, str):
+        return v.replace("$item.label", item.get("label", ""))
+    if isinstance(v, dict):
+        return {k: _subst(x, item) for k, x in v.items()}
+    if isinstance(v, list):
+        return [_subst(x, item) for x in v]
+    return v
+
+
+class Program:
+    """Interprets the run_actions JSON program on top of a Batch."""
+
+    def __init__(self, b: Batch):
+        self.b = b
+        self.vars: dict[str, list] = {}
+        self.nodes = 0
+        self.out: list[str] = []
+
+    def _stop(self, why: str):
+        self.b.stopped = why
+
+    def _sel(self, sel, item):
+        b = self.b
+        pid = b.pid if b.pid is not None else b.last_pid
+        if pid is None:
+            raise ValueError("find/if/read need a pid (give one at the top level)")
+        if b.seen is None:
+            b.seen = _ids(b.g._window_sig(pid))
+        return b.select(pid, b.last_wid or b.wid, _subst(sel, item))
+
+    def run(self, steps, depth: int = 0, item: Optional[dict] = None, top: bool = False):
+        b = self.b
+        if depth > MAX_DEPTH:
+            return self._stop(f"nesting deeper than {MAX_DEPTH}")
+        for i, s in enumerate(steps or []):
+            if b.stopped:
+                return
+            self.nodes += 1
+            if self.nodes > MAX_NODES:
+                return self._stop(f"more than {MAX_NODES} steps were interpreted (loop too long)")
+            if not isinstance(s, dict):
+                return self._stop(f"a step is not an object: {str(s)[:60]}")
+            try:
+                if "find" in s:
+                    o, hits, _ = self._sel(s["find"], item)
+                    hits = hits[: int(s.get("max", 20))]
+                    name = str(s.get("as") or "found")
+                    self.vars[name] = [{"_token": f"{o.snapshot_id}:{e.index}", "_wid": o.window_id,
+                                        "label": e.label, "role": e.role} for e in hits]
+                    b.lines.append(f"find -> {name}: {len(hits)} match(es)"
+                                   + (f" ({', '.join(e.label for e in hits[:5])})" if hits else ""))
+                elif "for_each" in s:
+                    items = self.vars.get(str(s["for_each"]))
+                    if items is None:
+                        return self._stop(f"for_each: no list named \"{s['for_each']}\" (use find ... as first)")
+                    for it in items:
+                        self.run(s.get("do") or [], depth + 1, it)
+                        if b.stopped:
+                            return
+                elif "if" in s:
+                    cond = s["if"] or {}
+                    key = "exists" if "exists" in cond else "not_exists" if "not_exists" in cond else None
+                    if key is None:
+                        return self._stop("if needs {exists: selector} or {not_exists: selector}")
+                    _, hits, _ = self._sel(cond[key], item)
+                    ok = bool(hits) if key == "exists" else not hits
+                    b.lines.append(f"if {key} -> {'then' if ok else 'else'}")
+                    self.run(s.get("then") if ok else s.get("else"), depth + 1, item)
+                elif "read" in s:
+                    o, hits, _ = self._sel(s["read"], item)
+                    vals = [(_line_of(o, e.index) or f'{e.role} "{e.label}"') for e in hits[:20]]
+                    name = s.get("as") or "read"
+                    self.out.append(f"{name}: " + (" | ".join(vals) if vals else "(nothing matched)"))
+                else:
+                    tool = s.get("tool")
+                    if not tool:  # also accept {"click": {...}}
+                        keys = [k for k in s if k != "expect"]
+                        tool = keys[0] if keys else ""
+                        sargs = s.get(tool) if isinstance(s.get(tool), dict) else {}
+                    else:
+                        sargs = s.get("args") or {}
+                    b.step(str(tool), _subst(sargs, item), s.get("expect"),
+                           last=(top and i == len(steps) - 1))
+            except (ValueError, re.error, TypeError) as e:
+                return self._stop(f"bad step {str(s)[:80]}: {e}")
+
+
 def run_actions(gate, args: dict) -> dict:
     steps = args.get("steps")
     if not isinstance(steps, list) or not steps:
         return {"isError": True, "content": [{"type": "text", "text": "run_actions needs a non-empty `steps` list"}]}
     b = Batch(gate, args.get("pid"), args.get("window_id"), args.get("stop_on_new_window", True) is not False)
+    prog = Program(b)
     gate._batch = True
     try:
-        for i, s in enumerate(steps):
-            if not isinstance(s, dict):
-                b.stopped = f"step {i + 1} is not an object"
-                break
-            tool = s.get("tool")
-            if not tool:  # also accept {"click": {...}}
-                keys = [k for k in s if k not in ("expect",)]
-                tool = keys[0] if keys else ""
-                sargs = s.get(tool) if isinstance(s.get(tool), dict) else {}
-            else:
-                sargs = s.get("args") or {}
-            b.step(str(tool), sargs, s.get("expect"), last=(i == len(steps) - 1))
-            if b.stopped:
-                break
+        prog.run(steps, top=True)
     finally:
         gate._batch = False
-    head = (f"[gate] run_actions: {b.executed} of {len(steps)} steps ran."
+    head = (f"[gate] run_actions: {b.executed} GUI action(s) ran."
             + (f" STOPPED: {b.stopped}. Steps after it did NOT run." if b.stopped else " All done."))
-    out = {"content": [{"type": "text", "text": head + "\n" + "\n".join(b.lines)}],
-           "structuredContent": {"batch": {"executed": b.executed, "total": len(steps), "stopped": b.stopped}}}
+    body = "\n".join(b.lines + prog.out)
+    out = {"content": [{"type": "text", "text": head + "\n" + body}],
+           "structuredContent": {"batch": {"executed": b.executed, "stopped": b.stopped, "read": prog.out}}}
     if b.stopped:
         out["isError"] = True
     return b.finish(out)
-
-
-# ----------------------------------------------------------------- gui_script (QuickJS)
-_PRELUDE = r"""
-var __out = [], __con = [], __res, __err, __done = false;
-function __fmt(v) { return typeof v === 'string' ? v : JSON.stringify(v); }
-function text(v) { __out.push(__fmt(v)); }
-var console = { log: function () { __con.push(Array.prototype.map.call(arguments, __fmt).join(' ')); } };
-console.info = console.warn = console.error = console.debug = console.log;
-var __EXIT = { exit: true };
-function exit() { throw __EXIT; }
-var tools = new Proxy({}, { get: function (_, n) { return function (a) {
-  var r = JSON.parse(__call(String(n), JSON.stringify(a === undefined ? {} : a)));
-  if (r && r.__error) throw new Error(r.__error);
-  return r; }; } });
-var __store = JSON.parse(__store_in);
-function store(k, v) { if (v === undefined) delete __store[k]; else __store[k] = v; }
-function load(k) { return __store[k]; }
-var ALL_TOOLS = JSON.parse(__tools_in);
-"""
-
-_OPT_RX = re.compile(r"^\s*//\s*@options:\s*(\{.*\})\s*$")
-
-
-def _js_str(s: str) -> str:
-    return json.dumps(s)
-
-
-def run_js(src: str, store: dict, names: list, host_call) -> dict:
-    """Run `src` in QuickJS. Called inside the child process (see run_js_child). Returns
-    {out, con, res, err, store}. host_call(name, args_json) -> result_json."""
-    import quickjs
-    ctx = quickjs.Context()
-    try:
-        ctx.set_memory_limit(128 * 1024 * 1024)
-    except Exception:
-        pass
-    ctx.add_callable("__call", host_call)
-    err = None
-    out_items, con, new_store = [], [], store
-    try:
-        ctx.eval(f"var __store_in = {_js_str(json.dumps(store))}; var __tools_in = {_js_str(json.dumps(names))};")
-        ctx.eval(_PRELUDE)
-        ctx.eval("(async function () {\n" + src + "\n})().then(function (v) { __res = v; __done = true; },"
-                 " function (e) { __done = true; if (e === __EXIT) return; __err = String(e) + ((e && e.stack) ? '\\n' + e.stack : ''); });")
-        while ctx.execute_pending_job():
-            pass
-        err = ctx.eval("__err === undefined ? '' : __err") or None
-        if err is None and not ctx.eval("__done"):
-            err = "the script waited on something that can never finish (there are no timers)"
-        out_items = json.loads(ctx.eval("JSON.stringify(__out)") or "[]")
-        res = ctx.eval("JSON.stringify(__res === undefined ? null : __res)")
-        if res and res != "null":
-            v = json.loads(res)
-            out_items.append(v if isinstance(v, str) else json.dumps(v, ensure_ascii=False))
-        con = json.loads(ctx.eval("JSON.stringify(__con)") or "[]")
-        if err is None:
-            new_store = json.loads(ctx.eval("JSON.stringify(__store)") or "{}")
-    except Exception as e:  # syntax errors, out of memory
-        err = err or f"{type(e).__name__}: {e}"
-    return {"out": out_items, "con": con, "err": err, "store": new_store}
-
-
-def run_js_child() -> None:
-    """Entry point of the sandbox child process: `python -m gui_gate.batch`. Protocol (JSON lines):
-    parent -> {"src","store","names"}; child -> {"call": name, "args": json} / parent -> result json;
-    child -> {"done": {...}}. The parent kills the child on timeout (QuickJS refuses a time limit
-    while Python callables are registered)."""
-    import sys
-    rd, wr = sys.stdin, sys.stdout
-    job = json.loads(rd.readline())
-
-    def host_call(name, ajson):
-        wr.write(json.dumps({"call": name, "args": ajson}) + "\n")
-        wr.flush()
-        line = rd.readline()
-        return line.rstrip("\n") if line else json.dumps({"__error": "gate went away"})
-
-    done = run_js(job["src"], job.get("store") or {}, job.get("names") or [], host_call)
-    wr.write(json.dumps({"done": done}) + "\n")
-    wr.flush()
-
-
-def gui_script(gate, args: dict) -> dict:
-    import select
-    import subprocess
-    import sys
-    src = str(args.get("script") or args.get("code") or "")
-    if not src.strip():
-        return {"isError": True, "content": [{"type": "text", "text": "gui_script needs `script`"}]}
-    lines = src.splitlines()
-    opts = {}
-    if lines and _OPT_RX.match(lines[0]):
-        try:
-            opts = json.loads(_OPT_RX.match(lines[0]).group(1))
-        except json.JSONDecodeError:
-            return {"isError": True, "content": [{"type": "text", "text": "bad // @options line (must be JSON)"}]}
-        src = "\n".join(lines[1:])
-    timeout_s = min(float(opts.get("timeout_ms", 60000)) / 1000.0, 300.0)
-    max_chars = int(opts.get("max_output_chars", 20000))
-    b = Batch(gate)
-    t0 = time.time()
-    t_end = t0 + timeout_s
-
-    def host_call(name, ajson):
-        try:
-            a = json.loads(ajson) if ajson else {}
-        except json.JSONDecodeError:
-            return json.dumps({"__error": f"{name}: arguments are not JSON"})
-        if b.stopped:
-            return json.dumps({"__error": f"batch already stopped: {b.stopped}"})
-        if name in OBS_TOOLS:
-            r = gate.passthrough(name, a)
-        elif name in GATED_TOOLS:
-            r = b.step(name, a)
-            if b.stopped:
-                return json.dumps({"__error": f"{b.stopped}: {text_of(r)[:600]}"})
-        else:
-            return json.dumps({"__error": f"unknown or unavailable tool `{name}`"})
-        if r.get("isError"):
-            return json.dumps({"__error": text_of(r)[:800]})
-        sc = dict(r.get("structuredContent") or {})
-        return json.dumps({"text": text_of(r), "structuredContent": sc})
-
-    names = sorted((GATED_TOOLS - NOT_IN_BATCH) | OBS_TOOLS)
-    pkg_root = __import__("os").path.dirname(__import__("os").path.dirname(__import__("os").path.abspath(__file__)))
-    env = dict(__import__("os").environ)
-    env["PYTHONPATH"] = pkg_root + ((":" + env["PYTHONPATH"]) if env.get("PYTHONPATH") else "")
-    p = subprocess.Popen([sys.executable, "-m", "gui_gate.batch"], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                         stderr=subprocess.DEVNULL, text=True, env=env)
-    done, err = None, None
-    gate._batch = True
-    try:
-        p.stdin.write(json.dumps({"src": src, "store": gate._script_store, "names": names}) + "\n")
-        p.stdin.flush()
-        while True:
-            left = t_end - time.time()
-            if left <= 0:
-                err = f"script timeout after {timeout_s:.0f} s"
-                break
-            ready, _, _ = select.select([p.stdout], [], [], min(left, 1.0))
-            if not ready:
-                if p.poll() is not None:
-                    err = "the script sandbox exited unexpectedly"
-                    break
-                continue
-            line = p.stdout.readline()
-            if not line:
-                err = "the script sandbox exited unexpectedly"
-                break
-            msg = json.loads(line)
-            if "done" in msg:
-                done = msg["done"]
-                break
-            p.stdin.write(host_call(msg.get("call", ""), msg.get("args") or "{}") + "\n")
-            p.stdin.flush()
-    except (BrokenPipeError, OSError, json.JSONDecodeError) as e:
-        err = err or f"script sandbox error: {e!r}"
-    finally:
-        gate._batch = False
-        if p.poll() is None:
-            p.kill()
-        try:
-            p.wait(timeout=2)
-        except Exception:
-            pass
-    out_items, con = [], []
-    if done is not None:
-        out_items, con, err = done.get("out") or [], done.get("con") or [], done.get("err")
-        if not err:
-            gate._script_store = done.get("store") or {}
-    body = "\n".join(out_items)
-    if con:
-        body += "\n<console_output>\n" + "\n".join(con) + "\n</console_output>"
-    if len(body) > max_chars:
-        body = body[: max_chars // 2] + f"\n... ({len(body) - max_chars} chars cut) ...\n" + body[-max_chars // 2:]
-    head = (f"Script {'failed' if err else 'completed'} in {time.time() - t0:.1f} s; {b.executed} GUI action(s) ran."
-            + (f" Batch stopped: {b.stopped}." if b.stopped else ""))
-    text = head + ("\n" + body if body else "") + (f"\nScript error: {err}" if err else "")
-    if b.lines:
-        text += "\n[gate] actions: " + " | ".join(b.lines)
-    out = {"content": [{"type": "text", "text": text}],
-           "structuredContent": {"batch": {"executed": b.executed, "stopped": b.stopped, "error": err}}}
-    if err:
-        out["isError"] = True
-    return b.finish(out)
-
-
-if __name__ == "__main__":
-    run_js_child()

@@ -1,3 +1,8 @@
+> UPDATE 2026-10-21 (0.5.0): the optional QuickJS `gui_script` was dropped so the package has no extra
+> dependencies. Batch mode is `run_actions` with a small JSON program (action steps + find / for_each / if /
+> read), interpreted in pure Python. Cua Driver now comes with the package (official `cua-driver==0.37.0`
+> wheels), so `pip install gui-gate` is the whole install.
+
 # Codemode inside gui-gate (design, theory only) — 2026-10-21
 
 Problem: Pi's codemode (MIT, earendil-works/pi, packages/coding-agent) runs on the client. Any other MCP client

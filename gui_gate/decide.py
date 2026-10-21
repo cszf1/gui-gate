@@ -78,7 +78,7 @@ class GateConfig:
     auto_observe: bool = True     # after an action, return the window's fresh tree (no extra model turn)
     delivery: str = "auto"        # auto (background, sticky fallback to foreground) | background | foreground
     task: str = ""                # the user's request, verbatim (authorizes risky actions it explicitly asks for)
-    batch: str = "auto"           # auto: run_actions + gui_script (if quickjs is installed) | actions | off
+    batch: str = "auto"           # auto | actions: single-step tools + run_actions; off: single-step only
     deny_consecutive: int = 3     # refusals in a row before the agent is told to stop and report
     deny_total: int = 8           # refusals per session before the same
     costs: dict = field(default_factory=lambda: dict(DEFAULT_COSTS))

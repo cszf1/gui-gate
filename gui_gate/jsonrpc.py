@@ -30,15 +30,9 @@ class StdioWriter:
 
 
 def find_driver() -> Optional[str]:
-    """Locate the cua-driver executable (PATH, then the installer's default)."""
-    env = os.environ.get("GUI_GATE_DRIVER")
-    if env:
-        return env
-    p = shutil.which("cua-driver")
-    if p:
-        return p
-    cand = os.path.expanduser("~/.local/bin/cua-driver")
-    return cand if os.path.exists(cand) else None
+    """Locate the cua-driver executable (GUI_GATE_DRIVER, PATH, then the installer's default places)."""
+    from .install import find_driver as _fd
+    return _fd()
 
 
 class ChildMCP:

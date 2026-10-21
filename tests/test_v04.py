@@ -212,7 +212,7 @@ class RunActionsTests(unittest.TestCase):
             {"tool": "type_text", "args": {"text": "abc"}},
             {"tool": "press_key", "args": {"key": "Tab"}}])
         self.assertFalse(r.get("isError"), txt(r))
-        self.assertIn("3 of 3 steps ran", txt(r))
+        self.assertIn("3 GUI action(s) ran", txt(r))
         auto = [e for e in self.c.events() if e.get("ev") == "obs" and e.get("auto")]
         self.assertEqual(len(auto), 1)
         acts = [e for e in self.c.events() if e.get("ev") == "action"]
@@ -276,63 +276,64 @@ class RunActionsTests(unittest.TestCase):
         self.assertIn("cannot be used inside a batch", txt(r))
 
 
-try:
-    import quickjs  # noqa: F401
-    HAVE_QJS = True
-except Exception:
-    HAVE_QJS = False
+class ProgramTests(unittest.TestCase):
+    """run_actions control steps: find / for_each / if / read (the codemode replacement, no JS engine)."""
 
-
-@unittest.skipUnless(HAVE_QJS, "quickjs not installed (optional; pip install quickjs)")
-class GuiScriptTests(unittest.TestCase):
     def setUp(self):
         self.c = Client("--human", "deny")
 
     def tearDown(self):
         self.c.close()
 
-    def test_script_reads_filters_and_clicks(self):
+    def test_find_and_for_each_clicks_each_match(self):
+        self.c.call("fake_mutate", elements=[["button", "Inc A"], ["button", "Inc B"], ["text", "x"], ["button", "Other"]])
         self.c.read()
-        src = """
-const r = await tools.get_window_state({pid: 4242, window_id: 777, fresh: true});
-const sid = r.structuredContent.snapshot_id;
-const rows = r.structuredContent.tree_markdown.split("\\n").filter(l => l.includes("Increment"));
-await tools.click({element_token: sid + ":0"});
-await tools.press_key({pid: 4242, key: "Tab"});
-console.log("rows", rows.length);
-store("n", 1);
-return {clicked: true};
-"""
-        r = self.c.call("gui_script", script=src)
+        r = self.c.call("run_actions", pid=4242, window_id=777, steps=[
+            {"find": {"label_contains": "inc", "role": "button"}, "as": "incs"},
+            {"for_each": "incs", "do": [{"tool": "click", "args": {"target": "$item"}}]}])
         self.assertFalse(r.get("isError"), txt(r))
-        self.assertIn("2 GUI action(s) ran", txt(r))
-        self.assertIn('"clicked": true', txt(r).replace('"clicked":true', '"clicked": true'))
-        self.assertIn("<console_output>", txt(r))
-        auto = [e for e in self.c.events() if e.get("ev") == "obs" and e.get("auto")]
-        self.assertEqual(len(auto), 1)
-        r2 = self.c.call("gui_script", script="return load('n');")
-        self.assertIn("1", txt(r2))
+        self.assertEqual(r["structuredContent"]["batch"]["executed"], 2)
+        self.assertIn("2 match(es)", txt(r))
 
-    def test_refusal_throws_and_stops(self):
-        s = self.c.read()
-        src = f"""
-await tools.click({{element_token: "{s}:1"}});
-text("should not get here");
-"""
-        r = self.c.call("gui_script", script=src)
-        self.assertTrue(r.get("isError"))
-        self.assertNotIn("should not get here", txt(r).split("Script error")[0])
-        self.assertIn("refused", txt(r))
+    def test_if_branches(self):
+        self.c.call("fake_mutate", elements=[["button", "Increment"], ["button", "Plum"], ["text", "x"]])
+        self.c.read()
+        r = self.c.call("run_actions", pid=4242, window_id=777, steps=[
+            {"if": {"exists": {"label": "Nope"}},
+             "then": [{"tool": "click", "args": {"target": {"label": "Plum"}}}],
+             "else": [{"tool": "click", "args": {"target": {"label": "Increment"}}}]}])
+        self.assertIn("if exists -> else", txt(r))
+        self.assertIn('"Increment"', txt(r))
 
-    def test_endless_loop_is_killed(self):
-        r = self.c.call("gui_script", script='// @options: {"timeout_ms": 1500}\nwhile (true) {}')
-        self.assertTrue(r.get("isError"))
-        self.assertIn("timeout", txt(r))
+    def test_read_reports_values(self):
+        self.c.read()
+        r = self.c.call("run_actions", pid=4242, window_id=777, steps=[
+            {"tool": "click", "args": {"target": {"label": "Increment"}}},
+            {"read": {"label_regex": "^count="}, "as": "counter"}])
+        self.assertIn("count=1", txt(r))
+        self.assertEqual(r["structuredContent"]["batch"]["read"], ['counter: text "count=1" [actions=[click]]'])
 
-    def test_syntax_error_reported(self):
-        r = self.c.call("gui_script", script="this is not js")
+    def test_loop_cannot_run_away(self):
+        self.c.read()
+        r = self.c.call("run_actions", pid=4242, window_id=777, steps=[
+            {"find": {"role": "button"}, "as": "b"},
+            {"for_each": "b", "do": [{"for_each": "b", "do": [{"for_each": "b", "do": [
+                {"for_each": "b", "do": [{"tool": "press_key", "args": {"key": "Tab"}}]}]}]}]}])
         self.assertTrue(r.get("isError"))
-        self.assertIn("Script failed", txt(r))
+        self.assertIn("nesting deeper", txt(r))
+
+    def test_action_limit(self):
+        self.c.read()
+        steps = [{"tool": "press_key", "args": {"key": "Tab"}} for _ in range(25)]
+        r = self.c.call("run_actions", pid=4242, window_id=777, steps=steps)
+        self.assertIn("limit of 20", txt(r))
+
+    def test_risky_step_inside_loop_is_still_gated(self):
+        self.c.read()
+        r = self.c.call("run_actions", pid=4242, window_id=777, steps=[
+            {"find": {"role": "button"}, "as": "b"},
+            {"for_each": "b", "do": [{"tool": "click", "args": {"target": "$item"}}]}])
+        self.assertIn("REFUSED", txt(r))  # "Delete file" is the second button
 
 
 if __name__ == "__main__":

@@ -1,6 +1,15 @@
 # gui-gate
 
-**Cua Driver + 点击前价值门，合成一个 MCP server。** 任何支持 MCP 的 Agent（Pi、opencode、Claude Code、Codex……）加一行配置就能用。
+**一个完整的 MCP：门控 + Cua Driver + 批量执行，装一个包就能用。** 任何支持 MCP 的 Agent（Claude Code、Codex、Cursor、Pi……）都能接。
+
+```bash
+pipx install git+https://github.com/cszf1/gui-gate      # 或 pip install；Cua Driver 随包一起装好，不用另装
+gui-gate setup --client claude                          # 写入客户端配置（claude / codex / cursor / pi / print），并自检
+```
+
+两种用法同时提供：**单步**（`click`、`type_text`……每次一个动作）和 **批量**（`run_actions`，一次一串步骤，
+支持 find / for_each / if / read，功能对标 Pi codemode，但不需要 JS 引擎）。每个动作不管哪种方式都过门控。
+`--mode single` 只给单步。Cua Driver 用的是官方预编译包（macOS、Linux x86_64/arm64、Windows），版本固定为 0.37.0。
 
 ```
 Agent (Pi 等) ──MCP stdio──▶ gui-gate ──▶ cua-driver（手脚：AT-SPI / UIA / AX + 输入）
@@ -38,20 +47,20 @@ Cua Driver 的 66 个工具原样暴露。观察类工具（`get_window_state` �
   中风险步骤由一个只看「用户原话 + 具体动作 + 对话框文字」的小模型判，不再让干活的模型自己复核。
 - **省观察**：截图只在刚用过坐标点击时附带；动作后紧接着重读同一窗口直接用缓存（`fresh:true` 强制重读）；
   表格里「粘贴覆盖单元格」不再当成覆盖文件。
-- **服务端批量执行（任何 Agent 可用）**：`run_actions` 一次传多步，每步单独过门，被拒 / 报错 /
-  意外弹窗 / 期望不符就停，整批结束只观察一次；坐标点击只允许第一步。
-  `gui_script`（`pip install .[codemode]` 装 quickjs 后出现）写 JS 脚本，用法同 Pi codemode
-  （`await tools.click({...})`、`text()`、`return`、`store/load`），在子进程沙箱里跑、超时即杀。
-  `--batch auto|actions|off`。
+- **服务端批量执行（任何 Agent 可用）**：`run_actions` 一次传一段小程序：动作步骤 + find（找元素）/
+  for_each（逐个处理）/ if（有没有某元素）/ read（读出值）。每个 GUI 动作单独过门；被拒 / 报错 /
+  意外弹窗 / 期望不符就停，整批结束只观察一次；坐标点击只允许第一步；后出现的菜单项、按钮按名字找；
+  最多 20 个动作、嵌套 3 层，不能执行任意代码。
 
-## 安装与接入 Pi
+## 安装
 
 ```bash
-curl -fsSL https://cua.ai/driver/install.sh | bash      # Cua Driver（Linux 还需 at-spi2-core）
-pip install .                                           # 本仓库，零依赖
-pi mcp add gui -- gui-gate                              # 接入 Pi
-pi mcp list                                             # 检查连接
+pipx install git+https://github.com/cszf1/gui-gate      # Python ≥ 3.10；只依赖官方 cua-driver 预编译包
+gui-gate setup --client pi                              # 或 claude / codex / cursor；不带参数则打印配置片段
+gui-gate doctor                                         # 自检：启动驱动、列出工具
 ```
+
+Linux 桌面需要开启无障碍（AT-SPI，多数发行版默认有）；macOS 首次使用要给辅助功能 / 屏幕录制权限。
 
 常用参数：
 

@@ -34,7 +34,7 @@ GATE_ARGS = ("gate_ack", "gate_confirm")
 
 CORE_TOOLS = {"list_apps", "list_windows", "get_window_state", "launch_app", "bring_to_front", "click",
               "double_click", "right_click", "type_text", "press_key", "hotkey", "scroll", "set_value", "drag",
-              "invoke_menu", "gate_report", "request_human", "gate_task", "run_actions", "gui_script"}
+              "invoke_menu", "gate_report", "request_human", "gate_task", "run_actions"}
 # parameters an agent driving a GUI task practically never needs (dropped from schemas in core mode;
 # calls that still pass them go through unchanged)
 RARE_PARAMS = {"session", "capture_mode", "screenshot_out_file", "verbose", "full_output", "display_only", "cursor_id",
@@ -313,8 +313,6 @@ class Gate:
         allt = tools + GATE_TOOLS
         if self.cfg.batch != "off":
             allt = allt + [batch.RUN_ACTIONS_TOOL]
-            if self.cfg.batch == "auto" and batch.quickjs_available():
-                allt = allt + [batch.GUI_SCRIPT_TOOL]
         if self.cfg.toolset == "core":
             allt = [t for t in allt if t.get("name") in CORE_TOOLS]
         result["tools"] = allt
@@ -367,9 +365,6 @@ class Gate:
             elif name == "run_actions":
                 with self.lock:
                     result = batch.run_actions(self, args)
-            elif name == "gui_script" and batch.quickjs_available():
-                with self.lock:
-                    result = batch.gui_script(self, args)
             elif name in GATED_TOOLS:
                 with self.lock:
                     result = self.gated(name, args)
@@ -588,6 +583,12 @@ class Gate:
             fast = _fast_path(ctx, f)
             if fast:
                 dec = Decision("direct", dec.p_direct, fast, "rule", dec.scores)
+        # inside a batch the model chained these steps on purpose, and the batch itself stops on any surprise
+        # (refusal, error, unexpected dialog, failed expect, pixel after the first step); so the predictor's
+        # "look again first" for a keyboard or freshly resolved element step is not a reason to break the batch
+        if (self._batch and dec.option in ("look_light", "reason", "check", "wait") and dec.tier not in ("rule", "policy")
+                and not ctx.risk_level and ctx.target.kind != "pixel" and f.get("token_stale", 0) < 0.5):
+            dec = Decision("direct", dec.p_direct, "planned step inside a guarded batch", "rule", dec.scores)
         # cheap options are resolved here and re-decided (each at most once)
         waited = checked = False
         for _ in range(5):
@@ -1069,6 +1070,10 @@ class Gate:
 
 
 def main(argv=None) -> None:
+    argv = list(sys.argv[1:] if argv is None else argv)
+    if argv and argv[0] in ("setup", "doctor"):  # one entry point: gui-gate setup | gui-gate doctor | gui-gate (serve)
+        from . import install
+        sys.exit(install.setup_main(argv[1:]) if argv[0] == "setup" else install.doctor_main(argv[1:]))
     ap = argparse.ArgumentParser(prog="gui-gate", description="Cua Driver behind a pre-action value gate (MCP stdio server)")
     ap.add_argument("--policy", choices=["gate", "direct", "light", "full"])
     ap.add_argument("--lambda", dest="lam", type=float)
@@ -1087,9 +1092,11 @@ def main(argv=None) -> None:
     ap.add_argument("--no-auto-observe", dest="auto_observe", action="store_false", default=None,
                     help="do not return the fresh window tree after each action")
     ap.add_argument("--task", help="the user's request, verbatim (or GUI_GATE_TASK / GUI_GATE_TASK_FILE)")
+    ap.add_argument("--mode", choices=["both", "single", "batch"],
+                    help="how actions run: both (default) = single-step tools + run_actions (batch); "
+                         "single = one action per call only")
     ap.add_argument("--task-file", help="file holding the user's request, verbatim")
-    ap.add_argument("--batch", choices=["auto", "actions", "off"],
-                    help="server-side batching: auto (run_actions + gui_script when quickjs is installed), actions, off")
+    ap.add_argument("--batch", choices=["auto", "actions", "off"], help="legacy switch for --mode (off = single)")
     ap.add_argument("--weights", help="trained weights JSON (from gui-gate-train)")
     ap.add_argument("--log", help="JSONL log path (default ~/.gui-gate/logs/<time>.jsonl; 'none' disables)")
     ap.add_argument("--driver", help="path to cua-driver (default: PATH or ~/.local/bin)")
@@ -1101,6 +1108,8 @@ def main(argv=None) -> None:
                               decider=a.decider, risk_mode=a.risk_mode, human_channel=a.human_channel,
                               human_timeout=a.human_timeout, toolset=a.toolset, auto_observe=a.auto_observe,
                               delivery=a.delivery, task=a.task, batch=a.batch)
+    if a.mode == "single":
+        cfg.batch = "off"
     if a.task_file and not cfg.task and os.path.exists(a.task_file):
         cfg.task = open(a.task_file, encoding="utf-8").read().strip()
     if a.weights:
@@ -1108,9 +1117,11 @@ def main(argv=None) -> None:
     if a.child:
         cmd = a.child.split()
     else:
-        drv = a.driver or find_driver()
+        from .install import ensure_driver
+        drv = a.driver or ensure_driver()
         if not drv:
-            log_err("cua-driver not found. Install it with: curl -fsSL https://cua.ai/driver/install.sh | bash")
+            log_err("Cua Driver was not found. It ships with gui-gate (the `cua-driver` package); reinstall with "
+                    "`pip install --force-reinstall gui-gate`, or run `gui-gate doctor`.")
             sys.exit(2)
         cmd = [drv, "mcp", *a.driver_arg]
     log_path = None if (a.log or "").lower() == "none" else (a.log or os.environ.get("GUI_GATE_LOG") or "auto")
