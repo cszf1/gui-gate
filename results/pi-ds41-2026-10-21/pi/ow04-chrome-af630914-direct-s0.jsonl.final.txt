@@ -1,0 +1,1 @@
+DONE — Opened Chromium's Settings → Appearance and set the default "Font size" to its largest option, "Very large" (24 px, confirmed on the Customize fonts page).

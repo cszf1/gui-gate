@@ -1,0 +1,1 @@
+The cell grid isn't exposed to AT-SPI, so I'll use a Basic macro for exactness. Let me open the Tools menu.

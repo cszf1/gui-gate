@@ -1,0 +1,1 @@
+Selection covers exactly the first two paragraphs. Now applying double line spacing via Format → Paragraph.
