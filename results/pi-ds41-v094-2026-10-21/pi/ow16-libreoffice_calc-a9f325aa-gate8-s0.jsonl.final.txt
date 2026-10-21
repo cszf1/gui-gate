@@ -1,0 +1,5 @@
+The spreadsheet is complete and saved.
+
+**Verification:** C2 = "Minions In Black" (from "  MinioNs   IN    bIACK"), C4 = "Hairy Potter", C6 = "Silence Of Thf Fans", C17 = "Hug Club" — whitespace collapsed/trimmed, each word's first letter uppercased with the rest lowercased. Column B and all other areas are untouched.
+
+DONE — Ran a Basic macro on Sheet1 that trimmed/collapsed redundant whitespace in every title in column B (rows 2–28) and wrote the Title-Cased version into column C, then saved the file.

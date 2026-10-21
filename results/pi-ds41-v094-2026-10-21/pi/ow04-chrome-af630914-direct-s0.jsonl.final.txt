@@ -1,0 +1,1 @@
+Clicks seem to land with an offset. Let me calibrate with a harmless probe on the sidebar.

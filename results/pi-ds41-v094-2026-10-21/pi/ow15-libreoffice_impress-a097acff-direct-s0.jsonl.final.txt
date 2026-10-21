@@ -1,0 +1,1 @@
+Confirmed: `pre.pptx` now exists in /home/user/Desktop. Closing the dialog.

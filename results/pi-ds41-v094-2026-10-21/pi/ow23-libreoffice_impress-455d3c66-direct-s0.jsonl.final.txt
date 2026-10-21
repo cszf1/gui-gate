@@ -1,0 +1,3 @@
+The export succeeded — `res.png` now appears on the Desktop with an image thumbnail icon.
+
+DONE — In LibreOffice Impress I used File > Export..., set the filename to `res` in `/home/user/Desktop`, chose the PNG format, and accepted the default PNG options, creating `/home/user/Desktop/res.png`.

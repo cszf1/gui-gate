@@ -1,0 +1,1 @@
+DONE — In the open terminal at `/data/workspace` I ran `find . -type f ! -perm 644 -exec chmod 644 {} +`, setting all 29,281 regular files in the directory tree to mode 644 while leaving directories untouched (verified 0 files remaining non-644).

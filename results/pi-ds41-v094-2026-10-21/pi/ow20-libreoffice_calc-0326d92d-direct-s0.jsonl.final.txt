@@ -1,0 +1,1 @@
+Growth row is formatted as percentages. Now I'll create the Total bar chart — first select B12:G12.

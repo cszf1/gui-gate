@@ -1,0 +1,1 @@
+DONE — Exported the sheet via File → Save As with the default Text CSV filter ("Save cell content as shown", comma delimiter), but since `/home/user/Export_Calc_to_CSV.csv` already existed and overwriting was declined, I saved it as `/home/user/Export_Calc_to_CSV_1.csv` (leaving the original xlsx and the existing CSV untouched).

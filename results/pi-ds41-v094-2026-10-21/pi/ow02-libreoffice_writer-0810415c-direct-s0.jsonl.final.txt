@@ -1,0 +1,1 @@
+Double spacing is applied to just the first two paragraphs. Now saving with Ctrl+S.

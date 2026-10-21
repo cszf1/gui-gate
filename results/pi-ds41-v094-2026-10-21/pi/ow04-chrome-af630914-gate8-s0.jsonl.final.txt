@@ -1,0 +1,3 @@
+The font-size slider is now at its maximum ("Huge", 72 px), and Chrome's settings save instantly to the profile.
+
+DONE — Opened Chromium's settings (chrome://settings/fonts) and dragged the default "Font size" slider to its largest value (72, "Huge").

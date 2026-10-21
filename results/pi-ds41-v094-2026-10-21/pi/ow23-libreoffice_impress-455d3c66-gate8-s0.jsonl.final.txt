@@ -1,0 +1,3 @@
+res.png now appears on the Desktop.
+
+DONE — Exported the open Impress presentation via File ▸ Export with format PNG, default PNG options, saved to /home/user/Desktop/res.png.

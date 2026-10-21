@@ -1,0 +1,3 @@
+All three copies succeeded (file1 in dir1, dir2, dir3 — 33 bytes each, matching the source).
+
+DONE — Copied `/data/home/file1` into `/data/home/dir1/`, `/data/home/dir2/`, and `/data/home/dir3/` via the open terminal, verifying all three copies exist.

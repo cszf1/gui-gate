@@ -1,0 +1,1 @@
+DONE — In LibreOffice Impress I used Save As (Ctrl+Shift+S), navigated to /home/user/Desktop, set the filename to "pre" with file type PowerPoint 2007–365 (.pptx), confirmed replacing the existing file, and verified /home/user/Desktop/pre.pptx now exists (2.46 MB) with the document title updated to "pre.pptx".
