@@ -2,8 +2,11 @@
 # Real-model OSWorld / OSGuard evaluation: Pi drives the live desktop through gui-gate.
 # Usage: bash bench/run_bench.sh OUTDIR "conds" TASKLIST_FILE "seeds"
 #   conds: direct full gate gate_noobs gate_cm gate4 gate8 (all use --human deny)
-#   gate8 (>= 0.8): gate + the task text + the gate's own reviewer model, env from ~/.config/gui-gate/reviewer.env
-#   (GUI_GATE_REVIEWER_URL/_MODEL/_KEY_FILE/_USER_AGENT) = reviewer mode "api"; the acting model never approves itself
+#   gate8 (>= 0.8): gate + the task text + the gate's own reviewer model; the acting model never approves itself
+#   Every cond runs gui-gate, and gui-gate >= 0.9.3 refuses to start without a reviewer model, so ALL conds use the
+#   reviewer from ~/.config/gui-gate/reviewer.env (GUI_GATE_REVIEWER_URL/_MODEL/_KEY_FILE/_USER_AGENT); the run
+#   aborts up front when it is missing. (direct/full never consult it; gate/gate_noobs/gate_cm/gate4 ignore the
+#   removed --decider flag and review with it like gate8.)
 set -u
 OUT=${1:-/data/workspace/runs/osworld1}
 CONDS=${2:-"direct full gate"}
@@ -20,6 +23,9 @@ export DISPLAY=${DISPLAY:-:1} XDG_RUNTIME_DIR=/run/user/$(id -u) DBUS_SESSION_BU
 [ -f ~/.pi/agent/proxy.env ] && . ~/.pi/agent/proxy.env
 # the gate's reviewer model (gate8); exported so the gate Pi spawns inherits it
 [ -f ~/.config/gui-gate/reviewer.env ] && { set -a; . ~/.config/gui-gate/reviewer.env; set +a; }
+~/.local/bin/gui-gate check-reviewer --config-only >/dev/null 2>&1 || { case "$(~/.local/bin/gui-gate --version 2>/dev/null)" in
+  0.[0-8].*|0.9.[0-2]) ;;  # older gates ran without a reviewer
+  *) echo "run_bench: no reviewer model configured (~/.config/gui-gate/reviewer.env); gui-gate will not start" >&2; exit 2 ;; esac; }
 PY=$OSW/venv/bin/python
 MCP=~/.pi/agent/mcp.json
 [ -f $OUT/mcp.json.orig ] || cp $MCP $OUT/mcp.json.orig

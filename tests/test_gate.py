@@ -15,6 +15,11 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 FAKE = f"{sys.executable} {os.path.join(HERE, 'fake_driver.py')}"
 # the gate under test: the Rust binary (GUI_GATE_BIN, default target/{debug,release}/gui-gate)
+# a reviewer model is required (>= 0.9.3): tests get a dummy one that is never reachable (fails closed) unless a
+# test points GUI_GATE_REVIEWER_URL at its own fake server; GUI_GATE_REVIEWER_ENV keeps the user's file out
+FAKE_REVIEWER = {"GUI_GATE_REVIEWER_URL": "http://127.0.0.1:9/v1/chat/completions", "GUI_GATE_REVIEWER_MODEL": "fake-reviewer",
+                 "GUI_GATE_REVIEWER_KEY": "test-key", "GUI_GATE_REVIEWER_TIMEOUT": "2",
+                 "GUI_GATE_REVIEWER_ENV": os.path.join(HERE, "no-such-reviewer.env")}
 BIN = os.environ.get("GUI_GATE_BIN") or next(
     (p for p in (os.path.join(ROOT, "target", "release", "gui-gate"), os.path.join(ROOT, "target", "debug", "gui-gate"),
                  "/tmp/gg-target/release/gui-gate", "/tmp/gg-target/debug/gui-gate") if os.path.exists(p)), None)
@@ -26,7 +31,9 @@ class Client:
         if not BIN:
             raise unittest.SkipTest("build the gate first: cargo build")
         cmd = [BIN, "--child", FAKE, "--log", self.log, *extra]
-        e = dict(os.environ, PYTHONPATH=ROOT, **(env or {}))
+        e = dict(os.environ, PYTHONPATH=ROOT)
+        e.update({k: v for k, v in FAKE_REVIEWER.items() if not (env or {}).get(k) and not os.environ.get(k)})
+        e.update(env or {})
         self.p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True, env=e, cwd=ROOT)
         self.i = 0
         self.extra = []
@@ -110,17 +117,18 @@ class GateTests(unittest.TestCase):
         self.assertIn("fresh tree is attached", txt(r))  # the gate read the window itself: no extra turn
         self.assertIn("nothing was executed", txt(r))
 
-    def test_reviewer_mode_without_reviewer_is_refused_not_the_agent(self):
+    def test_reviewer_mode_with_unreachable_reviewer_goes_to_a_person_not_the_agent(self):
         self.c.call("gate_config", risk_mode="reviewer")
         s = self.c.read()
         r = self.c.call("click", element_token=f"{s}:1")
         self.assertTrue(r.get("isError"))
-        self.assertEqual(r["structuredContent"]["gate"]["decision"], "deny")  # fail closed: no reviewer API
-        self.assertIn("no reviewer API is configured", txt(r))
+        # fail closed: the (dummy) reviewer does not answer -> a person (attended), never the acting agent
+        self.assertEqual(r["structuredContent"]["gate"]["decision"], "ask_human")
+        self.assertIn("Not executed", txt(r))
         r2 = self.c.call("click", element_token=f"{s}:1", gate_ack=True)  # ignored
         self.assertTrue(r2.get("isError"))
         rep = self.c.call("gate_report")["structuredContent"]
-        self.assertFalse(rep["reviewer"])
+        self.assertEqual(rep["reviewer"], "api:chat:fake-reviewer")
         self.assertNotIn("decider", rep)
 
     def test_second_read_omits_screenshot(self):
@@ -231,13 +239,13 @@ class ToolTests(unittest.TestCase):
         r2 = self.c.call("click", element_token=f"{s}:1", gate_ack=True)  # the model cannot self-approve high risk
         self.assertTrue(r2.get("isError"))
 
-    def test_medium_risk_without_reviewer_is_refused(self):
+    def test_medium_risk_with_unreachable_reviewer_is_not_executed(self):
         self.c.call("fake_mutate", elements=[["button", "Send"], ["button", "Plum"]])
         s = self.c.read()
         r = self.c.call("click", element_token=f"{s}:0")
         self.assertTrue(r.get("isError"))
-        self.assertEqual(r["structuredContent"]["gate"]["decision"], "deny")  # fail closed, nobody is asked
-        self.assertIn("no reviewer API is configured", txt(r))
+        self.assertEqual(r["structuredContent"]["gate"]["decision"], "ask_human")  # reviewer down + attended: a person
+        self.assertIn("Not executed", txt(r))
         r2 = self.c.call("click", element_token=f"{s}:0", gate_ack=True)  # self-approval does nothing
         self.assertTrue(r2.get("isError"))
 
@@ -247,11 +255,12 @@ class ToolTests(unittest.TestCase):
         r = self.c.call("type_text", element_token=f"{s}:0", text="hunter2")
         self.assertEqual(r["structuredContent"]["gate"]["decision"], "handoff")
 
-    def test_dangerous_command_without_reviewer_is_refused(self):
+    def test_dangerous_command_with_unreachable_reviewer_is_not_executed(self):
         self.c.read()
-        r = self.c.call("type_text", pid=4242, text="rm -rf ~/work")  # medium risk, needs review: no reviewer API
-        self.assertEqual(r["structuredContent"]["gate"]["decision"], "deny")
-        self.assertIn("no reviewer API is configured", txt(r))
+        r = self.c.call("type_text", pid=4242, text="rm -rf ~/work")  # medium risk, needs review: reviewer down
+        self.assertTrue(r.get("isError"))
+        self.assertEqual(r["structuredContent"]["gate"]["decision"], "ask_human")
+        self.assertIn("Not executed", txt(r))
 
     def test_enter_after_dangerous_command(self):
         c = Client("--risk-mode", "human")  # every risky step goes to a person instead of the reviewer

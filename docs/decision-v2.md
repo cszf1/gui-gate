@@ -72,6 +72,10 @@ or a one-shot agent CLI run) and the `auto` fallback to it are removed.
 | re-read needed (`look_light`) | agent calls get_window_state, then retries | the gate reads the window itself and attaches the fresh tree to its refusal |
 | re-aim needed (`look_full`, pixel targets) | agent calls get_window_state with a screenshot, then retries | the gate attaches a fresh screenshot to its refusal |
 
+Since 0.9.3 a reviewer model is required: the gate refuses to start without one (`GUI_GATE_REVIEWER=off` is gone),
+so "no reviewer" above now only means "the configured reviewer did not answer" (API error or timeout): a person
+when one is reachable, otherwise the step is refused with a safe way on.
+
 So a step the gate stops costs the agent one turn (re-plan with what is attached) instead of two (read, then retry),
 and the agent is never asked "are you sure?". `review` is not offered for pixel targets: the reviewer reads the
 element tree, not the screen. Baseline policies (`light`, `full`, `direct`) are unchanged so earlier runs stay

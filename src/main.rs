@@ -36,10 +36,12 @@ options:
   --collect                           shadow-label every action for training
   --no-risk-confirm                   do not stop risky actions
   --risk-mode {auto,reviewer,human}   auto: high risk -> person, medium -> the gate's reviewer
-                                      reviewer = the only LLM in the gate: an independent decision model
-                                      over its API (GUI_GATE_REVIEWER_URL/_MODEL/_KEY, _PROTOCOL=
-                                      auto|chat|responses|anthropic|gemini|systemone; GUI_GATE_REVIEWER=off
-                                      turns it off); none configured = steps needing review are refused;
+                                      reviewer = the only LLM in the gate, REQUIRED: an independent model
+                                      over its API (GUI_GATE_REVIEWER_URL, _MODEL, _KEY or _KEY_FILE;
+                                      _PROTOCOL=auto|chat|responses|anthropic|gemini|systemone), from the
+                                      environment or ~/.config/gui-gate/reviewer.env; the server refuses
+                                      to start without one (check it: gui-gate check-reviewer); a reviewer
+                                      that errors or times out = ask a person if reachable, else refuse;
                                       the acting agent is never asked to approve its own step
   --human {auto,elicit,desktop,chat,deny}  how to reach a person
   --human-timeout S                   seconds to wait for a person (default 120)
@@ -133,6 +135,11 @@ fn main() {
             }
         }
         i += 1;
+    }
+    // a reviewer model is required: never serve a gate that could not review a step
+    if let Some(why) = reviewer::config_problem() {
+        eprintln!("gui-gate: refusing to start: {why}.\n{}", reviewer::how_to_configure());
+        std::process::exit(3);
     }
     if mode.as_deref() == Some("single") {
         cfg.batch = "off".into();

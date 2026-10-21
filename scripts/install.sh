@@ -12,6 +12,14 @@
 #   --skip-driver      do not install / update Cua Driver   (GUI_GATE_SKIP_DRIVER=1)
 #   --no-modify-path   do not add the bin dir to your shell profile
 #   GUI_GATE_BASE_URL  download gui-gate from this URL instead of GitHub (a mirror)
+# The gate needs a reviewer model (it refuses to start without one). Unless one is already configured the
+# installer asks for it on a terminal, or takes it from these (saved to ~/.config/gui-gate/reviewer.env):
+#   --reviewer-url URL          base URL or full endpoint          (GUI_GATE_REVIEWER_URL)
+#   --reviewer-model NAME       model name                         (GUI_GATE_REVIEWER_MODEL)
+#   --reviewer-key-file PATH    file holding only the API key      (GUI_GATE_REVIEWER_KEY_FILE;
+#                               or GUI_GATE_REVIEWER_KEY=..., saved to ~/.config/gui-gate/reviewer.key, mode 600)
+#   --reviewer-protocol P       auto|chat|responses|anthropic|gemini|systemone (GUI_GATE_REVIEWER_PROTOCOL, default auto)
+#   --no-prompt                 never ask on the terminal          (GUI_GATE_NO_PROMPT=1)
 # Cua Driver's own env vars (e.g. CUA_DRIVER_RS_VERSION=0.38.0) are passed through to its installer.
 set -euo pipefail
 
@@ -20,6 +28,12 @@ BIN_DIR="${GUI_GATE_INSTALL_DIR:-$HOME/.local/bin}"
 VERSION="${GUI_GATE_VERSION:-}"
 SKIP_DRIVER="${GUI_GATE_SKIP_DRIVER:-0}"
 NO_MODIFY_PATH=0
+NO_PROMPT="${GUI_GATE_NO_PROMPT:-0}"
+[[ -n "${CI:-}" ]] && NO_PROMPT=1   # never wait for a terminal answer in CI
+R_URL="${GUI_GATE_REVIEWER_URL:-}"
+R_MODEL="${GUI_GATE_REVIEWER_MODEL:-}"
+R_KEY_FILE="${GUI_GATE_REVIEWER_KEY_FILE:-}"
+R_PROTOCOL="${GUI_GATE_REVIEWER_PROTOCOL:-}"
 CLIENTS=()
 if [[ -n "${GUI_GATE_CLIENT:-}" ]]; then IFS=',' read -r -a CLIENTS <<< "$GUI_GATE_CLIENT"; fi
 
@@ -33,7 +47,16 @@ while [[ $# -gt 0 ]]; do
         --bin-dir=*) BIN_DIR="${1#*=}"; shift ;;
         --skip-driver) SKIP_DRIVER=1; shift ;;
         --no-modify-path) NO_MODIFY_PATH=1; shift ;;
-        -h|--help) sed -n '2,16p' "$0" 2>/dev/null || true; exit 0 ;;
+        --reviewer-url) R_URL="$2"; shift 2 ;;
+        --reviewer-url=*) R_URL="${1#*=}"; shift ;;
+        --reviewer-model) R_MODEL="$2"; shift 2 ;;
+        --reviewer-model=*) R_MODEL="${1#*=}"; shift ;;
+        --reviewer-key-file) R_KEY_FILE="$2"; shift 2 ;;
+        --reviewer-key-file=*) R_KEY_FILE="${1#*=}"; shift ;;
+        --reviewer-protocol) R_PROTOCOL="$2"; shift 2 ;;
+        --reviewer-protocol=*) R_PROTOCOL="${1#*=}"; shift ;;
+        --no-prompt) NO_PROMPT=1; shift ;;
+        -h|--help) sed -n '2,25p' "$0" 2>/dev/null || true; exit 0 ;;
         *) echo "gui-gate install: unknown argument $1" >&2; exit 2 ;;
     esac
 done
@@ -105,6 +128,73 @@ esac
 # leave no residue: remove what older versions left (old copies, old Python package, stale PATH lines,
 # stale MCP entries and flags, our own config backups, old caches); `gui-gate cleanup --dry-run` shows it
 "$BIN_DIR/gui-gate" cleanup --quiet || true
+
+# ------------------------------------------------------------------ reviewer model (required)
+GG="$BIN_DIR/gui-gate"
+CFG_DIR="$HOME/.config/gui-gate"
+REV_ENV="${GUI_GATE_REVIEWER_ENV:-$CFG_DIR/reviewer.env}"
+reviewer_ok() { "$GG" check-reviewer --config-only >/dev/null 2>&1; }
+# set KEY=VALUE in the reviewer.env file (other lines kept), file mode 600
+set_rev() {
+    local k="$1" v="$2" f="$REV_ENV"
+    mkdir -p "$(dirname "$f")"; chmod 700 "$(dirname "$f")" 2>/dev/null || true
+    touch "$f"; chmod 600 "$f"
+    grep -v "^\(export \)\?$k=" "$f" > "$f.tmp" || true
+    printf '%s=%s\n' "$k" "$v" >> "$f.tmp"
+    mv -f "$f.tmp" "$f"; chmod 600 "$f"
+}
+save_key() {  # the key -> ~/.config/gui-gate/reviewer.key (mode 600); never echoed (printf is a builtin)
+    local kf="$CFG_DIR/reviewer.key"
+    mkdir -p "$CFG_DIR"; chmod 700 "$CFG_DIR" 2>/dev/null || true
+    ( umask 077; printf '%s\n' "$1" > "$kf" ); chmod 600 "$kf"
+    R_KEY_FILE="$kf"
+}
+abs_path() { case "$1" in "~/"*) printf '%s\n' "$HOME/${1#\~/}" ;; /*) printf '%s\n' "$1" ;; *) printf '%s\n' "$PWD/$1" ;; esac; }
+write_reviewer() {
+    [[ -n "$R_URL" ]] && set_rev GUI_GATE_REVIEWER_URL "$R_URL"
+    [[ -n "$R_MODEL" ]] && set_rev GUI_GATE_REVIEWER_MODEL "$R_MODEL"
+    [[ -n "$R_KEY_FILE" ]] && set_rev GUI_GATE_REVIEWER_KEY_FILE "$(abs_path "$R_KEY_FILE")"
+    if [[ -n "$R_PROTOCOL" && "$R_PROTOCOL" != "auto" ]]; then set_rev GUI_GATE_REVIEWER_PROTOCOL "$R_PROTOCOL"; fi
+    say "saved the reviewer settings to $REV_ENV"
+}
+# from here on check what was saved, not this shell's environment (the key never stays in env)
+clear_rev_env() { unset GUI_GATE_REVIEWER GUI_GATE_REVIEWER_URL GUI_GATE_REVIEWER_MODEL GUI_GATE_REVIEWER_KEY GUI_GATE_REVIEWER_KEY_FILE GUI_GATE_REVIEWER_PROTOCOL; }
+if [[ -n "${GUI_GATE_REVIEWER_KEY:-}" && -z "$R_KEY_FILE" ]]; then
+    save_key "$GUI_GATE_REVIEWER_KEY"
+fi
+if [[ -n "$R_URL$R_MODEL$R_KEY_FILE$R_PROTOCOL" ]]; then
+    write_reviewer   # given by flags / env: these replace what was saved before
+    clear_rev_env
+elif ! reviewer_ok && [[ "$NO_PROMPT" != "1" ]] && (exec </dev/tty) 2>/dev/null; then
+    {
+        echo
+        echo "gui-gate needs a reviewer model: an independent model that checks risky or doubtful steps"
+        echo "(any LLM API - OpenAI-compatible chat, OpenAI responses, Anthropic, Gemini - or a System One"
+        echo "decision model). The gate does not start without one. Leave the URL empty to skip for now."
+    } >&2
+    read -r -p "Reviewer API URL (e.g. https://api.deepseek.com/v1): " R_URL </dev/tty || R_URL=""
+    if [[ -n "$R_URL" ]]; then
+        read -r -p "Model name (e.g. deepseek-chat): " R_MODEL </dev/tty || R_MODEL=""
+        read -r -s -p "API key (hidden; saved to $CFG_DIR/reviewer.key, mode 600): " key </dev/tty || key=""
+        echo >&2
+        if [[ -n "$key" ]]; then save_key "$key"; fi
+        unset key
+        guess="$(GUI_GATE_REVIEWER_ENV=/nonexistent GUI_GATE_REVIEWER_URL="$R_URL" GUI_GATE_REVIEWER_MODEL="${R_MODEL:-x}" \
+                 GUI_GATE_REVIEWER_KEY=x "$GG" check-reviewer --config-only 2>/dev/null | sed -n 's/.*"reviewer":"api:\([a-z]*\):.*/\1/p')"
+        read -r -p "Protocol [auto = ${guess:-chat}] (chat|responses|anthropic|gemini|systemone): " R_PROTOCOL </dev/tty || R_PROTOCOL=""
+        write_reviewer
+        clear_rev_env
+    fi
+fi
+if reviewer_ok; then
+    say "checking the reviewer model: $("$GG" check-reviewer --config-only 2>/dev/null | sed -n 's/.*"reviewer":"\([^"]*\)".*/\1/p')"
+    "$GG" check-reviewer || echo "warning: the reviewer is configured but did not pass its check (see above); fix the settings in $REV_ENV" >&2
+else
+    printf '\033[1;31mwarning: no reviewer model is configured: the gate will NOT start until one is set.\033[0m\n' >&2
+    "$GG" check-reviewer --config-only >/dev/null || true
+    echo "Set GUI_GATE_REVIEWER_URL / _MODEL / _KEY_FILE in $REV_ENV (or re-run this installer on a terminal, or with" >&2
+    echo "--reviewer-url URL --reviewer-model NAME --reviewer-key-file PATH), then run: gui-gate check-reviewer" >&2
+fi
 
 if [[ ${#CLIENTS[@]} -gt 0 ]]; then
     setup_args=()
