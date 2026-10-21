@@ -109,6 +109,31 @@ pub fn word_hit(word: &str, text: &str) -> bool {
     }
 }
 
+const NEG_EN: &[&str] = &["not", "don't", "dont", "never", "without", "no", "avoid", "nor", "shouldn't", "mustn't", "can't", "cannot", "won't"];
+const NEG_ZH: &[&str] = &["不要", "别", "勿", "不", "禁止", "无需", "不用", "先不", "避免"];
+
+/// The word occurs in the request in a clause that is not negated ("do not send it yet" does not ask to send).
+pub fn affirmed_hit(word: &str, text: &str) -> bool {
+    let clause_break = |c: char| ",.;:!?，。；：！？\n".contains(c);
+    if word.is_ascii() {
+        let Ok(r) = Regex::new(&format!(r"\b{}\b", regex::escape(word))) else { return false };
+        let hit = r.find_iter(text).any(|m| {
+            let before = &text[..m.start()];
+            let clause = before.rsplit(clause_break).next().unwrap_or("");
+            let clause = clause.rsplit(" but ").next().unwrap_or(clause);
+            let prev: Vec<&str> = clause.split_whitespace().rev().take(4).collect();
+            !prev.iter().any(|w| NEG_EN.contains(&w.trim_matches(|c: char| !c.is_alphanumeric() && c != '\'')))
+        });
+        hit
+    } else {
+        text.match_indices(word).any(|(i, _)| {
+            let clause = text[..i].rsplit(clause_break).next().unwrap_or("");
+            let prev: String = clause.chars().rev().take(4).collect::<Vec<_>>().into_iter().rev().collect();
+            !NEG_ZH.iter().any(|n| prev.contains(n))
+        })
+    }
+}
+
 /// (authorized?, why). Never authorizes when there is no task text, except the working document.
 pub fn authorized(reason: &str, task: &str, _label: &str, dialog_text: &str, titles: &[String]) -> (bool, String) {
     let hz = hazard_of(reason);
@@ -123,7 +148,10 @@ pub fn authorized(reason: &str, task: &str, _label: &str, dialog_text: &str, tit
     let Some(words) = auth_words(hz) else {
         return (false, "this kind of action is never authorized by wording alone".into());
     };
-    let Some(hit) = words.iter().find(|w| word_hit(w, &t)) else {
+    let Some(hit) = words.iter().find(|w| affirmed_hit(w, &t)) else {
+        if words.iter().any(|w| word_hit(w, &t)) {
+            return (false, format!("the request mentions it only in a negated way (does not ask to {hz})"));
+        }
         return (false, format!("the request does not ask to {hz}"));
     };
     if let Some(tf) = tf {
@@ -188,6 +216,19 @@ mod tests {
         assert!(!authorized(cp, "Copies file 'file1' to each of directories 'dir1', 'dir2', 'dir3'.", "", "", &[]).0);
         assert!(alternative(cp).starts_with("do not overwrite it: copy"));
         assert!(!authorized("\"Delete file\" (delete)", "", "", "", &[]).0);
+    }
+
+    #[test]
+    fn negated_wording_does_not_authorize() {
+        let r = "\"Send\" (send)";
+        assert!(!authorized(r, "draft a reply to Bob, do not send it yet", "", "", &[]).0);
+        assert!(!authorized(r, "Write the email but don't send it", "", "", &[]).0);
+        assert!(!authorized(r, "回复 Bob，先不要发送", "", "", &[]).0);
+        assert!(authorized(r, "reply to Bob and send it", "", "", &[]).0);
+        assert!(authorized(r, "do not wait, send it now", "", "", &[]).0);
+        assert!(authorized(r, "写好后发送给 Bob", "", "", &[]).0);
+        assert!(authorized(r, "send it before 5 pm", "", "", &[]).0);
+        assert!(!authorized("\"Delete file\" (delete)", "Rename the file; never delete anything", "", "", &[]).0);
     }
 
     #[test]
