@@ -50,8 +50,18 @@ Cua Driver 的 66 个工具原样暴露。观察类工具（`get_window_state` �
   同一后果换条路做也会被拒；连续 3 次 / 累计 8 次被拒才让 Agent 停下汇报。
 - **独立审核模型**（门里唯一的大模型）：中风险步骤和拿不准的目标都由它判，只看「用户原话 + 具体动作 +
   界面树/对话框」，看不到对话和主模型的理由。两种模式（`GUI_GATE_REVIEWER=auto|api|agent|off`）：
-  - `api`：自己配的决策模型（例如 Jev 这类决策模型，或任意 OpenAI 兼容接口）：
-    `GUI_GATE_REVIEWER_URL/_MODEL/_KEY`（或 `_KEY_FILE`）、`_USER_AGENT`、`_MAX_TOKENS`；
+  - `api`：自己配的模型：`GUI_GATE_REVIEWER_URL/_MODEL/_KEY`（或 `_KEY_FILE`）、`_USER_AGENT`、`_MAX_TOKENS`、
+    `_PROTOCOL`。URL 可以填基础地址（`.../v1`）或完整接口地址。支持的协议（`_PROTOCOL`，默认 `auto` 按地址和模型名猜）：
+
+    | 协议 | 用于 | 请求 |
+    |---|---|---|
+    | `systemone` | 决策模型：TypeSafe Jev、千问/百炼 `decision-model-preview`、Kev、Ollama、Upstage Solar Decide 等 | `POST …/systemone`，发 state + 是非题，返回概率；每题 P ≥ `GUI_GATE_REVIEWER_ALLOW_P`（默认 0.5）才放行 |
+    | `chat` | OpenAI Chat Completions 及兼容接口（DeepSeek、千问、各类中转） | `POST …/chat/completions` |
+    | `responses` | OpenAI Responses | `POST …/responses` |
+    | `anthropic` | Anthropic Messages（Claude 及兼容接口） | `POST …/v1/messages` |
+    | `gemini` | Google Gemini | `POST …/models/<model>:generateContent` |
+
+    配好后用 `gui-gate check-reviewer [--cases FILE]` 自检：会显示用的是哪个模型、哪种协议，并跑一条该拒、一条该放的样例。
   - `agent`：复用用户 Agent 正在用的主 LLM，每次只单独发一次请求、不带上下文：客户端支持 MCP sampling 就走
     `sampling/createMessage`（`includeContext: none`）；否则直接调用一次 Agent 自己的命令行（Pi / Claude Code /
     Codex，无工具、无 MCP、无会话、不读项目文件，沿用启动时的模型），不用另配 key。

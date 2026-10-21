@@ -59,7 +59,7 @@ Held-out quality (session split, so a model is never scored on a run it was trai
 ## 0.8.0: one language model in the gate, and it is not the agent's
 The acting agent's model (e.g. Pi's) is never asked to judge its own step any more: `gate_ack` is gone (accepted and
 ignored), the `decider=model` mode is removed. The only language model inside the gate is the independent reviewer
-(`GUI_GATE_REVIEWER_URL` / `_MODEL` / `_KEY`, any OpenAI-compatible endpoint; reasoning-blind: it sees the user's
+(`GUI_GATE_REVIEWER_URL` / `_MODEL` / `_KEY`, protocols chat | responses | anthropic | gemini | systemone (System One decision models such as Jev or decision-model-preview); reasoning-blind: it sees the user's
 request, the concrete action and the window tree, never the agent's explanation).
 
 | situation | 0.6 / 0.7 | 0.8 |

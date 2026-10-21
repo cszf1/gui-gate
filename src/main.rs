@@ -26,7 +26,7 @@ mod util;
 use decide::GateConfig;
 use util::*;
 
-const HELP: &str = "usage: gui-gate [setup|doctor|update|cleanup|uninstall|train|compare|replay] [options]
+const HELP: &str = "usage: gui-gate [setup|doctor|update|cleanup|uninstall|check-reviewer|train|compare|replay] [options]
 
 Cua Driver behind a pre-action value gate (MCP stdio server).
 
@@ -37,7 +37,8 @@ options:
   --no-risk-confirm                   do not stop risky actions
   --risk-mode {auto,reviewer,human}   auto: high risk -> person, medium -> the gate's reviewer
                                       reviewer = the only LLM in the gate, GUI_GATE_REVIEWER=auto|api|agent|off:
-                                      api = your decision model (GUI_GATE_REVIEWER_URL/_MODEL/_KEY),
+                                      api = your model (GUI_GATE_REVIEWER_URL/_MODEL/_KEY, _PROTOCOL=
+                                      auto|chat|responses|anthropic|gemini|systemone),
                                       agent = one context-free request to your agent's own model;
                                       the acting agent is never asked to approve its own step
   --human {auto,elicit,desktop,chat,deny}  how to reach a person
@@ -63,6 +64,7 @@ fn main() {
             "update" => Some(updates::update_main(rest)),
             "cleanup" => Some(cleanup::cleanup_main(rest)),
             "uninstall" => Some(cleanup::uninstall_main(rest)),
+            "check-reviewer" => Some(reviewer::check_main(rest)),
             "train" => Some(tools::train_main(rest)),
             "compare" => Some(tools::compare_main(rest)),
             "replay" => Some(tools::replay_main(rest)),
