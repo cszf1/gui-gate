@@ -45,10 +45,14 @@ class ChildMCP:
 
     def __init__(self, cmd: list[str], on_unsolicited: Callable[[dict], None],
                  stderr=None):
+        env = os.environ.copy()
+        if "site-packages" in (cmd[0] if cmd else "") or "dist-packages" in (cmd[0] if cmd else ""):
+            # same as the cua-driver package's own launcher: tell the binary it came from the Python package
+            env.setdefault("CUA_DRIVER_INSTALL_CHANNEL", "python_package")
         self.p = subprocess.Popen(
             cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             stderr=stderr if stderr is not None else subprocess.DEVNULL,
-            text=True, bufsize=1)
+            text=True, bufsize=1, env=env)
         self._w = StdioWriter(self.p.stdin)
         self._ids = itertools.count(1)
         self._pending: dict[str, queue.Queue] = {}
