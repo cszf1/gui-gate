@@ -775,9 +775,8 @@ class Gate:
                 a = {"pid": pid, "include_screenshot": shot}
                 if wid:
                     a["window_id"] = wid
-                if not new and prev is not None and wid and prev.window_id == wid and attempt == 0:
-                    # same window as the agent's last read: send only what changed (driver diff read)
-                    a["since"] = "latest"
+                # (a driver diff read, since:"latest", was tried in 0.3.3 and dropped: its answer is not in
+                # tree_markdown, and it could not be shown to report changes in unindexed text rows)
                 r = self._tool("get_window_state", a, timeout=20)
                 sc = r.get("structuredContent") or {}
                 md = str(sc.get("tree_markdown") or "")
@@ -802,6 +801,10 @@ class Gate:
             if o is not None:
                 o.window_count = sig
             self._seen_pids.add(pid)
+            if a.get("since") or not md.strip():
+                # a diff read puts its answer (changed rows / "no change since ...") in the text, not the tree
+                body = text_of(r).strip()
+                md = "\n".join(x for x in body.splitlines() if not x.startswith(("window_id=", "element_token for row")))
             lines = md.splitlines()
             more = ""
             if len(lines) > MAX_TREE_LINES:
