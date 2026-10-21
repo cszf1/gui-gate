@@ -60,6 +60,11 @@ gui-gate setup --client pi                              # 或 claude / codex / c
 gui-gate doctor                                         # 自检：启动驱动、列出工具
 ```
 
+**Cua Driver 更新**：它是独立的包（`cua-driver>=0.37.0,<1`），跟 gui-gate 一起装但不打包进来。
+gui-gate 每天最多查一次 PyPI（后台、3 秒超时，`GUI_GATE_NO_UPDATE_CHECK=1` 关闭），有新版就通过 MCP 提醒；
+从不自动安装。`gui-gate update` 由用户执行：装新版 → 自检（能启动、门控需要的工具都在）→ 不通过就退回原版本。
+`gui-gate update --to 0.37.0` 回到测试过的版本。
+
 Linux 桌面需要开启无障碍（AT-SPI，多数发行版默认有）；macOS 首次使用要给辅助功能 / 屏幕录制权限。
 
 常用参数：

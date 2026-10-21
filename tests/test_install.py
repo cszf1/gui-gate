@@ -3,6 +3,7 @@ import json
 import os
 import sys
 import tempfile
+import time
 import unittest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -50,6 +51,51 @@ class InstallTests(unittest.TestCase):
             self.assertIn("click", names)
         finally:
             c.close()
+
+
+class UpdateTests(unittest.TestCase):
+    def setUp(self):
+        from gui_gate import updates
+        self.u = updates
+
+    def test_version_order(self):
+        v = self.u.vtuple
+        self.assertGreater(v("0.37.10"), v("0.37.9"))
+        self.assertGreater(v("0.38.0"), v("0.37.0"))
+        self.assertEqual(v("v0.37.0"), (0, 37, 0))
+        self.assertEqual(v("0.38.0rc1")[:2], (0, 38))
+
+    def test_no_network_when_disabled(self):
+        os.environ.pop("GUI_GATE_LATEST_OVERRIDE", None)
+        os.environ["GUI_GATE_NO_UPDATE_CHECK"] = "1"
+        self.assertIsNone(self.u.latest())
+
+    def test_note_when_newer(self):
+        st = {"installed": "0.37.0", "latest": "0.38.1", "tested_with": "0.37.0",
+              "update_available": True, "untested": False}
+        self.assertIn("gui-gate update", self.u.note(st))
+        st2 = dict(st, latest="0.37.0", update_available=False)
+        self.assertEqual(self.u.note(st2), "")
+        st3 = dict(st2, installed="0.39.0", untested=True)
+        self.assertIn("--to 0.37.0", self.u.note(st3))
+
+    def test_missing_tools(self):
+        self.assertEqual(self.u.missing_tools(["click", "type_text"]),
+                         ["get_window_state", "list_windows", "press_key"])
+
+    def test_server_tells_client_about_new_driver(self):
+        os.environ["GUI_GATE_LATEST_OVERRIDE"] = "0.99.0"
+        try:
+            c = Client(env={"GUI_GATE_LATEST_OVERRIDE": "0.99.0", "GUI_GATE_NO_UPDATE_CHECK": ""})
+            try:
+                time.sleep(2.5)
+                c.rpc("tools/list", {})
+                seen = json.dumps(c.init) + json.dumps(c.extra)
+                self.assertIn("Cua Driver 0.99.0 is available", seen)
+            finally:
+                c.close()
+        finally:
+            del os.environ["GUI_GATE_LATEST_OVERRIDE"]
 
 
 if __name__ == "__main__":

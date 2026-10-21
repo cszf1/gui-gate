@@ -15,7 +15,7 @@ import subprocess
 import sys
 from typing import Optional
 
-DRIVER_VERSION = "0.37.0"  # keep equal to the cua-driver pin in pyproject.toml
+from .updates import TESTED as DRIVER_VERSION  # noqa: E402  (tested driver version)
 CLIENTS = ("claude", "codex", "cursor", "pi", "print")
 
 
@@ -143,7 +143,10 @@ def doctor(driver: Optional[str] = None, cmd: Optional[list] = None) -> dict:
                 raise RuntimeError(init["error"].get("message"))
             child.forward({"jsonrpc": "2.0", "method": "notifications/initialized"})
             tl = child.call("tools/list", {}, timeout=30)
-            rep["driver_tools"] = len((tl.get("result") or {}).get("tools") or [])
+            names = [t.get("name") for t in (tl.get("result") or {}).get("tools") or []]
+            rep["driver_tools"] = len(names)
+            from .updates import missing_tools
+            rep["missing_tools"] = missing_tools(names)
             rep["driver_server"] = ((init.get("result") or {}).get("serverInfo") or {}).get("name")
         except Exception as e:
             rep["driver_error"] = repr(e)
@@ -154,7 +157,14 @@ def doctor(driver: Optional[str] = None, cmd: Optional[list] = None) -> dict:
         rep["display"] = bool(os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"))
         rep["at_spi"] = bool(shutil.which("at-spi-bus-launcher") or os.path.exists("/usr/libexec/at-spi-bus-launcher")
                              or os.path.exists("/usr/lib/at-spi2-core/at-spi-bus-launcher"))
-    rep["ok"] = bool(rep["driver_tools"])
+    rep["ok"] = bool(rep["driver_tools"]) and not rep.get("missing_tools")
+    if not cmd:
+        from . import updates
+        st = updates.status()
+        rep["driver_latest"], rep["driver_tested_with"] = st["latest"], st["tested_with"]
+        n = updates.note(st)
+        if n:
+            rep["driver_note"] = n
     return rep
 
 

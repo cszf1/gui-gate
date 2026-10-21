@@ -4,6 +4,7 @@ Run:  python3 -m unittest discover -s tests -v
 """
 import json
 import os
+os.environ.setdefault("GUI_GATE_NO_UPDATE_CHECK", "1")  # unit tests never touch the network
 import re
 import subprocess
 import sys
@@ -22,6 +23,7 @@ class Client:
         e = dict(os.environ, PYTHONPATH=ROOT, **(env or {}))
         self.p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True, env=e, cwd=ROOT)
         self.i = 0
+        self.extra = []
         self.init = self.rpc("initialize", {"protocolVersion": "2025-06-18", "capabilities": {},
                                             "clientInfo": {"name": "t", "version": "0"}})
         self.p.stdin.write(json.dumps({"jsonrpc": "2.0", "method": "notifications/initialized"}) + "\n")
@@ -35,6 +37,7 @@ class Client:
             m = json.loads(self.p.stdout.readline())
             if m.get("id") == self.i:
                 return m["result"]
+            self.extra.append(m)
 
     def call(self, name, **args):
         return self.rpc("tools/call", {"name": name, "arguments": args})

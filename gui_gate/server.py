@@ -21,7 +21,7 @@ import threading
 import time
 from typing import Optional
 
-from . import __version__, authz, batch
+from . import __version__, authz, batch, updates
 from .decide import Decision, GateConfig, choose, hard_rules, p_direct, policy_decision
 from .features import GATED_TOOLS, OBS_TOOLS, ActionCtx, build_ctx, features
 from .human import Human
@@ -160,6 +160,8 @@ class Gate:
         self.out = StdioWriter(sys.stdout)
         self.state = GateState()
         self.log = EventLog(log_path)
+        self.update_note = ""
+        self._update_told = False
         self.lock = threading.RLock()  # re-entrant: batches call gated()/passthrough() while holding it
         self.confirm_codes: dict[str, str] = {}
         self.pending_methods: dict = {}  # agent request id -> method (to rewrite some responses)
@@ -276,11 +278,35 @@ class Gate:
             elif meth == "initialize" and "result" in msg:
                 r = msg["result"]
                 r["instructions"] = (r.get("instructions") or "") + INSTRUCTIONS_NOTE
+                if self.update_note:
+                    r["instructions"] += "\n" + self.update_note
+                    self._update_told = True
                 si = r.get("serverInfo") or {}
+                self.driver_version = si.get("version")
                 si["name"] = f"gui-gate (cua-driver {si.get('version', '?')})"
                 si["version"] = __version__
                 r["serverInfo"] = si
         self.out.send(msg)
+
+    def _check_updates(self) -> None:
+        """Background, never blocks: tell the user (through the client and the agent) about a new driver."""
+        for _ in range(50):  # the running driver's own version comes with initialize
+            if getattr(self, "driver_version", None):
+                break
+            time.sleep(0.1)
+        try:
+            n = updates.note(updates.status(inst=getattr(self, "driver_version", None)))
+        except Exception:
+            return
+        if not n:
+            return
+        self.update_note = n
+        log_err(n)
+        time.sleep(2)
+        if not self._update_told:  # initialize already answered: send it as an MCP log message instead
+            self._update_told = True
+            self.out.send({"jsonrpc": "2.0", "method": "notifications/message",
+                           "params": {"level": "warning", "logger": "gui-gate", "data": n}})
 
     def _augment_tools(self, result: dict) -> None:
         tools = result.get("tools") or []
@@ -310,6 +336,11 @@ class Gate:
                                      "double-check this target and you are sure. Never set it pre-emptively."}
                 props["gate_confirm"] = {"type": "string", "description": "Confirmation code the gate gave "
                                          "for a high-risk action, only after the user approved it."}
+        miss = updates.missing_tools([t.get("name") for t in tools])
+        if miss and not getattr(self, "_compat_warned", False):
+            self._compat_warned = True
+            log_err(f"this Cua Driver lacks tools the gate needs: {', '.join(miss)}; run `gui-gate update --to "
+                    f"{updates.TESTED}`")
         allt = tools + GATE_TOOLS
         if self.cfg.batch != "off":
             allt = allt + [batch.RUN_ACTIONS_TOOL]
@@ -1071,9 +1102,10 @@ class Gate:
 
 def main(argv=None) -> None:
     argv = list(sys.argv[1:] if argv is None else argv)
-    if argv and argv[0] in ("setup", "doctor"):  # one entry point: gui-gate setup | gui-gate doctor | gui-gate (serve)
-        from . import install
-        sys.exit(install.setup_main(argv[1:]) if argv[0] == "setup" else install.doctor_main(argv[1:]))
+    if argv and argv[0] in ("setup", "doctor", "update"):  # gui-gate setup | doctor | update | (serve)
+        from . import install, updates
+        fn = {"setup": install.setup_main, "doctor": install.doctor_main, "update": updates.update_main}[argv[0]]
+        sys.exit(fn(argv[1:]))
     ap = argparse.ArgumentParser(prog="gui-gate", description="Cua Driver behind a pre-action value gate (MCP stdio server)")
     ap.add_argument("--policy", choices=["gate", "direct", "light", "full"])
     ap.add_argument("--lambda", dest="lam", type=float)
@@ -1125,7 +1157,9 @@ def main(argv=None) -> None:
             sys.exit(2)
         cmd = [drv, "mcp", *a.driver_arg]
     log_path = None if (a.log or "").lower() == "none" else (a.log or os.environ.get("GUI_GATE_LOG") or "auto")
-    Gate(cmd, cfg, log_path).serve()
+    g = Gate(cmd, cfg, log_path)
+    threading.Thread(target=g._check_updates, daemon=True).start()
+    g.serve()
 
 
 if __name__ == "__main__":
