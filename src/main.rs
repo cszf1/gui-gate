@@ -36,10 +36,10 @@ options:
   --collect                           shadow-label every action for training
   --no-risk-confirm                   do not stop risky actions
   --risk-mode {auto,reviewer,human}   auto: high risk -> person, medium -> the gate's reviewer
-                                      reviewer = the only LLM in the gate, GUI_GATE_REVIEWER=auto|api|agent|off:
-                                      api = your model (GUI_GATE_REVIEWER_URL/_MODEL/_KEY, _PROTOCOL=
-                                      auto|chat|responses|anthropic|gemini|systemone),
-                                      agent = one context-free request to your agent's own model;
+                                      reviewer = the only LLM in the gate: an independent decision model
+                                      over its API (GUI_GATE_REVIEWER_URL/_MODEL/_KEY, _PROTOCOL=
+                                      auto|chat|responses|anthropic|gemini|systemone; GUI_GATE_REVIEWER=off
+                                      turns it off); none configured = steps needing review are refused;
                                       the acting agent is never asked to approve its own step
   --human {auto,elicit,desktop,chat,deny}  how to reach a person
   --human-timeout S                   seconds to wait for a person (default 120)

@@ -4,7 +4,6 @@
 #   conds: direct full gate gate_noobs gate_cm gate4 gate8 (all use --human deny)
 #   gate8 (>= 0.8): gate + the task text + the gate's own reviewer model, env from ~/.config/gui-gate/reviewer.env
 #   (GUI_GATE_REVIEWER_URL/_MODEL/_KEY_FILE/_USER_AGENT) = reviewer mode "api"; the acting model never approves itself
-#   gate8a (>= 0.9): same, reviewer mode "agent": one context-free request to Pi's own model (pi -p, no tools/MCP/session)
 set -u
 OUT=${1:-/data/workspace/runs/osworld1}
 CONDS=${2:-"direct full gate"}
@@ -43,11 +42,6 @@ run_one() {  # task cond seed attempt
       mkdir -p $OUT/task
       $PY -c "import json,sys;print(json.load(open(sys.argv[1]))['instruction'])" $HERE/tasks/$task > $OUT/task/$tag.txt
       GA='"--policy","gate","--task-file","'$OUT/task/$tag.txt'"';;
-    gate8a)
-      mkdir -p $OUT/task
-      $PY -c "import json,sys;print(json.load(open(sys.argv[1]))['instruction'])" $HERE/tasks/$task > $OUT/task/$tag.txt
-      GA='"--policy","gate","--task-file","'$OUT/task/$tag.txt'"'
-      GENV=',"env":{"GUI_GATE_REVIEWER":"agent","GUI_GATE_REVIEWER_URL":""}';;
   esac
   local TOOLS='mcp__gui__*' CWD=/tmp HINT=""
   if [ "$c" = gate_cm ]; then

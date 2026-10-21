@@ -49,8 +49,9 @@ Cua Driver 的 66 个工具原样暴露。观察类工具（`get_window_state` �
 - **拦了接着干**：被拒时返回理由 + 安全做法（换名保存、跳过冲突文件、先列出再执行……），
   同一后果换条路做也会被拒；连续 3 次 / 累计 8 次被拒才让 Agent 停下汇报。
 - **独立审核模型**（门里唯一的大模型）：中风险步骤和拿不准的目标都由它判，只看「用户原话 + 具体动作 +
-  界面树/对话框」，看不到对话和主模型的理由。两种模式（`GUI_GATE_REVIEWER=auto|api|agent|off`）：
-  - `api`：自己配的模型：`GUI_GATE_REVIEWER_URL/_MODEL/_KEY`（或 `_KEY_FILE`）、`_USER_AGENT`、`_MAX_TOKENS`、
+  界面树/对话框」，看不到对话和主模型的理由。审核只用你自己配置的独立决策模型，通过 API 调用
+  （`GUI_GATE_REVIEWER=api|off`，默认 `api`）：
+  - 配置：`GUI_GATE_REVIEWER_URL/_MODEL/_KEY`（或 `_KEY_FILE`）、`_USER_AGENT`、`_MAX_TOKENS`、
     `_PROTOCOL`。URL 可以填基础地址（`.../v1`）或完整接口地址。支持的协议（`_PROTOCOL`，默认 `auto` 按地址和模型名猜）：
 
     | 协议 | 用于 | 请求 |
@@ -62,11 +63,10 @@ Cua Driver 的 66 个工具原样暴露。观察类工具（`get_window_state` �
     | `gemini` | Google Gemini | `POST …/models/<model>:generateContent` |
 
     配好后用 `gui-gate check-reviewer [--cases FILE]` 自检：会显示用的是哪个模型、哪种协议，并跑一条该拒、一条该放的样例。
-  - `agent`：复用用户 Agent 正在用的主 LLM，每次只单独发一次请求、不带上下文：客户端支持 MCP sampling 就走
-    `sampling/createMessage`（`includeContext: none`）；否则直接调用一次 Agent 自己的命令行（Pi / Claude Code /
-    Codex，无工具、无 MCP、无会话、不读项目文件，沿用启动时的模型），不用另配 key。
-  - `auto`（默认）：配了 api 就用 api，否则用 agent。
-  两种都不可用时：有人可找就问人，无人值守就拒绝并给出安全做法。干活的主模型从不审核自己的动作。
+  - 没配审核 API（或 `GUI_GATE_REVIEWER=off`）时：需要审核的风险步骤一律拒绝（fail closed），并提示去配置
+    `GUI_GATE_REVIEWER_URL/_MODEL/_KEY`；`gui-gate check-reviewer` 会报告「not configured」。
+    审核 API 配了但没答复时：有人可找就问人，无人值守就拒绝并给出安全做法。
+  干活的主模型从不审核自己的动作，门也不会借用 Agent 自己的模型。
 - **省观察**：截图只在刚用过坐标点击时附带；动作后紧接着重读同一窗口直接用缓存（`fresh:true` 强制重读）；
   表格里「粘贴覆盖单元格」不再当成覆盖文件。
 - **服务端批量执行（任何 Agent 可用）**：`run_actions` 一次传一段小程序：动作步骤 + find（找元素）/
