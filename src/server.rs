@@ -193,7 +193,7 @@ pub struct Gate {
     client_pending: Arc<Mutex<HashMap<String, Sender<Value>>>>,
     pub restarts: AtomicU64,
     pub human: Human,
-    pub reviewer: Option<Reviewer>,
+    pub reviewer: Reviewer,
     started: f64,
     toolset: String,
     batch_mode: String,
@@ -324,8 +324,6 @@ fn augment_tools(result: &mut Value, shared: &Arc<Mutex<Shared>>, toolset: &str,
 
 impl Gate {
     pub fn new(child_cmd: Vec<String>, mut cfg: GateConfig, log_path: Option<String>) -> Arc<Gate> {
-        let rv = Reviewer::from_env();
-        cfg.reviewer = rv.is_some();
         let out = Arc::new(Out::new());
         let shared = Arc::new(Mutex::new(Shared {
             pending_methods: HashMap::new(), update_note: String::new(), update_told: false, driver_version: None,
@@ -337,11 +335,12 @@ impl Gate {
         let client_elicit = Arc::new(AtomicBool::new(false));
         let (o2, cp2) = (out.clone(), client_pending.clone());
         let cids = Arc::new(AtomicU64::new(0));
-        let elicit: crate::human::Elicit = Arc::new(move |params: Value, timeout: f64| {
+        // one request to the MCP client (elicitation for a person, sampling for the reviewer)
+        let client_request: crate::reviewer::ClientRequest = Arc::new(move |method: &str, params: Value, timeout: f64| {
             let cid = format!("gate-c-{}", cids.fetch_add(1, Ordering::SeqCst) + 1);
             let (tx, rx) = channel();
             cp2.lock().unwrap().insert(cid.clone(), tx);
-            o2.send(&json!({"jsonrpc": "2.0", "id": cid, "method": "elicitation/create", "params": params}));
+            o2.send(&json!({"jsonrpc": "2.0", "id": cid, "method": method, "params": params}));
             match rx.recv_timeout(Duration::from_secs_f64(timeout)) {
                 Ok(m) => m.get("result").cloned(),
                 Err(_) => {
@@ -350,6 +349,10 @@ impl Gate {
                 }
             }
         });
+        let cr = client_request.clone();
+        let elicit: crate::human::Elicit = Arc::new(move |params: Value, timeout: f64| cr("elicitation/create", params, timeout));
+        let rv = Reviewer::from_env(Some(client_request.clone()));
+        cfg.reviewer = rv.available();
         let ce = client_elicit.clone();
         let human = Human::new(&cfg.human_channel, cfg.human_timeout, Some(elicit), Arc::new(move || ce.load(Ordering::SeqCst)));
         let toolset = cfg.toolset.clone();
@@ -479,6 +482,10 @@ impl Gate {
             if method.as_deref() == Some("initialize") {
                 let p = msg.get("params").cloned().unwrap_or(json!({}));
                 self.client_elicit.store(p.get("capabilities").and_then(|c| c.get("elicitation")).is_some(), Ordering::SeqCst);
+                self.reviewer.set_client(&p); // never lock `inner` here: a tool call may hold it while it waits on the client
+                self.log.write(json!({"ev": "client", "name": p.get("clientInfo").and_then(|c| c.get("name")),
+                                      "sampling": p.get("capabilities").and_then(|c| c.get("sampling")).is_some(),
+                                      "reviewer": self.reviewer.backend()}));
                 *self.init_params.lock().unwrap() = Some(p);
             }
             if method.as_deref() == Some("tools/call") && has_id {
@@ -726,6 +733,7 @@ impl Gate {
     pub fn gated(&self, inn: &mut Inner, name: &str, mut args: Value) -> Value {
         let tg0 = Instant::now();
         let ack = false; // the acting model never approves its own step (gate_ack is accepted and ignored)
+        inn.cfg.reviewer = self.reviewer.available(); // known only after the client's initialize
         let code = args.get("gate_confirm").map(|v| pystr(Some(v))).filter(|c| !c.is_empty());
         if let Some(o) = args.as_object_mut() {
             o.remove("gate_ack");
@@ -1186,7 +1194,7 @@ impl Gate {
     /// otherwise the formula's next-best option. The acting model is never asked to approve its own step.
     fn review_step(&self, inn: &mut Inner, ctx: &ActionCtx, dec: Decision, trail: &mut Vec<String>, judge: &mut Value) -> Decision {
         let t = &ctx.target;
-        if let Some(rv) = self.reviewer.as_ref() {
+        if let Some(rv) = Some(&self.reviewer).filter(|r| r.available()) {
             let keys = if truthy(ctx.args.get("keys")) { ctx.args.get("keys").cloned() } else { ctx.args.get("key").cloned() };
             let action = json!({"tool": ctx.tool, "target_kind": t.kind, "target_role": t.the_role(), "target_label": t.the_label(),
                 "x": t.x, "y": t.y, "typed_text": trunc(&pystr(ctx.args.get("text")), 300), "keys": keys, "why_doubted": dec.reason});
@@ -1244,7 +1252,7 @@ impl Gate {
             inn.inc("authorized");
             return None;
         }
-        if let (Some(rv), true) = (self.reviewer.as_ref(), dec.option == "risk_review") {
+        if let (Some(rv), true) = (Some(&self.reviewer).filter(|r| r.available()), dec.option == "risk_review") {
             let keys = if truthy(ctx.args.get("keys")) { ctx.args.get("keys").cloned() } else { ctx.args.get("key").cloned() };
             let action = json!({"tool": ctx.tool, "target_role": t.the_role(), "target_label": label, "rule_that_fired": risk,
                 "risk_level": ctx.risk_level, "typed_text": trunc(&pystr(ctx.args.get("text")), 300), "keys": keys,
@@ -1268,7 +1276,7 @@ impl Gate {
             if ch != "deny" {
                 return Some(Decision::new("ask_human", 0.0, dec.reason.clone(), "rule"));
             }
-            let why = if self.reviewer.is_some() { "the reviewer did not answer, so nobody approved it" } else { "no reviewer is configured to approve it" };
+            let why = if self.reviewer.available() { "the reviewer did not answer, so nobody approved it" } else { "no reviewer is configured to approve it" };
             return Some(Decision::new("deny", 0.0, format!("{}; {why}", dec.reason), "rule"));
         }
         Some(dec)
@@ -1382,7 +1390,7 @@ impl Gate {
         let per = if g("actions") > 0.0 { round_to(g("gate_ms") / g("actions"), 1) } else { 0.0 };
         st.insert("gate_ms_per_action".into(), json!(per));
         st.insert("log".into(), json!(self.log.path));
-        st.insert("reviewer".into(), json!(self.reviewer.is_some()));
+        st.insert("reviewer".into(), json!(self.reviewer.backend()));
         let lines = [
             format!("policy={} lambda={} model={}", inn.cfg.policy, inn.cfg.lam, inn.cfg.model_name),
             format!("actions={} executed={} errors={}", g("actions"), g("executed"), g("exec_errors")),
@@ -1392,7 +1400,7 @@ impl Gate {
             format!("gate overhead={per} ms/action"),
             format!("human: asked={} allowed={} channel={} | auto observations={} | driver restarts={}", g("human_asked"), g("human_allowed"),
                     self.human.resolve_channel(), g("auto_obs"), self.restarts.load(Ordering::SeqCst)),
-            format!("reviewer={} reviews={} (allowed {}) | screenshots skipped={}", self.reviewer.is_some(), g("reviews"), g("review_allowed"), g("screenshots_skipped")),
+            format!("reviewer={} reviews={} (allowed {}) | screenshots skipped={}", self.reviewer.backend().unwrap_or_else(|| "none".into()), g("reviews"), g("review_allowed"), g("screenshots_skipped")),
         ];
         json!({"content": [{"type": "text", "text": lines.join("\n")}], "structuredContent": st})
     }
@@ -1407,7 +1415,7 @@ impl Gate {
         if ["auto", "reviewer", "human"].contains(&rm) { inn.cfg.risk_mode = rm.into(); }
         self.log.write(json!({"ev": "config", "policy": inn.cfg.policy, "lam": inn.cfg.lam, "collect": inn.cfg.collect}));
         let d = json!({"policy": inn.cfg.policy, "lambda": inn.cfg.lam, "collect": inn.cfg.collect, "risk_confirm": inn.cfg.risk_confirm,
-                       "model": inn.cfg.model_name, "reviewer": self.reviewer.is_some(), "risk_mode": inn.cfg.risk_mode});
+                       "model": inn.cfg.model_name, "reviewer": self.reviewer.backend(), "risk_mode": inn.cfg.risk_mode});
         json!({"content": [{"type": "text", "text": d.to_string()}], "structuredContent": d})
     }
 }

@@ -37,10 +37,10 @@ try {
     New-Item -ItemType Directory -Force -Path $BinDir | Out-Null
     $Exe = Join-Path $BinDir 'gui-gate.exe'
     if (Test-Path $Exe) {
-        # a running gate keeps the exe locked; renaming a running exe is allowed on Windows
-        $Old = "$Exe.old"
-        Remove-Item -Force $Old -ErrorAction SilentlyContinue
-        Rename-Item -Path $Exe -NewName 'gui-gate.exe.old'
+        Remove-Item -Force "$Exe.old" -ErrorAction SilentlyContinue
+        # delete the old exe; a running gate keeps it locked, then rename it (allowed on Windows) and
+        # `gui-gate cleanup` / the next gate start removes gui-gate.exe.old once it is free
+        try { Remove-Item -Force $Exe -ErrorAction Stop } catch { Rename-Item -Path $Exe -NewName 'gui-gate.exe.old' }
     }
     Copy-Item (Join-Path $Tmp 'gui-gate.exe') $Exe
     Say "installed gui-gate $(& $Exe --version) -> $Exe"
@@ -64,6 +64,10 @@ if ($env:GUI_GATE_SKIP_DRIVER -ne '1') {
     $machine = [Environment]::GetEnvironmentVariable('Path', 'Machine')
     $env:Path = "$BinDir;" + [Environment]::GetEnvironmentVariable('Path', 'User') + ";$machine"
 }
+
+# leave no residue: old copies (incl. gui-gate.exe.old), old Python package, duplicate/stale user Path entries
+# (registry HKCU\Environment), stale MCP entries and flags, our own config backups, old caches
+& $Exe cleanup --quiet
 
 if ($env:GUI_GATE_CLIENT) {
     $args2 = @('setup')

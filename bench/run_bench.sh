@@ -3,7 +3,8 @@
 # Usage: bash bench/run_bench.sh OUTDIR "conds" TASKLIST_FILE "seeds"
 #   conds: direct full gate gate_noobs gate_cm gate4 gate8 (all use --human deny)
 #   gate8 (>= 0.8): gate + the task text + the gate's own reviewer model, env from ~/.config/gui-gate/reviewer.env
-#   (GUI_GATE_REVIEWER_URL/_MODEL/_KEY_FILE/_USER_AGENT); the acting model is never asked to approve its own step
+#   (GUI_GATE_REVIEWER_URL/_MODEL/_KEY_FILE/_USER_AGENT) = reviewer mode "api"; the acting model never approves itself
+#   gate8a (>= 0.9): same, reviewer mode "agent": one context-free request to Pi's own model (pi -p, no tools/MCP/session)
 set -u
 OUT=${1:-/data/workspace/runs/osworld1}
 CONDS=${2:-"direct full gate"}
@@ -25,7 +26,7 @@ MCP=~/.pi/agent/mcp.json
 [ -f $OUT/mcp.json.orig ] || cp $MCP $OUT/mcp.json.orig
 trap 'cp $OUT/mcp.json.orig $MCP' EXIT
 run_one() {  # task cond seed attempt
-  local task=$1 c=$2 s=$3 att=$4
+  local task=$1 c=$2 s=$3 att=$4 GENV=""
   local name=$(basename $task .json) tag=$(basename $task .json)-$2-s$3
   [ "$att" -gt 1 ] && tag=$tag-try$att
   case $c in
@@ -42,6 +43,11 @@ run_one() {  # task cond seed attempt
       mkdir -p $OUT/task
       $PY -c "import json,sys;print(json.load(open(sys.argv[1]))['instruction'])" $HERE/tasks/$task > $OUT/task/$tag.txt
       GA='"--policy","gate","--task-file","'$OUT/task/$tag.txt'"';;
+    gate8a)
+      mkdir -p $OUT/task
+      $PY -c "import json,sys;print(json.load(open(sys.argv[1]))['instruction'])" $HERE/tasks/$task > $OUT/task/$tag.txt
+      GA='"--policy","gate","--task-file","'$OUT/task/$tag.txt'"'
+      GENV=',"env":{"GUI_GATE_REVIEWER":"agent","GUI_GATE_REVIEWER_URL":""}';;
   esac
   local TOOLS='mcp__gui__*' CWD=/tmp HINT=""
   if [ "$c" = gate_cm ]; then
@@ -51,7 +57,7 @@ run_one() {  # task cond seed attempt
 Speed: when you already know the next several steps (e.g. click a field, type, press Enter, save), run them in ONE codemode script calling tools.mcp__gui__* in sequence. After each call check r.isError; if a call is blocked or errors, stop the script and return its text. End the script by returning only the short text you need (and image() of a screenshot only when you must look). Use single direct tool calls when you need to look before deciding."
   fi
   cat > $MCP <<J
-{"mcpServers":{"gui":{"command":"$HOME/.local/bin/gui-gate","args":[$GA,"--human","deny","--log","$OUT/gate/$tag.jsonl"],
+{"mcpServers":{"gui":{"command":"$HOME/.local/bin/gui-gate","args":[$GA,"--human","deny","--log","$OUT/gate/$tag.jsonl"]$GENV,
  "exposure":"hidden","toolExposure":{"list_apps":"direct","list_windows":"direct","get_window_state":"direct",
  "click":"direct","press_key":"direct","type_text":"direct","scroll":"direct","request_human":"direct",
  "run_actions":"direct"}}}}

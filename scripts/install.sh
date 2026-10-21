@@ -102,6 +102,10 @@ case ":$PATH:" in
         export PATH="$BIN_DIR:$PATH" ;;
 esac
 
+# leave no residue: remove what older versions left (old copies, old Python package, stale PATH lines,
+# stale MCP entries and flags, our own config backups, old caches); `gui-gate cleanup --dry-run` shows it
+"$BIN_DIR/gui-gate" cleanup --quiet || true
+
 if [[ ${#CLIENTS[@]} -gt 0 ]]; then
     setup_args=()
     for c in "${CLIENTS[@]}"; do setup_args+=(--client "$c"); done

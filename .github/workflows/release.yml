@@ -101,6 +101,31 @@ jobs:
           gui-gate --version
           gui-gate doctor | tee doctor.json || true
           python3 -c "import json; d=json.load(open('doctor.json')); print('driver', d['driver_version'], 'tools', d['driver_tools']); assert (d['driver_tools'] or 0) > 0"
+      - name: upgrade from an older release leaves no residue (unix)
+        if: runner.os != 'Windows'
+        run: |
+          set -eux
+          export PATH="$HOME/.local/bin:$PATH"
+          gui-gate uninstall
+          test ! -e "$HOME/.local/bin/gui-gate"
+          # old release + the junk old versions left
+          curl -fsSL https://github.com/${{ github.repository }}/releases/download/v0.8.3/install.sh | bash -s -- --skip-driver
+          printf '\n# gui-gate\nexport PATH="%s:$PATH"\n\n# gui-gate\nexport PATH="/gone/bin:$PATH"\n' "$HOME/.local/bin" >> "$HOME/.bashrc"
+          mkdir -p "$HOME/.pi/agent" "$HOME/oldbin"
+          cp "$HOME/.local/bin/gui-gate" "$HOME/oldbin/gui-gate"
+          echo '{"mcpServers":{"gui":{"command":"'$HOME'/oldbin/gui-gate","args":["--decider","model"]}}}' > "$HOME/.pi/agent/mcp.json"
+          cp "$HOME/.pi/agent/mcp.json" "$HOME/.pi/agent/mcp.json.bak"
+          touch "$HOME/.local/bin/.gui-gate.new"
+          export PATH="$HOME/oldbin:$PATH"
+          curl -fsSL https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/install.sh | bash -s -- --skip-driver
+          gui-gate --version
+          test ! -e "$HOME/oldbin/gui-gate"
+          test ! -e "$HOME/.local/bin/.gui-gate.new"
+          test ! -e "$HOME/.pi/agent/mcp.json.bak"
+          test "$(grep -c '^# gui-gate' "$HOME/.bashrc")" -le 1
+          ! grep -q /gone/bin "$HOME/.bashrc"
+          python3 -c "import json,os; e=json.load(open(os.path.expanduser('~/.pi/agent/mcp.json')))['mcpServers']['gui']; print(e); assert e['command']==os.path.expanduser('~/.local/bin/gui-gate') and '--decider' not in e['args']"
+          test -z "$(gui-gate cleanup --quiet)"
       - name: install from the release (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
@@ -114,3 +139,38 @@ jobs:
           $d = Get-Content doctor.json -Raw | ConvertFrom-Json
           Write-Host "driver $($d.driver_version) tools $($d.driver_tools)"
           if (-not $d.driver_tools) { exit 1 }
+      - name: upgrade from an older release leaves no residue (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $bin = Join-Path $env:LOCALAPPDATA 'Programs\gui-gate\bin'
+          $exe = Join-Path $bin 'gui-gate.exe'
+          & $exe uninstall
+          Start-Sleep -Seconds 5
+          if (Test-Path $exe) { throw "uninstall left $exe" }
+          if ((([Environment]::GetEnvironmentVariable('Path','User')) -split ';') -contains $bin) { throw "uninstall left the Path entry" }
+          $env:GUI_GATE_SKIP_DRIVER = '1'
+          $env:GUI_GATE_VERSION = '0.8.3'
+          irm https://github.com/${{ github.repository }}/releases/download/v0.8.3/install.ps1 | iex
+          # junk: a duplicate and a stale user Path entry, our own backup, an old exe
+          $p = [Environment]::GetEnvironmentVariable('Path','User')
+          [Environment]::SetEnvironmentVariable('Path', "$p;$bin;C:\gone\gui-gate\bin", 'User')
+          New-Item -ItemType Directory -Force (Join-Path $HOME '.pi\agent') | Out-Null
+          $cfg = Join-Path $HOME '.pi\agent\mcp.json'
+          ('{"mcpServers":{"gui":{"command":"' + ($exe -replace '\\','\\') + '","args":["--decider","model"]}}}') | Set-Content $cfg
+          Copy-Item $cfg "$cfg.bak"
+          $env:GUI_GATE_VERSION = '${{ github.ref_name }}'
+          irm https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/install.ps1 | iex
+          & $exe --version
+          Start-Sleep -Seconds 6
+          & $exe cleanup --quiet
+          $entries = ([Environment]::GetEnvironmentVariable('Path','User')) -split ';'
+          if (($entries | Where-Object { $_ -eq $bin }).Count -ne 1) { throw "user Path should hold the gui-gate dir once: $entries" }
+          if ($entries -contains 'C:\gone\gui-gate\bin') { throw "stale Path entry left" }
+          if (Test-Path "$cfg.bak") { throw "backup left" }
+          if (Test-Path "$exe.old") { throw "gui-gate.exe.old left" }
+          $e = (Get-Content $cfg -Raw | ConvertFrom-Json).mcpServers.gui
+          if ($e.args -contains '--decider') { throw "removed flag left: $($e.args)" }
+          $left = & $exe cleanup --quiet
+          if ($left) { throw "second cleanup still found: $left" }

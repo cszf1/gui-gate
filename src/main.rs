@@ -13,6 +13,7 @@ mod features;
 mod human;
 mod install;
 mod log;
+mod cleanup;
 mod reviewer;
 mod rpc;
 mod server;
@@ -25,7 +26,7 @@ mod util;
 use decide::GateConfig;
 use util::*;
 
-const HELP: &str = "usage: gui-gate [setup|doctor|update|train|compare|replay] [options]
+const HELP: &str = "usage: gui-gate [setup|doctor|update|cleanup|uninstall|train|compare|replay] [options]
 
 Cua Driver behind a pre-action value gate (MCP stdio server).
 
@@ -35,8 +36,10 @@ options:
   --collect                           shadow-label every action for training
   --no-risk-confirm                   do not stop risky actions
   --risk-mode {auto,reviewer,human}   auto: high risk -> person, medium -> the gate's reviewer
-                                      (reviewer = GUI_GATE_REVIEWER_URL/_MODEL/_KEY, the only LLM in the gate;
-                                      the acting agent is never asked to approve its own step)
+                                      reviewer = the only LLM in the gate, GUI_GATE_REVIEWER=auto|api|agent|off:
+                                      api = your decision model (GUI_GATE_REVIEWER_URL/_MODEL/_KEY),
+                                      agent = one context-free request to your agent's own model;
+                                      the acting agent is never asked to approve its own step
   --human {auto,elicit,desktop,chat,deny}  how to reach a person
   --human-timeout S                   seconds to wait for a person (default 120)
   --delivery {auto,background,foreground}  input delivery
@@ -58,6 +61,8 @@ fn main() {
             "setup" => Some(install::setup_main(rest)),
             "doctor" => Some(install::doctor_main(rest)),
             "update" => Some(updates::update_main(rest)),
+            "cleanup" => Some(cleanup::cleanup_main(rest)),
+            "uninstall" => Some(cleanup::uninstall_main(rest)),
             "train" => Some(tools::train_main(rest)),
             "compare" => Some(tools::compare_main(rest)),
             "replay" => Some(tools::replay_main(rest)),
@@ -67,6 +72,7 @@ fn main() {
             std::process::exit(c);
         }
     }
+    cleanup::startup();
     let mut cfg = GateConfig::from_env();
     let (mut mode, mut task_file, mut weights, mut log, mut driver, mut child) = (None, None, None, None, None, None);
     let mut driver_args: Vec<String> = vec![];

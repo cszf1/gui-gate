@@ -34,7 +34,7 @@ Cua Driver 的 66 个工具原样暴露。观察类工具（`get_window_state` �
 
 选项：`direct` 直接执行 · `check` 门自己探测（0.2 s）· `heal` 修复过期 token · `wait` 等界面稳定 ·
 `look_light` / `look_full` 门自己重读界面（需要时带截图）并随拒绝一起返回，Agent 直接重新瞄准 ·
-`review` 门里唯一的大模型——独立审核模型（`GUI_GATE_REVIEWER_URL`）复核拿不准的目标 · `risk_review` 审核模型裁决中等风险 ·
+`review` 门里唯一的大模型——独立审核模型复核拿不准的目标 · `risk_review` 审核模型裁决中等风险 ·
 `ask_human` 请用户确认风险动作 · `ask_help` 连续失败卡住时请人代做或指点（有人可找时才会出现）。
 **正在干活的主模型（如 Pi 里的）从不被要求确认自己的动作**（v0.8 起没有 gate_ack）。
 
@@ -48,9 +48,15 @@ Cua Driver 的 66 个工具原样暴露。观察类工具（`get_window_state` �
   覆盖当前正在编辑的文档本身也放行。
 - **拦了接着干**：被拒时返回理由 + 安全做法（换名保存、跳过冲突文件、先列出再执行……），
   同一后果换条路做也会被拒；连续 3 次 / 累计 8 次被拒才让 Agent 停下汇报。
-- **独立审核模型**：设置 `GUI_GATE_REVIEWER_URL/_MODEL/_KEY`（OpenAI 兼容接口）后，中风险步骤和拿不准的目标
-  都由它判（只看「用户原话 + 具体动作 + 界面树/对话框」，看不到主模型的理由）。没配置时：有人可找就问人，
-  无人值守就拒绝并给出安全做法。v0.8 起不再让干活的主模型自己复核。
+- **独立审核模型**（门里唯一的大模型）：中风险步骤和拿不准的目标都由它判，只看「用户原话 + 具体动作 +
+  界面树/对话框」，看不到对话和主模型的理由。两种模式（`GUI_GATE_REVIEWER=auto|api|agent|off`）：
+  - `api`：自己配的决策模型（例如 Jev 这类决策模型，或任意 OpenAI 兼容接口）：
+    `GUI_GATE_REVIEWER_URL/_MODEL/_KEY`（或 `_KEY_FILE`）、`_USER_AGENT`、`_MAX_TOKENS`；
+  - `agent`：复用用户 Agent 正在用的主 LLM，每次只单独发一次请求、不带上下文：客户端支持 MCP sampling 就走
+    `sampling/createMessage`（`includeContext: none`）；否则直接调用一次 Agent 自己的命令行（Pi / Claude Code /
+    Codex，无工具、无 MCP、无会话、不读项目文件，沿用启动时的模型），不用另配 key。
+  - `auto`（默认）：配了 api 就用 api，否则用 agent。
+  两种都不可用时：有人可找就问人，无人值守就拒绝并给出安全做法。干活的主模型从不审核自己的动作。
 - **省观察**：截图只在刚用过坐标点击时附带；动作后紧接着重读同一窗口直接用缓存（`fresh:true` 强制重读）；
   表格里「粘贴覆盖单元格」不再当成覆盖文件。
 - **服务端批量执行（任何 Agent 可用）**：`run_actions` 一次传一段小程序：动作步骤 + find（找元素）/
@@ -81,6 +87,12 @@ irm https://github.com/cszf1/gui-gate/releases/latest/download/install.ps1 | iex
 已有 pip/pipx 安装的 Cua Driver 也能识别。
 
 **更新**：重新跑一次安装命令，或 `gui-gate update --self`，就同时更新 gui-gate 和 Cua Driver。
+每次安装/更新后自动运行 `gui-gate cleanup`，不留旧版残留：旧位置的旧版本副本、0.2–0.5 的 Python 包
+（以及只因它装上的 pip 版 Cua Driver，前提是官方驱动已装好）、重复或失效的 PATH 行（shell 配置文件；Windows
+是注册表 `HKCU\Environment` 里的用户 Path）、指向已删副本的 MCP 配置和已删除的参数（如 `--decider`）、
+gui-gate 自己留的配置备份、旧缓存、30 天前的日志（`GUI_GATE_LOG_KEEP_DAYS`）、Windows 上被占用改名的
+`gui-gate.exe.old`。只动 gui-gate 自己的东西；需要管理员权限的只报告。`gui-gate cleanup --dry-run` 先看会动什么；
+`gui-gate uninstall [--keep-logs]` 完整卸载（Cua Driver 是独立产品，保留）。
 gui-gate 每天最多查一次 Cua 官方安装器当前发布的驱动版本（后台、3 秒超时，`GUI_GATE_NO_UPDATE_CHECK=1` 关闭），
 有新版就通过 MCP 提醒，从不自动安装。`gui-gate update` 只更新驱动：用官方安装器装新版 → 自检（能启动、
 门控需要的工具都在）→ 不通过就退回原版本；`gui-gate update --to 0.37.0` 回到测试过的版本。
