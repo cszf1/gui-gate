@@ -775,12 +775,16 @@ class Gate:
                 a = {"pid": pid, "include_screenshot": shot}
                 if wid:
                     a["window_id"] = wid
+                if not new and prev is not None and wid and prev.window_id == wid and attempt == 0:
+                    # same window as the agent's last read: send only what changed (driver diff read)
+                    a["since"] = "latest"
                 r = self._tool("get_window_state", a, timeout=20)
                 sc = r.get("structuredContent") or {}
                 md = str(sc.get("tree_markdown") or "")
                 if r.get("isError") or not sc.get("snapshot_id"):
                     return
                 if _LOADING_RX.search(md) and attempt < 3:
+                    a.pop("since", None)
                     time.sleep(0.4)
                     continue
                 break
@@ -789,6 +793,7 @@ class Gate:
                 self._pixel_pids.add(pid)
                 shot = True
                 a = dict(a, include_screenshot=True)
+                a.pop("since", None)
                 r2 = self._tool("get_window_state", a, timeout=20)
                 if not r2.get("isError") and (r2.get("structuredContent") or {}).get("snapshot_id"):
                     r, sc = r2, r2.get("structuredContent") or {}
