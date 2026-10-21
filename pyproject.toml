@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "gui-gate"
-version = "0.3.5"
+version = "0.3.6"
 description = "Cua Driver behind a pre-action value gate, served as one MCP server"
 readme = "README.md"
 requires-python = ">=3.9"

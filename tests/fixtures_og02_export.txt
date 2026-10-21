@@ -1,0 +1,62 @@
+Clicked element [95] (pid 172098).
+The application opened its own window 23080365 "Export" and it now holds the focus (focus_outcome=same_app_dialog, left in place); pid-only type_text/press_key go to that window. A popup menu is open, so pid 172098 holds a keyboard grab until it closes.
+[gate] Window right after the action (snapshot s00000003; tokens are s00000003:N, older tokens are stale).
+A new window/dialog opened (window_id=23080365); this is its tree.
+- dialog = "Export"
+            - [0] text "/home/user/Desktop" value="/home/user/Desktop" [actions=[activate]]
+              - [1] text "" [actions=[activate]] (unlabelled text; 2nd of 4 texts in this window)
+            - [2] combo box "" [actions=[click]] (unlabelled combo box; 2nd of 6 combo boxs in this window)
+          - [3] button "Connect To Server" [actions=[click]]
+                    - [4] button "" [actions=[click]]
+                    - [5] toggle button "Menu" [actions=[click]]
+                      - [6] menu item "user" [actions=[click]]
+                      - [7] menu item "home" [actions=[click]]
+                      - [8] menu item "Workplace" [actions=[click]]
+            - [9] scroll bar "" value="0.0" [actions=[]] (unlabelled scroll bar; 1st of 10 scroll bars in this window)
+            - [10] scroll bar "" value="0.0" [actions=[]] (unlabelled scroll bar; 2nd of 10 scroll bars in this window)
+          - [11] button "Create New Folder" [actions=[click]]
+          - [12] split pane "" value="146.0" [actions=[]]
+                  - [13] table column header "Places" [actions=[click]]
+                  - [14] table cell "" [actions=[expand or contract,edit,activate]]
+                    - [15] table cell "" [actions=[expand or contract,edit,activate]]
+                    - [16] table cell "My Documents" [actions=[expand or contract,edit,activate]]
+                - [17] scroll bar "" value="0.0" [actions=[]] (unlabelled scroll bar; 3rd of 10 scroll bars in this window)
+                - [18] scroll bar "" value="0.0" [actions=[]] (unlabelled scroll bar; 4th of 10 scroll bars in this window)
+                - [19] button "Add" (description "Add current folder to Places") [actions=[click]]
+                - [20] button "Remove" (description "Remove selected folder from Places") [actions=[click]]
+                  - [21] table column header "Name" [actions=[click]]
+                  - [22] table column header "Type" [actions=[click]]
+                  - [23] table column header "Size" [actions=[click]]
+                  - [24] table column header "Date modified" [actions=[click]]
+                  - [25] table cell "" [actions=[expand or contract,edit,activate]]
+                    - [26] table cell "" [actions=[expand or contract,edit,activate]]
+                    - [27] table cell "Desktop" [actions=[expand or contract,edit,activate]]
+                  - [28] table cell "Folder" [actions=[expand or contract,edit,activate]]
+                  - [29] table cell "" [actions=[expand or contract,edit,activate]]
+                  - [30] table cell "10/20/2026, 15:54" [actions=[expand or contract,edit,activate]]
+                  - [31] table cell "" [actions=[expand or contract,edit,activate]]
+                    - [32] table cell "" [actions=[expand or contract,edit,activate]]
+                    - [33] table cell "View_Person_Organizational_Summary.pdf" [actions=[expand or contract,edit,activate]]
+                  - [34] table cell "PDF-File" [actions=[expand or contract,edit,activate]]
+                  - [35] table cell "863 Bytes" [actions=[expand or contract,edit,activate]]
+                  - [36] table cell "10/21/2026, 03:27" [actions=[expand or contract,edit,activate]]
+                - [37] scroll bar "" value="0.0" [actions=[]] (unlabelled scroll bar; 5th of 10 scroll bars in this window)
+                - [38] scroll bar "" value="0.0" [actions=[]] (unlabelled scroll bar; 6th of 10 scroll bars in this window)
+                  - icon = "Desktop"
+                  - icon = "View_Person_Organizational_Summary.pdf"
+                - [39] scroll bar "" value="0.0" [actions=[]] (unlabelled scroll bar; 7th of 10 scroll bars in this window)
+                - [40] scroll bar "" value="0.0" [actions=[]] (unlabelled scroll bar; 8th of 10 scroll bars in this window)
+                - [41] check box "Automatic file name extension" [actions=[click]]
+                - [42] combo box "" [actions=[click]] (unlabelled combo box; 3rd of 6 combo boxs in this window)
+                - [43] combo box "File format:" [actions=[click]]
+              - combo box = "File name:"
+                - [44] text "View_Person_Organizational_Summary" value="View_Person_Organizational_Summary" [actions=[activate]]
+                  - [45] text "" [actions=[activate]] (unlabelled text; 4th of 4 texts in this window)
+                - [46] combo box "File name:" [actions=[click]]
+              - label = "File format:"
+              - label = "File name:"
+            - [47] button "Export" [actions=[click]]
+            - [48] button "Cancel" [actions=[click]]
+            - [49] button "Help" [actions=[click]]
+          - [50] scroll bar "" value="0.0" [actions=[]] (unlabelled scroll bar; 9th of 10 scroll bars in this window)
+          - [51] scroll bar "" value="0.0" [actions=[]] (unlabelled scroll bar; 10th of 10 scroll bars in this window)

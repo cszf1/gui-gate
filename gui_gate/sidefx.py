@@ -299,7 +299,13 @@ def save_dialog_target(text: str) -> Optional[str]:
             return f
     for d in dirs:
         for n in names:
-            cands = [n] if os.path.splitext(n)[1] else [f"{n}.{e}" for e in exts[:1]]
+            if os.path.splitext(n)[1]:
+                cands = [n]
+            else:
+                # no file-type filter text (LibreOffice's own dialog shows "File format:" without a value):
+                # the dialog's file list shows NAME.ext for files of the chosen type, so take those extensions
+                listed = [e.lower() for e in re.findall(re.escape(n) + r"\.([A-Za-z0-9]{1,6})\b", text)]
+                cands = [f"{n}.{e}" for e in dict.fromkeys(exts[:1] + listed)]
             for c in cands:
                 p = os.path.join(d, c)
                 if _nonempty_file(p):
