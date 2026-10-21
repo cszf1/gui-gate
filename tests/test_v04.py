@@ -1,4 +1,5 @@
 """v0.4: authorization, deny-and-continue, observation budget, server-side batching (run_actions)."""
+import json
 import os
 import sys
 import unittest
@@ -293,3 +294,65 @@ class ProgramTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ReviewerReusesTheAgentsModel(unittest.TestCase):
+    """0.9: by default the reviewer is ONE context-free request to the model the user's agent runs."""
+
+    def send_click(self, c):
+        c.call("fake_mutate", elements=[["button", "Send"], ["button", "Increment"], ["text", "x"]])
+        s = c.read()
+        return c.call("click", element_token=f"{s}:0", gate_ack=True)
+
+    def test_mcp_sampling(self):
+        for decision, blocked in (("deny", True), ("allow", False)):
+            ans = lambda m, d=decision: {"role": "assistant", "model": "client-model",
+                                         "content": {"type": "text", "text": '{"decision": "%s", "reason": "x"}' % d}}
+            c = Client("--human", "deny", "--task", "draft a reply to Bob", capabilities={"sampling": {}}, on_request=ans,
+                       env={"GUI_GATE_REVIEWER_URL": ""})
+            try:
+                r = self.send_click(c)
+                self.assertEqual(bool(r.get("isError")), blocked, txt(r))
+                req = [m for m in c.requests if m["method"] == "sampling/createMessage"]
+                self.assertEqual(len(req), 1)
+                p = req[0]["params"]
+                self.assertEqual(p["includeContext"], "none")  # no conversation, one stand-alone request
+                self.assertEqual(len(p["messages"]), 1)
+                self.assertIn("draft a reply to Bob", p["messages"][0]["content"]["text"])
+                self.assertNotIn("gate_ack", p["messages"][0]["content"]["text"])
+                rev = [e for e in c.events() if e.get("ev") == "client"][0]
+                self.assertEqual(rev["reviewer"], "agent:sampling")
+            finally:
+                c.close()
+
+    def test_agent_cli_one_shot(self):
+        import tempfile, stat
+        d = tempfile.mkdtemp()
+        argf = os.path.join(d, "args.json")
+        pi = os.path.join(d, "pi")
+        with open(pi, "w") as f:
+            f.write("#!%s\nimport json,os,sys\njson.dump({'argv': sys.argv[1:], 'child': os.environ.get('GUI_GATE_REVIEWER_CHILD')}, open(%r,'w'))\n"
+                    "print('{\"decision\": \"deny\", \"reason\": \"not asked\"}')\n" % (sys.executable, argf))
+        os.chmod(pi, os.stat(pi).st_mode | stat.S_IEXEC)
+        c = Client("--human", "deny", "--task", "draft a reply to Bob", client_name="pi",
+                   env={"PATH": d + os.pathsep + os.environ["PATH"], "GUI_GATE_REVIEWER_URL": ""})
+        try:
+            r = self.send_click(c)
+            self.assertTrue(r.get("isError"))
+            self.assertIn("not asked", txt(r))
+            got = json.load(open(argf))
+            for flag in ("-p", "--no-session", "--no-tools", "--no-mcp", "--no-context-files"):
+                self.assertIn(flag, got["argv"])
+            self.assertEqual(got["child"], "1")  # the nested agent never starts a reviewer of its own
+            self.assertIn("draft a reply to Bob", got["argv"][-1])
+        finally:
+            c.close()
+
+    def test_no_backend_refuses(self):
+        c = Client("--human", "deny", "--task", "draft a reply to Bob", env={"GUI_GATE_REVIEWER_URL": "", "GUI_GATE_REVIEWER": "api"})  # api mode, no endpoint
+        try:
+            r = self.send_click(c)
+            self.assertTrue(r.get("isError"))
+            self.assertIn("no reviewer", txt(r))
+        finally:
+            c.close()

@@ -30,7 +30,8 @@ class InstallTests(unittest.TestCase):
             d = json.load(open(os.path.join(h, ".cursor", "mcp.json")))
             self.assertIn("other", d["mcpServers"])
             self.assertIn("gui", d["mcpServers"])
-            self.assertTrue(os.path.exists(os.path.join(h, ".cursor", "mcp.json.bak")))
+            self.assertFalse(os.path.exists(os.path.join(h, ".cursor", "mcp.json.bak")))  # 0.9: atomic write, no leftover backup
+            self.assertFalse(any(n.endswith("gui-gate-tmp") for n in os.listdir(os.path.join(h, ".cursor"))))
 
     def test_codex_config_once(self):
         with tempfile.TemporaryDirectory() as h:

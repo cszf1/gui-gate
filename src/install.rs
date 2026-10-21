@@ -151,7 +151,6 @@ fn merge_json(path: &str, name: &str, entry: Value) -> String {
             Ok(v) if v.is_object() => data = v,
             _ => return format!("{path} is not valid JSON; add this yourself:\n{}", snippet(name)),
         }
-        let _ = std::fs::copy(path, format!("{path}.bak"));
     }
     if !data.get("mcpServers").map(|v| v.is_object()).unwrap_or(false) {
         data["mcpServers"] = json!({});
@@ -160,9 +159,14 @@ fn merge_json(path: &str, name: &str, entry: Value) -> String {
     if let Some(d) = Path::new(path).parent() {
         let _ = std::fs::create_dir_all(d);
     }
-    match std::fs::write(path, serde_json::to_string_pretty(&data).unwrap()) {
+    // atomic replace, no backup copy left behind (an unreadable file is never touched, see above)
+    let tmp = format!("{path}.gui-gate-tmp");
+    match std::fs::write(&tmp, serde_json::to_string_pretty(&data).unwrap()).and_then(|_| std::fs::rename(&tmp, path)) {
         Ok(_) => format!("wrote {path}"),
-        Err(e) => format!("could not write {path}: {e}"),
+        Err(e) => {
+            let _ = std::fs::remove_file(&tmp);
+            format!("could not write {path}: {e}")
+        }
     }
 }
 
@@ -178,9 +182,6 @@ pub fn configure(client: &str, name: &str, home_dir: Option<&str>) -> String {
             let old = std::fs::read_to_string(&path).unwrap_or_default();
             if old.contains(&format!("[mcp_servers.{name}]")) {
                 return format!("{path} already has [mcp_servers.{name}]");
-            }
-            if !old.is_empty() {
-                let _ = std::fs::copy(&path, format!("{path}.bak"));
             }
             let block = format!("\n[mcp_servers.{name}]\ncommand = {}\nargs = {}\nstartup_timeout_sec = 120\n",
                                 json!(cmd[0]), json!(cmd[1..]));
