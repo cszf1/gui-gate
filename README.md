@@ -1,16 +1,19 @@
 # gui-gate
 
 **一个完整的 MCP：门控 + Cua Driver + 批量执行，装一次就能用。** 任何支持 MCP 的 Agent（Claude Code、Codex、Cursor、Pi……）都能接。
-门控本身是一个 Rust 程序（约 4 MB，无运行时依赖）；Cua Driver 是独立的官方包，安装时一起装上。
+门控本身是一个 Rust 程序（约 4 MB，无运行时依赖）；Cua Driver 用它官方的安装器装最新版，一条命令全部装好。
 
 ```bash
-pipx install gui-gate            # 或 uv tool install gui-gate；门控程序 + Cua Driver 一起装好
-gui-gate setup --client claude   # 写入客户端配置（claude / codex / cursor / pi / print），并自检
+# macOS / Linux
+curl -fsSL https://github.com/cszf1/gui-gate/releases/latest/download/install.sh | bash -s -- --client claude
+# Windows（PowerShell）
+$env:GUI_GATE_CLIENT="claude"; irm https://github.com/cszf1/gui-gate/releases/latest/download/install.ps1 | iex
 ```
+`--client` 可选（claude / codex / cursor / pi），不写就只装好并自检，之后再 `gui-gate setup --client ...`。
 
 两种用法同时提供：**单步**（`click`、`type_text`……每次一个动作）和 **批量**（`run_actions`，一次一串步骤，
 支持 find / for_each / if / read，功能对标 Pi codemode，但不需要 JS 引擎）。每个动作不管哪种方式都过门控。
-`--mode single` 只给单步。Cua Driver 用的是官方预编译包（macOS、Linux x86_64/arm64、Windows），测试版本 0.37.0。
+`--mode single` 只给单步。Cua Driver 用的是官方预编译版本（macOS、Linux x86_64/arm64、Windows），测试版本 0.37.0。
 
 ```
 Agent (Pi 等) ──MCP stdio──▶ gui-gate ──▶ cua-driver（手脚：AT-SPI / UIA / AX + 输入）
@@ -55,16 +58,30 @@ Cua Driver 的 66 个工具原样暴露。观察类工具（`get_window_state` �
 
 ## 安装
 
+一条命令：下载对应平台的 gui-gate（GitHub Release，SHA256 校验）→ 运行 Cua 官方安装器装最新 Cua Driver →
+把目录加进 PATH → 自检（`gui-gate doctor`）。不需要 Python、Rust 或管理员权限。
+
 ```bash
-pipx install gui-gate                                   # 需要 Python ≥ 3.10 来装包；门控本身是 Rust 程序
-gui-gate setup --client pi                              # 或 claude / codex / cursor；不带参数则打印配置片段
-gui-gate doctor                                         # 自检：启动驱动、列出工具
+curl -fsSL https://github.com/cszf1/gui-gate/releases/latest/download/install.sh | bash          # macOS / Linux
+irm https://github.com/cszf1/gui-gate/releases/latest/download/install.ps1 | iex                  # Windows PowerShell
 ```
 
-**Cua Driver 更新**：它是独立的包（`cua-driver>=0.37.0,<1`），跟 gui-gate 一起装但不打包进来。
-gui-gate 每天最多查一次 PyPI（后台、3 秒超时，`GUI_GATE_NO_UPDATE_CHECK=1` 关闭），有新版就通过 MCP 提醒；
-从不自动安装。`gui-gate update` 由用户执行：装新版 → 自检（能启动、门控需要的工具都在）→ 不通过就退回原版本。
-`gui-gate update --to 0.37.0` 回到测试过的版本。
+| 选项（sh 参数 / 环境变量） | 作用 |
+|---|---|
+| `--client claude` / `GUI_GATE_CLIENT=claude,codex` | 顺便写入 Agent 配置 |
+| `--version 0.6.1` / `GUI_GATE_VERSION` | 装指定版本 |
+| `--bin-dir` / `GUI_GATE_INSTALL_DIR` | 安装目录（默认 `~/.local/bin`，Windows `%LOCALAPPDATA%\Programs\gui-gate\bin`） |
+| `--skip-driver` / `GUI_GATE_SKIP_DRIVER=1` | 不动 Cua Driver |
+| `GUI_GATE_BASE_URL` | 从镜像下载 gui-gate（GitHub 慢时） |
+| `CUA_DRIVER_RS_VERSION=0.37.0` | 交给 Cua 官方安装器：固定驱动版本 |
+
+平台：macOS（universal）、Linux x86_64 / aarch64（静态链接，任何发行版）、Windows x64（ARM 版 Windows 走仿真）。
+已有 pip/pipx 安装的 Cua Driver 也能识别。
+
+**更新**：重新跑一次安装命令，或 `gui-gate update --self`，就同时更新 gui-gate 和 Cua Driver。
+gui-gate 每天最多查一次 Cua 官方安装器当前发布的驱动版本（后台、3 秒超时，`GUI_GATE_NO_UPDATE_CHECK=1` 关闭），
+有新版就通过 MCP 提醒，从不自动安装。`gui-gate update` 只更新驱动：用官方安装器装新版 → 自检（能启动、
+门控需要的工具都在）→ 不通过就退回原版本；`gui-gate update --to 0.37.0` 回到测试过的版本。
 
 Linux 桌面需要开启无障碍（AT-SPI，多数发行版默认有）；macOS 首次使用要给辅助功能 / 屏幕录制权限。
 

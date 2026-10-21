@@ -1,5 +1,6 @@
-//! One install: `pipx install gui-gate` (or `uv tool install gui-gate`) puts this binary and Cua Driver's own
-//! prebuilt package side by side. This module finds the driver, wires the server into MCP clients
+//! One install: the release installer (scripts/install.sh, scripts/install.ps1) drops this binary next to
+//! Cua Driver installed by Cua's own official installer; a pip/pipx install (Cua Driver's Python package)
+//! is still found too. This module finds the driver, wires the server into MCP clients
 //! (`gui-gate setup`) and checks the machine end to end (`gui-gate doctor`).
 use crate::rpc::ChildMCP;
 use crate::updates;
@@ -68,24 +69,51 @@ pub fn bundled_driver() -> Option<String> {
     if !p.is_empty() && Path::new(&p).is_file() { Some(p) } else { None }
 }
 
-/// GUI_GATE_DRIVER, then the bundled binary, then a cua-driver already on this machine.
+/// Where Cua Driver's official installers put it (install.sh / install.ps1), newest layout first.
+pub fn official_driver_paths() -> Vec<String> {
+    let h = home();
+    let mut v = vec![];
+    if cfg!(windows) {
+        if let Some(la) = env("LOCALAPPDATA") {
+            v.push(format!("{la}\\Programs\\Cua\\cua-driver\\bin\\cua-driver.exe"));
+        }
+        let up = env("USERPROFILE").unwrap_or(h.clone());
+        v.push(format!("{up}\\.cua-driver\\packages\\current\\cua-driver.exe"));
+    } else {
+        if cfg!(target_os = "macos") {
+            v.push("/Applications/CuaDriver.app/Contents/MacOS/cua-driver".into());
+            v.push(format!("{h}/Applications/CuaDriver.app/Contents/MacOS/cua-driver"));
+        }
+        v.push(format!("{h}/.local/bin/cua-driver"));
+        v.push(format!("{h}/.cua-driver/packages/current/cua-driver"));
+    }
+    v
+}
+
+/// GUI_GATE_DRIVER, then a cua-driver next to this binary or on PATH (the official installer),
+/// then the official install locations, then the Python package's bundled binary.
 pub fn find_driver() -> Option<String> {
     if let Some(e) = env("GUI_GATE_DRIVER") {
         return Some(e);
     }
     if let Some(b) = bundled_driver() {
-        return Some(b);
+        return Some(b); // pip/pipx install: the binary inside the Python package, not its Python launcher
+    }
+    if let Some(d) = exe_dir() {
+        let c = d.join(exe_name("cua-driver"));
+        if c.is_file() {
+            return Some(c.to_string_lossy().to_string());
+        }
     }
     if let Some(p) = which("cua-driver") {
         return Some(p);
     }
-    let h = home();
-    for c in [format!("{h}/.local/bin/cua-driver"), format!("{h}/.cua-driver/packages/current/cua-driver")] {
-        if Path::new(&c).exists() {
-            return Some(c);
-        }
-    }
-    None
+    official_driver_paths().into_iter().find(|c| Path::new(c).exists())
+}
+
+/// True when the driver in use came from Cua Driver's Python package (pip/pipx), not the official installer.
+pub fn driver_is_pip(path: &str) -> bool {
+    path.contains("site-packages") || path.contains("dist-packages")
 }
 
 /// Version from the package metadata next to the bundled binary, else `cua-driver --version`.
@@ -183,7 +211,7 @@ pub fn configure(client: &str, name: &str, home_dir: Option<&str>) -> String {
 /// Real end-to-end check: start the driver's MCP server, initialize, list tools.
 pub fn doctor(cmd: Option<Vec<String>>) -> Value {
     let mut rep = json!({"platform": format!("{} {}", std::env::consts::OS, std::env::consts::ARCH), "gui_gate": crate::server::VERSION,
-                         "bundled_driver": bundled_driver().is_some()});
+                         "driver_source": if find_driver().map(|d| driver_is_pip(&d)).unwrap_or(false) { "pip" } else { "official" }});
     let d = if cmd.is_some() { None } else { find_driver() };
     rep["driver"] = json!(d.clone().or_else(|| cmd.as_ref().map(|c| c.join(" "))));
     rep["driver_version"] = json!(d.as_ref().and_then(|p| driver_version(p)));

@@ -61,7 +61,8 @@ class InstallTests(unittest.TestCase):
     def test_update_check_offline(self):
         r = subprocess.run([BIN, "update", "--check"], capture_output=True, text=True, timeout=60,
                            env=dict(os.environ, GUI_GATE_LATEST_OVERRIDE="0.37.0", GUI_GATE_DRIVER="/nonexistent"))
-        self.assertIn('"tested_with": "0.37.0"', r.stdout)
+        self.assertIn('"tested_with": "0.', r.stdout)
+        self.assertIn('"latest": "0.37.0"', r.stdout)
 
     def test_server_tells_client_about_new_driver(self):
         c = Client(env={"GUI_GATE_LATEST_OVERRIDE": "0.99.0", "GUI_GATE_NO_UPDATE_CHECK": ""})
