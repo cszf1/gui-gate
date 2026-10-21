@@ -33,7 +33,10 @@ RUN_ACTIONS_TOOL = {
         "item, type a name, press Enter). Each step is checked by the gate like a single call. The batch stops "
         "at the first refused or failed step, when a new window/dialog opens unexpectedly, or when an `expect` "
         "fails; you get what ran plus one fresh read of the window at the end. x/y (pixel) targets are allowed "
-        "only in the first step; later steps must use element_token / element names or keys. Max 15 steps."),
+        "only in the first step. Name things that appear only after an earlier step (menu items, dialog buttons) with "
+        "args.target = {\"label\": \"Save As\", \"role\": \"menu item\"}: the gate finds it on screen when the step runs. "
+        "A popup menu opening is expected; any other new window stops the batch unless that step says "
+        "expect.new_window. Max 15 steps."),
     "inputSchema": {"type": "object", "properties": {
         "pid": {"type": "integer", "description": "Default pid for steps that omit it."},
         "window_id": {"type": "integer", "description": "Default window_id for steps that omit it."},
@@ -86,6 +89,21 @@ def _ids(sig: Optional[str]) -> set:
     return {x.split("@")[0] for x in (sig or "").split(";") if x}
 
 
+_MENU_ROLES = {"menu", "popup menu", "menu item", "check menu item", "radio menu item", "menu bar", "list",
+               "list item", "combo box", "tear off menu item", "separator"}
+
+
+def _norm_label(s: str) -> str:
+    s = (s or "").replace("_", "").replace("&", "").replace("\u2026", "").replace("...", "")
+    return re.sub(r"\s+", " ", s).strip().lower()
+
+
+def _menu_like(obs) -> bool:
+    """A popup menu / dropdown list rather than a dialog: every actionable element is a menu or list entry."""
+    roles = [e.role for e in obs.elements.values()] if obs is not None else []
+    return bool(roles) and all(r in _MENU_ROLES for r in roles)
+
+
 class Batch:
     """One batch: counts GUI actions, enforces the guards, remembers where to observe at the end."""
 
@@ -97,7 +115,60 @@ class Batch:
         self.lines: list[str] = []
         self.stopped: Optional[str] = None
         self.last_pid, self.last_wid = default_pid, default_wid
+        self.seen: Optional[set] = None
         self.bid = f"b{int(time.time() * 1000) % 10_000_000}"
+        self.menu_open = False  # the last step opened a popup menu/list (not a surprise)
+
+    def _read(self, pid, wid):
+        a = {"pid": int(pid), "include_screenshot": False, "tree_format": "elements", "max_elements": 800}
+        if wid:
+            a["window_id"] = int(wid)
+        r = self.g._tool("get_window_state", a, timeout=20)
+        o = self.g.state.record_observation(a, r)
+        self.g.stats["tree_reads"] += 1
+        if o is not None:
+            o.gate_read = True
+            o.window_count = self.g._window_sig(o.pid) if o.pid is not None else None
+        return o
+
+    def resolve(self, a: dict) -> Optional[str]:
+        """`target: {label, role?}` -> a fresh element_token, read at the moment the step runs (so steps can name
+        things that only appear after earlier steps, such as menu items). Newest windows are searched first.
+        Returns an error string, or None when a["element_token"] was set."""
+        tgt = a.pop("target")
+        if not isinstance(tgt, dict) or not tgt.get("label"):
+            return "target needs {\"label\": ..., \"role\": optional}"
+        pid = a.get("pid")
+        if pid is None:
+            return "target needs a pid"
+        want, role = _norm_label(str(tgt["label"])), str(tgt.get("role") or "").lower()
+        wins = []
+        try:
+            r = self.g._tool("list_windows", {"pid": int(pid)}, timeout=10)
+            ws = [w for w in (r.get("structuredContent") or {}).get("windows") or [] if w.get("is_on_screen", True)]
+            ws.sort(key=lambda w: -(w.get("z_index") or 0))
+            wins = [w.get("window_id") for w in ws]
+        except Exception:
+            pass
+        # windows opened during the batch (popups, menus) first, then the batch's own window, then the rest
+        base = a.get("window_id")
+        fresh = [w for w in wins if str(w) not in (self.seen or set()) and w != base]
+        order = fresh + ([base] if base else []) + [w for w in wins if w not in fresh and w != base]
+        seen_names = []
+        for wid in order[:4]:
+            o = self._read(pid, wid)
+            if o is None:
+                continue
+            hits = [e for e in o.elements.values() if _norm_label(e.label) == want and (not role or role in (e.role or ""))]
+            seen_names += [e.label for e in o.elements.values() if e.label][:12]
+            if len(hits) == 1:
+                a["element_token"] = f"{o.snapshot_id}:{hits[0].index}"
+                a["window_id"] = o.window_id or wid
+                a.pop("x", None), a.pop("y", None)
+                return None
+            if len(hits) > 1:
+                return f"\"{tgt['label']}\" matches {len(hits)} elements; add a role or use an element_token"
+        return f"no element named \"{tgt['label']}\" is on screen (seen: {', '.join(seen_names[:10])})"
 
     def fill(self, args: dict) -> dict:
         a = dict(args or {})
@@ -118,6 +189,17 @@ class Batch:
             self.stopped = f"the batch limit of {MAX_STEPS} GUI actions was reached"
             return {"isError": True, "content": [{"type": "text", "text": self.stopped}]}
         a = self.fill(args)
+        if self.seen is None and a.get("pid") is not None:
+            self.seen = _ids(g._window_sig(a["pid"]))  # windows that were there before the batch
+        if "target" in a:
+            err = self.resolve(a)
+            if err:
+                self.stopped = f"step {n}: {err}"
+                return {"isError": True, "content": [{"type": "text", "text": self.stopped}]}
+        elif self.menu_open and "element_token" in a:
+            self.stopped = (f"step {n}: a menu opened in the previous step, and an element_token from before the "
+                            f"batch cannot point into it; name the item with target:{{label}}")
+            return {"isError": True, "content": [{"type": "text", "text": self.stopped}]}
         if self.executed > 0 and "x" in a and "y" in a and "element_token" not in a:
             self.stopped = (f"step {n}: pixel x/y after the batch already changed the screen; those coordinates "
                             f"are stale. Re-read the window and aim again")
@@ -145,7 +227,13 @@ class Batch:
         if pid is not None and before is not None:
             after = g._window_sig(pid)
             new = _ids(after) - _ids(before)
+            self.menu_open = False
             if new and not expect.get("new_window") and not last:
+                nw = sorted(new)[-1]
+                o = self._read(pid, int(nw)) if nw.isdigit() else None
+                if _menu_like(o):  # a menu or dropdown opened: expected, the next step names its item
+                    self.menu_open = True
+                    return res
                 self.stopped = (f"step {n} opened a new window/dialog (window_id={sorted(new)[-1]}) that the batch "
                                 f"did not expect; read it before going on")
                 self.last_wid = int(sorted(new)[-1]) if sorted(new)[-1].isdigit() else self.last_wid

@@ -17,6 +17,7 @@ import json
 import os
 import re
 import time
+import urllib.parse
 import urllib.request
 from typing import Optional
 
@@ -62,7 +63,10 @@ class Reviewer:
                                               **({"Authorization": f"Bearer {self.key}"} if self.key else {})})
         t0 = time.time()
         try:
-            with urllib.request.urlopen(req, timeout=self.timeout) as r:
+            host = urllib.parse.urlparse(self.url).hostname or ""
+            opener = (urllib.request.build_opener(urllib.request.ProxyHandler({}))  # never proxy a local endpoint
+                      if host in ("127.0.0.1", "localhost", "::1") else urllib.request.build_opener())
+            with opener.open(req, timeout=self.timeout) as r:
                 d = json.loads(r.read().decode())
             txt = d["choices"][0]["message"]["content"]
         except Exception:

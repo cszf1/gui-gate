@@ -186,6 +186,7 @@ class Gate:
         self.denials_consec = 0
         self.denials_total = 0
         self._task_locked = bool(cfg.task)
+        self._task_source = "operator" if cfg.task else None
         self._batch = False
         self._batch_ctx = None
         self._script_store: dict = {}
@@ -565,11 +566,17 @@ class Gate:
         dec = policy_decision(ctx, f, self.cfg)
         trail = []
         if dec is None:
-            dec = hard_rules(ctx, f, self.cfg, confirmed, ack)
+            # with an independent reviewer configured, the acting model cannot wave its own medium-risk step
+            # through with gate_ack (design-v0.4 T3: the reviewer never sees the agent's reasoning)
+            self._cur_ack = ack
+            self_ack = ack and not (self.reviewer is not None and ctx.risk and (ctx.risk_level or "high") == "medium")
+            dec = hard_rules(ctx, f, self.cfg, confirmed, self_ack)
             if dec is not None and dec.option == "ask_human" and confirmed:
                 dec = None
             if dec is not None and dec.option in ("ask_human", "risk_review") and ctx.risk:
                 dec = self._risk_gate(ctx, dec, trail)
+                if dec is None:  # authorized: the remaining zero-cost rules (stale token, no observation...) still apply
+                    dec = hard_rules(ctx, f, self.cfg, True, ack)
             if dec is not None and ack and dec.option == "reason":
                 dec = None
             if dec is None:
@@ -910,6 +917,8 @@ class Gate:
         titles = batch._titles(self, t.pid) if t.pid is not None else []
         label = (t.element.label if t.element else t.label) or ""
         ok, why = authz.authorized(ctx.risk, self.cfg.task, label, dialog, titles)
+        if ok and self._task_source == "agent" and info["hazard"] in authz.OPERATOR_ONLY and not why.startswith("replaces the document"):
+            ok, why = False, "a request relayed by the agent cannot authorize this kind of action"
         info.update({"authorized": ok, "why": why})
         if ok:
             trail.append("authorized")
@@ -929,6 +938,9 @@ class Gate:
                     return None
                 trail.append("reviewer_deny")
                 return Decision("deny", 0.0, f"{dec.reason}; independent reviewer: {r['reason']}", "review")
+            if getattr(self, "_cur_ack", False):  # reviewer unreachable: fall back to the v0.3 self-check
+                trail.append("reviewer_down_selfack")
+                return None
         return dec
 
     def _deny_text(self, ctx: ActionCtx, dec: Decision, who: str) -> str:
@@ -978,6 +990,10 @@ class Gate:
                                  "changed."}], "isError": True}
         if not req:
             return {"content": [{"type": "text", "text": "[gate] request is empty"}], "isError": True}
+        if self.stats.get("actions", 0) > 0:  # only before the first action: no inventing a request at a dialog
+            return {"content": [{"type": "text", "text": "[gate] Too late: the request can only be given before the "
+                                 "first action."}], "isError": True}
+        self._task_source = "agent"
         self.cfg.task = req[:4000]
         self._task_locked = True
         self.log.write({"ev": "task", "source": "agent", "chars": len(req)})

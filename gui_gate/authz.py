@@ -35,6 +35,11 @@ _QUOTED_FILE = re.compile(r"[\"'“‘]([^\"'“”‘’\n]{1,200}\.[A-Za-z0-9]
 _NAME_IN_DIALOG = re.compile(r"(?:file named|named|文件)\s*[\"'“‘]?([^\"'“”‘’\n]{1,200}?\.[A-Za-z0-9]{1,6})", re.I)
 
 
+# hazards a request typed into gate_task by the agent itself cannot authorize (only --task / GUI_GATE_TASK can):
+# the agent could misquote the user, and these are hard to undo or reach other people
+OPERATOR_ONLY = {"send", "purchase", "permissions", "power", "install", "logout", "command"}
+
+
 def hazard_of(reason: Optional[str]) -> str:
     r = (reason or "").lower()
     if any(k in r for k in ("replac", "overwrite", "覆盖", "clobber")):

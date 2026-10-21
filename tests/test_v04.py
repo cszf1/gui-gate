@@ -93,6 +93,20 @@ class V04GateTests(unittest.TestCase):
         self.assertFalse(self.c.call("gate_task", request="delete the file").get("isError"))
         self.assertTrue(self.c.call("gate_task", request="something else").get("isError"))
 
+    def test_gate_task_only_before_first_action(self):
+        self.c = Client("--human", "deny")
+        s = self.c.read()
+        self.c.call("click", element_token=f"{s}:0")
+        self.assertIn("Too late", txt(self.c.call("gate_task", request="delete the file")))
+
+    def test_agent_relayed_request_cannot_authorize_sending(self):
+        self.c = Client("--human", "deny")
+        self.c.call("gate_task", request="send the email to Bob")
+        self.c.call("fake_mutate", elements=[["button", "Send"], ["button", "Increment"], ["text", "x"]])
+        s = self.c.read()
+        r = self.c.call("click", element_token=f"{s}:0")
+        self.assertTrue(r.get("isError"), txt(r))
+
     def test_duplicate_read_served_from_auto_observe(self):
         self.c = Client("--human", "deny")
         s = self.c.read()
@@ -110,6 +124,73 @@ class V04GateTests(unittest.TestCase):
             self.c.call("press_key", pid=4242, window_id=777, key="Down")
         shots = [e["screenshot"] for e in self.c.events() if e.get("ev") == "obs" and e.get("auto")]
         self.assertEqual(shots, [True, True, False, False])
+
+
+class _Rev:
+    """A local OpenAI-compatible endpoint that answers with a fixed decision and records what it was shown."""
+    def __init__(self, decision):
+        import http.server
+        import json as _j
+        import threading
+        seen = self.seen = []
+
+        class H(http.server.BaseHTTPRequestHandler):
+            def do_POST(self):
+                body = _j.loads(self.rfile.read(int(self.headers["Content-Length"])))
+                seen.append(body)
+                out = _j.dumps({"choices": [{"message": {"content": _j.dumps(
+                    {"decision": decision, "reason": "test reviewer"})}}]}).encode()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(out)
+
+            def log_message(self, *a):
+                pass
+        self.srv = http.server.HTTPServer(("127.0.0.1", 0), H)
+        threading.Thread(target=self.srv.serve_forever, daemon=True).start()
+        self.url = f"http://127.0.0.1:{self.srv.server_port}/v1/chat/completions"
+
+    def close(self):
+        self.srv.shutdown()
+
+
+class ReviewerTests(unittest.TestCase):
+    def run_send(self, decision):
+        rev = _Rev(decision)
+        c = Client("--human", "deny", "--task", "draft a reply to Bob",
+                   env=dict(os.environ, GUI_GATE_REVIEWER_URL=rev.url))
+        try:
+            c.call("fake_mutate", elements=[["button", "Send"], ["button", "Increment"], ["text", "x"]])
+            s = c.read()
+            r = c.call("click", element_token=f"{s}:0", gate_ack=True)  # self-ack must not bypass the reviewer
+            return r, rev.seen
+        finally:
+            c.close()
+            rev.close()
+
+    def test_reviewer_deny(self):
+        r, seen = self.run_send("deny")
+        self.assertEqual(r["structuredContent"]["gate"]["decision"], "deny")
+        self.assertIn("independent reviewer", txt(r))
+        prompt = seen[0]["messages"][1]["content"]
+        self.assertIn("draft a reply to Bob", prompt)
+        self.assertNotIn("gate_ack", prompt)
+
+    def test_reviewer_down_falls_back_to_self_check(self):
+        c = Client("--human", "deny", env=dict(os.environ, GUI_GATE_REVIEWER_URL="http://127.0.0.1:9/x",
+                                               GUI_GATE_REVIEWER_TIMEOUT="2"))
+        try:
+            c.call("fake_mutate", elements=[["button", "Send"], ["button", "Increment"], ["text", "x"]])
+            s = c.read()
+            r = c.call("click", element_token=f"{s}:0", gate_ack=True)
+            self.assertFalse(r.get("isError"), txt(r))
+        finally:
+            c.close()
+
+    def test_reviewer_allow(self):
+        r, _ = self.run_send("allow")
+        self.assertFalse(r.get("isError"), txt(r))
 
 
 class RunActionsTests(unittest.TestCase):
@@ -164,6 +245,31 @@ class RunActionsTests(unittest.TestCase):
             {"tool": "press_key", "args": {"key": "Tab"}}])
         self.assertIn("new window/dialog", txt(r))
         self.assertEqual(r["structuredContent"]["batch"]["executed"], 1)
+
+    def test_menu_then_item_by_label(self):
+        self.c.call("fake_mutate", elements=[["button", "Open menu"], ["button", "Increment"], ["text", "x"]])
+        self.c.read()
+        r = self.c.call("run_actions", pid=4242, window_id=777, steps=[
+            {"tool": "click", "args": {"target": {"label": "Open menu"}}},
+            {"tool": "click", "args": {"target": {"label": "Save As", "role": "menu item"}}}])
+        self.assertFalse(r.get("isError"), txt(r))
+        self.assertEqual(r["structuredContent"]["batch"]["executed"], 2)
+
+    def test_token_into_new_menu_is_refused(self):
+        self.c.call("fake_mutate", elements=[["button", "Open menu"], ["button", "Increment"], ["text", "x"]])
+        s = self.c.read()
+        r = self.c.call("run_actions", pid=4242, window_id=777, steps=[
+            {"tool": "click", "args": {"element_token": f"{s}:0"}},
+            {"tool": "click", "args": {"element_token": f"{s}:1"}}])
+        self.assertIn("target:{label}", txt(r))
+        self.assertEqual(r["structuredContent"]["batch"]["executed"], 1)
+
+    def test_missing_label_stops(self):
+        self.c.read()
+        r = self.c.call("run_actions", pid=4242, window_id=777, steps=[
+            {"tool": "click", "args": {"target": {"label": "Nope"}}}])
+        self.assertIn("no element named", txt(r))
+        self.assertEqual(r["structuredContent"]["batch"]["executed"], 0)
 
     def test_tools_not_allowed_in_batch(self):
         r = self.c.call("run_actions", steps=[{"tool": "run_steps", "args": {}}])

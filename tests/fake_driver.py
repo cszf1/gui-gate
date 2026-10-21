@@ -14,6 +14,9 @@ state = {
     "elements": [("button", "Increment"), ("button", "Delete file"), ("text", "count=0"), ("button", "OK"), ("button", "OK")],
     "windows": [{"window_id": WID, "pid": PID, "x": 0, "y": 0, "width": 500, "height": 300, "is_on_screen": True,
                  "title": "Fixture"}],
+    "win_elems": {},   # window_id -> elements of a popup window (menus, dialogs)
+    "snap_win": {},    # snapshot id -> window_id it was read from
+    "clicked": [],
     "fail_next": 0,
     "count": 0,
 }
@@ -47,19 +50,24 @@ def call(name, a):
     if name == "get_window_state":
         state["snap"] += 1
         sid = snap_id(state["snap"])
-        rows = "\n".join(f'    - [{i}] {r} "{l}" [actions=[click]]' for i, (r, l) in enumerate(state["elements"]))
+        w = a.get("window_id") or WID
+        if w not in state["win_elems"]:
+            w = WID
+        els = state["win_elems"][w] if w != WID else state["elements"]
+        state["snap_win"][sid] = w
+        rows = "\n".join(f'    - [{i}] {r} "{l}" [actions=[click]]' for i, (r, l) in enumerate(els))
         md = f'- frame = "Fixture"\n{rows}\n'
         shot = a.get("include_screenshot", True)
         state["last_shot"] = shot
-        sc = {"snapshot_id": sid, "pid": PID, "window_id": WID, "tree_markdown": md, "truncated": False,
+        sc = {"snapshot_id": sid, "pid": PID, "window_id": w, "tree_markdown": md, "truncated": False,
               "screenshot_width": 500 if shot else None, "screenshot_height": 300 if shot else None}
         if shot:
             sc["capture_id"] = "cap_" + sid
         if a.get("tree_format") == "elements":
             sc["elements"] = [{"element_index": i, "element_token": f"{sid}:{i}", "role": r, "label": l,
                                "enabled": True, "frame": {"x": 10, "y": 10 + 40 * i, "w": 200, "h": 34}}
-                              for i, (r, l) in enumerate(state["elements"])]
-        return text(f"window_id={WID} pid={PID} snapshot_id={sid}\n{md}", sc=sc, img=shot)
+                              for i, (r, l) in enumerate(els)]
+        return text(f"window_id={w} pid={PID} snapshot_id={sid}\n{md}", sc=sc, img=shot)
     if name == "click":
         tok = a.get("element_token")
         if tok:
@@ -70,7 +78,13 @@ def call(name, a):
             if state["fail_next"]:
                 state["fail_next"] -= 1
                 return text("click failed: target_occluded", err=True, sc={"code": "target_occluded"})
-            role, lab = state["elements"][int(idx)]
+            w = state["snap_win"].get(sid, WID)
+            role, lab = (state["win_elems"][w] if w != WID else state["elements"])[int(idx)]
+            state["clicked"].append(lab)
+            if lab == "Open menu":
+                state["windows"].append({"window_id": WID + 6, "pid": PID, "x": 0, "y": 20, "width": 120,
+                                         "height": 200, "is_on_screen": True, "title": "", "z_index": 9})
+                state["win_elems"][WID + 6] = [("menu item", "Save As"), ("menu item", "Export")]
             if lab == "Open dialog":
                 state["windows"].append({"window_id": WID + 5, "pid": PID, "x": 60, "y": 60, "width": 200,
                                          "height": 100, "is_on_screen": True, "title": "Dialog"})
