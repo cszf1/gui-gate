@@ -1,4 +1,4 @@
-# Decision v2 (gui-gate 0.7.0): trained predictor + one expected-cost formula
+# Decision v2 (gui-gate 0.7.0 / 0.8.0): trained predictor + one expected-cost formula + one reviewer model
 
 Every GUI action passes three stages before it reaches Cua Driver.
 
@@ -55,6 +55,28 @@ Held-out quality (session split, so a model is never scored on a run it was trai
 * Before handing a step back to the model, the gate tries its cheap probe once. The old fixed "grey band"
   (always probe when 0.55 ≤ P < 0.9) is gone: in the logs 330 of 332 probes passed and they flagged only 2 of 82
   later failures, at ~0.2 s each.
+
+## 0.8.0: one language model in the gate, and it is not the agent's
+The acting agent's model (e.g. Pi's) is never asked to judge its own step any more: `gate_ack` is gone (accepted and
+ignored), the `decider=model` mode is removed. The only language model inside the gate is the independent reviewer
+(`GUI_GATE_REVIEWER_URL` / `_MODEL` / `_KEY`, any OpenAI-compatible endpoint; reasoning-blind: it sees the user's
+request, the concrete action and the window tree, never the agent's explanation).
+
+| situation | 0.6 / 0.7 | 0.8 |
+|---|---|---|
+| medium risk not authorized by the user's words | agent re-thinks, may retry with gate_ack | reviewer allows / denies; no reviewer → a person if reachable, else refused with the safe way on |
+| doubtful target, possible loop (option `review`, ~3 s) | agent double-checks, may retry with gate_ack | reviewer checks the target against the tree; no reviewer → a person when stuck, else "try a clearly different way" |
+| high risk | person | person (unchanged) |
+| re-read needed (`look_light`) | agent calls get_window_state, then retries | the gate reads the window itself and attaches the fresh tree to its refusal |
+| re-aim needed (`look_full`, pixel targets) | agent calls get_window_state with a screenshot, then retries | the gate attaches a fresh screenshot to its refusal |
+
+So a step the gate stops costs the agent one turn (re-plan with what is attached) instead of two (read, then retry),
+and the agent is never asked "are you sure?". `review` is not offered for pixel targets: the reviewer reads the
+element tree, not the screen. Baseline policies (`light`, `full`, `direct`) are unchanged so earlier runs stay
+comparable.
+
+Replay with a reviewer configured (`gui-gate replay ... --reviewer`): 12 of 2,934 steps go to the reviewer (10 of them
+really failed); the 139 pixel re-aims remain, now with the screenshot attached.
 
 ## Offline replay on the same logs (`gui-gate replay`)
 Each logged executed action re-decided by the current rules + formula, compared with what really happened to it

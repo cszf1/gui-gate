@@ -131,14 +131,15 @@ class ReviewerTests(unittest.TestCase):
         self.assertIn("draft a reply to Bob", prompt)
         self.assertNotIn("gate_ack", prompt)
 
-    def test_reviewer_down_falls_back_to_self_check(self):
+    def test_reviewer_down_refuses_unattended(self):
         c = Client("--human", "deny", env=dict(os.environ, GUI_GATE_REVIEWER_URL="http://127.0.0.1:9/x",
                                                GUI_GATE_REVIEWER_TIMEOUT="2"))
         try:
             c.call("fake_mutate", elements=[["button", "Send"], ["button", "Increment"], ["text", "x"]])
             s = c.read()
-            r = c.call("click", element_token=f"{s}:0", gate_ack=True)
-            self.assertFalse(r.get("isError"), txt(r))
+            r = c.call("click", element_token=f"{s}:0", gate_ack=True)  # no self-approval fallback any more
+            self.assertTrue(r.get("isError"))
+            self.assertEqual(r["structuredContent"]["gate"]["decision"], "deny")
         finally:
             c.close()
 
