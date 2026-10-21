@@ -197,18 +197,20 @@ pub struct Gate {
     started: f64,
     toolset: String,
     batch_mode: String,
+    pub shot: crate::shot::ShotCfg,
 }
 
 fn new_stats() -> Obj {
     let mut m = Obj::new();
     for k in ["actions", "executed", "obs_calls", "screenshots", "screenshot_px", "tree_reads", "model_turns_requested",
               "exec_errors", "heals", "checks", "screenshots_skipped", "reviews", "review_allowed", "auto_obs",
-              "human_asked", "human_allowed"] {
+              "human_asked", "human_allowed", "img_bytes_in", "img_bytes_out"] {
         m.insert(k.into(), json!(0));
     }
     m.insert("by_option".into(), json!({}));
     m.insert("gate_ms".into(), json!(0.0));
     m.insert("driver_ms".into(), json!(0.0));
+    m.insert("img_ms".into(), json!(0.0));
     m
 }
 
@@ -370,7 +372,7 @@ impl Gate {
             }),
             shared, out, log: Arc::new(EventLog::new(log_path)), child: Mutex::new(child), child_cmd,
             init_params: Mutex::new(None), client_elicit, client_pending, restarts: AtomicU64::new(0), human,
-            reviewer: rv, started: now(), toolset, batch_mode,
+            reviewer: rv, started: now(), toolset, batch_mode, shot: crate::shot::ShotCfg::from_env(),
         })
     }
 
@@ -536,6 +538,19 @@ impl Gate {
                 text_result(format!("[gate] internal error: {what}"), true)
             }
         };
+        let mut result = result;
+        // v0.9.4: screenshots go back to the agent as full-size JPEG (all policies, so bench conditions match)
+        if let Some(mut ev) = crate::shot::reencode_result(&mut result, &self.shot) {
+            {
+                let mut inn = self.inner.lock().unwrap_or_else(|e| e.into_inner());
+                inn.add("img_bytes_in", ev["bytes_in"].as_f64().unwrap_or(0.0));
+                inn.add("img_bytes_out", ev["bytes_out"].as_f64().unwrap_or(0.0));
+                inn.add("img_ms", ev["ms"].as_f64().unwrap_or(0.0));
+                ev["aid"] = json!(inn.aid);
+            }
+            ev["tool"] = json!(name);
+            self.log.write(ev);
+        }
         self.out.send(&json!({"jsonrpc": "2.0", "id": msg["id"], "result": result}));
     }
 
@@ -1392,6 +1407,7 @@ impl Gate {
         st.insert("gate_ms_per_action".into(), json!(per));
         st.insert("log".into(), json!(self.log.path));
         st.insert("reviewer".into(), json!(self.reviewer.backend()));
+        st.insert("screenshot_format".into(), json!(self.shot.name()));
         let lines = [
             format!("policy={} lambda={} model={}", inn.cfg.policy, inn.cfg.lam, inn.cfg.model_name),
             format!("actions={} executed={} errors={}", g("actions"), g("executed"), g("exec_errors")),
@@ -1402,6 +1418,8 @@ impl Gate {
             format!("human: asked={} allowed={} channel={} | auto observations={} | driver restarts={}", g("human_asked"), g("human_allowed"),
                     self.human.resolve_channel(), g("auto_obs"), self.restarts.load(Ordering::SeqCst)),
             format!("reviewer={} reviews={} (allowed {}) | screenshots skipped={}", self.reviewer.backend().unwrap_or_else(|| "none".into()), g("reviews"), g("review_allowed"), g("screenshots_skipped")),
+
+            format!("screenshot format={} bytes {} -> {} ({} ms re-encoding)", self.shot.name(), g("img_bytes_in"), g("img_bytes_out"), round_to(g("img_ms"), 1)),
         ];
         json!({"content": [{"type": "text", "text": lines.join("\n")}], "structuredContent": st})
     }

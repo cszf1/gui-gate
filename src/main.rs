@@ -17,6 +17,7 @@ mod cleanup;
 mod reviewer;
 mod rpc;
 mod server;
+mod shot;
 mod sidefx;
 mod state;
 mod tools;

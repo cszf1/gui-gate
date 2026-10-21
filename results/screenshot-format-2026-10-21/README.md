@@ -6,7 +6,7 @@ The image is 93 KB instead of 326 KB, with the same prompt tokens (773 per image
 Half-size JPEG is fastest but accuracy drops sharply (25% vs 43%, paired 7 / 47, p < 1e-7), so it is rejected.
 WebP q80 is faster than JPEG q60 (cold 4.9 s / 11.4 s), but its accuracy trends lower (38% vs 43%, paired 11 / 21, p = 0.11).
 That is not significant, but it does not meet "no meaningful drop" as clearly as JPEG q60. WebP is a second choice to re-check with more samples.
-No gate code was changed. This is a measurement only (the user implements the chosen format).
+No gate code was changed in this run. This is a measurement only. **Implemented in gui-gate v0.9.4**: full-size JPEG q60 is the default for every screenshot the gate returns (`GUI_GATE_SCREENSHOT_FORMAT=png` to opt out).
 
 ## Setup
 - Model: Pi's main model **tokenrhythm deepseek-v4.1-flash-1017**, `reasoning_effort: medium` (= Pi think medium), OpenAI chat

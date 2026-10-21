@@ -4,9 +4,12 @@ It mimics the parts of Cua Driver's contract the gate relies on: snapshot ids,
 element tokens that go stale after the next read, verify_state, list_windows,
 click results. `fake_mutate` lets a test change the UI between calls.
 """
+import base64
 import json
 import os
+import struct
 import sys
+import zlib
 
 PID, WID = 4242, 777
 state = {
@@ -30,10 +33,28 @@ def snap_id(n):
     return f"s{n:08x}"
 
 
+def real_png(w=500, h=300):
+    """A real RGBA PNG (stdlib only): flat panels, text-like stripes and a gradient, like a window capture."""
+    rows = []
+    for y in range(h):
+        row = bytearray(b"\x00")
+        for x in range(w):
+            v = 40 if (y // 6) % 4 == 0 and (x // 3) % 5 and x % 300 < 180 else (230 if y < 40 else 250)
+            row += bytes((v, v * (w - x // 2) // w, (x + y) % 256, 255))
+        rows.append(bytes(row))
+    chunk = lambda t, d: struct.pack(">I", len(d)) + t + d + struct.pack(">I", zlib.crc32(t + d) & 0xFFFFFFFF)
+    return (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 6, 0, 0, 0))
+            + chunk(b"IDAT", zlib.compress(b"".join(rows), 9)) + chunk(b"IEND", b""))
+
+
+# FAKE_PNG=1: screenshots are a real 500x300 PNG instead of the placeholder "AAAA" (not decodable)
+_PNG = base64.b64encode(real_png()).decode() if os.environ.get("FAKE_PNG") else None
+
+
 def text(t, err=False, sc=None, img=False):
     r = {"content": [{"type": "text", "text": t}]}
     if img:
-        r["content"].append({"type": "image", "data": "AAAA", "mimeType": "image/png"})
+        r["content"].append({"type": "image", "data": _PNG or "AAAA", "mimeType": "image/png"})
     if err:
         r["isError"] = True
     if sc is not None:
