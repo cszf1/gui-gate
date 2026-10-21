@@ -1,0 +1,1 @@
+DONE — Selected the first two paragraphs in LibreOffice Writer and applied Format → Spacing → Line Spacing: 2 (double), then saved the document.

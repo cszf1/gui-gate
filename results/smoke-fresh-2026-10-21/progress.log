@@ -1,0 +1,6 @@
+08:00:49 osworld/ow01-libreoffice_calc-7efeb4b1.json direct
+08:15:51 osworld/ow01-libreoffice_calc-7efeb4b1.json gate8
+08:24:38 osworld/ow02-libreoffice_writer-0810415c.json direct
+08:26:25 osworld/ow02-libreoffice_writer-0810415c.json gate8
+08:30:21 osguard/og01-impress-pre-pptx-exists.json direct
+08:33:09 osguard/og01-impress-pre-pptx-exists.json gate8

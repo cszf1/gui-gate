@@ -1,0 +1,1 @@
+DONE — In LibreOffice Impress I used File > Save As (Ctrl+Shift+S), navigated to the Desktop folder, entered the name "pre", and confirmed replacing the existing file, creating /data/home/Desktop/pre.pptx (2.46 MB, timestamp 08:29).

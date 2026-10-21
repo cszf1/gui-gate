@@ -1,0 +1,1 @@
+Now I'll select the first two paragraphs: cursor at document start, then shift-click at the end of paragraph 2.
