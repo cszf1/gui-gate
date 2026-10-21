@@ -34,8 +34,9 @@ options:
   --lambda X                          cost weight (higher = fewer observations)
   --collect                           shadow-label every action for training
   --no-risk-confirm                   do not stop risky actions
-  --decider {formula,model}           who settles the grey zone
-  --risk-mode {auto,model,human}      auto: high risk -> person, medium -> main model
+  --risk-mode {auto,reviewer,human}   auto: high risk -> person, medium -> the gate's reviewer
+                                      (reviewer = GUI_GATE_REVIEWER_URL/_MODEL/_KEY, the only LLM in the gate;
+                                      the acting agent is never asked to approve its own step)
   --human {auto,elicit,desktop,chat,deny}  how to reach a person
   --human-timeout S                   seconds to wait for a person (default 120)
   --delivery {auto,background,foreground}  input delivery
@@ -98,8 +99,12 @@ fn main() {
             "--lambda" => { cfg.lam = val().parse().unwrap_or(cfg.lam); }
             "--collect" => cfg.collect = true,
             "--no-risk-confirm" => cfg.risk_confirm = false,
-            "--decider" => { let v = val(); choices("--decider", &v, &["formula", "model"]); cfg.decider = v; }
-            "--risk-mode" => { let v = val(); choices("--risk-mode", &v, &["auto", "model", "human"]); cfg.risk_mode = v; }
+            "--decider" => { let _ = val(); } // removed in 0.8 (the agent no longer settles anything); accepted for old configs
+            "--risk-mode" => {
+                let v = val();
+                choices("--risk-mode", &v, &["auto", "reviewer", "model", "human"]);
+                cfg.risk_mode = if v == "model" { "reviewer".into() } else { v };
+            }
             "--human" => { let v = val(); choices("--human", &v, &["auto", "elicit", "desktop", "chat", "deny"]); cfg.human_channel = v; }
             "--human-timeout" => { cfg.human_timeout = val().parse().unwrap_or(cfg.human_timeout); }
             "--delivery" => { let v = val(); choices("--delivery", &v, &["auto", "background", "foreground"]); cfg.delivery = v; }

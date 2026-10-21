@@ -1,7 +1,9 @@
 #!/bin/bash
 # Real-model OSWorld / OSGuard evaluation: Pi drives the live desktop through gui-gate.
 # Usage: bash bench/run_bench.sh OUTDIR "conds" TASKLIST_FILE "seeds"
-#   conds: direct full gate gate_noobs gate_cm gate4 (all use --human deny)
+#   conds: direct full gate gate_noobs gate_cm gate4 gate8 (all use --human deny)
+#   gate8 (>= 0.8): gate + the task text + the gate's own reviewer model, env from ~/.config/gui-gate/reviewer.env
+#   (GUI_GATE_REVIEWER_URL/_MODEL/_KEY_FILE/_USER_AGENT); the acting model is never asked to approve its own step
 set -u
 OUT=${1:-/data/workspace/runs/osworld1}
 CONDS=${2:-"direct full gate"}
@@ -16,6 +18,8 @@ mkdir -p $OUT/pi $OUT/gate $OUT/eval $OUT/shots
 export DISPLAY=${DISPLAY:-:1} XDG_RUNTIME_DIR=/run/user/$(id -u) DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$(id -u)/bus \
   GDK_BACKEND=x11 NO_AT_BRIDGE=0
 [ -f ~/.pi/agent/proxy.env ] && . ~/.pi/agent/proxy.env
+# the gate's reviewer model (gate8); exported so the gate Pi spawns inherits it
+[ -f ~/.config/gui-gate/reviewer.env ] && { set -a; . ~/.config/gui-gate/reviewer.env; set +a; }
 PY=$OSW/venv/bin/python
 MCP=~/.pi/agent/mcp.json
 [ -f $OUT/mcp.json.orig ] || cp $MCP $OUT/mcp.json.orig
@@ -34,6 +38,10 @@ run_one() {  # task cond seed attempt
       mkdir -p $OUT/task
       $PY -c "import json,sys;print(json.load(open(sys.argv[1]))['instruction'])" $HERE/tasks/$task > $OUT/task/$tag.txt
       GA='"--policy","gate","--decider","model","--human-timeout","30","--batch","actions","--task-file","'$OUT/task/$tag.txt'"';;
+    gate8)
+      mkdir -p $OUT/task
+      $PY -c "import json,sys;print(json.load(open(sys.argv[1]))['instruction'])" $HERE/tasks/$task > $OUT/task/$tag.txt
+      GA='"--policy","gate","--task-file","'$OUT/task/$tag.txt'"';;
   esac
   local TOOLS='mcp__gui__*' CWD=/tmp HINT=""
   if [ "$c" = gate_cm ]; then
