@@ -1,41 +1,116 @@
-# Build the gate for every platform Cua Driver ships for, and publish the wheels when a version tag is pushed.
+# On a version tag: test, build the gate for every platform Cua Driver ships for, publish a GitHub
+# release (binaries + SHA256SUMS + install.sh / install.ps1), then install it from that release on
+# Linux, macOS and Windows exactly the way a user would.
 name: release
 on:
   push:
     tags: ["v*"]
   workflow_dispatch:
+permissions: {contents: write}
 jobs:
-  wheels:
-    strategy:
-      matrix:
-        include:
-          - {os: ubuntu-latest, target: x86_64, manylinux: "2_31"}
-          - {os: ubuntu-latest, target: aarch64, manylinux: "2_31"}
-          - {os: macos-14, target: universal2-apple-darwin}
-          - {os: windows-latest, target: x64}
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: PyO3/maturin-action@v1
-        with:
-          target: ${{ matrix.target }}
-          manylinux: ${{ matrix.manylinux || 'auto' }}
-          args: --release --out dist
-      - uses: actions/upload-artifact@v4
-        with: {name: "wheel-${{ matrix.os }}-${{ matrix.target }}", path: dist}
   test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - run: cargo test --release && cargo build --release
-      - run: GUI_GATE_BIN=target/release/gui-gate python3 -m unittest discover -s tests
-  publish:
-    needs: [wheels, test]
+      - run: GUI_GATE_BIN=target/release/gui-gate GUI_GATE_NO_UPDATE_CHECK=1 python3 -m unittest discover -s tests
+      - run: bash -n scripts/install.sh
+
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {os: ubuntu-latest, name: linux-x86_64, target: x86_64-unknown-linux-musl}
+          - {os: ubuntu-24.04-arm, name: linux-aarch64, target: aarch64-unknown-linux-musl}
+          - {os: macos-14, name: macos-universal, target: aarch64-apple-darwin}
+          - {os: windows-latest, name: windows-x86_64, target: x86_64-pc-windows-msvc}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - if: runner.os == 'Linux'
+        run: sudo apt-get update -q && sudo apt-get install -y -q musl-tools
+      - run: rustup target add ${{ matrix.target }}
+      - if: runner.os == 'macOS'
+        run: rustup target add x86_64-apple-darwin
+      - name: build (Linux, static musl)
+        if: runner.os == 'Linux'
+        run: |
+          cargo build --release --target ${{ matrix.target }}
+          mkdir out && cp target/${{ matrix.target }}/release/gui-gate out/
+          file out/gui-gate && out/gui-gate --version
+          tar -C out -czf gui-gate-${{ matrix.name }}.tar.gz gui-gate
+      - name: build (macOS universal)
+        if: runner.os == 'macOS'
+        run: |
+          cargo build --release --target aarch64-apple-darwin
+          cargo build --release --target x86_64-apple-darwin
+          mkdir out
+          lipo -create -output out/gui-gate target/aarch64-apple-darwin/release/gui-gate target/x86_64-apple-darwin/release/gui-gate
+          codesign --force -s - out/gui-gate
+          lipo -info out/gui-gate && out/gui-gate --version
+          tar -C out -czf gui-gate-${{ matrix.name }}.tar.gz gui-gate
+      - name: build (Windows, static CRT)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env: {RUSTFLAGS: "-C target-feature=+crt-static"}
+        run: |
+          cargo build --release --target ${{ matrix.target }}
+          New-Item -ItemType Directory out | Out-Null
+          Copy-Item target/${{ matrix.target }}/release/gui-gate.exe out/
+          ./out/gui-gate.exe --version
+          Compress-Archive -Path out/gui-gate.exe -DestinationPath gui-gate-${{ matrix.name }}.zip
+      - uses: actions/upload-artifact@v4
+        with: {name: "bin-${{ matrix.name }}", path: "gui-gate-${{ matrix.name }}.*"}
+
+  release:
+    needs: [test, build]
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
-    environment: pypi
-    permissions: {id-token: write}
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with: {path: dist, merge-multiple: true}
-      - uses: pypa/gh-action-pypi-publish@release/v1
+      - run: |
+          cp scripts/install.sh scripts/install.ps1 dist/
+          cd dist && sha256sum gui-gate-* install.sh install.ps1 > SHA256SUMS && cat SHA256SUMS
+      - env: {GH_TOKEN: "${{ github.token }}"}
+        run: |
+          cat > notes.md <<NOTES
+          Install (gui-gate + the latest Cua Driver):
+
+          macOS / Linux: \`curl -fsSL https://github.com/${{ github.repository }}/releases/latest/download/install.sh | bash\`
+
+          Windows (PowerShell): \`irm https://github.com/${{ github.repository }}/releases/latest/download/install.ps1 | iex\`
+          NOTES
+          gh release create "${{ github.ref_name }}" dist/* --title "gui-gate ${{ github.ref_name }}" --notes-file notes.md --latest
+
+  install-smoke:
+    needs: [release]
+    strategy:
+      fail-fast: false
+      matrix: {os: [ubuntu-latest, ubuntu-24.04-arm, macos-14, windows-latest]}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: install from the release (unix)
+        if: runner.os != 'Windows'
+        env: {GUI_GATE_VERSION: "${{ github.ref_name }}"}
+        run: |
+          curl -fsSL https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/install.sh | bash
+          export PATH="$HOME/.local/bin:$PATH"
+          gui-gate --version
+          gui-gate doctor | tee doctor.json || true
+          python3 -c "import json; d=json.load(open('doctor.json')); print('driver', d['driver_version'], 'tools', d['driver_tools']); assert (d['driver_tools'] or 0) > 0"
+      - name: install from the release (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env: {GUI_GATE_VERSION: "${{ github.ref_name }}"}
+        run: |
+          irm https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/install.ps1 | iex
+          $exe = Join-Path $env:LOCALAPPDATA 'Programs\gui-gate\bin\gui-gate.exe'
+          & $exe --version
+          $out = & $exe doctor
+          $out | Out-File doctor.json
+          $d = Get-Content doctor.json -Raw | ConvertFrom-Json
+          Write-Host "driver $($d.driver_version) tools $($d.driver_tools)"
+          if (-not $d.driver_tools) { exit 1 }

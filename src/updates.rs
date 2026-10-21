@@ -1,15 +1,23 @@
-//! Cua Driver stays a separate package; gui-gate only depends on it, notices new releases and updates on request.
-//!  * the Python package declares `cua-driver>=0.37.0,<1` (installed together with gui-gate, never vendored);
+//! Cua Driver stays Cua's own program; gui-gate only finds it, notices new releases and updates on request.
+//!  * the release installer (scripts/install.sh / install.ps1) runs Cua's official installer, so a fresh
+//!    install always gets the latest Cua Driver;
 //!  * TESTED is the driver version this release was tested with; a newer one works but is flagged untested;
-//!  * the check is one HTTPS GET to PyPI, at most once a day (cached), in the background, 3 s timeout;
+//!  * the check reads the version Cua's official installer would install (one small HTTPS GET to cua.ai,
+//!    PyPI as fallback), at most once a day (cached), in the background, 3 s timeout;
 //!    GUI_GATE_NO_UPDATE_CHECK=1 turns it off;
-//!  * nothing is installed automatically: `gui-gate update` installs on request, checks it, rolls back on failure.
+//!  * nothing is installed automatically: `gui-gate update` installs on request, checks it, rolls back on failure;
+//!    `gui-gate update --self` re-runs gui-gate's own installer (gate + latest driver).
 use crate::util::*;
 use serde_json::{json, Value};
 use std::time::Duration;
 
 pub const TESTED: &str = "0.37.0";
+const CUA_INSTALLER_SH: &str = "https://cua.ai/driver/install.sh";
+const CUA_INSTALLER_RS: &str = "https://cua.ai/driver/_install-rust.sh";
+const CUA_INSTALLER_PS1: &str = "https://cua.ai/driver/install.ps1";
 const PYPI_URL: &str = "https://pypi.org/pypi/cua-driver/json";
+pub const GATE_INSTALL_SH: &str = "https://github.com/cszf1/gui-gate/releases/latest/download/install.sh";
+pub const GATE_INSTALL_PS1: &str = "https://github.com/cszf1/gui-gate/releases/latest/download/install.ps1";
 pub const REQUIRED_DRIVER_TOOLS: &[&str] = &["get_window_state", "list_windows", "click", "type_text", "press_key"];
 const CACHE_TTL: f64 = 24.0 * 3600.0;
 
@@ -27,6 +35,22 @@ pub fn vtuple(v: &str) -> Vec<u64> {
 
 pub fn newer(a: &str, b: &str) -> bool {
     vtuple(a) > vtuple(b)
+}
+
+/// The version pinned in Cua's official installer (what a fresh install gets), from its baked-version line.
+pub fn baked_version(script: &str) -> Option<String> {
+    let re = regex::Regex::new(r#"CUA_DRIVER_RS_BAKED_VERSION="v?([0-9]+\.[0-9]+\.[0-9]+)""#).ok()?;
+    re.captures(script).map(|c| c[1].to_string())
+}
+
+fn fetch_latest() -> Option<String> {
+    let agent = ureq::AgentBuilder::new().timeout(Duration::from_secs(3)).build();
+    if let Some(v) = agent.get(CUA_INSTALLER_RS).set("User-Agent", "gui-gate-update-check").call().ok()
+        .and_then(|r| r.into_string().ok()).and_then(|t| baked_version(&t)) {
+        return Some(v);
+    }
+    let d: Value = agent.get(PYPI_URL).set("User-Agent", "gui-gate-update-check").call().ok()?.into_json().ok()?;
+    d.get("info")?.get("version")?.as_str().map(String::from)
 }
 
 pub fn installed() -> Option<String> {
@@ -56,9 +80,7 @@ pub fn latest(use_cache: bool) -> Option<String> {
             }
         }
     }
-    let agent = ureq::AgentBuilder::new().timeout(Duration::from_secs(3)).build();
-    let d: Value = agent.get(PYPI_URL).set("User-Agent", "gui-gate-update-check").call().ok()?.into_json().ok()?;
-    let v = d.get("info")?.get("version")?.as_str()?.to_string();
+    let v = fetch_latest()?;
     if let Some(dir) = std::path::Path::new(&p).parent() {
         let _ = std::fs::create_dir_all(dir);
     }
@@ -99,6 +121,32 @@ fn pip_install(spec: &str) -> bool {
     std::process::Command::new(py).args(["-m", "pip", "install", "-q", spec]).status().map(|s| s.success()).unwrap_or(false)
 }
 
+/// Run a remote installer script the way its README says (bash -c "$(curl ...)" / irm | iex), in a child shell.
+fn run_installer(sh_url: &str, ps1_url: &str, envs: &[(&str, &str)]) -> bool {
+    let mut c = if cfg!(windows) {
+        let mut c = std::process::Command::new("powershell");
+        c.args(["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", &format!("irm {ps1_url} | iex")]);
+        c
+    } else {
+        let mut c = std::process::Command::new("bash");
+        c.args(["-c", &format!("set -e; s=\"$(curl -fsSL {sh_url})\"; bash -c \"$s\" installer")]);
+        c
+    };
+    for (k, v) in envs {
+        c.env(k, v);
+    }
+    c.status().map(|s| s.success()).unwrap_or(false)
+}
+
+/// Install one Cua Driver version the same way the running one was installed.
+fn install_driver(version: &str) -> bool {
+    let from_pip = crate::install::find_driver().map(|d| crate::install::driver_is_pip(&d)).unwrap_or(false);
+    if from_pip {
+        return pip_install(&format!("cua-driver=={version}"));
+    }
+    run_installer(CUA_INSTALLER_SH, CUA_INSTALLER_PS1, &[("CUA_DRIVER_RS_VERSION", version)])
+}
+
 pub fn update_main(argv: &[String]) -> i32 {
     let mut check = false;
     let mut yes = false;
@@ -109,7 +157,11 @@ pub fn update_main(argv: &[String]) -> i32 {
             "--check" => check = true,
             "-y" | "--yes" => yes = true,
             "--to" => { to = argv.get(i + 1).cloned(); i += 1; }
-            "-h" | "--help" => { println!("usage: gui-gate update [--check] [--to VERSION] [-y]\ncheck for / install a newer Cua Driver"); return 0; }
+            "--self" => {
+                println!("Re-running gui-gate's installer (latest gui-gate + latest Cua Driver)...");
+                return if run_installer(GATE_INSTALL_SH, GATE_INSTALL_PS1, &[]) { 0 } else { 1 };
+            }
+            "-h" | "--help" => { println!("usage: gui-gate update [--check] [--to VERSION] [-y] | --self\ncheck for / install a newer Cua Driver; --self updates gui-gate and the driver together"); return 0; }
             other => { eprintln!("gui-gate update: unknown argument {other}"); return 2; }
         }
         i += 1;
@@ -118,7 +170,7 @@ pub fn update_main(argv: &[String]) -> i32 {
     println!("{}", serde_json::to_string_pretty(&st).unwrap());
     let target = to.clone().or_else(|| st["latest"].as_str().map(String::from));
     let Some(target) = target else {
-        println!("Could not reach PyPI to look for a newer Cua Driver.");
+        println!("Could not reach cua.ai or PyPI to look for a newer Cua Driver.");
         return 0;
     };
     if check || (to.is_none() && !truthy(st.get("update_available"))) {
@@ -140,8 +192,8 @@ pub fn update_main(argv: &[String]) -> i32 {
             return 0;
         }
     }
-    if !pip_install(&format!("cua-driver=={target}")) {
-        println!("Could not install it from here. With pipx: pipx inject gui-gate cua-driver=={target}  |  with uv: uv tool install gui-gate --with cua-driver=={target}");
+    if !install_driver(&target) {
+        println!("Could not install Cua Driver {target} from here. Re-run the installer: curl -fsSL {GATE_INSTALL_SH} | bash  (Windows: irm {GATE_INSTALL_PS1} | iex)");
         return 1;
     }
     let rep = crate::install::doctor(None);
@@ -155,7 +207,7 @@ pub fn update_main(argv: &[String]) -> i32 {
              rep.get("driver_error").map(|e| pystr(Some(e))).unwrap_or_else(|| format!("missing tools: {}", rep["missing_tools"])),
              prev.clone().unwrap_or_else(|| "the previous version".into()));
     if let Some(p) = prev {
-        pip_install(&format!("cua-driver=={p}"));
+        install_driver(&p);
     }
     1
 }
@@ -178,6 +230,11 @@ mod tests {
         assert_eq!(note(&st2), "");
         let st3 = json!({"installed": "0.39.0", "latest": "0.37.0", "tested_with": "0.37.0", "update_available": false, "untested": true});
         assert!(note(&st3).contains("--to 0.37.0"));
+    }
+    #[test]
+    fn baked() {
+        assert_eq!(baked_version("x\nCUA_DRIVER_RS_BAKED_VERSION=\"0.38.0\" # published-installer-version\n").as_deref(), Some("0.38.0"));
+        assert_eq!(baked_version("nothing"), None);
     }
     #[test]
     fn missing() {

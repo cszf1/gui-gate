@@ -3,7 +3,7 @@
 //!   gui-gate                 serve MCP on stdio (what MCP clients run)
 //!   gui-gate setup           add it to an MCP client and check the machine
 //!   gui-gate doctor          check the machine end to end
-//!   gui-gate update          look for / install a newer Cua Driver (only when you run it)
+//!   gui-gate update          look for / install a newer Cua Driver and gui-gate (only when you run it)
 //!   gui-gate train | compare offline tools over the gate's logs
 #![allow(dead_code, unused_assignments)]
 mod authz;
@@ -139,7 +139,7 @@ fn main() {
         Some(c) => c.split_whitespace().map(String::from).collect(),
         None => {
             let Some(drv) = driver.or_else(install::find_driver) else {
-                log_err("Cua Driver was not found. It is installed with gui-gate (the `cua-driver` package); reinstall with `pipx install --force gui-gate`, or run `gui-gate doctor`.");
+                log_err("Cua Driver was not found. Install it with gui-gate's installer (it installs the latest Cua Driver too): curl -fsSL https://github.com/cszf1/gui-gate/releases/latest/download/install.sh | bash  (Windows: irm https://github.com/cszf1/gui-gate/releases/latest/download/install.ps1 | iex), then run `gui-gate doctor`.");
                 std::process::exit(2);
             };
             let mut c = vec![drv, "mcp".into()];
