@@ -38,7 +38,9 @@ HOME = os.path.expanduser("~")
 STATE = os.path.join(OSW, "state")
 APPS = ["soffice.bin", "soffice", "oosplash", "gimp", "gimp-2.10", "gimp-3.0", "chrome", "chromium", "vlc",
         "xfce4-terminal", "socat", "code", "thunderbird", "eog", "evince", "mousepad", "ristretto", "Thunar", "xfce4-mime-helper", "exo-open"]
-KEEP_HOME = {".gui-gate", ".cache", ".pi", ".local", ".config", ".bashrc", ".profile", ".npm"}
+# tool installs that may come after box_setup took the home baseline (reset must never delete them)
+KEEP_HOME = {".gui-gate", ".cache", ".pi", ".local", ".config", ".bashrc", ".profile", ".npm", ".cua-driver", ".ssh",
+             "xray", ".claude", ".codex", ".gnupg"}
 
 
 def sh(cmd: str, timeout: float = 60) -> subprocess.CompletedProcess:
