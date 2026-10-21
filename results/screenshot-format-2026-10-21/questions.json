@@ -1,0 +1,1302 @@
+{
+ "shots": {
+  "ow01-libreoffice_calc-7efeb4b1": {
+   "w": 1396,
+   "h": 823,
+   "sizes": {
+    "png": 390532,
+    "jpg80": 169203,
+    "jpg60": 127335,
+    "jpg80half": 55223,
+    "webp80": 66728
+   },
+   "app": "libreoffice-calc"
+  },
+  "ow02-libreoffice_writer-0810415c": {
+   "w": 1396,
+   "h": 823,
+   "sizes": {
+    "png": 398286,
+    "jpg80": 126315,
+    "jpg60": 94350,
+    "jpg80half": 38943,
+    "webp80": 68132
+   },
+   "app": "libreoffice-writer"
+  },
+  "ow03-libreoffice_impress-39be0d19": {
+   "w": 1396,
+   "h": 823,
+   "sizes": {
+    "png": 318929,
+    "jpg80": 114949,
+    "jpg60": 86902,
+    "jpg80half": 39309,
+    "webp80": 48696
+   },
+   "app": "libreoffice-impress"
+  },
+  "ow04-chrome-af630914": {
+   "w": 1050,
+   "h": 853,
+   "sizes": {
+    "png": 58416,
+    "jpg80": 46073,
+    "jpg60": 36691,
+    "jpg80half": 16152,
+    "webp80": 13822
+   },
+   "app": "Chromium-browser"
+  },
+  "ow05-libreoffice_calc-abed40dc": {
+   "w": 1396,
+   "h": 823,
+   "sizes": {
+    "png": 265562,
+    "jpg80": 145743,
+    "jpg60": 110871,
+    "jpg80half": 48780,
+    "webp80": 45376
+   },
+   "app": "libreoffice-calc"
+  },
+  "ow07-libreoffice_writer-ecc2413d": {
+   "w": 1396,
+   "h": 823,
+   "sizes": {
+    "png": 259692,
+    "jpg80": 90208,
+    "jpg60": 68393,
+    "jpg80half": 28085,
+    "webp80": 43396
+   },
+   "app": "libreoffice-writer"
+  },
+  "ow08-libreoffice_calc-1e8df695": {
+   "w": 1396,
+   "h": 823,
+   "sizes": {
+    "png": 287205,
+    "jpg80": 156107,
+    "jpg60": 119538,
+    "jpg80half": 52250,
+    "webp80": 49616
+   },
+   "app": "libreoffice-calc"
+  },
+  "ow09-libreoffice_impress-b8adbc24": {
+   "w": 1396,
+   "h": 823,
+   "sizes": {
+    "png": 322391,
+    "jpg80": 124926,
+    "jpg60": 92913,
+    "jpg80half": 41834,
+    "webp80": 54676
+   },
+   "app": "libreoffice-impress"
+  },
+  "ow11-libreoffice_writer-0e47de2a": {
+   "w": 1396,
+   "h": 823,
+   "sizes": {
+    "png": 204135,
+    "jpg80": 78403,
+    "jpg60": 60154,
+    "jpg80half": 26139,
+    "webp80": 31832
+   },
+   "app": "libreoffice-writer"
+  },
+  "ow12-libreoffice_calc-8b1ce5f2": {
+   "w": 1396,
+   "h": 823,
+   "sizes": {
+    "png": 595775,
+    "jpg80": 207517,
+    "jpg60": 154438,
+    "jpg80half": 64156,
+    "webp80": 102122
+   },
+   "app": "libreoffice-calc"
+  },
+  "ow13-libreoffice_impress-986fc832": {
+   "w": 1396,
+   "h": 823,
+   "sizes": {
+    "png": 391837,
+    "jpg80": 140317,
+    "jpg60": 104468,
+    "jpg80half": 49133,
+    "webp80": 63054
+   },
+   "app": "libreoffice-impress"
+  },
+  "ow14-libreoffice_writer-72b810ef": {
+   "w": 1396,
+   "h": 823,
+   "sizes": {
+    "png": 538753,
+    "jpg80": 157508,
+    "jpg60": 116560,
+    "jpg80half": 45592,
+    "webp80": 87474
+   },
+   "app": "libreoffice-writer"
+  },
+  "ow16-libreoffice_calc-a9f325aa": {
+   "w": 1396,
+   "h": 823,
+   "sizes": {
+    "png": 325371,
+    "jpg80": 157907,
+    "jpg60": 118344,
+    "jpg80half": 52410,
+    "webp80": 57084
+   },
+   "app": "libreoffice-calc"
+  },
+  "ow17-gimp-045bf3ff": {
+   "w": 800,
+   "h": 600,
+   "sizes": {
+    "png": 290704,
+    "jpg80": 79000,
+    "jpg60": 57485,
+    "jpg80half": 25931,
+    "webp80": 44086
+   },
+   "app": "Gimp"
+  },
+  "ow21-gimp-734d6579": {
+   "w": 1003,
+   "h": 681,
+   "sizes": {
+    "png": 364525,
+    "jpg80": 108023,
+    "jpg60": 78909,
+    "jpg80half": 35899,
+    "webp80": 56392
+   },
+   "app": "Gimp"
+  }
+ },
+ "questions": [
+  {
+   "id": "ow01-libreoffice_calc-7efeb4b1#click#New",
+   "shot": "ow01-libreoffice_calc-7efeb4b1",
+   "kind": "click",
+   "name": "New",
+   "role": "button",
+   "bboxes": [
+    [
+     3.9,
+     28.1,
+     42.7,
+     33.9
+    ]
+   ]
+  },
+  {
+   "id": "ow01-libreoffice_calc-7efeb4b1#click#Copy",
+   "shot": "ow01-libreoffice_calc-7efeb4b1",
+   "kind": "click",
+   "name": "Copy",
+   "role": "button",
+   "bboxes": [
+    [
+     275.3,
+     28.1,
+     32.0,
+     33.9
+    ]
+   ]
+  },
+  {
+   "id": "ow01-libreoffice_calc-7efeb4b1#click#Help",
+   "shot": "ow01-libreoffice_calc-7efeb4b1",
+   "kind": "click",
+   "name": "Help",
+   "role": "menu",
+   "bboxes": [
+    [
+     500.2,
+     0.0,
+     44.6,
+     24.2
+    ],
+    [
+     461.5,
+     0.0,
+     40.7,
+     18.4
+    ]
+   ]
+  },
+  {
+   "id": "ow01-libreoffice_calc-7efeb4b1#text#321",
+   "shot": "ow01-libreoffice_calc-7efeb4b1",
+   "kind": "text",
+   "truth": "321",
+   "role": "table cell",
+   "bbox": [
+    388.7,
+    320.9,
+    87.2,
+    20.4
+   ]
+  },
+  {
+   "id": "ow01-libreoffice_calc-7efeb4b1#text#100%",
+   "shot": "ow01-libreoffice_calc-7efeb4b1",
+   "kind": "text",
+   "truth": "100%",
+   "role": "label",
+   "bbox": [
+    1349.5,
+    803.7,
+    40.7,
+    19.3
+   ]
+  },
+  {
+   "id": "ow02-libreoffice_writer-0810415c#click#Image",
+   "shot": "ow02-libreoffice_writer-0810415c",
+   "kind": "click",
+   "name": "Image",
+   "role": "button",
+   "bboxes": [
+    [
+     636.9,
+     28.1,
+     32.0,
+     33.9
+    ]
+   ]
+  },
+  {
+   "id": "ow02-libreoffice_writer-0810415c#click#Center",
+   "shot": "ow02-libreoffice_writer-0810415c",
+   "kind": "click",
+   "name": "Center",
+   "role": "toggle button",
+   "bboxes": [
+    [
+     955.9,
+     65.9,
+     32.0,
+     33.9
+    ]
+   ]
+  },
+  {
+   "id": "ow02-libreoffice_writer-0810415c#click#Help",
+   "shot": "ow02-libreoffice_writer-0810415c",
+   "kind": "click",
+   "name": "Help",
+   "role": "menu",
+   "bboxes": [
+    [
+     499.3,
+     0.0,
+     44.6,
+     24.2
+    ],
+    [
+     460.5,
+     0.0,
+     40.7,
+     18.4
+    ]
+   ]
+  },
+  {
+   "id": "ow02-libreoffice_writer-0810415c#text#Page 1 of 4",
+   "shot": "ow02-libreoffice_writer-0810415c",
+   "kind": "text",
+   "truth": "Page 1 of 4",
+   "role": "label",
+   "bbox": [
+    33.9,
+    803.7,
+    154.1,
+    19.3
+   ]
+  },
+  {
+   "id": "ow02-libreoffice_writer-0810415c#text#1,199 words, 6,438 characters",
+   "shot": "ow02-libreoffice_writer-0810415c",
+   "kind": "text",
+   "truth": "1,199 words, 6,438 characters",
+   "role": "label",
+   "bbox": [
+    193.9,
+    803.7,
+    269.5,
+    19.3
+   ]
+  },
+  {
+   "id": "ow03-libreoffice_impress-39be0d19#click#Shadow",
+   "shot": "ow03-libreoffice_impress-39be0d19",
+   "kind": "click",
+   "name": "Shadow",
+   "role": "toggle button",
+   "bboxes": [
+    [
+     984.0,
+     65.9,
+     32.0,
+     33.9
+    ]
+   ]
+  },
+  {
+   "id": "ow03-libreoffice_impress-39be0d19#click#Find and Replace",
+   "shot": "ow03-libreoffice_impress-39be0d19",
+   "kind": "click",
+   "name": "Find and Replace",
+   "role": "toggle button",
+   "bboxes": [
+    [
+     458.5,
+     28.1,
+     32.0,
+     33.9
+    ]
+   ]
+  },
+  {
+   "id": "ow03-libreoffice_impress-39be0d19#click#Insert",
+   "shot": "ow03-libreoffice_impress-39be0d19",
+   "kind": "click",
+   "name": "Insert",
+   "role": "menu",
+   "bboxes": [
+    [
+     124.1,
+     0.0,
+     51.4,
+     24.2
+    ],
+    [
+     112.5,
+     0.0,
+     47.5,
+     18.4
+    ]
+   ]
+  },
+  {
+   "id": "ow03-libreoffice_impress-39be0d19#text#-0.16 / -1.38 0.00 x 0.00",
+   "shot": "ow03-libreoffice_impress-39be0d19",
+   "kind": "text",
+   "truth": "-0.16 / -1.38 0.00 x 0.00",
+   "role": "label",
+   "bbox": [
+    633.0,
+    803.7,
+    231.7,
+    19.3
+   ]
+  },
+  {
+   "id": "ow03-libreoffice_impress-39be0d19#text#Slide 1 of 3",
+   "shot": "ow03-libreoffice_impress-39be0d19",
+   "kind": "text",
+   "truth": "Slide 1 of 3",
+   "role": "label",
+   "bbox": [
+    5.8,
+    803.7,
+    72.7,
+    19.3
+   ]
+  },
+  {
+   "id": "ow04-chrome-af630914#click#Search by voice",
+   "shot": "ow04-chrome-af630914",
+   "kind": "click",
+   "name": "Search by voice",
+   "role": "button",
+   "bboxes": [
+    [
+     817.0,
+     355.0,
+     26.0,
+     36.0
+    ]
+   ]
+  },
+  {
+   "id": "ow04-chrome-af630914#click#Close",
+   "shot": "ow04-chrome-af630914",
+   "kind": "click",
+   "name": "Close",
+   "role": "button",
+   "bboxes": [
+    [
+     1014.0,
+     0.0,
+     32.0,
+     40.0
+    ]
+   ]
+  },
+  {
+   "id": "ow04-chrome-af630914#text#Customize Chromium",
+   "shot": "ow04-chrome-af630914",
+   "kind": "text",
+   "truth": "Customize Chromium",
+   "role": "static",
+   "bbox": [
+    888.0,
+    809.0,
+    126.0,
+    15.0
+   ]
+  },
+  {
+   "id": "ow04-chrome-af630914#text#Images",
+   "shot": "ow04-chrome-af630914",
+   "kind": "text",
+   "truth": "Images",
+   "role": "static",
+   "bbox": [
+    934.0,
+    111.0,
+    43.0,
+    15.0
+   ]
+  },
+  {
+   "id": "ow05-libreoffice_calc-abed40dc#click#Bold",
+   "shot": "ow05-libreoffice_calc-abed40dc",
+   "kind": "click",
+   "name": "Bold",
+   "role": "toggle button",
+   "bboxes": [
+    [
+     318.0,
+     65.9,
+     32.0,
+     33.9
+    ]
+   ]
+  },
+  {
+   "id": "ow05-libreoffice_calc-abed40dc#click#Increase",
+   "shot": "ow05-libreoffice_calc-abed40dc",
+   "kind": "click",
+   "name": "Increase",
+   "role": "button",
+   "bboxes": [
+    [
+     1094.5,
+     65.9,
+     32.0,
+     33.9
+    ]
+   ]
+  },
+  {
+   "id": "ow05-libreoffice_calc-abed40dc#click#Data",
+   "shot": "ow05-libreoffice_calc-abed40dc",
+   "kind": "click",
+   "name": "Data",
+   "role": "menu",
+   "bboxes": [
+    [
+     341.2,
+     0.0,
+     45.6,
+     24.2
+    ],
+    [
+     314.1,
+     0.0,
+     41.7,
+     18.4
+    ]
+   ]
+  },
+  {
+   "id": "ow05-libreoffice_calc-abed40dc#text#Average: ; Sum: 0",
+   "shot": "ow05-libreoffice_calc-abed40dc",
+   "kind": "text",
+   "truth": "Average: ; Sum: 0",
+   "role": "label",
+   "bbox": [
+    986.9,
+    803.7,
+    218.1,
+    19.3
+   ]
+  },
+  {
+   "id": "ow05-libreoffice_calc-abed40dc#text#Sheet 1 of 1",
+   "shot": "ow05-libreoffice_calc-abed40dc",
+   "kind": "text",
+   "truth": "Sheet 1 of 1",
+   "role": "label",
+   "bbox": [
+    33.9,
+    803.7,
+    185.2,
+    19.3
+   ]
+  },
+  {
+   "id": "ow07-libreoffice_writer-ecc2413d#click#Copy",
+   "shot": "ow07-libreoffice_writer-ecc2413d",
+   "kind": "click",
+   "name": "Copy",
+   "role": "button",
+   "bboxes": [
+    [
+     275.3,
+     28.1,
+     32.0,
+     33.9
+    ]
+   ]
+  },
+  {
+   "id": "ow07-libreoffice_writer-ecc2413d#click#Page Break",
+   "shot": "ow07-libreoffice_writer-ecc2413d",
+   "kind": "click",
+   "name": "Page Break",
+   "role": "button",
+   "bboxes": [
+    [
+     740.7,
+     28.1,
+     32.0,
+     33.9
+    ]
+   ]
+  },
+  {
+   "id": "ow07-libreoffice_writer-ecc2413d#click#Form",
+   "shot": "ow07-libreoffice_writer-ecc2413d",
+   "kind": "click",
+   "name": "Form",
+   "role": "menu",
+   "bboxes": [
+    [
+     338.3,
+     0.0,
+     47.5,
+     24.2
+    ],
+    [
+     311.2,
+     0.0,
+     43.6,
+     18.4
+    ]
+   ]
+  },
+  {
+   "id": "ow07-libreoffice_writer-ecc2413d#text#Page 1 of 7",
+   "shot": "ow07-libreoffice_writer-ecc2413d",
+   "kind": "text",
+   "truth": "Page 1 of 7",
+   "role": "label",
+   "bbox": [
+    33.9,
+    803.7,
+    156.1,
+    19.3
+   ]
+  },
+  {
+   "id": "ow07-libreoffice_writer-ecc2413d#text#100%",
+   "shot": "ow07-libreoffice_writer-ecc2413d",
+   "kind": "text",
+   "truth": "100%",
+   "role": "label",
+   "bbox": [
+    1349.5,
+    803.7,
+    40.7,
+    19.3
+   ]
+  },
+  {
+   "id": "ow08-libreoffice_calc-1e8df695#click#Percent",
+   "shot": "ow08-libreoffice_calc-1e8df695",
+   "kind": "click",
+   "name": "Percent",
+   "role": "button",
+   "bboxes": [
+    [
+     919.0,
+     65.9,
+     32.0,
+     33.9
+    ]
+   ]
+  },
+  {
+   "id": "ow08-libreoffice_calc-1e8df695#click#Redo",
+   "shot": "ow08-libreoffice_calc-1e8df695",
+   "kind": "click",
+   "name": "Redo",
+   "role": "button",
+   "bboxes": [
+    [
+     472.1,
+     28.1,
+     42.7,
+     33.9
+    ]
+   ]
+  },
+  {
+   "id": "ow08-libreoffice_calc-1e8df695#click#File",
+   "shot": "ow08-libreoffice_calc-1e8df695",
+   "kind": "click",
+   "name": "File",
+   "role": "menu",
+   "bboxes": [
+    [
+     0.0,
+     0.0,
+     37.8,
+     24.2
+    ],
+    [
+     0.0,
+     0.0,
+     33.9,
+     18.4
+    ]
+   ]
+  },
+  {
+   "id": "ow08-libreoffice_calc-1e8df695#text#103740",
+   "shot": "ow08-libreoffice_calc-1e8df695",
+   "kind": "text",
+   "truth": "103740",
+   "role": "table cell",
+   "bbox": [
+    114.4,
+    233.6,
+    120.2,
+    17.4
+   ]
+  },
+  {
+   "id": "ow08-libreoffice_calc-1e8df695#text#Sheet 1 of 1",
+   "shot": "ow08-libreoffice_calc-1e8df695",
+   "kind": "text",
+   "truth": "Sheet 1 of 1",
+   "role": "label",
+   "bbox": [
+    33.9,
+    803.7,
+    185.2,
+    19.3
+   ]
+  },
+  {
+   "id": "ow09-libreoffice_impress-b8adbc24#click#Ellipse",
+   "shot": "ow09-libreoffice_impress-b8adbc24",
+   "kind": "click",
+   "name": "Ellipse",
+   "role": "button",
+   "bboxes": [
+    [
+     334.5,
+     65.9,
+     32.0,
+     33.9
+    ]
+   ]
+  },
+  {
+   "id": "ow09-libreoffice_impress-b8adbc24#click#Arrow Shapes",
+   "shot": "ow09-libreoffice_impress-b8adbc24",
+   "kind": "click",
+   "name": "Arrow Shapes",
+   "role": "button",
+   "bboxes": [
+    [
+     595.2,
+     65.9,
+     42.7,
+     33.9
+    ]
+   ]
+  },
+  {
+   "id": "ow09-libreoffice_impress-b8adbc24#click#Slide",
+   "shot": "ow09-libreoffice_impress-b8adbc24",
+   "kind": "click",
+   "name": "Slide",
+   "role": "menu",
+   "bboxes": [
+    [
+     235.6,
+     0.0,
+     46.5,
+     24.2
+    ],
+    [
+     216.2,
+     0.0,
+     42.7,
+     18.4
+    ]
+   ]
+  },
+  {
+   "id": "ow09-libreoffice_impress-b8adbc24#text#-0.15 / -0.31 0.00 x 0.00",
+   "shot": "ow09-libreoffice_impress-b8adbc24",
+   "kind": "text",
+   "truth": "-0.15 / -0.31 0.00 x 0.00",
+   "role": "label",
+   "bbox": [
+    657.3,
+    803.7,
+    231.7,
+    19.3
+   ]
+  },
+  {
+   "id": "ow09-libreoffice_impress-b8adbc24#text#Slide 1 of 2",
+   "shot": "ow09-libreoffice_impress-b8adbc24",
+   "kind": "text",
+   "truth": "Slide 1 of 2",
+   "role": "label",
+   "bbox": [
+    5.8,
+    803.7,
+    72.7,
+    19.3
+   ]
+  },
+  {
+   "id": "ow11-libreoffice_writer-0e47de2a#click#Copy",
+   "shot": "ow11-libreoffice_writer-0e47de2a",
+   "kind": "click",
+   "name": "Copy",
+   "role": "button",
+   "bboxes": [
+    [
+     275.3,
+     28.1,
+     32.0,
+     33.9
+    ]
+   ]
+  },
+  {
+   "id": "ow11-libreoffice_writer-0e47de2a#click#Ordered List",
+   "shot": "ow11-libreoffice_writer-0e47de2a",
+   "kind": "click",
+   "name": "Ordered List",
+   "role": "toggle button",
+   "bboxes": [
+    [
+     1102.3,
+     65.9,
+     42.7,
+     33.9
+    ]
+   ]
+  },
+  {
+   "id": "ow11-libreoffice_writer-0e47de2a#click#Form",
+   "shot": "ow11-libreoffice_writer-0e47de2a",
+   "kind": "click",
+   "name": "Form",
+   "role": "menu",
+   "bboxes": [
+    [
+     338.3,
+     0.0,
+     47.5,
+     24.2
+    ],
+    [
+     311.2,
+     0.0,
+     43.6,
+     18.4
+    ]
+   ]
+  },
+  {
+   "id": "ow11-libreoffice_writer-0e47de2a#text#723 words, 4,182 characters",
+   "shot": "ow11-libreoffice_writer-0e47de2a",
+   "kind": "text",
+   "truth": "723 words, 4,182 characters",
+   "role": "label",
+   "bbox": [
+    195.8,
+    803.7,
+    260.8,
+    19.3
+   ]
+  },
+  {
+   "id": "ow11-libreoffice_writer-0e47de2a#text#100%",
+   "shot": "ow11-libreoffice_writer-0e47de2a",
+   "kind": "text",
+   "truth": "100%",
+   "role": "label",
+   "bbox": [
+    1349.5,
+    803.7,
+    40.7,
+    19.3
+   ]
+  },
+  {
+   "id": "ow12-libreoffice_calc-8b1ce5f2#click#Align Right",
+   "shot": "ow12-libreoffice_calc-8b1ce5f2",
+   "kind": "click",
+   "name": "Align Right",
+   "role": "button",
+   "bboxes": [
+    [
+     589.4,
+     65.9,
+     32.0,
+     33.9
+    ]
+   ]
+  },
+  {
+   "id": "ow12-libreoffice_calc-8b1ce5f2#click#Select Function",
+   "shot": "ow12-libreoffice_calc-8b1ce5f2",
+   "kind": "click",
+   "name": "Select Function",
+   "role": "button",
+   "bboxes": [
+    [
+     192.9,
+     107.6,
+     34.9,
+     26.2
+    ]
+   ]
+  },
+  {
+   "id": "ow12-libreoffice_calc-8b1ce5f2#click#Data",
+   "shot": "ow12-libreoffice_calc-8b1ce5f2",
+   "kind": "click",
+   "name": "Data",
+   "role": "menu",
+   "bboxes": [
+    [
+     341.2,
+     0.0,
+     45.6,
+     24.2
+    ],
+    [
+     314.1,
+     0.0,
+     41.7,
+     18.4
+    ]
+   ]
+  },
+  {
+   "id": "ow12-libreoffice_calc-8b1ce5f2#text#100%",
+   "shot": "ow12-libreoffice_calc-8b1ce5f2",
+   "kind": "text",
+   "truth": "100%",
+   "role": "label",
+   "bbox": [
+    1349.5,
+    803.7,
+    40.7,
+    19.3
+   ]
+  },
+  {
+   "id": "ow12-libreoffice_calc-8b1ce5f2#text#Average: ; Sum: 0",
+   "shot": "ow12-libreoffice_calc-8b1ce5f2",
+   "kind": "text",
+   "truth": "Average: ; Sum: 0",
+   "role": "label",
+   "bbox": [
+    986.9,
+    803.7,
+    218.1,
+    19.3
+   ]
+  },
+  {
+   "id": "ow13-libreoffice_impress-986fc832#click#Hyperlink",
+   "shot": "ow13-libreoffice_impress-986fc832",
+   "kind": "click",
+   "name": "Hyperlink",
+   "role": "toggle button",
+   "bboxes": [
+    [
+     1009.2,
+     28.1,
+     32.0,
+     33.9
+    ]
+   ]
+  },
+  {
+   "id": "ow13-libreoffice_impress-986fc832#click#Curves and Polygons",
+   "shot": "ow13-libreoffice_impress-986fc832",
+   "kind": "click",
+   "name": "Curves and Polygons",
+   "role": "button",
+   "bboxes": [
+    [
+     416.9,
+     65.9,
+     42.7,
+     33.9
+    ]
+   ]
+  },
+  {
+   "id": "ow13-libreoffice_impress-986fc832#click#Tools",
+   "shot": "ow13-libreoffice_impress-986fc832",
+   "kind": "click",
+   "name": "Tools",
+   "role": "menu",
+   "bboxes": [
+    [
+     366.4,
+     0.0,
+     47.5,
+     24.2
+    ],
+    [
+     339.3,
+     0.0,
+     43.6,
+     18.4
+    ]
+   ]
+  },
+  {
+   "id": "ow13-libreoffice_impress-986fc832#text#-0.15 / -0.31 0.00 x 0.00",
+   "shot": "ow13-libreoffice_impress-986fc832",
+   "kind": "text",
+   "truth": "-0.15 / -0.31 0.00 x 0.00",
+   "role": "label",
+   "bbox": [
+    657.3,
+    803.7,
+    231.7,
+    19.3
+   ]
+  },
+  {
+   "id": "ow13-libreoffice_impress-986fc832#text#Slide 1 of 1",
+   "shot": "ow13-libreoffice_impress-986fc832",
+   "kind": "text",
+   "truth": "Slide 1 of 1",
+   "role": "label",
+   "bbox": [
+    5.8,
+    803.7,
+    72.7,
+    19.3
+   ]
+  },
+  {
+   "id": "ow14-libreoffice_writer-72b810ef#click#Spelling",
+   "shot": "ow14-libreoffice_writer-72b810ef",
+   "kind": "click",
+   "name": "Spelling",
+   "role": "button",
+   "bboxes": [
+    [
+     522.5,
+     28.1,
+     32.0,
+     33.9
+    ]
+   ]
+  },
+  {
+   "id": "ow14-libreoffice_writer-72b810ef#click#Undo",
+   "shot": "ow14-libreoffice_writer-72b810ef",
+   "kind": "click",
+   "name": "Undo",
+   "role": "button",
+   "bboxes": [
+    [
+     397.5,
+     28.1,
+     42.7,
+     33.9
+    ]
+   ]
+  },
+  {
+   "id": "ow14-libreoffice_writer-72b810ef#click#Form",
+   "shot": "ow14-libreoffice_writer-72b810ef",
+   "kind": "click",
+   "name": "Form",
+   "role": "menu",
+   "bboxes": [
+    [
+     338.3,
+     0.0,
+     47.5,
+     24.2
+    ],
+    [
+     311.2,
+     0.0,
+     43.6,
+     18.4
+    ]
+   ]
+  },
+  {
+   "id": "ow14-libreoffice_writer-72b810ef#text#268 words, 1,861 characters",
+   "shot": "ow14-libreoffice_writer-72b810ef",
+   "kind": "text",
+   "truth": "268 words, 1,861 characters",
+   "role": "label",
+   "bbox": [
+    195.8,
+    803.7,
+    260.8,
+    19.3
+   ]
+  },
+  {
+   "id": "ow14-libreoffice_writer-72b810ef#text#Page 1 of 1",
+   "shot": "ow14-libreoffice_writer-72b810ef",
+   "kind": "text",
+   "truth": "Page 1 of 1",
+   "role": "label",
+   "bbox": [
+    33.9,
+    803.7,
+    156.1,
+    19.3
+   ]
+  },
+  {
+   "id": "ow16-libreoffice_calc-a9f325aa#click#Clone",
+   "shot": "ow16-libreoffice_calc-a9f325aa",
+   "kind": "click",
+   "name": "Clone",
+   "role": "toggle button",
+   "bboxes": [
+    [
+     357.7,
+     28.1,
+     32.0,
+     33.9
+    ]
+   ]
+  },
+  {
+   "id": "ow16-libreoffice_calc-a9f325aa#click#Borders (Shift to overwrite)",
+   "shot": "ow16-libreoffice_calc-a9f325aa",
+   "kind": "click",
+   "name": "Borders (Shift to overwrite)",
+   "role": "button",
+   "bboxes": [
+    [
+     1166.2,
+     65.9,
+     42.7,
+     33.9
+    ]
+   ]
+  },
+  {
+   "id": "ow16-libreoffice_calc-a9f325aa#click#Help",
+   "shot": "ow16-libreoffice_calc-a9f325aa",
+   "kind": "click",
+   "name": "Help",
+   "role": "menu",
+   "bboxes": [
+    [
+     500.2,
+     0.0,
+     44.6,
+     24.2
+    ],
+    [
+     461.5,
+     0.0,
+     40.7,
+     18.4
+    ]
+   ]
+  },
+  {
+   "id": "ow16-libreoffice_calc-a9f325aa#text#Average: ; Sum: 0",
+   "shot": "ow16-libreoffice_calc-a9f325aa",
+   "kind": "text",
+   "truth": "Average: ; Sum: 0",
+   "role": "label",
+   "bbox": [
+    986.9,
+    803.7,
+    218.1,
+    19.3
+   ]
+  },
+  {
+   "id": "ow16-libreoffice_calc-a9f325aa#text#Sheet 1 of 1",
+   "shot": "ow16-libreoffice_calc-a9f325aa",
+   "kind": "text",
+   "truth": "Sheet 1 of 1",
+   "role": "label",
+   "bbox": [
+    33.9,
+    803.7,
+    185.2,
+    19.3
+   ]
+  },
+  {
+   "id": "ow17-gimp-045bf3ff#click#Release Notes",
+   "shot": "ow17-gimp-045bf3ff",
+   "kind": "click",
+   "name": "Release Notes",
+   "role": "radio button",
+   "bboxes": [
+    [
+     582.0,
+     28.0,
+     128.0,
+     34.0
+    ]
+   ]
+  },
+  {
+   "id": "ow17-gimp-045bf3ff#click#Tutorials",
+   "shot": "ow17-gimp-045bf3ff",
+   "kind": "click",
+   "name": "Tutorials",
+   "role": "button",
+   "bboxes": [
+    [
+     126.0,
+     491.0,
+     89.0,
+     34.0
+    ]
+   ]
+  },
+  {
+   "id": "ow17-gimp-045bf3ff#click#File",
+   "shot": "ow17-gimp-045bf3ff",
+   "kind": "click",
+   "name": "File",
+   "role": "menu",
+   "bboxes": [
+    [
+     0.0,
+     0.0,
+     39.0,
+     25.0
+    ]
+   ]
+  },
+  {
+   "id": "ow17-gimp-045bf3ff#text#Rendering Intent:",
+   "shot": "ow17-gimp-045bf3ff",
+   "kind": "text",
+   "truth": "Rendering Intent:",
+   "role": "label",
+   "bbox": [
+    513.0,
+    389.0,
+    112.0,
+    34.0
+   ]
+  },
+  {
+   "id": "ow21-gimp-734d6579#click#66.7\u2009%",
+   "shot": "ow21-gimp-734d6579",
+   "kind": "click",
+   "name": "66.7\u2009%",
+   "role": "combo box",
+   "bboxes": [
+    [
+     391.0,
+     647.0,
+     101.0,
+     34.0
+    ]
+   ]
+  },
+  {
+   "id": "ow21-gimp-734d6579#click#GIMP website",
+   "shot": "ow21-gimp-734d6579",
+   "kind": "click",
+   "name": "GIMP website",
+   "role": "button",
+   "bboxes": [
+    [
+     126.0,
+     457.0,
+     123.0,
+     34.0
+    ]
+   ]
+  },
+  {
+   "id": "ow21-gimp-734d6579#click#File",
+   "shot": "ow21-gimp-734d6579",
+   "kind": "click",
+   "name": "File",
+   "role": "menu",
+   "bboxes": [
+    [
+     0.0,
+     0.0,
+     39.0,
+     25.0
+    ]
+   ]
+  },
+  {
+   "id": "ow21-gimp-734d6579#text#66.7 %",
+   "shot": "ow21-gimp-734d6579",
+   "kind": "text",
+   "truth": "66.7 %",
+   "role": "text",
+   "bbox": [
+    391.0,
+    647.0,
+    65.0,
+    34.0
+   ]
+  },
+  {
+   "id": "ow21-gimp-734d6579#text#You installed GIMP 3.0.4!",
+   "shot": "ow21-gimp-734d6579",
+   "kind": "text",
+   "truth": "You installed GIMP 3.0.4!",
+   "role": "label",
+   "bbox": [
+    93.0,
+    362.0,
+    623.0,
+    24.0
+   ]
+  }
+ ],
+ "formats": [
+  "png",
+  "jpg80",
+  "jpg60",
+  "jpg80half",
+  "webp80"
+ ]
+}
