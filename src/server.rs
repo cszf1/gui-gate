@@ -335,8 +335,8 @@ impl Gate {
         let client_elicit = Arc::new(AtomicBool::new(false));
         let (o2, cp2) = (out.clone(), client_pending.clone());
         let cids = Arc::new(AtomicU64::new(0));
-        // one request to the MCP client (elicitation for a person, sampling for the reviewer)
-        let client_request: crate::reviewer::ClientRequest = Arc::new(move |method: &str, params: Value, timeout: f64| {
+        // one request to the MCP client (elicitation for a person)
+        let client_request: Arc<dyn Fn(&str, Value, f64) -> Option<Value> + Send + Sync> = Arc::new(move |method: &str, params: Value, timeout: f64| {
             let cid = format!("gate-c-{}", cids.fetch_add(1, Ordering::SeqCst) + 1);
             let (tx, rx) = channel();
             cp2.lock().unwrap().insert(cid.clone(), tx);
@@ -351,7 +351,7 @@ impl Gate {
         });
         let cr = client_request.clone();
         let elicit: crate::human::Elicit = Arc::new(move |params: Value, timeout: f64| cr("elicitation/create", params, timeout));
-        let rv = Reviewer::from_env(Some(client_request.clone()));
+        let rv = Reviewer::from_env();
         cfg.reviewer = rv.available();
         let ce = client_elicit.clone();
         let human = Human::new(&cfg.human_channel, cfg.human_timeout, Some(elicit), Arc::new(move || ce.load(Ordering::SeqCst)));
@@ -482,9 +482,7 @@ impl Gate {
             if method.as_deref() == Some("initialize") {
                 let p = msg.get("params").cloned().unwrap_or(json!({}));
                 self.client_elicit.store(p.get("capabilities").and_then(|c| c.get("elicitation")).is_some(), Ordering::SeqCst);
-                self.reviewer.set_client(&p); // never lock `inner` here: a tool call may hold it while it waits on the client
                 self.log.write(json!({"ev": "client", "name": p.get("clientInfo").and_then(|c| c.get("name")),
-                                      "sampling": p.get("capabilities").and_then(|c| c.get("sampling")).is_some(),
                                       "reviewer": self.reviewer.backend()}));
                 *self.init_params.lock().unwrap() = Some(p);
             }
@@ -733,7 +731,7 @@ impl Gate {
     pub fn gated(&self, inn: &mut Inner, name: &str, mut args: Value) -> Value {
         let tg0 = Instant::now();
         let ack = false; // the acting model never approves its own step (gate_ack is accepted and ignored)
-        inn.cfg.reviewer = self.reviewer.available(); // known only after the client's initialize
+        inn.cfg.reviewer = self.reviewer.available();
         let code = args.get("gate_confirm").map(|v| pystr(Some(v))).filter(|c| !c.is_empty());
         if let Some(o) = args.as_object_mut() {
             o.remove("gate_ack");
@@ -1270,14 +1268,17 @@ impl Gate {
             }
             trail.push("reviewer_down".into());
         }
-        // no reviewer (or it did not answer): a person if one is reachable, otherwise refuse with the safe way on
         if dec.option == "risk_review" {
-            let ch = self.human.resolve_channel();
-            if ch != "deny" {
+            // no reviewer API configured: fail closed, nobody else (and never the acting agent) may approve it
+            if !self.reviewer.available() {
+                trail.push("no_reviewer".into());
+                return Some(Decision::new("deny", 0.0, format!("{}; {}, so nobody approved it", dec.reason, crate::reviewer::NOT_CONFIGURED), "rule"));
+            }
+            // the reviewer did not answer: a person if one is reachable, otherwise refuse with the safe way on
+            if self.human.resolve_channel() != "deny" {
                 return Some(Decision::new("ask_human", 0.0, dec.reason.clone(), "rule"));
             }
-            let why = if self.reviewer.available() { "the reviewer did not answer, so nobody approved it" } else { "no reviewer is configured to approve it" };
-            return Some(Decision::new("deny", 0.0, format!("{}; {why}", dec.reason), "rule"));
+            return Some(Decision::new("deny", 0.0, format!("{}; the reviewer did not answer, so nobody approved it", dec.reason), "rule"));
         }
         Some(dec)
     }

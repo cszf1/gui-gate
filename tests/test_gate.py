@@ -30,7 +30,7 @@ class Client:
         self.p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True, env=e, cwd=ROOT)
         self.i = 0
         self.extra = []
-        self.on_request = on_request  # answers requests the gate sends to the client (sampling, elicitation)
+        self.on_request = on_request  # answers requests the gate sends to the client (elicitation)
         self.requests = []
         self.init = self.rpc("initialize", {"protocolVersion": "2025-06-18", "capabilities": capabilities or {},
                                             "clientInfo": {"name": client_name, "version": "0"}})
@@ -110,12 +110,13 @@ class GateTests(unittest.TestCase):
         self.assertIn("fresh tree is attached", txt(r))  # the gate read the window itself: no extra turn
         self.assertIn("nothing was executed", txt(r))
 
-    def test_reviewer_mode_without_reviewer_goes_to_person_not_the_agent(self):
+    def test_reviewer_mode_without_reviewer_is_refused_not_the_agent(self):
         self.c.call("gate_config", risk_mode="reviewer")
         s = self.c.read()
         r = self.c.call("click", element_token=f"{s}:1")
         self.assertTrue(r.get("isError"))
-        self.assertEqual(r["structuredContent"]["gate"]["decision"], "ask_human")
+        self.assertEqual(r["structuredContent"]["gate"]["decision"], "deny")  # fail closed: no reviewer API
+        self.assertIn("no reviewer API is configured", txt(r))
         r2 = self.c.call("click", element_token=f"{s}:1", gate_ack=True)  # ignored
         self.assertTrue(r2.get("isError"))
         rep = self.c.call("gate_report")["structuredContent"]
@@ -230,16 +231,15 @@ class ToolTests(unittest.TestCase):
         r2 = self.c.call("click", element_token=f"{s}:1", gate_ack=True)  # the model cannot self-approve high risk
         self.assertTrue(r2.get("isError"))
 
-    def test_medium_risk_without_reviewer_asks_the_user_not_the_agent(self):
+    def test_medium_risk_without_reviewer_is_refused(self):
         self.c.call("fake_mutate", elements=[["button", "Send"], ["button", "Plum"]])
         s = self.c.read()
         r = self.c.call("click", element_token=f"{s}:0")
-        self.assertEqual(r["structuredContent"]["gate"]["decision"], "ask_human")
+        self.assertTrue(r.get("isError"))
+        self.assertEqual(r["structuredContent"]["gate"]["decision"], "deny")  # fail closed, nobody is asked
+        self.assertIn("no reviewer API is configured", txt(r))
         r2 = self.c.call("click", element_token=f"{s}:0", gate_ack=True)  # self-approval does nothing
         self.assertTrue(r2.get("isError"))
-        code = r["structuredContent"]["gate"]["confirm_code"]
-        r3 = self.c.call("click", element_token=f"{s}:0", gate_confirm=code)  # the user's approval does
-        self.assertFalse(r3.get("isError"), txt(r3))
 
     def test_secret_field_handoff(self):
         self.c.call("fake_mutate", elements=[["password text", "Password"], ["button", "Plum"]])
@@ -247,13 +247,23 @@ class ToolTests(unittest.TestCase):
         r = self.c.call("type_text", element_token=f"{s}:0", text="hunter2")
         self.assertEqual(r["structuredContent"]["gate"]["decision"], "handoff")
 
-    def test_enter_after_dangerous_command(self):
+    def test_dangerous_command_without_reviewer_is_refused(self):
         self.c.read()
-        r = self.c.call("type_text", pid=4242, text="rm -rf ~/work")
-        self.assertEqual(r["structuredContent"]["gate"]["decision"], "ask_human")
-        self.c.call("type_text", pid=4242, text="rm -rf ~/work", gate_confirm=r["structuredContent"]["gate"]["confirm_code"])
-        r = self.c.call("press_key", pid=4242, key="Return")
-        self.assertEqual(r["structuredContent"]["gate"]["decision"], "ask_human")
+        r = self.c.call("type_text", pid=4242, text="rm -rf ~/work")  # medium risk, needs review: no reviewer API
+        self.assertEqual(r["structuredContent"]["gate"]["decision"], "deny")
+        self.assertIn("no reviewer API is configured", txt(r))
+
+    def test_enter_after_dangerous_command(self):
+        c = Client("--risk-mode", "human")  # every risky step goes to a person instead of the reviewer
+        try:
+            c.read()
+            r = c.call("type_text", pid=4242, text="rm -rf ~/work")
+            self.assertEqual(r["structuredContent"]["gate"]["decision"], "ask_human")
+            c.call("type_text", pid=4242, text="rm -rf ~/work", gate_confirm=r["structuredContent"]["gate"]["confirm_code"])
+            r = c.call("press_key", pid=4242, key="Return")
+            self.assertEqual(r["structuredContent"]["gate"]["decision"], "ask_human")
+        finally:
+            c.close()
 
     def test_request_human_chat_fallback(self):
         r = self.c.call("request_human", question="Which file?", kind="answer")

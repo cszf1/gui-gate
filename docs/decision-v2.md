@@ -60,11 +60,13 @@ Held-out quality (session split, so a model is never scored on a run it was trai
 The acting agent's model (e.g. Pi's) is never asked to judge its own step any more: `gate_ack` is gone (accepted and
 ignored), the `decider=model` mode is removed. The only language model inside the gate is the independent reviewer
 (`GUI_GATE_REVIEWER_URL` / `_MODEL` / `_KEY`, protocols chat | responses | anthropic | gemini | systemone (System One decision models such as Jev or decision-model-preview); reasoning-blind: it sees the user's
-request, the concrete action and the window tree, never the agent's explanation).
+request, the concrete action and the window tree, never the agent's explanation). Since 0.9.2 it is only ever an
+independent decision model reached over its API; the 0.9.0 `agent` mode (reusing the agent's own model via MCP sampling
+or a one-shot agent CLI run) and the `auto` fallback to it are removed.
 
 | situation | 0.6 / 0.7 | 0.8 |
 |---|---|---|
-| medium risk not authorized by the user's words | agent re-thinks, may retry with gate_ack | reviewer allows / denies; no reviewer → a person if reachable, else refused with the safe way on |
+| medium risk not authorized by the user's words | agent re-thinks, may retry with gate_ack | reviewer allows / denies; no reviewer API configured → refused (fail closed, 0.9.2); reviewer did not answer → a person if reachable, else refused with the safe way on |
 | doubtful target, possible loop (option `review`, ~3 s) | agent double-checks, may retry with gate_ack | reviewer checks the target against the tree; no reviewer → a person when stuck, else "try a clearly different way" |
 | high risk | person | person (unchanged) |
 | re-read needed (`look_light`) | agent calls get_window_state, then retries | the gate reads the window itself and attaches the fresh tree to its refusal |
