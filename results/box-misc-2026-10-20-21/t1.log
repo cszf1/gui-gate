@@ -1,0 +1,11 @@
+=== osworld/ow01-libreoffice_calc-7efeb4b1.json
+ERROR:desktopenv.providers.aws.ProxyPool:Failed to load proxies from evaluation_examples/settings/proxy/dataimpulse.json: [Errno 2] No such file or directory: 'evaluation_examples/settings/proxy/dataimpulse.json'
+{"ok": true, "setup_s": 3.0, "protected": {}}
+0x00a00003 -1 instabox-gui-agent xfce4-panel
+0x00e0002c -1 instabox-gui-agent Desktop
+0x00a0000e -1 instabox-gui-agent xfce4-panel
+0x00c00075  0 instabox-gui-agent Order_Sales_Serial#.xlsx — LibreOffice Calc
+0x00a47132 -1 instabox-gui-agent xfce4-panel
+  sheet2 = sheet2.round(error_limit)
+{"ok": true, "final_fail": false, "score": 0.0, "success": false}
+T1DONE

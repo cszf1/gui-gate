@@ -1,0 +1,3 @@
+{"tag":"ow01-libreoffice_calc-7efeb4b1-direct-s0","task":"ow01-libreoffice_calc-7efeb4b1","cond":"direct","seed":0,"attempt":1,"infra":"relay_error","pi":{"turns": 12, "stop": "agent", "rc": 0, "wall_s": 52.3}}
+{"tag":"ow01-libreoffice_calc-7efeb4b1-direct-s0-try2","task":"ow01-libreoffice_calc-7efeb4b1","cond":"direct","seed":0,"attempt":2,"infra":"relay_error","pi":{"turns": 21, "stop": "agent", "rc": 0, "wall_s": 111.0}}
+{"tag":"ow01-libreoffice_calc-7efeb4b1-full-s0","task":"ow01-libreoffice_calc-7efeb4b1","cond":"full","seed":0,"attempt":1,"infra":"relay_error","pi":{"turns": 8, "stop": "agent", "rc": 0, "wall_s": 28.3}}
