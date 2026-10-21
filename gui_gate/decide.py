@@ -13,6 +13,8 @@ Options
   risk_review high-risk action: the main model must think it over and re-send with gate_ack
   ask_human   high-risk action: a person approves it (dialog / MCP elicitation / via the agent)
   handoff     a person must do this step (secret entry, captcha) before the agent goes on
+  deny        risky and not authorized (reviewer said no, a person said no, or the same effect was already
+              refused): not executed, the agent gets a safe alternative and goes on (deny-and-continue)
 
 Deciders (who settles the grey zone after the rules):
   formula  rules + calibrated logistic predictor + tree probe (no model calls)
@@ -29,7 +31,8 @@ from typing import Optional
 
 from .features import FEATURE_NAMES, ActionCtx
 
-OPTIONS = ["direct", "check", "heal", "wait", "look_light", "look_full", "reason", "risk_review", "model_review", "ask_human", "handoff"]
+OPTIONS = ["direct", "check", "heal", "wait", "look_light", "look_full", "reason", "risk_review", "model_review", "ask_human",
+           "handoff", "deny"]
 
 # Prior weights for P(direct succeeds). Hand-set, documented as a prior only:
 # replaced by `gui-gate-train` once logs exist. Logit scale.
@@ -74,6 +77,10 @@ class GateConfig:
     toolset: str = "core"         # core: expose only the tools a GUI task needs | all
     auto_observe: bool = True     # after an action, return the window's fresh tree (no extra model turn)
     delivery: str = "auto"        # auto (background, sticky fallback to foreground) | background | foreground
+    task: str = ""                # the user's request, verbatim (authorizes risky actions it explicitly asks for)
+    batch: str = "auto"           # auto: run_actions + gui_script (if quickjs is installed) | actions | off
+    deny_consecutive: int = 3     # refusals in a row before the agent is told to stop and report
+    deny_total: int = 8           # refusals per session before the same
     costs: dict = field(default_factory=lambda: dict(DEFAULT_COSTS))
     weights: dict = field(default_factory=lambda: dict(PRIOR_WEIGHTS))
     gains: dict = field(default_factory=lambda: dict(PRIOR_GAINS))
@@ -93,6 +100,11 @@ class GateConfig:
         c.toolset = os.environ.get("GUI_GATE_TOOLSET", c.toolset)
         c.auto_observe = os.environ.get("GUI_GATE_AUTO_OBSERVE", "1") not in ("0", "false", "no")
         c.delivery = os.environ.get("GUI_GATE_DELIVERY", c.delivery)
+        c.task = os.environ.get("GUI_GATE_TASK", c.task)
+        tf = os.environ.get("GUI_GATE_TASK_FILE")
+        if not c.task and tf and os.path.exists(tf):
+            c.task = open(tf, encoding="utf-8").read().strip()
+        c.batch = os.environ.get("GUI_GATE_BATCH", c.batch)
         for k, v in over.items():
             if v is not None:
                 setattr(c, k, v)

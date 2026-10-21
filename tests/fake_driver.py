@@ -12,7 +12,8 @@ PID, WID = 4242, 777
 state = {
     "snap": 0,
     "elements": [("button", "Increment"), ("button", "Delete file"), ("text", "count=0"), ("button", "OK"), ("button", "OK")],
-    "windows": [{"window_id": WID, "pid": PID, "x": 0, "y": 0, "width": 500, "height": 300, "is_on_screen": True}],
+    "windows": [{"window_id": WID, "pid": PID, "x": 0, "y": 0, "width": 500, "height": 300, "is_on_screen": True,
+                 "title": "Fixture"}],
     "fail_next": 0,
     "count": 0,
 }
@@ -70,6 +71,9 @@ def call(name, a):
                 state["fail_next"] -= 1
                 return text("click failed: target_occluded", err=True, sc={"code": "target_occluded"})
             role, lab = state["elements"][int(idx)]
+            if lab == "Open dialog":
+                state["windows"].append({"window_id": WID + 5, "pid": PID, "x": 60, "y": 60, "width": 200,
+                                         "height": 100, "is_on_screen": True, "title": "Dialog"})
             if lab == "Increment":
                 state["count"] += 1
                 state["elements"][2] = ("text", f"count={state['count']}")

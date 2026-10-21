@@ -21,19 +21,20 @@ import threading
 import time
 from typing import Optional
 
-from . import __version__
+from . import __version__, authz, batch
 from .decide import Decision, GateConfig, choose, hard_rules, p_direct, policy_decision
 from .features import GATED_TOOLS, OBS_TOOLS, ActionCtx, build_ctx, features
 from .human import Human
 from .jsonrpc import ChildMCP, StdioWriter, find_driver, log_err, text_of
 from .log import EventLog
+from .reviewer import Reviewer
 from .state import ActionRecord, GateState
 
 GATE_ARGS = ("gate_ack", "gate_confirm")
 
 CORE_TOOLS = {"list_apps", "list_windows", "get_window_state", "launch_app", "bring_to_front", "click",
               "double_click", "right_click", "type_text", "press_key", "hotkey", "scroll", "set_value", "drag",
-              "invoke_menu", "gate_report", "request_human"}
+              "invoke_menu", "gate_report", "request_human", "gate_task", "run_actions", "gui_script"}
 # parameters an agent driving a GUI task practically never needs (dropped from schemas in core mode;
 # calls that still pass them go through unchanged)
 RARE_PARAMS = {"session", "capture_mode", "screenshot_out_file", "verbose", "full_output", "display_only", "cursor_id",
@@ -55,6 +56,15 @@ GATE_TOOLS = [
             "question": {"type": "string", "description": "What you need from them, in one or two plain sentences."},
             "kind": {"type": "string", "enum": ["approve", "answer", "takeover"]},
         }, "required": ["question"]},
+    },
+    {
+        "name": "gate_task",
+        "description": "Tell the gate the user's request, VERBATIM, once at the start (copy their words; do not "
+                       "summarise or add to them). The gate lets a risky step through without stopping you when the "
+                       "request explicitly asks for it (e.g. \"overwrite report.pdf\"). It can be set only once.",
+        "inputSchema": {"type": "object", "properties": {
+            "request": {"type": "string", "description": "The user's request, word for word."},
+        }, "required": ["request"]},
     },
     {
         "name": "gate_report",
@@ -84,7 +94,11 @@ INSTRUCTIONS_NOTE = (
     "If a call returns a message starting with \"[gate]\", nothing was executed: do exactly what it says "
     "(re-read cheaply, re-read with a screenshot, double-check the target or think a risky step over and "
     "retry with gate_ack:true, or ask the user and retry with gate_confirm). To save time the gate omits the screenshot "
-    "from get_window_state when the element tree is enough; pass include_screenshot:true when you really need pixels."
+    "from get_window_state when the element tree is enough; pass include_screenshot:true when you really need pixels. "
+    "Each action's result already carries a fresh read of the window: do not read it again before the next step. "
+    "Several steps whose targets you can already see go in ONE run_actions call. If the user's request is known, "
+    "pass it verbatim once with gate_task. When the gate refuses a risky step it tells you a safe way to go on: "
+    "take it and finish the task."
 )
 
 
@@ -146,7 +160,7 @@ class Gate:
         self.out = StdioWriter(sys.stdout)
         self.state = GateState()
         self.log = EventLog(log_path)
-        self.lock = threading.Lock()
+        self.lock = threading.RLock()  # re-entrant: batches call gated()/passthrough() while holding it
         self.confirm_codes: dict[str, str] = {}
         self.pending_methods: dict = {}  # agent request id -> method (to rewrite some responses)
         self.stats = {"actions": 0, "executed": 0, "by_option": {}, "obs_calls": 0, "screenshots": 0,
@@ -166,6 +180,17 @@ class Gate:
         # drops the driver's pixel frame and the next x/y click fails
         self._pixel_pids: set = set()
         self._probe_el = None
+        # v0.4: authorization, independent reviewer, deny-and-continue, batching, observation budget
+        self.reviewer = Reviewer.from_env()
+        self.denied_effects: dict[str, str] = {}  # effect key -> reason it was refused
+        self.denials_consec = 0
+        self.denials_total = 0
+        self._task_locked = bool(cfg.task)
+        self._batch = False
+        self._batch_ctx = None
+        self._script_store: dict = {}
+        self._pix_age: dict = {}      # pid -> GUI actions since the last pixel (x/y) action
+        self._last_auto: dict = {}    # pid -> what the last auto-observe returned (for duplicate reads)
         self.child_cmd = child_cmd
         self.init_params: Optional[dict] = None
         self.client_elicit = False
@@ -275,6 +300,9 @@ class Gate:
                 for pv in props0.values():
                     if isinstance(pv, dict) and isinstance(pv.get("description"), str):
                         pv["description"] = _short(pv["description"], 140)
+            if t.get("name") == "get_window_state":
+                sch["properties"]["fresh"] = {"type": "boolean", "description": "Force a new read even though "
+                                              "nothing was done since the tree that came back with your last action."}
             if t.get("name") in GATED_TOOLS:
                 props = t.setdefault("inputSchema", {}).setdefault("properties", {})
                 props["gate_ack"] = {"type": "boolean", "description": "Set true after the gate asked you to "
@@ -282,6 +310,10 @@ class Gate:
                 props["gate_confirm"] = {"type": "string", "description": "Confirmation code the gate gave "
                                          "for a high-risk action, only after the user approved it."}
         allt = tools + GATE_TOOLS
+        if self.cfg.batch != "off":
+            allt = allt + [batch.RUN_ACTIONS_TOOL]
+            if self.cfg.batch == "auto" and batch.quickjs_available():
+                allt = allt + [batch.GUI_SCRIPT_TOOL]
         if self.cfg.toolset == "core":
             allt = [t for t in allt if t.get("name") in CORE_TOOLS]
         result["tools"] = allt
@@ -329,6 +361,14 @@ class Gate:
                 result = self.config(args)
             elif name == "request_human":
                 result = self.request_human(args)
+            elif name == "gate_task":
+                result = self.set_task(args)
+            elif name == "run_actions":
+                with self.lock:
+                    result = batch.run_actions(self, args)
+            elif name == "gui_script" and batch.quickjs_available():
+                with self.lock:
+                    result = batch.gui_script(self, args)
             elif name in GATED_TOOLS:
                 with self.lock:
                     result = self.gated(name, args)
@@ -344,6 +384,11 @@ class Gate:
     def passthrough(self, name: str, args: dict) -> dict:
         t0 = time.time()
         trimmed = False
+        fresh = bool(args.pop("fresh", False)) if name == "get_window_state" else False
+        if name == "get_window_state" and self.cfg.policy == "gate" and not fresh:
+            dup = self._duplicate_read(args)
+            if dup is not None:
+                return dup
         if name == "get_window_state" and self.cfg.policy == "gate" and "include_screenshot" not in args:
             pid = args.get("pid")
             if pid in self._seen_pids and pid not in self._want_shot and pid not in self._pixel_pids:
@@ -502,6 +547,7 @@ class Gate:
         confirmed = bool(code) and self.confirm_codes.pop(str(code), None) == ctx.signature
         self.stats["actions"] += 1
         self.aid += 1
+        self._risk_info = None
 
         wc, wadd = None, None
         if ctx.target.kind == "pixel" or self.state.actions:
@@ -522,6 +568,8 @@ class Gate:
             dec = hard_rules(ctx, f, self.cfg, confirmed, ack)
             if dec is not None and dec.option == "ask_human" and confirmed:
                 dec = None
+            if dec is not None and dec.option in ("ask_human", "risk_review") and ctx.risk:
+                dec = self._risk_gate(ctx, dec, trail)
             if dec is not None and ack and dec.option == "reason":
                 dec = None
             if dec is None:
@@ -609,7 +657,8 @@ class Gate:
                  "risk": ctx.risk, "sig": ctx.signature, "features": f, "p_direct": round(dec.p_direct, 4),
                  "decision": opt, "tier": dec.tier, "trail": trail, "reason": dec.reason, "check": check_res,
                  "shadow_check": shadow, "decider": self.cfg.decider, "judge": judge, "window_changed": wc, "window_added": wadd, "ack": ack, "confirmed": confirmed,
-                 "risk_level": ctx.risk_level, "handoff": ctx.handoff}
+                 "risk_level": ctx.risk_level, "handoff": ctx.handoff, "risk_gate": self._risk_info,
+                 "batch": self._batch_ctx}
 
         # a person decides / acts, when the gate can reach one itself
         if opt in ("ask_human", "handoff") and self.human.resolve_channel() != "chat":
@@ -641,9 +690,7 @@ class Gate:
                 verdict = "declined" if h["answer"] == "deny" else f"did not answer within {int(self.cfg.human_timeout)} s"
                 event.update({"executed": False, "gate_ms": round((time.time() - tg0) * 1000, 1)})
                 self.log.write(event)
-                return _refusal(dec, f"[gate] Not executed: the person {verdict} ({dec.reason}). Do not retry this "
-                                     f"action. Stop and tell the user what you wanted to do and why.",
-                                {"human": h["answer"]})
+                return _refusal(dec, self._deny_text(ctx, dec, f"the person {verdict}"), {"human": h["answer"]})
 
         if opt == "direct":
             t0 = time.time()
@@ -667,6 +714,10 @@ class Gate:
             rec.aid = self.aid
             self.state.record_action(rec)
             pid0 = ctx.target.pid
+            self.denials_consec = 0
+            if pid0 is not None:
+                k = int(pid0)
+                self._pix_age[k] = 0 if ("x" in args and "y" in args) else self._pix_age.get(k, 99) + 1
             if pid0 is not None and "x" in args and "y" in args:
                 self._pixel_pids.add(pid0)
             if pid0 is not None and rec.is_error and _NO_FRAME.search(txt):
@@ -693,7 +744,7 @@ class Gate:
                     f"[gate] your token was stale; re-bound to {args['element_token']} from a fresh tree read. "
                     f"Older tokens for this window are now stale."})
             if (not rec.is_error and name in AUTO_OBS_TOOLS and pid0 is not None and self.cfg.policy == "gate"
-                    and self.cfg.auto_observe):
+                    and self.cfg.auto_observe and not self._batch):
                 self._auto_observe(pid0, ctx.target.window_id, res)
             return res
 
@@ -732,10 +783,9 @@ class Gate:
                     f"If you are sure, call again with gate_ack:true.")
         elif opt == "risk_review":
             self.stats["model_turns_requested"] += 1
-            text = (f"[gate] Not executed: {dec.reason} on {what}. Stop and think before doing this: did the user "
-                    f"explicitly ask for exactly this, and can it be undone? If the user did not clearly ask for it, "
-                    f"ask them first. Only if you are sure, call the same tool again with the same arguments plus "
-                    f"gate_ack:true.")
+            text = (f"[gate] Not executed: {dec.reason} on {what}. Did the user explicitly ask for exactly this, and "
+                    f"can it be undone? If not, the safe way on is: {authz.alternative(ctx.risk)}. Only if the "
+                    f"user clearly asked for it, call the same tool again with the same arguments plus gate_ack:true.")
         elif opt == "handoff":
             self.stats["model_turns_requested"] += 1
             text = (f"[gate] Not executed: {dec.reason}. A person must do this step, not you. Ask the user to do it "
@@ -745,8 +795,11 @@ class Gate:
             c = secrets.token_hex(3)
             self.confirm_codes[c] = ctx.signature
             extra["confirm_code"] = c
-            text = (f"[gate] Not executed: {dec.reason} on {what}. Ask the user to approve this exact action. "
-                    f"Only after they approve, call the same tool again with the same arguments plus gate_confirm:\"{c}\".")
+            text = (f"[gate] Not executed: {dec.reason} on {what}. Either ask the user to approve this exact action "
+                    f"and, only after they approve, call the same tool again with the same arguments plus "
+                    f"gate_confirm:\"{c}\"; or, without waiting for them: {authz.alternative(ctx.risk)}.")
+        elif opt == "deny":
+            text = self._deny_text(ctx, dec, "refused")
         else:
             text = f"[gate] Not executed: {dec.reason}."
         event.update({"executed": False, "gate_ms": round(gate_ms, 1)})
@@ -771,7 +824,9 @@ class Gate:
                 new = [w for w in now_ids if w not in prev_ids] if prev_ids else []
                 wid = int(new[-1]) if new else (int(window_id) if window_id else self.state.window_of_pid.get(pid))
                 note = f"A new window/dialog opened (window_id={wid}); this is its tree.\n" if new else ""
-                shot = pid in self._pixel_pids
+                # screenshot only while the agent is aiming by pixels in this app (an x/y action within the
+                # last two actions), not for the rest of the session (v0.3: 94% of auto-observes had one)
+                shot = pid in self._pixel_pids and self._pix_age.get(pid, 99) <= 1
                 a = {"pid": pid, "include_screenshot": shot}
                 if wid:
                     a["window_id"] = wid
@@ -787,7 +842,10 @@ class Gate:
                     time.sleep(0.4)
                     continue
                 break
-            if "PARTIAL TREE" in text_of(r) and not shot:
+            partial = "PARTIAL TREE" in text_of(r)
+            if partial:
+                self._pixel_pids.add(pid)
+            if partial and not shot and self._pix_age.get(pid, 99) <= 3:
                 # a grid/canvas the tree cannot show: the agent will aim by pixels, so give it the picture
                 self._pixel_pids.add(pid)
                 shot = True
@@ -811,17 +869,119 @@ class Gate:
                 more = f"\n... ({len(lines) - MAX_TREE_LINES} more rows; call get_window_state for the full tree)"
                 lines = lines[:MAX_TREE_LINES]
             busy = " The UI still looks busy." if _LOADING_RX.search(md) else ""
+            if partial and not shot:
+                busy += (" The tree is partial here (grid/canvas); read with include_screenshot:true before aiming "
+                         "by x/y.")
             res.setdefault("content", []).append({"type": "text", "text":
                 f"[gate] Window right after the action (snapshot {sc.get('snapshot_id')}; tokens are "
                 f"{sc.get('snapshot_id')}:N, older tokens are stale).{busy}\n{note}" + "\n".join(lines) + more})
             if shot:
                 res["content"].extend(c for c in (r.get("content") or []) if c.get("type") == "image")
             self.stats["auto_obs"] += 1
+            self._last_auto[pid] = {"aid": self.aid, "t": time.time(), "wid": a.get("window_id"), "shot": shot,
+                                    "snap": sc.get("snapshot_id"), "truncated": bool(more)}
             self.log.write({"ev": "obs", "tool": "get_window_state", "auto": True, "ms": round((time.time() - t0) * 1000, 1),
                             "screenshot": shot, "px": 0, "snapshot": sc.get("snapshot_id"), "pid": pid,
                             "trimmed": not shot, "new_window": bool(note)})
         except Exception as e:  # never break the action result
             log_err("auto-observe failed", repr(e))
+
+    # ------------------------------------------------------- v0.4 helpers
+    def _dialog_text(self, ctx: ActionCtx) -> str:
+        from .features import _newest_obs_text
+        t = ctx.target
+        txt = (t.obs.text if t.obs else "") or ""
+        if t.pid is not None:
+            txt = (_newest_obs_text(self.state, t.pid) or "") + "\n" + txt
+        return txt[:6000]
+
+    def _risk_gate(self, ctx: ActionCtx, dec: Decision, trail: list) -> Optional[Decision]:
+        """T2 authorization (+ T3 independent reviewer for medium risk). None = let it through."""
+        t = ctx.target
+        dialog = self._dialog_text(ctx)
+        key = authz.effect_key(ctx.risk, dialog)
+        info = {"effect": key, "hazard": authz.hazard_of(ctx.risk)}
+        self._risk_info = info
+        if key in self.denied_effects:
+            trail.append("denied_before")
+            info["denied_before"] = True
+            return Decision("deny", 0.0, f"{dec.reason}; the same effect was already refused "
+                                         f"({self.denied_effects[key]})", "rule")
+        titles = batch._titles(self, t.pid) if t.pid is not None else []
+        label = (t.element.label if t.element else t.label) or ""
+        ok, why = authz.authorized(ctx.risk, self.cfg.task, label, dialog, titles)
+        info.update({"authorized": ok, "why": why})
+        if ok:
+            trail.append("authorized")
+            self.stats["authorized"] = self.stats.get("authorized", 0) + 1
+            return None
+        if self.reviewer is not None and dec.option == "risk_review":
+            action = {"tool": ctx.tool, "target_role": (t.element.role if t.element else t.role) or "",
+                      "target_label": label, "rule_that_fired": ctx.risk, "risk_level": ctx.risk_level,
+                      "typed_text": str(ctx.args.get("text") or "")[:300], "keys": ctx.args.get("keys") or ctx.args.get("key"),
+                      "window_titles": titles[:4], "dialog_text": dialog[-1500:]}
+            r = self.reviewer.review(self.cfg.task, action)
+            info["reviewer"] = r
+            self.stats["reviews"] = self.stats.get("reviews", 0) + 1
+            if r is not None:
+                if r["decision"] == "allow":
+                    trail.append("reviewer_allow")
+                    return None
+                trail.append("reviewer_deny")
+                return Decision("deny", 0.0, f"{dec.reason}; independent reviewer: {r['reason']}", "review")
+        return dec
+
+    def _deny_text(self, ctx: ActionCtx, dec: Decision, who: str) -> str:
+        """Deny-and-continue: say no, remember the effect, give the safe way on; escalate after repeated denials."""
+        self.denials_consec += 1
+        self.denials_total += 1
+        self.stats["denials"] = self.stats.get("denials", 0) + 1
+        key = (self._risk_info or {}).get("effect") or authz.effect_key(ctx.risk, self._dialog_text(ctx))
+        self.denied_effects[key] = who
+        if self.denials_consec >= self.cfg.deny_consecutive or self.denials_total >= self.cfg.deny_total:
+            self.stats["deny_escalations"] = self.stats.get("deny_escalations", 0) + 1
+            return (f"[gate] Not executed: {who} ({dec.reason}). The gate has now refused "
+                    f"{self.denials_total} risky step(s) ({self.denials_consec} in a row): stop here and tell the user "
+                    f"what you wanted to do and why.")
+        return (f"[gate] Not executed: {who} ({dec.reason}). Do not retry it or reach the same result another way "
+                f"(another button, key or command). Instead: {authz.alternative(ctx.risk)}.")
+
+    def _duplicate_read(self, args: dict) -> Optional[dict]:
+        """The agent re-reads a window right after the auto-observe that came with its last action."""
+        try:
+            pid = int(args.get("pid"))
+        except (TypeError, ValueError):
+            return None
+        c = self._last_auto.get(pid)
+        if not c or c["aid"] != self.aid or time.time() - c["t"] > 20 or c["truncated"] or not c["snap"]:
+            return None
+        if args.get("window_id") and c["wid"] and int(args["window_id"]) != int(c["wid"]):
+            return None
+        if args.get("include_screenshot") and not c["shot"]:
+            return None
+        if any(k in args for k in ("since", "tree_format", "max_elements", "query", "capture_mode")):
+            return None
+        with self.lock:
+            self.stats["dup_reads_saved"] = self.stats.get("dup_reads_saved", 0) + 1
+        self.log.write({"ev": "obs", "tool": "get_window_state", "cached": True, "snapshot": c["snap"], "pid": pid,
+                        "screenshot": False, "ms": 0})
+        return {"content": [{"type": "text", "text":
+                f"[gate] Nothing has been done since snapshot {c['snap']}, which came back with your last action "
+                f"(same window, its tokens {c['snap']}:N are current). Use that tree. Call again with fresh:true only "
+                f"if you really need a new read."}],
+                "structuredContent": {"snapshot_id": c["snap"], "pid": pid, "window_id": c["wid"], "cached": True}}
+
+    def set_task(self, args: dict) -> dict:
+        req = str(args.get("request") or "").strip()
+        if self._task_locked:
+            return {"content": [{"type": "text", "text": "[gate] The user's request is already set; it cannot be "
+                                 "changed."}], "isError": True}
+        if not req:
+            return {"content": [{"type": "text", "text": "[gate] request is empty"}], "isError": True}
+        self.cfg.task = req[:4000]
+        self._task_locked = True
+        self.log.write({"ev": "task", "source": "agent", "chars": len(req)})
+        return {"content": [{"type": "text", "text": "[gate] Noted."}]}
 
     def request_human(self, args: dict) -> dict:
         q = str(args.get("question") or "").strip() or "The agent needs your help."
@@ -910,6 +1070,10 @@ def main(argv=None) -> None:
     ap.add_argument("--toolset", choices=["core", "all"], help="core (default): only the tools a GUI task needs")
     ap.add_argument("--no-auto-observe", dest="auto_observe", action="store_false", default=None,
                     help="do not return the fresh window tree after each action")
+    ap.add_argument("--task", help="the user's request, verbatim (or GUI_GATE_TASK / GUI_GATE_TASK_FILE)")
+    ap.add_argument("--task-file", help="file holding the user's request, verbatim")
+    ap.add_argument("--batch", choices=["auto", "actions", "off"],
+                    help="server-side batching: auto (run_actions + gui_script when quickjs is installed), actions, off")
     ap.add_argument("--weights", help="trained weights JSON (from gui-gate-train)")
     ap.add_argument("--log", help="JSONL log path (default ~/.gui-gate/logs/<time>.jsonl; 'none' disables)")
     ap.add_argument("--driver", help="path to cua-driver (default: PATH or ~/.local/bin)")
@@ -920,7 +1084,9 @@ def main(argv=None) -> None:
     cfg = GateConfig.from_env(policy=a.policy, lam=a.lam, collect=a.collect, risk_confirm=a.risk_confirm,
                               decider=a.decider, risk_mode=a.risk_mode, human_channel=a.human_channel,
                               human_timeout=a.human_timeout, toolset=a.toolset, auto_observe=a.auto_observe,
-                              delivery=a.delivery)
+                              delivery=a.delivery, task=a.task, batch=a.batch)
+    if a.task_file and not cfg.task and os.path.exists(a.task_file):
+        cfg.task = open(a.task_file, encoding="utf-8").read().strip()
     if a.weights:
         cfg.load_weights(a.weights)
     if a.child:

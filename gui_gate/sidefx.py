@@ -20,6 +20,11 @@ from typing import Optional
 
 OVERWRITE_CTX = re.compile(r"(already exists|do you want to (replace|overwrite)|replace the existing|overwrite the existing"
                            r"|file exists|已存在|是否(替换|覆盖)|替换现有)", re.I)
+# in-document overwrites (pasting over filled cells, replacing a selection) are undoable with Ctrl+Z:
+# not a file being replaced
+IN_DOCUMENT_CTX = re.compile(r"(pasting data into cells|cells that already contain|overwrite the existing data"
+                             r"|replace the (current )?selection|单元格.*已有数据|覆盖现有数据)", re.I)
+_FILE_WORDS = re.compile(r"(\bfile\b|\bfolder\b|\.[a-z0-9]{2,5}\b[\"'”]?\s*already exists|文件)", re.I)
 CONFIRM_LABELS = {"yes", "ok", "replace", "overwrite", "save", "continue", "use", "keep both", "&yes", "_yes",
                   "是", "确定", "替换", "覆盖", "保存", "继续"}
 _TERMINAL_COMM = re.compile(r"(term|konsole|tilix|alacritty|kitty|wezterm|guake|terminator|foot|sakura)", re.I)
@@ -268,6 +273,8 @@ def shell_effects(cmdline: str, cwd: str) -> Optional[tuple[str, str]]:
 def overwrite_dialog(blob: str, label: str, keys: set) -> bool:
     """True when the visible window asks to replace an existing file and this action says yes."""
     if not blob or not OVERWRITE_CTX.search(blob):
+        return False
+    if IN_DOCUMENT_CTX.search(blob) and not _FILE_WORDS.search(blob):
         return False
     lab = (label or "").strip().lower().replace("_", "").replace("&", "")
     return lab in CONFIRM_LABELS or bool(keys & {"return", "enter", "kp_enter", "y", "alt+y"})

@@ -1,4 +1,8 @@
-# gui-gate v0.4 design (theory only, not yet implemented or benchmarked) — 2026-10-21
+# gui-gate v0.4 design — 2026-10-21
+
+STATUS: implemented in 0.4.0 (unit tests only, no benchmark yet). Correction after reading the ow16 log: the
+false positive was a paste-over-cells warning, not saving the open document; fixed in sidefx (in-document
+overwrite != file overwrite). The working-document exception is kept as a separate rule.
 
 Inputs: docs/auto-review-comparison.md (Claude auto mode, Codex auto-review, Gemini safety_decision) and an
 offline read of existing logs (results/osworld-2026-10-21-gate034, gate condition, 24 OSWorld + 10 OSGuard).
@@ -11,7 +15,7 @@ No new runs were made.
 | executed directly | 906 (94%) | interventions 6% — same order as Codex (7% reviewed) |
 | model_review (main model asked to re-check itself) | 39 | self-review; the most common intervention |
 | ask_human (high risk) | 7 | 6 "Yes replaces existing file", 3 cp-overwrite (og04 counted 3x) |
-| of those on benign OSWorld tasks | 1 (ow16) | false positive: "Yes" to overwrite = saving the open document onto itself |
+| of those on benign OSWorld tasks | 1 (ow16) | false positive: Calc's "pasting into cells that already contain data — overwrite?" warning (an undoable in-document edit, not a file) |
 | auto-observes | 647, **607 with a screenshot (94%)** | screenshot flag is sticky per app after any pixel click / partial tree |
 | OSWorld actions by target | keyboard 279, token 208, pixel 200 (29%) | only ~1/3 of actions need pixels |
 | manual reads by the agent anyway | 274 (148 with screenshot) | agent re-reads despite auto-observe -> duplicated cost |
@@ -20,7 +24,7 @@ No new runs were made.
 
 Conclusions: (a) cost comes from observation, not from the decision; (b) observation is both over-supplied
 (sticky screenshots) and duplicated (agent re-reads); (c) safety stops are rare but end the task; (d) one of
-six overwrite stops on benign work was a false positive with an obvious rule fix.
+the overwrite stops was a false positive (paste-over-cells warning matched the file-overwrite rule) with an obvious rule fix.
 
 ## 2. Principles adopted from auto-review
 1. Most actions take a zero-cost path; heavy checks only where there is downside (Claude tiers 1-2, Codex sandbox).
