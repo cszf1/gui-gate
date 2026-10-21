@@ -6,7 +6,9 @@
 //!
 //! Environment (OpenAI-compatible chat completions endpoint):
 //!   GUI_GATE_REVIEWER_URL, GUI_GATE_REVIEWER_MODEL (default deepseek-chat),
-//!   GUI_GATE_REVIEWER_KEY or GUI_GATE_REVIEWER_KEY_FILE, GUI_GATE_REVIEWER_TIMEOUT (s, default 15)
+//!   GUI_GATE_REVIEWER_KEY or GUI_GATE_REVIEWER_KEY_FILE, GUI_GATE_REVIEWER_TIMEOUT (s, default 15),
+//!   GUI_GATE_REVIEWER_MAX_TOKENS (default 1024; reasoning models think before answering),
+//!   GUI_GATE_REVIEWER_USER_AGENT (some relays only accept known clients)
 use crate::util::*;
 use regex::Regex;
 use serde_json::{json, Value};
@@ -21,6 +23,8 @@ pub struct Reviewer {
     model: String,
     key: String,
     timeout: f64,
+    max_tokens: u64,
+    user_agent: Option<String>,
 }
 
 impl Reviewer {
@@ -39,6 +43,9 @@ impl Reviewer {
             url, key,
             model: env("GUI_GATE_REVIEWER_MODEL").unwrap_or_else(|| "deepseek-chat".into()),
             timeout: env("GUI_GATE_REVIEWER_TIMEOUT").and_then(|t| t.parse().ok()).unwrap_or(15.0),
+            // reasoning models spend tokens before the JSON answer
+            user_agent: env("GUI_GATE_REVIEWER_USER_AGENT").filter(|u| !u.trim().is_empty()),
+            max_tokens: env("GUI_GATE_REVIEWER_MAX_TOKENS").and_then(|t| t.parse().ok()).unwrap_or(1024),
         })
     }
 
@@ -62,7 +69,7 @@ impl Reviewer {
     }
 
     fn call(&self, system: &str, prompt: &str) -> Option<Value> {
-        let body = json!({"model": self.model, "temperature": 0, "max_tokens": 120,
+        let body = json!({"model": self.model, "temperature": 0, "max_tokens": self.max_tokens,
                           "messages": [{"role": "system", "content": system},
                                        {"role": "user", "content": prompt}]});
         let t0 = Instant::now();
@@ -78,6 +85,9 @@ impl Reviewer {
         let mut req = b.build().post(&self.url).set("Content-Type", "application/json");
         if !self.key.is_empty() {
             req = req.set("Authorization", &format!("Bearer {}", self.key));
+        }
+        if let Some(ua) = &self.user_agent {
+            req = req.set("User-Agent", ua); // some relays only serve known clients
         }
         let d: Value = req.send_json(body).ok()?.into_json().ok()?;
         let txt = d.get("choices")?.get(0)?.get("message")?.get("content")?.as_str()?.to_string();
