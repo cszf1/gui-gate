@@ -161,16 +161,18 @@ class GateTests(unittest.TestCase):
         r = self.c.call("click", element_token="s000000ff:0")
         self.assertIn("[gate]", txt(r))
 
-    def test_grey_zone_runs_cheap_check(self):
+    def test_somewhat_old_read_does_not_cost_a_turn(self):
+        # v2: no fixed grey band; a few keystrokes since the read are not worth a probe or a model turn
+        # (logged probes flagged 2 of 82 later failures), so the click goes through at once
         self.c.close()
         self.c = Client("--no-auto-observe")
         s = self.c.read()
-        for _ in range(3):  # several actions since the read push P(direct) into the grey zone
+        for _ in range(3):
             self.c.call("press_key", pid=4242, key="a")
         r = self.c.call("click", element_token=f"{s}:0")
         ev = [e for e in self.c.events() if e["ev"] == "action"][-1]
-        self.assertIn("check", ev["trail"])
-        self.assertTrue(ev["check"])
+        self.assertTrue(ev["executed"])
+        self.assertEqual(ev["model"], "osworld_v2")
         self.assertFalse(r.get("isError"), txt(r))
 
     def test_grey_zone_refresh_catches_relabel(self):

@@ -399,7 +399,30 @@ fn shell_check(cmd: &str, pid: i64, bump: &mut dyn FnMut(&str, String)) {
 pub const FEATURE_NAMES: &[&str] = &["bias", "is_pixel", "is_token", "is_name", "is_keyboard", "no_obs", "token_stale",
     "log_obs_age", "acts_since_obs", "obs_had_shot", "last_err", "last_unverif", "last_popup", "repeat", "edge_close",
     "small_target", "label_empty", "label_dup", "loading_cue", "window_changed", "window_added", "elem_unknown",
-    "check_pass", "check_fail"];
+    "check_pass", "check_fail",
+    // v2: what this session has already shown (known failures so far) and the kind of element
+    "prev_none", "sess_fail", "consec_fail", "sig_failed", "role_menu", "role_cell", "role_toggle"];
+
+/// Session-history features from the actions before this one: (sig, known failure, no visible effect).
+/// Shared by the live gate and the offline trainer so both compute exactly the same numbers.
+pub fn history_feats(prev: &[(String, bool, bool)], sig: &str) -> [(&'static str, f64); 4] {
+    let n = prev.len() as f64;
+    let fails = prev.iter().filter(|p| p.1).count() as f64;
+    let consec = prev.iter().rev().take_while(|p| p.1).count().min(3) as f64;
+    let sig_failed = prev.iter().any(|p| p.1 && p.0 == sig);
+    let prev_none = prev.last().map(|p| p.2).unwrap_or(false);
+    [("prev_none", if prev_none { 1.0 } else { 0.0 }),
+     ("sess_fail", ((fails + 1.0) / (n - fails + 4.0)).ln()),   // shrunk log-odds of failing in this session
+     ("consec_fail", consec),
+     ("sig_failed", if sig_failed { 1.0 } else { 0.0 })]
+}
+
+pub fn role_feats(role: &str) -> [(&'static str, f64); 3] {
+    let r = role.to_lowercase();
+    let b = |x: bool| if x { 1.0 } else { 0.0 };
+    [("role_menu", b(r.contains("menu"))), ("role_cell", b(r.contains("cell"))),
+     ("role_toggle", b(r.contains("toggle") || r.contains("check") || r.contains("radio")))]
+}
 
 pub type Feats = IndexMap<&'static str, f64>;
 
@@ -477,6 +500,14 @@ pub fn features(ctx: &ActionCtx, st: &GateState, window_changed: Option<bool>, w
         Some(true) => f["check_pass"] = 1.0,
         Some(false) => f["check_fail"] = 1.0,
         None => {}
+    }
+    let prev: Vec<(String, bool, bool)> = st.actions.iter().map(|a| (a.key.clone(), a.known_fail(), a.no_effect)).collect();
+    for (k, v) in history_feats(&prev, &ctx.signature) {
+        f[k] = v;
+    }
+    let role = t.element.as_ref().map(|e| e.role.clone()).unwrap_or_else(|| t.role.clone());
+    for (k, v) in role_feats(&role) {
+        f[k] = v;
     }
     f
 }

@@ -25,7 +25,7 @@ mod util;
 use decide::GateConfig;
 use util::*;
 
-const HELP: &str = "usage: gui-gate [setup|doctor|update|train|compare] [options]
+const HELP: &str = "usage: gui-gate [setup|doctor|update|train|compare|replay] [options]
 
 Cua Driver behind a pre-action value gate (MCP stdio server).
 
@@ -43,7 +43,7 @@ options:
   --no-auto-observe                   do not return the fresh window tree after each action
   --task TEXT | --task-file PATH      the user's request, verbatim (or GUI_GATE_TASK / GUI_GATE_TASK_FILE)
   --mode {both,single}                both (default): single-step tools + run_actions; single: one action per call
-  --weights PATH                      trained weights JSON
+  --weights PATH|prior_v1             trained weights JSON (default: built-in osworld_v2)
   --log PATH|none                     JSONL log (default ~/.gui-gate/logs/<time>.jsonl)
   --driver PATH                       path to cua-driver (default: the bundled one)
   --driver-arg ARG                    extra args for `cua-driver mcp` (repeatable)
@@ -59,6 +59,7 @@ fn main() {
             "update" => Some(updates::update_main(rest)),
             "train" => Some(tools::train_main(rest)),
             "compare" => Some(tools::compare_main(rest)),
+            "replay" => Some(tools::replay_main(rest)),
             _ => None,
         };
         if let Some(c) = code {
@@ -130,7 +131,11 @@ fn main() {
             }
         }
     }
-    if let Some(w) = weights {
+    if weights.as_deref() == Some("prior_v1") {
+        cfg.weights = decide::prior_v1_weights();
+        cfg.calib = None;
+        cfg.model_name = "prior_v1".into();
+    } else if let Some(w) = weights {
         if let Err(e) = cfg.load_weights(&w) {
             log_err(&format!("cannot load weights {w}: {e}"));
         }
