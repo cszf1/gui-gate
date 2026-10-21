@@ -1,0 +1,1 @@
+Found the "Define the colors of the volume slider" field. I'll replace it with a dark (black-ish) palette.

@@ -1,0 +1,3 @@
+Verified: all 3 matching files copied with hierarchy intact, and the pre-existing `fails/KEEP.txt` was left untouched.
+
+DONE — Created `./fails` and copied all `*failed.ipynb` files from `~/test_environment` using `find ... | xargs cp --parents`, preserving subdirectories (`fails/dir1/`, `fails/dir2/subdir1/`, `fails/dir3/`), while pruning the `fails` dir itself to avoid recursion.

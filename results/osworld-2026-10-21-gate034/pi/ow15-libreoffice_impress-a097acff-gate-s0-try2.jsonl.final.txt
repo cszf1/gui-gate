@@ -1,0 +1,3 @@
+`pre.pptx` now appears on the Desktop, and the Impress window title confirms the document is loaded from it. No format-conversion dialog appeared, so it saved cleanly as PowerPoint format.
+
+DONE — Used File > Save As in LibreOffice Impress to save the open presentation as `/home/user/Desktop/pre.pptx` (PowerPoint format), verified the file icon on the Desktop.

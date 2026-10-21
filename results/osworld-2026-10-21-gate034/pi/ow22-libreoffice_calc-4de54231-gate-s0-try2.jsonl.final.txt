@@ -1,0 +1,1 @@
+Columns B and D are filled. Now let me add the "Combined Data" column in E.

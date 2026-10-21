@@ -1,0 +1,1 @@
+DONE — On the "Features" slide (slide 3) of `41_3.pptx` I used Insert → Table… and created a 5-row × 2-column table, positioned in the content area, then saved with Ctrl+S.

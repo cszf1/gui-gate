@@ -1,0 +1,3 @@
+Font size slider moved to the far right — value now reads **72** (Huge), the maximum.
+
+DONE — Opened `chrome://settings/fonts` in Chromium and dragged the "Font size" slider from 16 all the way to the maximum (72, Huge).

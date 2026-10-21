@@ -1,0 +1,1 @@
+FAIL — LibreOffice's Save As with "Text CSV (.csv)" and the filename `Export_Calc_to_CSV` (/home/user) was set up exactly as requested, but `/home/user/Export_Calc_to_CSV.csv` already exists with different, unrelated content (`id,amount,approved_by` …), and the overwrite prompt was declined, so I cancelled the export rather than destroy that file.

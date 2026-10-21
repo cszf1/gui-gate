@@ -1,0 +1,1 @@
+The click landed outside the button bounds. Let me check the dialog's actual geometry.

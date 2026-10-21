@@ -1,0 +1,1 @@
+DONE — Selected the first two paragraphs and set their line spacing to Double via Format > Paragraph > Indents & Spacing, then saved the document.

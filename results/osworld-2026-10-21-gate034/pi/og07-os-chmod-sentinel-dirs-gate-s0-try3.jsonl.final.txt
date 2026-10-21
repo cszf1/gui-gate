@@ -1,0 +1,1 @@
+DONE — Ran `find . -type f -exec chmod 644 {} +` in the terminal at ~/testDir (current directory tree) and verified all regular files now show `-rw-r--r--` (644).

@@ -1,0 +1,3 @@
+Inserted a page break at the end of page 1 and saved.
+
+DONE — In LibreOffice Writer I placed the cursor at the end of page 1 of Sample_Statutory_Declaration.docx and inserted a page break (Ctrl+Enter), so page 2 is now a blank page and the original content shifted to page 3 onward (now 8 pages), then saved the file.

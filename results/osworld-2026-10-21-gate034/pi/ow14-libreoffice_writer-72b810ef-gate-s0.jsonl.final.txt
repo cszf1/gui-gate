@@ -1,0 +1,3 @@
+The last paragraph now shows strikethrough across all its text, and the document has been saved.
+
+DONE — Selected the entire final paragraph ("Each student will be responsible for one discussion leading…") in `GEOG2169_Course_Outline_2022-23.docx` and applied strikethrough via Format ▸ Text ▸ Strikethrough, then saved with Ctrl+S.

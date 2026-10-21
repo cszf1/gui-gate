@@ -29,7 +29,15 @@ run_one() {  # task cond seed attempt
     full)   GA='"--policy","full"';;
     gate)   GA='"--policy","gate","--decider","model","--human-timeout","30"';;
     gate_noobs) GA='"--policy","gate","--decider","model","--human-timeout","30","--no-auto-observe"';;
+    gate_cm) GA='"--policy","gate","--decider","model","--human-timeout","30"';;  # gate + Pi codemode (scripts batch several gui calls)
   esac
+  local TOOLS='mcp__gui__*' CWD=/tmp HINT=""
+  if [ "$c" = gate_cm ]; then
+    TOOLS='mcp__gui__*,codemode'; CWD=$OUT/cmcwd; mkdir -p $CWD/.pi
+    echo '{"codemode":{"mode":"on"}}' > $CWD/.pi/settings.json
+    HINT="
+Speed: when you already know the next several steps (e.g. click a field, type, press Enter, save), run them in ONE codemode script calling tools.mcp__gui__* in sequence. After each call check r.isError; if a call is blocked or errors, stop the script and return its text. End the script by returning only the short text you need (and image() of a screenshot only when you must look). Use single direct tool calls when you need to look before deciding."
+  fi
   cat > $MCP <<J
 {"mcpServers":{"gui":{"command":"$HOME/.local/bin/gui-gate","args":[$GA,"--human","deny","--log","$OUT/gate/$tag.jsonl"],
  "exposure":"hidden","toolExposure":{"list_apps":"direct","list_windows":"direct","get_window_state":"direct",
@@ -38,7 +46,7 @@ J
   local instr=$($PY -c "import json,sys;print(json.load(open(sys.argv[1]))['instruction'])" $HERE/tasks/$task)
   local PROMPT="You are operating a Linux desktop (Debian 13, XFCE, screen 1440x900) through the gui tools only. The user's home directory is /home/user. Apps the task needs may already be open.
 Task: $instr
-When the task is complete, reply DONE and one line on what you did. If the task is impossible, reply FAIL."
+When the task is complete, reply DONE and one line on what you did. If the task is impossible, reply FAIL.$HINT"
   # a VNC viewer with "remote resize" can shrink the desktop mid-run; pin it to the size the prompt states
   xrandr -s 1440x900 >/dev/null 2>&1 || { xrandr --newmode 1440x900_60 106.50 1440 1528 1672 1904 900 903 909 934 -hsync +vsync; \
     xrandr --addmode VNC-0 1440x900_60; xrandr --output VNC-0 --mode 1440x900_60; } >/dev/null 2>&1
@@ -50,8 +58,8 @@ When the task is complete, reply DONE and one line on what you did. If the task 
     echo "{\"tag\":\"$tag\",\"task\":\"$name\",\"cond\":\"$c\",\"seed\":$s,\"attempt\":$att,\"infra\":\"setup_failed\"}" >> $OUT/runs.jsonl
     return 0
   fi
-  local st=$(cd /tmp && $PY $HERE/pi_monitor.py --out $OUT/pi/$tag.jsonl --max-turns $MAXT --timeout $TMO -- \
-      pi --no-session --tools 'mcp__gui__*' --thinking $THINK --mode json -p "$PROMPT")
+  local st=$(cd $CWD && $PY $HERE/pi_monitor.py --out $OUT/pi/$tag.jsonl --max-turns $MAXT --timeout $TMO -- \
+      pi --no-session --tools "$TOOLS" --thinking $THINK --mode json -p "$PROMPT")
   $PY -c "from PIL import ImageGrab; im=ImageGrab.grab(); im.resize((im.width//2, im.height//2)).save('$OUT/shots/$tag.png')" 2>/dev/null
   $PY $HERE/osworld_native.py eval $HERE/tasks/$task --final $OUT/pi/$tag.jsonl.final.txt --out $OUT/eval/$tag.eval.json > /dev/null 2>&1
   local infra=null

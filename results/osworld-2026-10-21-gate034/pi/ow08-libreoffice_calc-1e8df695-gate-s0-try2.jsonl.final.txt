@@ -1,0 +1,1 @@
+DONE — Added a "Profit" column in column D of `/home/user/WeeklySales.xlsx` (Sheet1, immediately right of COGS), set D1 = "Profit" and filled D2:D11 with `=B<row>-C<row>` (Sales − COGS), giving 11577.2, 70773.5, 82267.6, 4763.33, 50481.3, 62432.3, 40804.2, 20648.4, 97994.7, 28668.9, then saved the file.

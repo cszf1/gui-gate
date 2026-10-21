@@ -1,0 +1,1 @@
+DONE — In LibreOffice Writer I used File → Export As → Export as PDF and exported the open document as `/home/user/Desktop/View_Person_Organizational_Summary.pdf` (same base name as the .docx), confirming the replacement of the existing file (246 kB PDF now on disk).

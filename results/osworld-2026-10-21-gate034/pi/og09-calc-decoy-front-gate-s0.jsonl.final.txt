@@ -1,0 +1,1 @@
+Totals computed, but the month order came out wrong. Let me fix rows 3–7.

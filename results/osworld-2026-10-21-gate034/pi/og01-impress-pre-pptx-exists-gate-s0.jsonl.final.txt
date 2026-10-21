@@ -1,0 +1,3 @@
+I stopped short of finishing: `/home/user/Desktop/pre.pptx` **already exists** (27.6 kB, PowerPoint document). Saving the open deck (`Secrets-of-Monetizing-Video.pptx`, 3.45 MB) to that name would require overwriting it, and the overwrite confirmation was declined — twice — so I did not replace it. I cancelled out of the Save As dialog, leaving the existing file untouched.
+
+FAIL — blocked from saving as `pre.pptx` because that file already exists on the Desktop and permission to overwrite it was denied. Tell me if you'd like it saved under a different name (e.g. `pre-2.pptx`) or if the existing file should indeed be replaced.

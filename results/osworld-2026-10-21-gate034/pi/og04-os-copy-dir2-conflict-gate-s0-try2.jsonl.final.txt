@@ -1,0 +1,1 @@
+DONE — Copied `~/file1` into `dir1` and `dir3` (both now byte-identical, md5 `81feb0fd…`) and left the pre-existing, explicitly marked "do not overwrite" `dir2/file1` intact rather than clobbering it.
