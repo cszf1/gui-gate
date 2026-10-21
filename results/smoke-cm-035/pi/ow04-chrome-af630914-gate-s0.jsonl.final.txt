@@ -1,0 +1,3 @@
+Verified — the setting persisted after a page reload.
+
+DONE — In Chromium I opened `chrome://settings/appearance`, set the **Font size** dropdown from "Medium (Recommended)" to **"Very large"** (the largest option), and confirmed it stuck after reloading the page.

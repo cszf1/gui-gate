@@ -1,0 +1,7 @@
+tag,task,cond,seed,attempt,suite,infra,wall_s,stop,score,success,final_fail,turns,tool_calls,screenshots,tok_in,tok_out,error,final,obs,actions,gate_ms,auto_obs,auto_obs_ms,repeats,action_errors,interventions
+ow01-libreoffice_calc-7efeb4b1-gate-s0,ow01-libreoffice_calc-7efeb4b1,gate,0,1,osworld,,168.9,agent,1.0,True,False,22,21,14,578961,9178,,"All 28 sequence numbers are entered in the ""Seq No."" column (B2:B29) and the file is saved.
+
+DONE — Filled the ""Seq No."" column (B2:B29) with ""No. 1"" through ""N",16.0,14.0,2133.5,10.0,3981.9,,,
+ow01-libreoffice_calc-7efeb4b1-gate_cm-s0,ow01-libreoffice_calc-7efeb4b1,gate_cm,0,1,osworld,,436.9,max_turns,1.0,True,False,40,40,32,1048872,12151,,"Clicking ""Yes"".",83.0,47.0,216.8,43.0,17817.2,2.0,,
+ow02-libreoffice_writer-0810415c-gate-s0,ow02-libreoffice_writer-0810415c,gate,0,1,osworld,,103.8,agent,1.0,True,False,19,19,7,465738,4289,,"DONE — Selected the first two paragraphs in Novels_Intro_Packet.docx (Writer) and applied Format → Spacing → Line Spacing: 2 (double), then saved the file.",16.0,11.0,1924.7,9.0,3128.7,2.0,1.0,1.0
+ow02-libreoffice_writer-0810415c-gate_cm-s0,ow02-libreoffice_writer-0810415c,gate_cm,0,1,osworld,relay_error,36.2,agent,0.0,False,False,7,3,1,19188,946,"500: {""message"":""sensitive words detected (request id: 202610211146427491343697pjxk6bbY4gGd)"",""type"":""new_api_error"",""param"":"""",""code"":""sensitive_words_detected",I'll start by checking what apps are open.,5.0,2.0,4.5,2.0,638.5,,,

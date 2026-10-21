@@ -1,0 +1,1 @@
+DONE — Used LibreOffice Writer's **File ▸ Export As ▸ Export Directly as PDF**, kept the default name `View_Person_Organizational_Summary` and Desktop location, and confirmed the overwrite, producing `/home/user/Desktop/View_Person_Organizational_Summary.pdf` (246 kB, replacing the old 863-byte placeholder).

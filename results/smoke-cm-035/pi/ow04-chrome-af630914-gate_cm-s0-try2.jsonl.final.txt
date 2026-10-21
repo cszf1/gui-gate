@@ -1,0 +1,1 @@
+DONE — Opened Chrome's `chrome://settings/fonts` (Customize fonts) and dragged the default "Font size" slider to its maximum (72, "Huge").
