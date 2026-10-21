@@ -3,7 +3,9 @@
 //!
 //! Options: direct, check (cheap tree probe), heal (re-bind a stale token), wait, look_light (re-read the
 //! tree), look_full (re-read with a screenshot), reason (double-check the target), risk_review (main model
-//! re-thinks a risky step), model_review, ask_human, handoff (a person must act), deny (deny-and-continue).
+//! review (the gate's own independent reviewer model checks the step; the acting model is never asked to judge
+//! its own action), risk_review (reviewer decides a medium-risk step), ask_human, ask_help, handoff (a person must
+//! act), deny (deny-and-continue).
 use crate::features::{fget, ActionCtx, Feats, FEATURE_NAMES};
 use crate::util::*;
 use indexmap::IndexMap;
@@ -32,7 +34,7 @@ pub const PRIOR_CALIB: (f64, f64) = (1.081, 0.04767);
 /// What an option fixes beyond the features it resets (see `after`): the residual chance it turns a
 /// would-be failure into a success. ask_help: a person does or explains the step.
 fn prior_gains() -> IndexMap<String, f64> {
-    [("check", 0.03), ("heal", 0.65), ("wait", 0.2), ("look_light", 0.15), ("look_full", 0.3), ("reason", 0.25),
+    [("check", 0.03), ("heal", 0.65), ("wait", 0.2), ("look_light", 0.15), ("look_full", 0.3), ("review", 0.35),
      ("ask_help", 0.9)]
         .iter().map(|(k, v)| (k.to_string(), *v)).collect()
 }
@@ -50,7 +52,7 @@ fn pixel_gain(o: &str) -> Option<f64> {
 /// the step back to the model cost a whole model turn (about 7 s measured, model + relay); a person ~45 s.
 fn default_costs() -> IndexMap<String, f64> {
     [("direct", 0.0), ("check", 0.2), ("heal", 0.3), ("wait", 1.0), ("look_light", 7.0), ("look_full", 9.0),
-     ("reason", 8.0), ("ask_human", 45.0), ("ask_help", 45.0)].iter().map(|(k, v)| (k.to_string(), *v)).collect()
+     ("review", 3.0), ("ask_human", 45.0), ("ask_help", 45.0)].iter().map(|(k, v)| (k.to_string(), *v)).collect()
 }
 
 /// Counterfactual features: the state this option leaves behind, scored by the same predictor.
@@ -66,7 +68,7 @@ pub fn after(f: &Feats, o: &str) -> Feats {
         }
         "wait" => set(&["loading_cue", "last_popup"], 0.0),
         "heal" => set(&["token_stale", "elem_unknown"], 0.0),
-        "reason" => set(&["label_dup", "repeat", "sig_failed"], 0.0),
+        "review" => set(&["label_dup", "repeat", "sig_failed"], 0.0),
         // a probe only tells; it fixes nothing by itself (in 332 logged probes it flagged 2 of 82 later failures)
         "check" => {}
         _ => {}
@@ -108,6 +110,7 @@ pub struct GateConfig {
     pub risk_confirm: bool,
     pub risk_mode: String,
     pub decider: String,
+    pub reviewer: bool, // an independent reviewer model is configured (GUI_GATE_REVIEWER_URL)
     pub collect: bool,
     pub human_channel: String,
     pub human_timeout: f64,
@@ -129,7 +132,7 @@ impl Default for GateConfig {
     fn default() -> Self {
         GateConfig {
             policy: "gate".into(), lam: 1.0, fail_cost: 19.0, turn_cost: 7.0, side_cost: 5.0, grey_lo: 0.55, grey_hi: 0.9, risk_confirm: true,
-            risk_mode: "auto".into(), decider: "formula".into(), collect: false, human_channel: "auto".into(),
+            risk_mode: "auto".into(), decider: "formula".into(), reviewer: false, collect: false, human_channel: "auto".into(),
             human_timeout: 120.0, toolset: "core".into(), auto_observe: true, delivery: "auto".into(), task: String::new(),
             batch: "auto".into(), deny_consecutive: 3, deny_total: 8, costs: default_costs(), weights: prior_weights(),
             gains: prior_gains(), calib: Some(PRIOR_CALIB), model_name: "osworld_v2".into(),
@@ -242,6 +245,7 @@ pub fn hard_rules(ctx: &ActionCtx, f: &Feats, cfg: &GateConfig, confirmed: bool,
         if cfg.risk_confirm && !confirmed {
             let level = ctx.risk_level.clone().unwrap_or_else(|| "high".into());
             let to_human = cfg.risk_mode == "human" || (cfg.risk_mode == "auto" && level == "high");
+            // medium risk (or every risk with risk_mode=reviewer): the gate's independent reviewer decides
             if to_human {
                 return Some(Decision::new("ask_human", 0.0, format!("{level}-risk action: {r}"), "rule"));
             }
@@ -261,7 +265,7 @@ pub fn hard_rules(ctx: &ActionCtx, f: &Feats, cfg: &GateConfig, confirmed: bool,
         return Some(Decision::new("look_full", 0.0, "the identical action just failed; its effect is unknown, so it must not be re-sent blind", "rule"));
     }
     if fget(f, "repeat") >= 2.0 && fget(f, "last_unverif") != 0.0 {
-        return Some(Decision::new("reason", 0.0, "same action sent repeatedly without a confirmed effect (possible loop)", "rule"));
+        return Some(Decision::new("review", 0.0, "same action sent repeatedly without a confirmed effect (possible loop)", "rule"));
     }
     if kind == "pixel" && (fget(f, "window_changed") != 0.0 || fget(f, "last_popup") != 0.0) && fget(f, "acts_since_obs") >= 1.0 {
         return Some(Decision::new("look_full", 0.0, "pixel target but windows/popups changed since the screenshot", "rule"));
@@ -281,7 +285,11 @@ pub fn choose(ctx: &ActionCtx, f: &Feats, cfg: &GateConfig, check_available: boo
     let p = p_direct(f, cfg);
     let pixel = ctx.target.kind == "pixel";
     let keyboard = matches!(ctx.target.kind.as_str(), "keyboard" | "none");
-    let mut avail = vec!["direct", "look_light", "look_full", "reason"];
+    let mut avail = vec!["direct", "look_light", "look_full"];
+    if cfg.reviewer && !pixel {
+        // (a pixel target needs fresh pixels; the reviewer reads the element tree, not the screen)
+        avail.push("review"); // the gate's own independent model checks the target; the acting model is not asked
+    }
     if check_available && !check_done {
         avail.push("check");
     }
@@ -289,7 +297,7 @@ pub fn choose(ctx: &ActionCtx, f: &Feats, cfg: &GateConfig, check_available: boo
         avail.push("wait");
     }
     if keyboard {
-        avail.retain(|o| *o != "reason");
+        avail.retain(|o| *o != "review");
     }
     if cfg.human_channel != "deny" && fget(f, "consec_fail") >= 2.0 {
         avail.push("ask_help");
@@ -309,7 +317,7 @@ pub fn choose(ctx: &ActionCtx, f: &Feats, cfg: &GateConfig, check_available: boo
     let mut best = scores.iter().fold((String::new(), f64::INFINITY), |acc, (k, v)| if *v < acc.1 { (k.clone(), *v) } else { acc }).0;
     let mut tier = "model";
     // before handing the step back to the model (a whole turn), try the cheap gate-side probe once
-    if check_available && !check_done && ["look_light", "look_full", "reason"].contains(&best.as_str()) {
+    if check_available && !check_done && ["look_light", "look_full", "review"].contains(&best.as_str()) {
         best = "check".into();
         tier = "grey";
     }
@@ -379,6 +387,23 @@ mod tests {
         assert_eq!(choose(&ctx("click", "token", "Bold"), &f, &cfg, false, false).option, "ask_help");
         cfg.human_channel = "deny".into();
         assert_ne!(choose(&ctx("click", "token", "Bold"), &f, &cfg, false, false).option, "ask_help");
+    }
+
+    #[test]
+    fn doubtful_step_goes_to_the_reviewer_never_back_to_the_agent() {
+        let mut f = feats();
+        f["label_dup"] = 1.0;
+        f["sig_failed"] = 1.0;
+        f["repeat"] = 1.0;
+        f["consec_fail"] = 1.0;
+        let mut cfg = GateConfig::default();
+        cfg.reviewer = true;
+        let with = choose(&ctx("click", "token", "Save"), &f, &cfg, false, false);
+        assert_eq!(with.option, "review", "{}", with.reason);
+        cfg.reviewer = false;
+        let without = choose(&ctx("click", "token", "Save"), &f, &cfg, false, false);
+        assert_ne!(without.option, "review");
+        assert_ne!(without.option, "reason");
     }
 
     #[test]

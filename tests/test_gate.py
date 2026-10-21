@@ -75,7 +75,8 @@ class GateTests(unittest.TestCase):
     def test_tools_list_augmented(self):
         tools = {t["name"]: t for t in self.c.rpc("tools/list", {})["tools"]}
         self.assertIn("gate_report", tools)
-        self.assertIn("gate_ack", tools["click"]["inputSchema"]["properties"])
+        self.assertNotIn("gate_ack", tools["click"]["inputSchema"]["properties"])  # the agent never approves its own step
+        self.assertIn("gate_confirm", tools["click"]["inputSchema"]["properties"])
         self.assertIn("[gui-gate]", self.c.init["instructions"])
 
     def test_fresh_click_runs_directly(self):
@@ -99,27 +100,20 @@ class GateTests(unittest.TestCase):
         self.c.read()
         r = self.c.call("click", element_token=f"{s1}:3")  # "OK" exists twice -> no unique re-bind
         self.assertTrue(r.get("isError"))
-        self.assertIn("without a screenshot", txt(r))
+        self.assertIn("fresh tree is attached", txt(r))  # the gate read the window itself: no extra turn
+        self.assertIn("nothing was executed", txt(r))
 
-    def test_high_risk_main_model_review(self):
-        self.c.call("gate_config", risk_mode="model")
+    def test_reviewer_mode_without_reviewer_goes_to_person_not_the_agent(self):
+        self.c.call("gate_config", risk_mode="reviewer")
         s = self.c.read()
         r = self.c.call("click", element_token=f"{s}:1")
         self.assertTrue(r.get("isError"))
-        self.assertEqual(r["structuredContent"]["gate"]["decision"], "risk_review")
-        r2 = self.c.call("click", element_token=f"{s}:1", gate_ack=True)
-        self.assertFalse(r2.get("isError"), txt(r2))
-
-    def test_model_decider_hands_grey_zone_to_main_model(self):
-        self.c.call("gate_config", decider="model")
-        s1 = self.c.read()
-        self.c.read()
-        r = self.c.call("click", element_token=f"{s1}:3")  # ambiguous stale token: formula would ask a re-read
-        self.assertTrue(r.get("isError"))
-        # a rule (stale, not healable) stays a rule; check the report fields exist
+        self.assertEqual(r["structuredContent"]["gate"]["decision"], "ask_human")
+        r2 = self.c.call("click", element_token=f"{s}:1", gate_ack=True)  # ignored
+        self.assertTrue(r2.get("isError"))
         rep = self.c.call("gate_report")["structuredContent"]
-        self.assertEqual(rep["decider"], "model")
-        self.assertIn("model_reviews", rep)
+        self.assertFalse(rep["reviewer"])
+        self.assertNotIn("decider", rep)
 
     def test_second_read_omits_screenshot(self):
         self.c.read()
@@ -147,7 +141,8 @@ class GateTests(unittest.TestCase):
         self.c.call("fake_mutate", popup=True)
         r = self.c.call("click", window_id=777, pid=4242, x=120, y=100)
         self.assertTrue(r.get("isError"))
-        self.assertIn("WITH a screenshot", txt(r))
+        self.assertIn("fresh screenshot of the window is attached", txt(r))
+        self.assertTrue(any(c.get("type") == "image" for c in r["content"]), [c.get("type") for c in r["content"]])
 
     def test_repeat_after_failure_is_blocked(self):
         s = self.c.read()
@@ -228,13 +223,16 @@ class ToolTests(unittest.TestCase):
         r2 = self.c.call("click", element_token=f"{s}:1", gate_ack=True)  # the model cannot self-approve high risk
         self.assertTrue(r2.get("isError"))
 
-    def test_medium_risk_model_rethinks(self):
+    def test_medium_risk_without_reviewer_asks_the_user_not_the_agent(self):
         self.c.call("fake_mutate", elements=[["button", "Send"], ["button", "Plum"]])
         s = self.c.read()
         r = self.c.call("click", element_token=f"{s}:0")
-        self.assertEqual(r["structuredContent"]["gate"]["decision"], "risk_review")
-        r2 = self.c.call("click", element_token=f"{s}:0", gate_ack=True)
-        self.assertFalse(r2.get("isError"), txt(r2))
+        self.assertEqual(r["structuredContent"]["gate"]["decision"], "ask_human")
+        r2 = self.c.call("click", element_token=f"{s}:0", gate_ack=True)  # self-approval does nothing
+        self.assertTrue(r2.get("isError"))
+        code = r["structuredContent"]["gate"]["confirm_code"]
+        r3 = self.c.call("click", element_token=f"{s}:0", gate_confirm=code)  # the user's approval does
+        self.assertFalse(r3.get("isError"), txt(r3))
 
     def test_secret_field_handoff(self):
         self.c.call("fake_mutate", elements=[["password text", "Password"], ["button", "Plum"]])
@@ -245,8 +243,8 @@ class ToolTests(unittest.TestCase):
     def test_enter_after_dangerous_command(self):
         self.c.read()
         r = self.c.call("type_text", pid=4242, text="rm -rf ~/work")
-        self.assertEqual(r["structuredContent"]["gate"]["decision"], "risk_review")
-        self.c.call("type_text", pid=4242, text="rm -rf ~/work", gate_ack=True)
+        self.assertEqual(r["structuredContent"]["gate"]["decision"], "ask_human")
+        self.c.call("type_text", pid=4242, text="rm -rf ~/work", gate_confirm=r["structuredContent"]["gate"]["confirm_code"])
         r = self.c.call("press_key", pid=4242, key="Return")
         self.assertEqual(r["structuredContent"]["gate"]["decision"], "ask_human")
 

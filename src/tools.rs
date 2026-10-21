@@ -340,7 +340,7 @@ pub fn compare_main(argv: &[String]) -> i32 {
     0
 }
 
-/// gui-gate replay LOGS... [--weights FILE|prior_v1] [--human deny|auto] [--lambda X]
+/// gui-gate replay LOGS... [--weights FILE|prior_v1] [--human deny|auto] [--reviewer] [--lambda X]
 /// Re-decide every executed action in old logs with the current formula and predictor (features rebuilt the way
 /// the live gate computes them) and score the decisions against what actually happened to those actions.
 pub fn replay_main(argv: &[String]) -> i32 {
@@ -358,7 +358,8 @@ pub fn replay_main(argv: &[String]) -> i32 {
             }
             "--human" => { cfg.human_channel = argv.get(i + 1).cloned().unwrap_or_default(); i += 1; }
             "--lambda" => { cfg.lam = argv.get(i + 1).and_then(|v| v.parse().ok()).unwrap_or(1.0); i += 1; }
-            "-h" | "--help" => { println!("usage: gui-gate replay LOGS... [--weights FILE|prior_v1] [--human deny|auto] [--lambda X]"); return 0; }
+            "--reviewer" => cfg.reviewer = true,
+            "-h" | "--help" => { println!("usage: gui-gate replay LOGS... [--weights FILE|prior_v1] [--human deny|auto] [--reviewer] [--lambda X]"); return 0; }
             p => paths.push(p.to_string()),
         }
         i += 1;
@@ -408,7 +409,7 @@ pub fn replay_main(argv: &[String]) -> i32 {
     let internal: f64 = by.iter().filter(|(k, _)| matches!(k.as_str(), "check" | "heal" | "wait")).map(|(_, v)| v.0).sum();
     let opts: serde_json::Map<String, Value> = by.iter().map(|(k, v)| (k.clone(), json!({"n": v.0, "actually_failed": v.1}))).collect();
     println!("{}", serde_json::to_string_pretty(&json!({
-        "model": cfg.model_name, "human": cfg.human_channel, "lambda": cfg.lam, "actions": n, "failed": fails,
+        "model": cfg.model_name, "human": cfg.human_channel, "reviewer": cfg.reviewer, "lambda": cfg.lam, "actions": n, "failed": fails,
         "intervene_rate": round_to(inter / n.max(1.0), 3), "gate_side_rate": round_to(internal / n.max(1.0), 3),
         "failures_caught": round_to(caught / fails.max(1.0), 3), "precision": round_to(caught / inter.max(1.0), 3),
         "by_option": opts})).unwrap());

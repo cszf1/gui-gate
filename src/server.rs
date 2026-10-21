@@ -48,7 +48,7 @@ re!(bg_unavailable, r"(?i)background delivery is not available|no focus-free inp
 re!(no_frame, r"(?i)no screenshot frame");
 re!(loading_rx, r"(?i)(loading|busy|please wait|加载|正在|请稍候)");
 
-const INSTRUCTIONS_NOTE: &str = "\n\n[gui-gate] Actions go through a value gate before they run. Usually they execute at once. If a call returns a message starting with \"[gate]\", nothing was executed: do exactly what it says (re-read cheaply, re-read with a screenshot, double-check the target or think a risky step over and retry with gate_ack:true, or ask the user and retry with gate_confirm). To save time the gate omits the screenshot from get_window_state when the element tree is enough; pass include_screenshot:true when you really need pixels. Each action's result already carries a fresh read of the window: do not read it again before the next step. Several steps whose targets you can already see go in ONE run_actions call. If the user's request is known, pass it verbatim once with gate_task. When the gate refuses a risky step it tells you a safe way to go on: take it and finish the task.";
+const INSTRUCTIONS_NOTE: &str = "\n\n[gui-gate] Actions go through a value gate before they run. Usually they execute at once. If a call returns a message starting with \"[gate]\", nothing was executed: do exactly what it says (re-read, re-aim with a screenshot, take the safe way it names, or ask the user and retry with gate_confirm). The gate settles doubtful and risky steps itself (rules, the user's own words, its own independent reviewer, or a person); it never asks you to approve your own action. To save time the gate omits the screenshot from get_window_state when the element tree is enough; pass include_screenshot:true when you really need pixels. Each action's result already carries a fresh read of the window: do not read it again before the next step. Several steps whose targets you can already see go in ONE run_actions call. If the user's request is known, pass it verbatim once with gate_task. When the gate refuses a risky step it tells you a safe way to go on: take it and finish the task.";
 
 fn gate_tools() -> Vec<Value> {
     vec![
@@ -65,12 +65,11 @@ fn gate_tools() -> Vec<Value> {
                "description": "Value-gate statistics for this session: how many actions ran directly, how many observations/screenshots were requested or avoided, interventions by type, and gate overhead.",
                "inputSchema": {"type": "object", "properties": {}, "required": []}, "annotations": {"readOnlyHint": true}}),
         json!({"name": "gate_config",
-               "description": "Read or change the value gate at runtime. policy: gate | direct | light | full. lambda: cost weight (higher = fewer observations). collect: shadow-label every action. decider: formula | model (formula, then the main model settles the grey zone). risk_mode: auto | model | human.",
+               "description": "Read or change the value gate at runtime. policy: gate | direct | light | full. lambda: cost weight (higher = fewer observations). collect: shadow-label every action. risk_mode: auto (high risk -> person, medium -> the gate's reviewer) | reviewer | human.",
                "inputSchema": {"type": "object", "properties": {
                    "policy": {"type": "string", "enum": ["gate", "direct", "light", "full"]},
                    "lambda": {"type": "number", "minimum": 0}, "collect": {"type": "boolean"}, "risk_confirm": {"type": "boolean"},
-                   "decider": {"type": "string", "enum": ["formula", "model"]},
-                   "risk_mode": {"type": "string", "enum": ["auto", "model", "human"]}}, "required": []}}),
+                   "risk_mode": {"type": "string", "enum": ["auto", "reviewer", "human"]}}, "required": []}}),
     ]
 }
 
@@ -203,7 +202,7 @@ pub struct Gate {
 fn new_stats() -> Obj {
     let mut m = Obj::new();
     for k in ["actions", "executed", "obs_calls", "screenshots", "screenshot_px", "tree_reads", "model_turns_requested",
-              "exec_errors", "heals", "checks", "screenshots_skipped", "model_reviews", "model_acks", "auto_obs",
+              "exec_errors", "heals", "checks", "screenshots_skipped", "reviews", "review_allowed", "auto_obs",
               "human_asked", "human_allowed"] {
         m.insert(k.into(), json!(0));
     }
@@ -303,7 +302,6 @@ fn augment_tools(result: &mut Value, shared: &Arc<Mutex<Shared>>, toolset: &str,
             props.insert("fresh".into(), json!({"type": "boolean", "description": "Force a new read even though nothing was done since the tree that came back with your last action."}));
         }
         if is_gated(&name) {
-            props.insert("gate_ack".into(), json!({"type": "boolean", "description": "Set true after the gate asked you to double-check this target and you are sure. Never set it pre-emptively."}));
             props.insert("gate_confirm".into(), json!({"type": "string", "description": "Confirmation code the gate gave for a high-risk action, only after the user approved it."}));
         }
     }
@@ -325,7 +323,9 @@ fn augment_tools(result: &mut Value, shared: &Arc<Mutex<Shared>>, toolset: &str,
 }
 
 impl Gate {
-    pub fn new(child_cmd: Vec<String>, cfg: GateConfig, log_path: Option<String>) -> Arc<Gate> {
+    pub fn new(child_cmd: Vec<String>, mut cfg: GateConfig, log_path: Option<String>) -> Arc<Gate> {
+        let rv = Reviewer::from_env();
+        cfg.reviewer = rv.is_some();
         let out = Arc::new(Out::new());
         let shared = Arc::new(Mutex::new(Shared {
             pending_methods: HashMap::new(), update_note: String::new(), update_told: false, driver_version: None,
@@ -367,7 +367,7 @@ impl Gate {
             }),
             shared, out, log: Arc::new(EventLog::new(log_path)), child: Mutex::new(child), child_cmd,
             init_params: Mutex::new(None), client_elicit, client_pending, restarts: AtomicU64::new(0), human,
-            reviewer: Reviewer::from_env(), started: now(), toolset, batch_mode,
+            reviewer: rv, started: now(), toolset, batch_mode,
         })
     }
 
@@ -725,7 +725,7 @@ impl Gate {
     // ------------------------------------------------------------------ gating
     pub fn gated(&self, inn: &mut Inner, name: &str, mut args: Value) -> Value {
         let tg0 = Instant::now();
-        let ack = truthy(args.get("gate_ack"));
+        let ack = false; // the acting model never approves its own step (gate_ack is accepted and ignored)
         let code = args.get("gate_confirm").map(|v| pystr(Some(v))).filter(|c| !c.is_empty());
         if let Some(o) = args.as_object_mut() {
             o.remove("gate_ack");
@@ -752,12 +752,7 @@ impl Gate {
         let mut dec = match policy_decision(&ctx, &f, &inn.cfg) {
             Some(d) => d,
             None => {
-                // with an independent reviewer configured, the acting model cannot wave its own medium-risk step
-                // through with gate_ack (the reviewer never sees the agent's reasoning)
-                inn.cur_ack = ack;
-                let self_ack = ack && !(self.reviewer.is_some() && ctx.risk.is_some()
-                    && ctx.risk_level.as_deref().unwrap_or("high") == "medium");
-                let mut d = hard_rules(&ctx, &f, &inn.cfg, confirmed, self_ack);
+                let mut d = hard_rules(&ctx, &f, &inn.cfg, confirmed, false);
                 if d.as_ref().map(|d| d.option == "ask_human").unwrap_or(false) && confirmed {
                     d = None;
                 }
@@ -768,32 +763,24 @@ impl Gate {
                         d = hard_rules(&ctx, &f, &inn.cfg, true, ack);
                     }
                 }
-                if ack && d.as_ref().map(|d| d.option == "reason").unwrap_or(false) {
-                    d = None;
-                }
                 match d {
                     Some(d) => d,
                     None => {
                         let ca = self.check_available(inn, &ctx);
-                        let c = choose(&ctx, &f, &inn.cfg, ca, false);
-                        if ack && (c.option == "reason" || c.option == "ask_help") {
-                            Decision::new("direct", c.p_direct, "agent acknowledged after double-check", "model").with_scores(&c.scores)
-                        } else {
-                            c
-                        }
+                        choose(&ctx, &f, &inn.cfg, ca, false)
                     }
                 }
             }
         };
         let soft = |d: &Decision| d.tier != "rule" && d.tier != "policy";
-        if dec.is(&["look_light", "look_full", "reason", "check"]) && soft(&dec) && fget(&f, "token_stale") < 0.5 && ctx.risk_level.is_none() {
+        if dec.is(&["look_light", "look_full", "review", "check"]) && soft(&dec) && fget(&f, "token_stale") < 0.5 && ctx.risk_level.is_none() {
             if let Some(fp) = fast_path(&ctx, &f) {
                 dec = Decision::new("direct", dec.p_direct, fp, "rule").with_scores(&dec.scores);
             }
         }
         // inside a batch the model chained these steps on purpose, and the batch itself stops on any surprise;
         // the predictor's "look again first" for a keyboard or freshly resolved element step does not break it
-        if inn.in_batch && dec.is(&["look_light", "reason", "check", "wait"]) && soft(&dec) && ctx.risk_level.is_none()
+        if inn.in_batch && dec.is(&["look_light", "review", "check", "wait"]) && soft(&dec) && ctx.risk_level.is_none()
             && ctx.target.kind != "pixel" && fget(&f, "token_stale") < 0.5 {
             dec = Decision::new("direct", dec.p_direct, "planned step inside a guarded batch", "rule").with_scores(&dec.scores);
         }
@@ -819,9 +806,6 @@ impl Gate {
                         f["loading_cue"] = 1.0;
                     }
                     dec = choose(&ctx, &f, &inn.cfg, false, true);
-                    if ack && dec.option == "reason" {
-                        dec = Decision::new("direct", dec.p_direct, "agent acknowledged after double-check", "model").with_scores(&dec.scores);
-                    }
                 }
                 "wait" => {
                     waited = true;
@@ -864,18 +848,10 @@ impl Gate {
         if dec.is(&["check", "wait", "heal"]) {
             dec = Decision::new("look_light", dec.p_direct, "could not settle the target cheaply", "grey");
         }
-        // decider=model: what the formula could not settle cheaply goes to the main model itself
+        // review: the gate's own independent reviewer looks at this step (the acting model is not asked)
         let mut judge = Value::Null;
-        if inn.cfg.policy == "gate" && inn.cfg.decider == "model" && soft(&dec) && dec.is(&["look_light", "look_full", "reason"]) {
-            if ack {
-                inn.inc("model_acks");
-                trail.push("model_ack".into());
-                dec = Decision::new("direct", dec.p_direct, "main model confirmed after gate review", "model_ack").with_scores(&dec.scores);
-            } else {
-                trail.push("model_review".into());
-                judge = json!({"asked": dec.option});
-                dec = Decision::new("model_review", dec.p_direct, dec.reason.clone(), "model_review").with_scores(&dec.scores);
-            }
+        if dec.option == "review" {
+            dec = self.review_step(inn, &ctx, dec, &mut trail, &mut judge);
         }
         let mut opt = dec.option.clone();
         {
@@ -890,7 +866,7 @@ impl Gate {
             "lam": inn.cfg.lam, "target": {"kind": t.kind, "role": trunc(t.the_role(), 40), "label": trunc(t.the_label(), 80)},
             "risk": ctx.risk, "sig": ctx.signature, "features": fjson, "p_direct": round_to(dec.p_direct, 4),
             "decision": opt, "tier": dec.tier, "trail": trail, "reason": dec.reason, "check": check_res,
-            "shadow_check": shadow, "decider": inn.cfg.decider, "judge": judge, "window_changed": wc, "window_added": wadd,
+            "shadow_check": shadow, "judge": judge, "window_changed": wc, "window_added": wadd,
             "ack": ack, "confirmed": confirmed, "risk_level": ctx.risk_level, "handoff": ctx.handoff,
             "risk_gate": inn.risk_info, "batch": inn.batch_ctx});
 
@@ -928,7 +904,7 @@ impl Gate {
                 event["executed"] = json!(false);
                 event["gate_ms"] = json!(round_to(tg0.elapsed().as_secs_f64() * 1000.0, 1));
                 self.log.write(event);
-                return text_result(format!("[gate] Not executed: {}. No person took this step. Do not send the same action again; try a clearly different way (a keyboard shortcut, another menu path, or another element), or call again with gate_ack:true if you are sure this exact action is right now.", dec.reason), true);
+                return text_result(format!("[gate] Not executed: {}. No person took this step. Do not send the same action again; try a clearly different way (a keyboard shortcut, another menu path, or another element).", dec.reason), true);
             } else {
                 let verdict = if ans == "deny" { "declined".to_string() } else { format!("did not answer within {} s", inn.cfg.human_timeout as i64) };
                 event["executed"] = json!(false);
@@ -1037,27 +1013,26 @@ impl Gate {
         let text = match opt.as_str() {
             "look_light" => {
                 inn.inc("model_turns_requested");
-                format!("[gate] Not executed: {}. Re-read the window without a screenshot (get_window_state {loc}, include_screenshot:false, since:\"latest\") and retry with the fresh token.", dec.reason)
+                if t.pid.is_some() && inn.cfg.auto_observe && inn.cfg.policy == "gate" {
+                    format!("[gate] Not executed: {}. The window's fresh tree is attached: pick the target from it and send the action again (no need to read the window yourself).", dec.reason)
+                } else {
+                    format!("[gate] Not executed: {}. Re-read the window without a screenshot (get_window_state {loc}, include_screenshot:false, since:\"latest\") and retry with the fresh token.", dec.reason)
+                }
             }
             "look_full" => {
                 inn.inc("model_turns_requested");
                 if let Some(p) = t.pid {
                     inn.want_shot.insert(p);
                 }
-                format!("[gate] Not executed: {}. Re-read the window WITH a screenshot (get_window_state {loc}, include_screenshot:true) and check the target before retrying.", dec.reason)
-            }
-            "model_review" => {
-                inn.inc("model_turns_requested");
-                inn.inc("model_reviews");
-                format!("[gate] Not executed: the gate is unsure this will hit {what} ({}). You decide: if you are confident the target is still current and correct, call again with the same arguments plus gate_ack:true. Otherwise re-read the window first (get_window_state {loc}; add include_screenshot:true only if you need pixels).", dec.reason)
-            }
-            "reason" => {
-                inn.inc("model_turns_requested");
-                format!("[gate] Not executed: {}. Double-check that {what} is really the element you mean (another element may share the label, or the last attempt had no visible effect). If you are sure, call again with gate_ack:true.", dec.reason)
+                if t.pid.is_some() && inn.cfg.auto_observe && inn.cfg.policy == "gate" {
+                    format!("[gate] Not executed: {}. A fresh screenshot of the window is attached: re-aim from it and send the action again (no need to read the window yourself).", dec.reason)
+                } else {
+                    format!("[gate] Not executed: {}. Re-read the window WITH a screenshot (get_window_state {loc}, include_screenshot:true) and check the target before retrying.", dec.reason)
+                }
             }
             "risk_review" => {
-                inn.inc("model_turns_requested");
-                format!("[gate] Not executed: {} on {what}. Did the user explicitly ask for exactly this, and can it be undone? If not, the safe way on is: {alt}. Only if the user clearly asked for it, call the same tool again with the same arguments plus gate_ack:true.", dec.reason)
+                // only reached when neither the user's words, the reviewer nor a person could settle it
+                self.deny_text(inn, &ctx, &dec, "refused")
             }
             "handoff" => {
                 inn.inc("model_turns_requested");
@@ -1070,9 +1045,13 @@ impl Gate {
                 extra.insert("confirm_code".into(), json!(c));
                 format!("[gate] Not executed: {} on {what}. Either ask the user to approve this exact action and, only after they approve, call the same tool again with the same arguments plus gate_confirm:\"{c}\"; or, without waiting for them: {alt}.", dec.reason)
             }
+            "stop_loop" => {
+                inn.inc("model_turns_requested");
+                format!("[gate] Not executed: {}. Sending the same action again will not help. Try a clearly different way: a keyboard shortcut, another menu path, or another element.", dec.reason)
+            }
             "ask_help" => {
                 inn.inc("model_turns_requested");
-                format!("[gate] Not executed: {}. This keeps failing. Ask your user for help (say what you are trying to do and what happens instead), or try a clearly different way: a keyboard shortcut, another menu path, or another element. If you are sure this exact action is right now, call again with gate_ack:true.", dec.reason)
+                format!("[gate] Not executed: {}. This keeps failing. Ask your user for help (say what you are trying to do and what happens instead), or try a clearly different way: a keyboard shortcut, another menu path, or another element.", dec.reason)
             }
             "deny" => self.deny_text(inn, &ctx, &dec, "refused"),
             _ => format!("[gate] Not executed: {}.", dec.reason),
@@ -1080,7 +1059,27 @@ impl Gate {
         event["executed"] = json!(false);
         event["gate_ms"] = json!(round_to(gate_ms, 1));
         self.log.write(event);
-        refusal(&dec, text, Some(extra))
+        let mut res = refusal(&dec, text, Some(extra));
+        // re-read / re-aim: the gate reads the window itself and attaches it, saving the agent a whole turn
+        if let (Some(p), true) = (t.pid, opt == "look_light" || opt == "look_full") {
+            if inn.cfg.auto_observe && !inn.in_batch && inn.cfg.policy == "gate" {
+                if opt == "look_full" {
+                    inn.pixel_pids.insert(p);
+                    inn.pix_age.insert(p, 0);
+                }
+                self.auto_observe(inn, p, t.window_id, &mut res, true);
+                inn.want_shot.remove(&p);
+                if let Some(items) = res.get_mut("content").and_then(|c| c.as_array_mut()) {
+                    for it in items.iter_mut() {
+                        if let Some(tx) = it.get("text").and_then(|x| x.as_str()) {
+                            let nt = tx.replace("Window right after the action", "Window now (nothing was executed)");
+                            it["text"] = json!(nt);
+                        }
+                    }
+                }
+            }
+        }
+        res
     }
 
     // ------------------------------------------------------------------ observe after an action
@@ -1183,6 +1182,41 @@ impl Gate {
         trunc(&txt, 6000)
     }
 
+    /// A step the predictor doubts: the gate's own reviewer decides; without one, a person when the run is stuck,
+    /// otherwise the formula's next-best option. The acting model is never asked to approve its own step.
+    fn review_step(&self, inn: &mut Inner, ctx: &ActionCtx, dec: Decision, trail: &mut Vec<String>, judge: &mut Value) -> Decision {
+        let t = &ctx.target;
+        if let Some(rv) = self.reviewer.as_ref() {
+            let keys = if truthy(ctx.args.get("keys")) { ctx.args.get("keys").cloned() } else { ctx.args.get("key").cloned() };
+            let action = json!({"tool": ctx.tool, "target_kind": t.kind, "target_role": t.the_role(), "target_label": t.the_label(),
+                "x": t.x, "y": t.y, "typed_text": trunc(&pystr(ctx.args.get("text")), 300), "keys": keys, "why_doubted": dec.reason});
+            let window = t.pid.and_then(|p| inn.state.latest_for(Some(p), t.window_id)).map(|o| inn.state.get(o).text.clone()).unwrap_or_default();
+            inn.inc("reviews");
+            let r = rv.check_step(&inn.cfg.task, &action, &window);
+            *judge = r.clone().unwrap_or(json!({"error": "reviewer did not answer"}));
+            if let Some(r) = r {
+                if s(&r, "decision") == "allow" {
+                    inn.inc("review_allowed");
+                    trail.push("reviewer_allow".into());
+                    return Decision::new("direct", dec.p_direct, format!("independent reviewer: {}", s(&r, "reason")), "review").with_scores(&dec.scores);
+                }
+                trail.push("reviewer_deny".into());
+                return Decision::new("look_light", dec.p_direct, format!("the gate's reviewer doubts this step: {}", s(&r, "reason")), "review").with_scores(&dec.scores);
+            }
+            trail.push("reviewer_down".into());
+        }
+        if self.human.resolve_channel() != "deny" && dec.tier == "rule" {
+            return Decision::new("ask_help", dec.p_direct, dec.reason.clone(), "rule").with_scores(&dec.scores);
+        }
+        if dec.tier == "rule" {
+            return Decision::new("stop_loop", dec.p_direct, dec.reason.clone(), "rule").with_scores(&dec.scores);
+        }
+        // formula picked review but no reviewer answered: take the best remaining option
+        let best = dec.scores.iter().filter(|(k, _)| k.as_str() != "review").fold(("direct".to_string(), f64::INFINITY),
+            |acc, (k, v)| if *v < acc.1 { (k.clone(), *v) } else { acc }).0;
+        Decision::new(&best, dec.p_direct, format!("{} (reviewer unavailable)", dec.reason), "model").with_scores(&dec.scores)
+    }
+
     /// Authorization (+ independent reviewer for medium risk). None = let it through.
     fn risk_gate(&self, inn: &mut Inner, ctx: &ActionCtx, dec: Decision, trail: &mut Vec<String>) -> Option<Decision> {
         let t = &ctx.target;
@@ -1210,7 +1244,7 @@ impl Gate {
             inn.inc("authorized");
             return None;
         }
-        if let (Some(rv), "risk_review") = (self.reviewer.as_ref(), dec.option.as_str()) {
+        if let (Some(rv), true) = (self.reviewer.as_ref(), dec.option == "risk_review") {
             let keys = if truthy(ctx.args.get("keys")) { ctx.args.get("keys").cloned() } else { ctx.args.get("key").cloned() };
             let action = json!({"tool": ctx.tool, "target_role": t.the_role(), "target_label": label, "rule_that_fired": risk,
                 "risk_level": ctx.risk_level, "typed_text": trunc(&pystr(ctx.args.get("text")), 300), "keys": keys,
@@ -1226,10 +1260,15 @@ impl Gate {
                 trail.push("reviewer_deny".into());
                 return Some(Decision::new("deny", 0.0, format!("{}; independent reviewer: {}", dec.reason, s(&r, "reason")), "review"));
             }
-            if inn.cur_ack {
-                trail.push("reviewer_down_selfack".into()); // reviewer unreachable: fall back to the self-check
-                return None;
+            trail.push("reviewer_down".into());
+        }
+        // no reviewer (or it did not answer): a person if one is reachable, otherwise refuse with the safe way on
+        if dec.option == "risk_review" {
+            let ch = self.human.resolve_channel();
+            if ch != "deny" {
+                return Some(Decision::new("ask_human", 0.0, dec.reason.clone(), "rule"));
             }
+            return Some(Decision::new("deny", 0.0, format!("{}; no reviewer is configured to approve it", dec.reason), "rule"));
         }
         Some(dec)
     }
@@ -1342,7 +1381,7 @@ impl Gate {
         let per = if g("actions") > 0.0 { round_to(g("gate_ms") / g("actions"), 1) } else { 0.0 };
         st.insert("gate_ms_per_action".into(), json!(per));
         st.insert("log".into(), json!(self.log.path));
-        st.insert("decider".into(), json!(inn.cfg.decider));
+        st.insert("reviewer".into(), json!(self.reviewer.is_some()));
         let lines = [
             format!("policy={} lambda={} model={}", inn.cfg.policy, inn.cfg.lam, inn.cfg.model_name),
             format!("actions={} executed={} errors={}", g("actions"), g("executed"), g("exec_errors")),
@@ -1352,7 +1391,7 @@ impl Gate {
             format!("gate overhead={per} ms/action"),
             format!("human: asked={} allowed={} channel={} | auto observations={} | driver restarts={}", g("human_asked"), g("human_allowed"),
                     self.human.resolve_channel(), g("auto_obs"), self.restarts.load(Ordering::SeqCst)),
-            format!("decider={} reviews by main model={} (acked {}) | screenshots skipped={}", inn.cfg.decider, g("model_reviews"), g("model_acks"), g("screenshots_skipped")),
+            format!("reviewer={} reviews={} (allowed {}) | screenshots skipped={}", self.reviewer.is_some(), g("reviews"), g("review_allowed"), g("screenshots_skipped")),
         ];
         json!({"content": [{"type": "text", "text": lines.join("\n")}], "structuredContent": st})
     }
@@ -1363,13 +1402,11 @@ impl Gate {
         if let Some(l) = as_f64(args.get("lambda")) { inn.cfg.lam = l; }
         if args.get("collect").is_some() { inn.cfg.collect = truthy(args.get("collect")); }
         if args.get("risk_confirm").is_some() { inn.cfg.risk_confirm = truthy(args.get("risk_confirm")); }
-        let d = s(args, "decider");
-        if d == "formula" || d == "model" { inn.cfg.decider = d.into(); }
         let rm = s(args, "risk_mode");
-        if ["auto", "model", "human"].contains(&rm) { inn.cfg.risk_mode = rm.into(); }
+        if ["auto", "reviewer", "human"].contains(&rm) { inn.cfg.risk_mode = rm.into(); }
         self.log.write(json!({"ev": "config", "policy": inn.cfg.policy, "lam": inn.cfg.lam, "collect": inn.cfg.collect}));
         let d = json!({"policy": inn.cfg.policy, "lambda": inn.cfg.lam, "collect": inn.cfg.collect, "risk_confirm": inn.cfg.risk_confirm,
-                       "model": inn.cfg.model_name, "decider": inn.cfg.decider, "risk_mode": inn.cfg.risk_mode});
+                       "model": inn.cfg.model_name, "reviewer": self.reviewer.is_some(), "risk_mode": inn.cfg.risk_mode});
         json!({"content": [{"type": "text", "text": d.to_string()}], "structuredContent": d})
     }
 }
