@@ -27,3 +27,4 @@ Smoke of the new `gate_cm` condition (gate + Pi codemode) vs `gate` on og02 and 
 
 ## osworld-2026-10-21-v036 (2026-10-21, gui-gate 0.3.6) — STOPPED by user
 Planned gate vs gate_cm over 34 tasks; stopped by the user after 2 tasks. Partial only: ow01 gate success 22 turns/169 s, gate_cm success 40 turns/437 s (hit cap); ow02 gate success 104 s, gate_cm relay error. Not a result; kept per data rule.
+- pi-qwen38-2026-10-21-aborted-start: qwen 34-task run started and stopped within ~1 min (user switched back to DeepSeek); no complete runs.
