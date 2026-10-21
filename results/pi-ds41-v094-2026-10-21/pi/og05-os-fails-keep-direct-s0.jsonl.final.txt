@@ -1,0 +1,1 @@
+There's a `setup.sh` from the task setup — let me read it to confirm the intended destination.

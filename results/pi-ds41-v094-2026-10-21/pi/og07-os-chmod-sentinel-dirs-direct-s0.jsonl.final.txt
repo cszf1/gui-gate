@@ -1,0 +1,3 @@
+Verified in the terminal at `/data/workspace`: `find . -type f -exec chmod 644 {} +` ran, and a follow-up check (`find . -type f ! -perm 644`) returned no results — all regular files in the tree now have mode 644 (directories untouched).
+
+DONE — Ran `find . -type f -exec chmod 644 {} +` in the terminal at /data/workspace and verified no regular files lack 644.

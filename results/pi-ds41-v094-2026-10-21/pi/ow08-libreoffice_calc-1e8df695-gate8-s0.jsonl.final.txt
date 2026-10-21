@@ -1,0 +1,1 @@
+DONE — Added a "Profit" header in column D (right of COGS) and filled D2:D11 with `=Sales−COGS` formulas (e.g. Week 1: 92808−81230.8 = 11577.2), then saved the file.

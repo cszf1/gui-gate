@@ -1,0 +1,3 @@
+Verified IDENTICAL checksums.
+
+DONE — In `/data/home/test_environment` (which had the pre-existing `./fails` dir) I ran `find . -name '*failed.ipynb' -not -path './fails/*' -exec cp --parents {} ./fails \;`, copying `dir1/a_failed.ipynb`, `dir2/subdir1/c_failed.ipynb`, and `dir3/e_failed.ipynb` into `./fails/dir1`, `./fails/dir2/subdir1`, `./fails/dir3` (leaving existing `fails/KEEP.txt` intact), and confirmed the copies match the originals via md5sum.

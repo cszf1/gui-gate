@@ -1,0 +1,1 @@
+The decoy window is stealing focus. Let me close it (discarding my stray typing there).

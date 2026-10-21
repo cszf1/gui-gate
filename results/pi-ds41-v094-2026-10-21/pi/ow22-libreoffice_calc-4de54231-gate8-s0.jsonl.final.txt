@@ -1,0 +1,1 @@
+Now I'll fill B and D down. First select B2:B30 via the Name Box.

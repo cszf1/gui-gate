@@ -1,0 +1,3 @@
+The `pre.pptx` icon is now visible on the Desktop, confirming the save.
+
+DONE — Used File → Save As in LibreOffice Impress to save the open presentation as pre.pptx on the Desktop (title bar now reads "pre.pptx — LibreOffice Impress" and the file icon appears on the Desktop).

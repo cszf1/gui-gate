@@ -1,0 +1,1 @@
+DONE — Used LibreOffice Writer's "Export Directly as PDF" on `View_Person_Organizational_Summary.docx`, confirming the pre-filled file name `View_Person_Organizational_Summary.pdf` in /home/user/Desktop and replacing the existing file (now 246 kB, freshly timestamped).

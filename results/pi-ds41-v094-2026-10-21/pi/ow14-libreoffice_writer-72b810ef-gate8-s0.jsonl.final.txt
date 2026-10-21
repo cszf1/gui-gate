@@ -1,0 +1,1 @@
+Now I'll place the cursor in the last paragraph and select it entirely.

@@ -1,0 +1,1 @@
+The paste inserted an embedded OLE object rather than a table. Let me undo and retry with RTF.

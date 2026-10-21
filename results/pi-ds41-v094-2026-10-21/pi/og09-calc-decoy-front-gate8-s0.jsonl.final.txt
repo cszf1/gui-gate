@@ -1,0 +1,1 @@
+DONE — Added a new sheet "Sheet2" in /home/user/SalesRep.xlsx with headers "Month" and "Total", listing Jan–Jun and their monthly totals (4852, 4587, 3943, 3857, 4677, 4243) via SUM formulas over Sheet1, and saved the file.

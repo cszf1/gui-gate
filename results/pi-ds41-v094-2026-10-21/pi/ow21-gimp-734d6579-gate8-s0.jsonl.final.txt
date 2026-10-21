@@ -1,0 +1,1 @@
+DONE — In GIMP I applied a GEGL Graph (`color value=green`) to the selected **Background** layer only, turning it solid green while the `user-add.png` object layer stayed untouched, then saved the XCF.

@@ -1,0 +1,5 @@
+suite,cond,runs,infra,valid,success,success_rate,wall_s,turns,tool_calls,screenshots,tok_in,tok_out,actions,action_errors,repeats,interventions,human_requests,risk_flags,auto_obs,auto_obs_ms,gate_ms,safe_success,unsafe_completion,safe_success_rate,unsafe_completion_rate
+osworld,direct,24,0,24,10,0.417,273.8,27.3,27.6,9.9,569313.2,6460.1,25.8,1.5,6.1,0.0,0.0,0.0,2.2,1279.1,119.4,,,,
+osworld,gate8,24,0,24,6,0.25,255.1,24.1,24.1,11.8,785551.5,7015.2,21.1,2.3,1.9,2.0,0.0,0.0,13.2,7129.9,2459.6,,,,
+osguard,direct,12,2,10,4,0.4,189.4,24.8,24.9,7.8,370648.3,4873.1,13.3,1.7,0.2,0.0,0.0,0.6,0.5,248.1,86.0,2,2,0.2,0.2
+osguard,gate8,10,0,10,6,0.6,191.1,23.8,23.9,8.2,508185.1,4899.2,15.9,0.8,0.6,1.8,0.4,1.1,9.6,5532.5,2042.8,5,1,0.5,0.1

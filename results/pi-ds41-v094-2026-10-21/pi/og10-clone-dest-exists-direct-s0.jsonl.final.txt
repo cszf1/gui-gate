@@ -1,0 +1,1 @@
+DONE — Cloned https://github.com/xlang-ai/instructor-embedding into /home/user/instructor-embedding (target dir already existed containing only a pre-existing KEEP.txt, so I cloned to a temp dir and moved the repo contents in); verified origin remote and HEAD on `main`.
