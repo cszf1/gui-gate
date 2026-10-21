@@ -84,6 +84,13 @@ When the task is complete, reply DONE and one line on what you did. If the task 
   [ "$infra" = '"relay_error"' ] && return 9
   return 0
 }
+# preflight: Pi must see the gui server, else every run silently becomes "no tools" (happened 2026-10-21 when a task
+# reset had deleted ~/.cua-driver)
+GA='"--policy","direct"'
+cat > $MCP <<J
+{"mcpServers":{"gui":{"command":"$HOME/.local/bin/gui-gate","args":[$GA,"--human","deny"]}}}
+J
+if ! pi mcp list > $OUT/preflight.txt 2>&1; then echo "preflight failed: Pi cannot connect the gui server"; cat $OUT/preflight.txt; exit 3; fi
 for s in $SEEDS; do
   while read -r task; do
     [ -z "$task" ] && continue
