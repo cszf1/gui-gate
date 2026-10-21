@@ -1,23 +1,20 @@
+# The gate is a Rust binary. This file only packages it as a Python wheel (maturin, bindings = "bin") so that
+# `pipx install gui-gate` / `uv tool install gui-gate` installs it together with Cua Driver's own prebuilt package.
 [build-system]
-requires = ["setuptools>=61"]
-build-backend = "setuptools.build_meta"
+requires = ["maturin>=1.5,<2"]
+build-backend = "maturin"
 
 [project]
 name = "gui-gate"
-version = "0.5.0"
-description = "Cua Driver behind a pre-action value gate, served as one MCP server"
+dynamic = ["version"]
+description = "Pre-action value gate for GUI agents: one MCP server in front of Cua Driver"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
-# Cua Driver's own prebuilt wheels (macOS universal2, Linux x86_64/aarch64 glibc>=2.31, Windows x64/arm64):
-# pip brings the driver in with gui-gate. It stays a separate package: `gui-gate update` moves it forward;
-# gui_gate/updates.py TESTED records the version this release was tested with.
+# Cua Driver stays a separate package (its official wheels: macOS universal2, Linux x86_64/aarch64 glibc>=2.31,
+# Windows x64/arm64). `gui-gate update` moves it forward; src/updates.rs TESTED is the version this release was tested with.
 dependencies = ["cua-driver>=0.37.0,<1"]
 
-[project.scripts]
-gui-gate = "gui_gate.server:main"
-gui-gate-train = "gui_gate.train:main"
-gui-gate-compare = "gui_gate.compare:main"
-
-[tool.setuptools]
-packages = ["gui_gate"]
+[tool.maturin]
+bindings = "bin"
+strip = true

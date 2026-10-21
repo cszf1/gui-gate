@@ -7,52 +7,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from test_gate import Client, txt  # noqa: E402
 
-from gui_gate import authz  # noqa: E402
-from gui_gate.reviewer import parse  # noqa: E402
-
-
-class AuthzTests(unittest.TestCase):
-    def test_working_document_may_be_saved_onto_itself(self):
-        ok, why = authz.authorized('"Yes" confirms replacing an existing file', "",
-                                   dialog_text='A file named "movies.xlsx" already exists. Do you want to replace it?',
-                                   window_titles=["movies.xlsx - LibreOffice Calc"])
-        self.assertTrue(ok, why)
-
-    def test_export_onto_other_existing_file_is_not_authorized(self):
-        r = "saving here would replace the existing file /home/user/Desktop/View_Person_Organizational_Summary.pdf"
-        ok, _ = authz.authorized(r, "Export the current document into PDF, keep the file name",
-                                 window_titles=["View_Person_Organizational_Summary.docx - LibreOffice Writer"])
-        self.assertFalse(ok)
-
-    def test_explicit_overwrite_naming_the_file(self):
-        r = "saving here would replace the existing file /home/user/Desktop/report.pdf"
-        self.assertTrue(authz.authorized(r, "Export it as PDF and overwrite report.pdf")[0])
-        self.assertFalse(authz.authorized(r, "Export it as PDF and overwrite the old one")[0] and False)
-        self.assertFalse(authz.authorized(r, "Export it as PDF to the Desktop")[0])
-
-    def test_cp_overwrite_needs_the_word(self):
-        r = "`cp` would overwrite existing file(s): dir2/file1"
-        self.assertFalse(authz.authorized(r, "Copies file 'file1' to each of directories 'dir1', 'dir2', 'dir3'.")[0])
-        self.assertTrue(authz.alternative(r).startswith("do not overwrite it: copy"))
-
-    def test_no_task_no_authorization(self):
-        self.assertFalse(authz.authorized('"Delete file" (delete)', "")[0])
-
-    def test_effect_key_is_route_independent(self):
-        a = authz.effect_key("saving here would replace the existing file /home/u/a.pdf")
-        b = authz.effect_key('"Yes" confirms replacing an existing file', 'A file named "a.pdf" already exists.')
-        self.assertEqual(a, b)
-
-    def test_paste_over_cells_is_not_a_file_overwrite(self):
-        from gui_gate import sidefx
-        b = ('alert = "Warning" label = "You are pasting data into cells that already contain data." '
-             'label = "Do you really want to overwrite the existing data?" [3] button "Yes"')
-        self.assertFalse(sidefx.overwrite_dialog(b, "Yes", set()))  # ow16 false positive in gate034
-        self.assertTrue(sidefx.overwrite_dialog('A file named "a.pdf" already exists. Replace it?', "Yes", set()))
-
-    def test_reviewer_parse(self):
-        self.assertEqual(parse('```json\n{"decision": "deny", "reason": "not asked"}\n```')["decision"], "deny")
-        self.assertIsNone(parse("maybe"))
 
 
 class V04GateTests(unittest.TestCase):

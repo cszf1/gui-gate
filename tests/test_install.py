@@ -1,32 +1,32 @@
-"""Packaging: driver discovery, client configuration, doctor (against the fake driver), --mode single."""
+"""Packaging and updates, against the built binary: client configuration, doctor, --mode single, update notice."""
 import json
 import os
+import subprocess
 import sys
 import tempfile
 import time
 import unittest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.dirname(HERE))
 sys.path.insert(0, HERE)
-from gui_gate import install  # noqa: E402
-from test_gate import Client  # noqa: E402
+from test_gate import BIN, FAKE, Client  # noqa: E402
 
 
+def run(*args, home=None):
+    env = dict(os.environ, GUI_GATE_NO_UPDATE_CHECK="1", GUI_GATE_DRIVER="/nonexistent/cua-driver")
+    if home:
+        env["HOME"] = home
+    return subprocess.run([BIN, *args], capture_output=True, text=True, env=env, timeout=60)
+
+
+@unittest.skipUnless(BIN, "build the gate first: cargo build")
 class InstallTests(unittest.TestCase):
-    def test_env_driver_wins(self):
-        os.environ["GUI_GATE_DRIVER"] = "/x/cua-driver"
-        try:
-            self.assertEqual(install.find_driver(), "/x/cua-driver")
-        finally:
-            del os.environ["GUI_GATE_DRIVER"]
-
     def test_cursor_config_merges(self):
         with tempfile.TemporaryDirectory() as h:
             os.makedirs(os.path.join(h, ".cursor"))
             with open(os.path.join(h, ".cursor", "mcp.json"), "w") as f:
                 json.dump({"mcpServers": {"other": {"command": "x"}}}, f)
-            install.configure("cursor", home=h)
+            run("setup", "--client", "cursor", home=h)
             d = json.load(open(os.path.join(h, ".cursor", "mcp.json")))
             self.assertIn("other", d["mcpServers"])
             self.assertIn("gui", d["mcpServers"])
@@ -34,14 +34,20 @@ class InstallTests(unittest.TestCase):
 
     def test_codex_config_once(self):
         with tempfile.TemporaryDirectory() as h:
-            install.configure("codex", home=h)
-            self.assertIn("already", install.configure("codex", home=h))
+            run("setup", "--client", "codex", home=h)
+            self.assertIn("already", run("setup", "--client", "codex", home=h).stdout)
             self.assertEqual(open(os.path.join(h, ".codex", "config.toml")).read().count("[mcp_servers.gui]"), 1)
 
     def test_doctor_end_to_end_with_fake_driver(self):
-        rep = install.doctor(cmd=[sys.executable, os.path.join(HERE, "fake_driver.py")])
+        r = run("doctor", "--child", FAKE)
+        rep = json.loads(r.stdout)
         self.assertTrue(rep["ok"], rep)
         self.assertGreater(rep["driver_tools"], 5)
+        self.assertEqual(rep["missing_tools"], [])
+
+    def test_doctor_reports_missing_driver(self):
+        r = run("doctor")
+        self.assertNotEqual(r.returncode, 0)
 
     def test_single_mode_hides_batch(self):
         c = Client("--mode", "single")
@@ -52,50 +58,20 @@ class InstallTests(unittest.TestCase):
         finally:
             c.close()
 
-
-class UpdateTests(unittest.TestCase):
-    def setUp(self):
-        from gui_gate import updates
-        self.u = updates
-
-    def test_version_order(self):
-        v = self.u.vtuple
-        self.assertGreater(v("0.37.10"), v("0.37.9"))
-        self.assertGreater(v("0.38.0"), v("0.37.0"))
-        self.assertEqual(v("v0.37.0"), (0, 37, 0))
-        self.assertEqual(v("0.38.0rc1")[:2], (0, 38))
-
-    def test_no_network_when_disabled(self):
-        os.environ.pop("GUI_GATE_LATEST_OVERRIDE", None)
-        os.environ["GUI_GATE_NO_UPDATE_CHECK"] = "1"
-        self.assertIsNone(self.u.latest())
-
-    def test_note_when_newer(self):
-        st = {"installed": "0.37.0", "latest": "0.38.1", "tested_with": "0.37.0",
-              "update_available": True, "untested": False}
-        self.assertIn("gui-gate update", self.u.note(st))
-        st2 = dict(st, latest="0.37.0", update_available=False)
-        self.assertEqual(self.u.note(st2), "")
-        st3 = dict(st2, installed="0.39.0", untested=True)
-        self.assertIn("--to 0.37.0", self.u.note(st3))
-
-    def test_missing_tools(self):
-        self.assertEqual(self.u.missing_tools(["click", "type_text"]),
-                         ["get_window_state", "list_windows", "press_key"])
+    def test_update_check_offline(self):
+        r = subprocess.run([BIN, "update", "--check"], capture_output=True, text=True, timeout=60,
+                           env=dict(os.environ, GUI_GATE_LATEST_OVERRIDE="0.37.0", GUI_GATE_DRIVER="/nonexistent"))
+        self.assertIn('"tested_with": "0.37.0"', r.stdout)
 
     def test_server_tells_client_about_new_driver(self):
-        os.environ["GUI_GATE_LATEST_OVERRIDE"] = "0.99.0"
+        c = Client(env={"GUI_GATE_LATEST_OVERRIDE": "0.99.0", "GUI_GATE_NO_UPDATE_CHECK": ""})
         try:
-            c = Client(env={"GUI_GATE_LATEST_OVERRIDE": "0.99.0", "GUI_GATE_NO_UPDATE_CHECK": ""})
-            try:
-                time.sleep(2.5)
-                c.rpc("tools/list", {})
-                seen = json.dumps(c.init) + json.dumps(c.extra)
-                self.assertIn("Cua Driver 0.99.0 is available", seen)
-            finally:
-                c.close()
+            time.sleep(2.5)
+            c.rpc("tools/list", {})
+            seen = json.dumps(c.init) + json.dumps(c.extra)
+            self.assertIn("Cua Driver 0.99.0 is available", seen)
         finally:
-            del os.environ["GUI_GATE_LATEST_OVERRIDE"]
+            c.close()
 
 
 if __name__ == "__main__":

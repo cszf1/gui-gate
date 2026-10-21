@@ -14,12 +14,18 @@ import unittest
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 FAKE = f"{sys.executable} {os.path.join(HERE, 'fake_driver.py')}"
+# the gate under test: the Rust binary (GUI_GATE_BIN, default target/{debug,release}/gui-gate)
+BIN = os.environ.get("GUI_GATE_BIN") or next(
+    (p for p in (os.path.join(ROOT, "target", "release", "gui-gate"), os.path.join(ROOT, "target", "debug", "gui-gate"),
+                 "/tmp/gg-target/release/gui-gate", "/tmp/gg-target/debug/gui-gate") if os.path.exists(p)), None)
 
 
 class Client:
     def __init__(self, *extra, env=None):
         self.log = tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False).name
-        cmd = [sys.executable, "-m", "gui_gate", "--child", FAKE, "--log", self.log, *extra]
+        if not BIN:
+            raise unittest.SkipTest("build the gate first: cargo build")
+        cmd = [BIN, "--child", FAKE, "--log", self.log, *extra]
         e = dict(os.environ, PYTHONPATH=ROOT, **(env or {}))
         self.p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True, env=e, cwd=ROOT)
         self.i = 0
@@ -329,16 +335,6 @@ class PixelFrameTests(unittest.TestCase):
             self.assertTrue(any(x.get("type") == "image" for x in r2["content"]))
         finally:
             c.close()
-
-
-class HumanDenyTests(unittest.TestCase):
-    def test_deny_channel_answers_at_once(self):
-        from gui_gate.human import Human
-        h = Human("deny", 30)
-        r = h.ask("approve?")
-        self.assertEqual(r["answer"], "deny")
-        self.assertEqual(r["channel"], "deny")
-        self.assertLess(r["ms"], 1000)
 
 
 if __name__ == "__main__":

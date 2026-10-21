@@ -1,0 +1,26 @@
+[package]
+name = "gui-gate"
+version = "0.6.0"
+edition = "2021"
+description = "Pre-action value gate for GUI agents: one MCP server in front of Cua Driver"
+license = "MIT"
+repository = "https://github.com/cszf1/gui-gate"
+readme = "README.md"
+
+[[bin]]
+name = "gui-gate"
+path = "src/main.rs"
+
+[dependencies]
+serde_json = { version = "1", features = ["preserve_order"] }
+regex = "1"
+glob = "0.3"
+indexmap = "2"
+ureq = { version = "2", default-features = false, features = ["tls", "json"] }
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
+panic = "unwind"

@@ -12,7 +12,7 @@ SEEDS_TRAIN=${SEEDS_TRAIN:-"$(seq -s ' ' 100 129)"}
 for s in $SEEDS_TRAIN; do
   timeout 120 python3 sim_agent.py --server "gui-gate --policy direct --collect --log $OUT/train_logs/s$s.jsonl" --seed $s --fixture-log $OUT/train_logs/s$s.fixture.jsonl --out $OUT/train_runs.jsonl >/dev/null 2>&1
 done
-PYTHONPATH=.. python3 -m gui_gate.train $OUT/train_logs --l2 0.02 -o $OUT/weights_pilot.json > $OUT/train_report.json 2>&1
+gui-gate train $OUT/train_logs --l2 0.02 -o $OUT/weights_pilot.json > $OUT/train_report.json 2>&1
 # 2) evaluation: same seeds under every policy
 for s in $SEEDS_EVAL; do
   timeout 120 python3 sim_agent.py --server "cua-driver mcp" --seed $s --fixture-log $OUT/logs/raw-s$s.fixture.jsonl --out $OUT/eval.jsonl >/dev/null 2>&1

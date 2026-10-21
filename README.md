@@ -1,15 +1,16 @@
 # gui-gate
 
-**一个完整的 MCP：门控 + Cua Driver + 批量执行，装一个包就能用。** 任何支持 MCP 的 Agent（Claude Code、Codex、Cursor、Pi……）都能接。
+**一个完整的 MCP：门控 + Cua Driver + 批量执行，装一次就能用。** 任何支持 MCP 的 Agent（Claude Code、Codex、Cursor、Pi……）都能接。
+门控本身是一个 Rust 程序（约 4 MB，无运行时依赖）；Cua Driver 是独立的官方包，安装时一起装上。
 
 ```bash
-pipx install git+https://github.com/cszf1/gui-gate      # 或 pip install；Cua Driver 随包一起装好，不用另装
-gui-gate setup --client claude                          # 写入客户端配置（claude / codex / cursor / pi / print），并自检
+pipx install gui-gate            # 或 uv tool install gui-gate；门控程序 + Cua Driver 一起装好
+gui-gate setup --client claude   # 写入客户端配置（claude / codex / cursor / pi / print），并自检
 ```
 
 两种用法同时提供：**单步**（`click`、`type_text`……每次一个动作）和 **批量**（`run_actions`，一次一串步骤，
 支持 find / for_each / if / read，功能对标 Pi codemode，但不需要 JS 引擎）。每个动作不管哪种方式都过门控。
-`--mode single` 只给单步。Cua Driver 用的是官方预编译包（macOS、Linux x86_64/arm64、Windows），版本固定为 0.37.0。
+`--mode single` 只给单步。Cua Driver 用的是官方预编译包（macOS、Linux x86_64/arm64、Windows），测试版本 0.37.0。
 
 ```
 Agent (Pi 等) ──MCP stdio──▶ gui-gate ──▶ cua-driver（手脚：AT-SPI / UIA / AX + 输入）
@@ -55,7 +56,7 @@ Cua Driver 的 66 个工具原样暴露。观察类工具（`get_window_state` �
 ## 安装
 
 ```bash
-pipx install git+https://github.com/cszf1/gui-gate      # Python ≥ 3.10；只依赖官方 cua-driver 预编译包
+pipx install gui-gate                                   # 需要 Python ≥ 3.10 来装包；门控本身是 Rust 程序
 gui-gate setup --client pi                              # 或 claude / codex / cursor；不带参数则打印配置片段
 gui-gate doctor                                         # 自检：启动驱动、列出工具
 ```
@@ -84,8 +85,8 @@ gui-gate --weights weights.json   # 用训练好的预测器
 
 ```bash
 gui-gate --policy direct --collect --log runs/s1.jsonl     # 不干预地采集，标签无偏
-gui-gate-train runs/ -o weights.json                       # 按会话留出、Platt 校准，输出 ECE/Brier/AUC
-gui-gate-compare runs/                                     # 各策略：执行数、失败率、观察/截图数、门开销
+gui-gate train runs/ -o weights.json                       # 按会话留出、Platt 校准，输出 ECE/Brier/AUC
+gui-gate compare runs/                                     # 各策略：执行数、失败率、观察/截图数、门开销
 ```
 
 日志默认写到 `~/.gui-gate/logs/`，每行一个事件（JSONL）。
@@ -96,11 +97,22 @@ gui-gate-compare runs/                                     # 各策略：执行�
 `scripts/sim_agent.py`：**脚本化**的 Agent（不是大模型），用来在真实桌面上把整条链路跑通。
 `scripts/run_matrix.sh`：同一批种子在各策略下跑，加上采数据和训练。
 
-## 测试
+`weights/osworld-2026-10-21.json`：用 OSWorld/OSGuard 实测日志（1948 个直接执行的动作，118 个会话）训练的预测器，
+按会话留出 35 个会话测试：手写先验 AUC 0.50（等于瞎猜）、ECE 0.096；训练后 AUC 0.66、ECE 0.037。
+默认仍用先验，需要时 `--weights weights/osworld-2026-10-21.json`（还没在基准上验证过）。
+
+## 开发
 
 ```bash
-python3 -m unittest discover -s tests -v     # 用假 driver 走真实 MCP stdio
+cargo build --release                       # 源码在 src/（Rust）
+cargo test                                  # 模块级单元测试
+GUI_GATE_BIN=target/release/gui-gate python3 -m unittest discover -s tests -v   # 用假 driver 走真实 MCP stdio
+maturin build --release                     # 打包成 Python wheel（发布由 .github/workflows/release.yml 按 tag 自动做）
 ```
+
+源码：`server.rs` 门控主流程 · `decide.rs` 规则与预测器 · `features.rs` 特征与风险 · `sidefx.rs` 文件系统副作用检查 ·
+`authz.rs` 用户原话授权 · `batch.rs` 批量执行 · `human.rs` 找人确认 · `reviewer.rs` 独立审核员 ·
+`install.rs` / `updates.rs` 安装、自检、驱动更新 · `tools.rs` 训练与对比。
 
 ## 许可
 
