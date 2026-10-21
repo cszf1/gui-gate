@@ -1268,7 +1268,8 @@ impl Gate {
             if ch != "deny" {
                 return Some(Decision::new("ask_human", 0.0, dec.reason.clone(), "rule"));
             }
-            return Some(Decision::new("deny", 0.0, format!("{}; no reviewer is configured to approve it", dec.reason), "rule"));
+            let why = if self.reviewer.is_some() { "the reviewer did not answer, so nobody approved it" } else { "no reviewer is configured to approve it" };
+            return Some(Decision::new("deny", 0.0, format!("{}; {why}", dec.reason), "rule"));
         }
         Some(dec)
     }
