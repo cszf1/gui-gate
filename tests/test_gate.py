@@ -324,6 +324,66 @@ class PolicyTests(unittest.TestCase):
             c.close()
 
 
+def _img(r):
+    return [c for c in r.get("content", []) if c.get("type") == "image"]
+
+
+class ScreenshotFormatTests(unittest.TestCase):
+    """v0.9.4: screenshots go back to the agent as full-size JPEG q60 (GUI_GATE_SCREENSHOT_FORMAT=png keeps PNG)."""
+
+    def _read(self, env, *extra):
+        c = Client(*extra, env=dict(env, FAKE_PNG="1"))
+        try:
+            r = c.call("get_window_state", pid=4242, window_id=777, include_screenshot=True)
+            return r, c.events(), c.call("gate_report")
+        finally:
+            c.close()
+
+    def test_default_is_jpeg_full_size(self):
+        import base64, struct
+        for policy in ("gate", "direct", "full", "light"):
+            with self.subTest(policy=policy):
+                r, evs, rep = self._read({}, "--policy", policy)
+                imgs = _img(r)
+                self.assertEqual(len(imgs), 1)
+                self.assertEqual(imgs[0]["mimeType"], "image/jpeg")
+                raw = base64.b64decode(imgs[0]["data"])
+                self.assertEqual(raw[:3], b"\xff\xd8\xff")
+                # SOF0/SOF2 frame header carries the size: never downscaled
+                i = 2
+                while i < len(raw):
+                    marker, ln = raw[i + 1], struct.unpack(">H", raw[i + 2:i + 4])[0]
+                    if marker in (0xC0, 0xC1, 0xC2):
+                        h, w = struct.unpack(">HH", raw[i + 5:i + 9])
+                        break
+                    i += 2 + ln
+                self.assertEqual((w, h), (500, 300))
+                ev = [e for e in evs if e["ev"] == "img"][-1]
+                self.assertEqual(ev["converted"], 1)
+                self.assertLess(ev["bytes_out"], ev["bytes_in"])
+                self.assertEqual(ev["format"], "jpeg q60")
+                self.assertEqual(rep["structuredContent"]["screenshot_format"], "jpeg q60")
+
+    def test_png_setting_keeps_png(self):
+        import base64
+        r, evs, _ = self._read({"GUI_GATE_SCREENSHOT_FORMAT": "png"})
+        imgs = _img(r)
+        self.assertEqual(imgs[0]["mimeType"], "image/png")
+        self.assertEqual(base64.b64decode(imgs[0]["data"])[:4], b"\x89PNG")
+        ev = [e for e in evs if e["ev"] == "img"][-1]
+        self.assertEqual((ev["converted"], ev["bytes_in"]), (0, ev["bytes_out"]))
+
+    def test_quality_clamped_and_undecodable_passes_through(self):
+        r, evs, _ = self._read({"GUI_GATE_SCREENSHOT_QUALITY": "5"})
+        self.assertEqual([e for e in evs if e["ev"] == "img"][-1]["format"], "jpeg q30")
+        c = Client()  # placeholder "AAAA" image: not a PNG -> untouched
+        try:
+            r = c.call("get_window_state", pid=4242, window_id=777, include_screenshot=True)
+            self.assertEqual(_img(r)[0], {"type": "image", "data": "AAAA", "mimeType": "image/png"})
+        finally:
+            c.close()
+
+
 class DeliveryTests(unittest.TestCase):
     def test_auto_falls_back_to_foreground_and_sticks(self):
         env = dict(os.environ, FAKE_NO_BG="1")

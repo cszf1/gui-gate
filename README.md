@@ -58,6 +58,25 @@ Cua Driver 的 66 个工具原样暴露。观察类工具（`get_window_state` �
 门拦下时返回以 `[gate]` 开头的一句话，告诉模型具体怎么做，**不会执行任何动作**。动作报错时也会顺带返回最新界面树，
 省掉模型再读一次。特征全部来自运行时，不使用任何生成器真值。`gui-gate replay 日志目录` 可以用旧日志回放评估当前判断。
 
+## 截图格式（v0.9.4）
+
+门交给 Agent 的每一张截图（`get_window_state` / `screenshot` / 动作后的自动观察 / `run_actions` 末尾读屏……
+cua-driver 结果里所有 `image` 内容）都从 PNG **重新编码成原尺寸 JPEG 质量 60**，`mimeType` 改为 `image/jpeg`。
+**不缩小**，所以模型从图上读出的 x/y 坐标照样有效。所有策略（direct / full / light / gate）都一样，基准各条件可比。
+
+依据是实验 `results/screenshot-format-2026-10-21`（deepseek-v4.1-flash，15 个 OSWorld 任务的门截图，980 次调用）：
+JPEG q60 原尺寸的准确率与 PNG 相同（配对 18 好 / 17 差，p = 1.0），冷启动首 token 7.0 s 对 21.4 s（3 张图 17.2 s 对 64.8 s），
+图片 93 KB 对 326 KB；半尺寸准确率明显下降（25% 对 43%），WebP q80 准确率偏低（38%），都没采用。
+
+| 环境变量 | 默认 | 说明 |
+|---|---|---|
+| `GUI_GATE_SCREENSHOT_FORMAT` | `jpeg` | `png` = 原样转发驱动的 PNG |
+| `GUI_GATE_SCREENSHOT_QUALITY` | `60` | JPEG 质量，限制在 30–95 |
+
+解不开的图（不是 PNG、数据损坏）原样透传。编码用纯 Rust（`image` crate，只开 png+jpeg），1396×823 截图约 20 ms。
+日志里每个带图的结果记一行 `{"ev": "img", "format", "images", "converted", "bytes_in", "bytes_out", "ms"}`，
+`gate_report` 里有累计字节数和编码耗时。
+
 ## v0.4 新增（借鉴 Claude Code auto mode / Codex auto-review，见 docs/）
 
 - **看用户原话授权**：`--task` / `--task-file` / 环境变量 `GUI_GATE_TASK`，或 Agent 开头调用一次 `gate_task`
@@ -170,7 +189,7 @@ maturin build --release                     # 打包成 Python wheel（发布由
 
 源码：`server.rs` 门控主流程 · `decide.rs` 规则与预测器 · `features.rs` 特征与风险 · `sidefx.rs` 文件系统副作用检查 ·
 `authz.rs` 用户原话授权 · `batch.rs` 批量执行 · `human.rs` 找人确认 · `reviewer.rs` 独立审核员 ·
-`install.rs` / `updates.rs` 安装、自检、驱动更新 · `tools.rs` 训练与对比。
+`install.rs` / `updates.rs` 安装、自检、驱动更新 · `tools.rs` 训练与对比 · `shot.rs` 截图转 JPEG。
 
 ## 许可
 
