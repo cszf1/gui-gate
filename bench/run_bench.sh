@@ -64,6 +64,7 @@ When the task is complete, reply DONE and one line on what you did. If the task 
   xrandr -s 1440x900 >/dev/null 2>&1 || { xrandr --newmode 1440x900_60 106.50 1440 1528 1672 1904 900 903 909 934 -hsync +vsync; \
     xrandr --addmode VNC-0 1440x900_60; xrandr --output VNC-0 --mode 1440x900_60; } >/dev/null 2>&1
   local ggv=$($HOME/.local/bin/gui-gate --version 2>/dev/null)
+  local model=$(python3 -c "import json,os;s=json.load(open(os.path.expanduser('~/.pi/agent/settings.json')));print(s.get('defaultProvider','')+'/'+s.get('defaultModel',''))" 2>/dev/null)
   local scr=$(xdpyinfo | awk '/dimensions/{print $2}')
   $PY $HERE/osworld_native.py setup $HERE/tasks/$task --out $OUT/eval/$tag.setup.json > /dev/null 2>&1
   local setup_ok=$($PY -c "import json;print(json.load(open('$OUT/eval/$tag.setup.json')).get('ok'))" 2>/dev/null)
@@ -80,7 +81,7 @@ When the task is complete, reply DONE and one line on what you did. If the task 
   if echo "$st" | grep -q '"stop": "agent"' && grep -q 'thinking must be passed back\|"stopReason":"error"' $OUT/pi/$tag.jsonl 2>/dev/null; then
     infra='"relay_error"'
   fi
-  echo "{\"tag\":\"$tag\",\"task\":\"$name\",\"cond\":\"$c\",\"seed\":$s,\"attempt\":$att,\"infra\":$infra,\"screen\":\"$scr\",\"think\":\"$THINK\",\"gg\":\"$ggv\",\"pi\":$st}" >> $OUT/runs.jsonl
+  echo "{\"tag\":\"$tag\",\"task\":\"$name\",\"cond\":\"$c\",\"seed\":$s,\"attempt\":$att,\"infra\":$infra,\"screen\":\"$scr\",\"think\":\"$THINK\",\"model\":\"$model\",\"gg\":\"$ggv\",\"pi\":$st}" >> $OUT/runs.jsonl
   [ "$infra" = '"relay_error"' ] && return 9
   return 0
 }

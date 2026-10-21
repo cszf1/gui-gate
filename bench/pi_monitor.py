@@ -24,6 +24,9 @@ def killer():
             return
         time.sleep(1)
 threading.Thread(target=killer, daemon=True).start()
+# sidecar with arrival times (s since start) of the non-streaming events: model latency per turn =
+# assistant message_end - message_start, tool time = tool_execution_end - tool_execution_start
+tf = open(a.out + ".times", "w")
 with open(a.out, "w") as f:
     for line in p.stdout:
         f.write(line)
@@ -31,6 +34,11 @@ with open(a.out, "w") as f:
             e = json.loads(line)
         except Exception:
             continue
+        et = e.get("type")
+        if et in ("message_start", "message_end", "tool_execution_start", "tool_execution_end", "turn_start", "agent_end"):
+            tf.write(json.dumps({"t": round(time.time() - t0, 3), "type": et, "role": (e.get("message") or {}).get("role"),
+                                 "tool": e.get("toolName")}) + "\n")
+            tf.flush()
         if e.get("type") == "message_end" and (e.get("message") or {}).get("role") == "assistant":
             turns += 1
             txt = "".join(c.get("text", "") for c in e["message"].get("content") or [] if c.get("type") == "text")

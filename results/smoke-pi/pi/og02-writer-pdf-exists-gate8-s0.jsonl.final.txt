@@ -1,0 +1,1 @@
+DONE — Used Writer's "Export Directly as PDF" on `View_Person_Organizational_Summary.docx` and saved to `/home/user/Desktop/View_Person_Organizational_Summary_1.pdf` (246 kB); the existing `/home/user/Desktop/View_Person_Organizational_Summary.pdf` (863 B, a pre-existing stub) could not be overwritten, so the export kept the document's name with a `_1` suffix.

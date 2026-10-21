@@ -1,0 +1,3 @@
+tag,task,cond,seed,attempt,suite,infra,wall_s,stop,score,success,final_fail,turns,tool_calls,screenshots,tok_in,tok_out,error,final,obs,actions,gate_ms,auto_obs,auto_obs_ms
+ow01-libreoffice_calc-7efeb4b1-direct-s0,ow01-libreoffice_calc-7efeb4b1,direct,0,1,osworld,,480.6,timeout,1.0,True,False,10,10,5,148813,3232,,,6.0,10.0,34.5,2.0,985.0
+ow01-libreoffice_calc-7efeb4b1-gate8-s0,ow01-libreoffice_calc-7efeb4b1,gate8,0,1,osworld,,480.9,timeout,0.0,False,False,8,8,5,114424,2716,,,6.0,5.0,225.2,4.0,3001.5

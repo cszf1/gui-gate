@@ -1,0 +1,4020 @@
+{
+ "og01-impress-pre-pptx-exists-direct-s0": {
+  "turns": [
+   {
+    "t0": 0.533,
+    "tools": [
+     [
+      "list_apps",
+      0.051000000000000156
+     ],
+     [
+      "list_windows",
+      0.05600000000000005
+     ]
+    ],
+    "ttft": 2.594,
+    "model": 3.132,
+    "in": 85,
+    "cached": 4224,
+    "out": 58,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 0,
+    "new_imgs": []
+   },
+   {
+    "t0": 3.724,
+    "tools": [
+     [
+      "get_window_state",
+      0.37600000000000033
+     ]
+    ],
+    "ttft": 1.798,
+    "model": 2.5249999999999995,
+    "in": 1809,
+    "cached": 4224,
+    "out": 146,
+    "reasoning": 31,
+    "think_chars": 125,
+    "imgs_in_ctx": 0,
+    "new_imgs": []
+   },
+   {
+    "t0": 6.64,
+    "tools": [
+     [
+      "press_key",
+      0.09299999999999642
+     ]
+    ],
+    "ttft": 39.259,
+    "model": 40.512,
+    "in": 4899,
+    "cached": 6016,
+    "out": 210,
+    "reasoning": 89,
+    "think_chars": 369,
+    "imgs_in_ctx": 1,
+    "new_imgs": [
+     {
+      "kb": 550,
+      "mime": "image/png",
+      "dims": [
+       1396,
+       823
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 47.245,
+    "tools": [
+     [
+      "list_windows",
+      0.0049999999999954525
+     ]
+    ],
+    "ttft": 51.504,
+    "model": 51.883,
+    "in": 288,
+    "cached": 10880,
+    "out": 52,
+    "reasoning": 7,
+    "think_chars": 31,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 99.134,
+    "tools": [
+     [
+      "get_window_state",
+      0.2609999999999957
+     ]
+    ],
+    "ttft": 50.288,
+    "model": 50.73100000000001,
+    "in": 172,
+    "cached": 11136,
+    "out": 92,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 150.128,
+    "tools": [
+     [
+      "click",
+      1.460000000000008
+     ]
+    ],
+    "ttft": 56.01000000000002,
+    "model": 59.912000000000006,
+    "in": 1670,
+    "cached": 11264,
+    "out": 553,
+    "reasoning": 482,
+    "think_chars": 1975,
+    "imgs_in_ctx": 2,
+    "new_imgs": [
+     {
+      "kb": 75,
+      "mime": "image/png",
+      "dims": [
+       782,
+       497
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 211.501,
+    "tools": [
+     [
+      "press_key",
+      0.10900000000000887
+     ]
+    ],
+    "ttft": 36.37299999999999,
+    "model": 36.84299999999999,
+    "in": 626,
+    "cached": 12928,
+    "out": 84,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 2,
+    "new_imgs": []
+   },
+   {
+    "t0": 248.456,
+    "tools": [
+     [
+      "press_key",
+      0.8860000000000241
+     ]
+    ],
+    "ttft": 35.347999999999985,
+    "model": 35.946,
+    "in": 223,
+    "cached": 13440,
+    "out": 124,
+    "reasoning": 26,
+    "think_chars": 108,
+    "imgs_in_ctx": 2,
+    "new_imgs": []
+   },
+   {
+    "t0": 285.288,
+    "tools": [
+     [
+      "type_text",
+      1.0559999999999832
+     ]
+    ],
+    "ttft": 60.596000000000004,
+    "model": 61.028999999999996,
+    "in": 262,
+    "cached": 13568,
+    "out": 83,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 2,
+    "new_imgs": []
+   },
+   {
+    "t0": 347.374,
+    "tools": [
+     [
+      "press_key",
+      0.8570000000000277
+     ]
+    ],
+    "ttft": 30.21199999999999,
+    "model": 30.78099999999995,
+    "in": 133,
+    "cached": 13824,
+    "out": 79,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 2,
+    "new_imgs": []
+   },
+   {
+    "t0": 379.012,
+    "tools": [
+     [
+      "get_window_state",
+      0.5090000000000146
+     ]
+    ],
+    "ttft": 37.10899999999998,
+    "model": 37.43000000000001,
+    "in": 127,
+    "cached": 13952,
+    "out": 100,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 2,
+    "new_imgs": []
+   },
+   {
+    "t0": 416.953,
+    "tools": [
+     [
+      "click",
+      1.4680000000000177
+     ]
+    ],
+    "ttft": 57.63500000000005,
+    "model": 59.62700000000001,
+    "in": 1899,
+    "cached": 13952,
+    "out": 339,
+    "reasoning": 259,
+    "think_chars": 1071,
+    "imgs_in_ctx": 3,
+    "new_imgs": [
+     {
+      "kb": 78,
+      "mime": "image/png",
+      "dims": [
+       782,
+       497
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 478.049,
+    "tools": []
+   }
+  ],
+  "gate": {
+   "actions": 7,
+   "exec_ms": 5800.9,
+   "gate_ms": 87.4,
+   "obs": 5,
+   "obs_ms": 844.2,
+   "reviews": [],
+   "shots": 3,
+   "px": [
+    1148908,
+    388654,
+    388654
+   ]
+  }
+ },
+ "og01-impress-pre-pptx-exists-gate8-s0": {
+  "turns": [
+   {
+    "t0": 2.54,
+    "tools": [
+     [
+      "list_windows",
+      0.05400000000000027
+     ]
+    ],
+    "ttft": 2.2299999999999995,
+    "model": 2.527,
+    "in": 85,
+    "cached": 4224,
+    "out": 36,
+    "reasoning": 8,
+    "think_chars": 32,
+    "imgs_in_ctx": 0,
+    "new_imgs": []
+   },
+   {
+    "t0": 5.122,
+    "tools": [
+     [
+      "get_window_state",
+      0.3619999999999992
+     ]
+    ],
+    "ttft": 1.7880000000000003,
+    "model": 2.3500000000000005,
+    "in": 314,
+    "cached": 4224,
+    "out": 110,
+    "reasoning": 28,
+    "think_chars": 100,
+    "imgs_in_ctx": 0,
+    "new_imgs": []
+   },
+   {
+    "t0": 7.841,
+    "tools": [
+     [
+      "press_key",
+      0.7519999999999989
+     ]
+    ],
+    "ttft": 14.233999999999998,
+    "model": 14.725999999999999,
+    "in": 3003,
+    "cached": 4480,
+    "out": 125,
+    "reasoning": 24,
+    "think_chars": 99,
+    "imgs_in_ctx": 1,
+    "new_imgs": [
+     {
+      "kb": 550,
+      "mime": "image/png",
+      "dims": [
+       1396,
+       823
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 23.319,
+    "tools": [
+     [
+      "run_actions",
+      2.3670000000000044
+     ]
+    ],
+    "ttft": 47.11999999999999,
+    "model": 48.619,
+    "in": 1497,
+    "cached": 7424,
+    "out": 292,
+    "reasoning": 150,
+    "think_chars": 609,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 74.306,
+    "tools": [
+     [
+      "get_window_state",
+      0.007999999999995566
+     ]
+    ],
+    "ttft": 46.50500000000001,
+    "model": 47.10000000000001,
+    "in": 531,
+    "cached": 8832,
+    "out": 82,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 121.414,
+    "tools": [
+     [
+      "list_windows",
+      0.008000000000009777
+     ]
+    ],
+    "ttft": 45.254000000000005,
+    "model": 45.64999999999999,
+    "in": 137,
+    "cached": 9344,
+    "out": 38,
+    "reasoning": 10,
+    "think_chars": 44,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 167.073,
+    "tools": [
+     [
+      "get_window_state",
+      0.24199999999999022
+     ]
+    ],
+    "ttft": 52.758999999999986,
+    "model": 55.31199999999998,
+    "in": 241,
+    "cached": 9472,
+    "out": 354,
+    "reasoning": 272,
+    "think_chars": 1169,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 222.635,
+    "tools": [
+     [
+      "press_key",
+      0.6870000000000118
+     ]
+    ],
+    "ttft": 82.05700000000002,
+    "model": 87.61000000000001,
+    "in": 2541,
+    "cached": 9600,
+    "out": 792,
+    "reasoning": 691,
+    "think_chars": 3024,
+    "imgs_in_ctx": 2,
+    "new_imgs": [
+     {
+      "kb": 550,
+      "mime": "image/png",
+      "dims": [
+       1396,
+       823
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 310.933,
+    "tools": [
+     [
+      "run_actions",
+      5.2239999999999895
+     ]
+    ],
+    "ttft": 93.61099999999999,
+    "model": 95.98000000000002,
+    "in": 3325,
+    "cached": 12032,
+    "out": 349,
+    "reasoning": 179,
+    "think_chars": 714,
+    "imgs_in_ctx": 2,
+    "new_imgs": []
+   },
+   {
+    "t0": 412.138,
+    "tools": []
+   }
+  ],
+  "gate": {
+   "actions": 9,
+   "exec_ms": 7260.6,
+   "gate_ms": 36.1,
+   "obs": 8,
+   "obs_ms": 1961.2999999999997,
+   "reviews": [],
+   "shots": 2,
+   "px": [
+    1148908,
+    1148908
+   ]
+  }
+ },
+ "og02-writer-pdf-exists-direct-s0": {
+  "turns": [
+   {
+    "t0": 0.881,
+    "tools": [
+     [
+      "list_windows",
+      0.017999999999999794
+     ],
+     [
+      "list_apps",
+      0.0699999999999994
+     ]
+    ],
+    "ttft": 2.7809999999999997,
+    "model": 3.107,
+    "in": 83,
+    "cached": 4224,
+    "out": 58,
+    "reasoning": 12,
+    "think_chars": 46,
+    "imgs_in_ctx": 0,
+    "new_imgs": []
+   },
+   {
+    "t0": 4.061,
+    "tools": [
+     [
+      "get_window_state",
+      0.29300000000000015
+     ]
+    ],
+    "ttft": 2.365,
+    "model": 2.95,
+    "in": 1808,
+    "cached": 4224,
+    "out": 100,
+    "reasoning": 36,
+    "think_chars": 151,
+    "imgs_in_ctx": 0,
+    "new_imgs": []
+   },
+   {
+    "t0": 7.31,
+    "tools": [
+     [
+      "click",
+      0.16499999999999915
+     ]
+    ],
+    "ttft": 10.874000000000002,
+    "model": 11.947000000000003,
+    "in": 4583,
+    "cached": 6016,
+    "out": 181,
+    "reasoning": 133,
+    "think_chars": 577,
+    "imgs_in_ctx": 1,
+    "new_imgs": [
+     {
+      "kb": 313,
+      "mime": "image/png",
+      "dims": [
+       1396,
+       823
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 19.423,
+    "tools": [
+     [
+      "get_window_state",
+      0.2799999999999976
+     ]
+    ],
+    "ttft": 5.267000000000003,
+    "model": 5.590000000000003,
+    "in": 371,
+    "cached": 10496,
+    "out": 64,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 25.295,
+    "tools": [
+     [
+      "click",
+      0.8889999999999958
+     ]
+    ],
+    "ttft": 29.729,
+    "model": 31.03,
+    "in": 1767,
+    "cached": 10752,
+    "out": 158,
+    "reasoning": 110,
+    "think_chars": 471,
+    "imgs_in_ctx": 2,
+    "new_imgs": [
+     {
+      "kb": 67,
+      "mime": "image/png",
+      "dims": [
+       782,
+       444
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 57.214,
+    "tools": [
+     [
+      "get_window_state",
+      2.060999999999993
+     ]
+    ],
+    "ttft": 31.628,
+    "model": 32.539,
+    "in": 326,
+    "cached": 12416,
+    "out": 64,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 2,
+    "new_imgs": []
+   },
+   {
+    "t0": 91.815,
+    "tools": [
+     [
+      "get_window_state",
+      1.0640000000000072
+     ]
+    ],
+    "ttft": 30.581000000000003,
+    "model": 30.649,
+    "in": 554,
+    "cached": 12672,
+    "out": 105,
+    "reasoning": 24,
+    "think_chars": 100,
+    "imgs_in_ctx": 3,
+    "new_imgs": [
+     {
+      "kb": 17,
+      "mime": "image/png",
+      "dims": [
+       546,
+       115
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 123.528,
+    "tools": [
+     [
+      "click",
+      5.151999999999987
+     ]
+    ],
+    "ttft": 20.059999999999988,
+    "model": 22.338000000000008,
+    "in": 542,
+    "cached": 13184,
+    "out": 224,
+    "reasoning": 130,
+    "think_chars": 497,
+    "imgs_in_ctx": 4,
+    "new_imgs": [
+     {
+      "kb": 17,
+      "mime": "image/png",
+      "dims": [
+       546,
+       115
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 151.018,
+    "tools": [
+     [
+      "list_windows",
+      0.006000000000000227
+     ]
+    ],
+    "ttft": 3.811000000000007,
+    "model": 4.182999999999993,
+    "in": 323,
+    "cached": 13696,
+    "out": 45,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 4,
+    "new_imgs": []
+   },
+   {
+    "t0": 155.208,
+    "tools": [
+     [
+      "get_window_state",
+      0.06499999999999773
+     ]
+    ],
+    "ttft": 16.591000000000008,
+    "model": 17.254999999999995,
+    "in": 221,
+    "cached": 13952,
+    "out": 132,
+    "reasoning": 49,
+    "think_chars": 221,
+    "imgs_in_ctx": 4,
+    "new_imgs": []
+   },
+   {
+    "t0": 172.529,
+    "tools": [
+     [
+      "click",
+      0.7129999999999939
+     ]
+    ],
+    "ttft": 23.789000000000016,
+    "model": 26.331000000000017,
+    "in": 503,
+    "cached": 14080,
+    "out": 376,
+    "reasoning": 282,
+    "think_chars": 1028,
+    "imgs_in_ctx": 5,
+    "new_imgs": [
+     {
+      "kb": 17,
+      "mime": "image/png",
+      "dims": [
+       546,
+       115
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 199.573,
+    "tools": [
+     [
+      "get_window_state",
+      0.00899999999998613
+     ]
+    ],
+    "ttft": 36.460999999999984,
+    "model": 36.905,
+    "in": 564,
+    "cached": 14464,
+    "out": 83,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 5,
+    "new_imgs": []
+   },
+   {
+    "t0": 236.487,
+    "tools": [
+     [
+      "list_windows",
+      0.047000000000025466
+     ]
+    ],
+    "ttft": 41.70000000000002,
+    "model": 42.23999999999998,
+    "in": 171,
+    "cached": 14976,
+    "out": 60,
+    "reasoning": 15,
+    "think_chars": 80,
+    "imgs_in_ctx": 5,
+    "new_imgs": []
+   },
+   {
+    "t0": 278.774,
+    "tools": [
+     [
+      "get_window_state",
+      0.7090000000000032
+     ]
+    ],
+    "ttft": 27.464999999999975,
+    "model": 28.778999999999996,
+    "in": 162,
+    "cached": 15104,
+    "out": 219,
+    "reasoning": 137,
+    "think_chars": 594,
+    "imgs_in_ctx": 5,
+    "new_imgs": []
+   },
+   {
+    "t0": 308.263,
+    "tools": [
+     [
+      "click",
+      1.733000000000004
+     ]
+    ],
+    "ttft": 41.31400000000002,
+    "model": 43.879999999999995,
+    "in": 1047,
+    "cached": 15232,
+    "out": 348,
+    "reasoning": 238,
+    "think_chars": 1074,
+    "imgs_in_ctx": 6,
+    "new_imgs": [
+     {
+      "kb": 45,
+      "mime": "image/png",
+      "dims": [
+       1356,
+       848
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 353.877,
+    "tools": [
+     [
+      "get_window_state",
+      0.478999999999985
+     ]
+    ],
+    "ttft": 33.980999999999995,
+    "model": 34.59899999999999,
+    "in": 440,
+    "cached": 16256,
+    "out": 82,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 6,
+    "new_imgs": []
+   },
+   {
+    "t0": 388.956,
+    "tools": [
+     [
+      "get_window_state",
+      0.14400000000000546
+     ]
+    ],
+    "ttft": 30.688999999999965,
+    "model": 31.358000000000004,
+    "in": 222,
+    "cached": 16640,
+    "out": 105,
+    "reasoning": 22,
+    "think_chars": 122,
+    "imgs_in_ctx": 6,
+    "new_imgs": []
+   },
+   {
+    "t0": 420.459,
+    "tools": [
+     [
+      "press_key",
+      0.8859999999999673
+     ]
+    ],
+    "ttft": 34.553,
+    "model": 36.94200000000001,
+    "in": 951,
+    "cached": 16768,
+    "out": 344,
+    "reasoning": 246,
+    "think_chars": 1061,
+    "imgs_in_ctx": 7,
+    "new_imgs": [
+     {
+      "kb": 45,
+      "mime": "image/png",
+      "dims": [
+       1356,
+       848
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 458.288,
+    "tools": []
+   }
+  ],
+  "gate": {
+   "actions": 6,
+   "exec_ms": 9485.699999999999,
+   "gate_ms": 38.00000000000001,
+   "obs": 12,
+   "obs_ms": 4660.9,
+   "reviews": [],
+   "shots": 7,
+   "px": [
+    1148908,
+    347208,
+    62790,
+    62790,
+    62790,
+    1149888,
+    1149888
+   ]
+  }
+ },
+ "og02-writer-pdf-exists-gate8-s0": {
+  "turns": [
+   {
+    "t0": 0.386,
+    "tools": [
+     [
+      "list_windows",
+      0.011999999999999567
+     ]
+    ],
+    "ttft": 3.4579999999999997,
+    "model": 3.923,
+    "in": 83,
+    "cached": 4224,
+    "out": 38,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 0,
+    "new_imgs": []
+   },
+   {
+    "t0": 4.322,
+    "tools": [
+     [
+      "get_window_state",
+      0.32200000000000095
+     ]
+    ],
+    "ttft": 3.128,
+    "model": 3.6689999999999996,
+    "in": 312,
+    "cached": 4224,
+    "out": 100,
+    "reasoning": 36,
+    "think_chars": 139,
+    "imgs_in_ctx": 0,
+    "new_imgs": []
+   },
+   {
+    "t0": 8.319,
+    "tools": [
+     [
+      "click",
+      0.6189999999999998
+     ]
+    ],
+    "ttft": 19.695,
+    "model": 20.452999999999996,
+    "in": 4623,
+    "cached": 4480,
+    "out": 132,
+    "reasoning": 58,
+    "think_chars": 265,
+    "imgs_in_ctx": 1,
+    "new_imgs": [
+     {
+      "kb": 313,
+      "mime": "image/png",
+      "dims": [
+       1396,
+       823
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 29.392,
+    "tools": [
+     [
+      "click",
+      0.01999999999999602
+     ]
+    ],
+    "ttft": 14.199000000000002,
+    "model": 15.439000000000004,
+    "in": 1576,
+    "cached": 9088,
+    "out": 205,
+    "reasoning": 125,
+    "think_chars": 565,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 44.855,
+    "tools": [
+     [
+      "click",
+      2.561
+     ]
+    ],
+    "ttft": 12.542000000000002,
+    "model": 14.202000000000005,
+    "in": 371,
+    "cached": 10624,
+    "out": 208,
+    "reasoning": 139,
+    "think_chars": 592,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 61.618,
+    "tools": [
+     [
+      "press_key",
+      0.9240000000000066
+     ]
+    ],
+    "ttft": 29.802,
+    "model": 30.08899999999999,
+    "in": 1712,
+    "cached": 10880,
+    "out": 99,
+    "reasoning": 15,
+    "think_chars": 55,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 92.631,
+    "tools": [
+     [
+      "click",
+      4.634
+     ]
+    ],
+    "ttft": 28.370999999999995,
+    "model": 29.522000000000006,
+    "in": 1495,
+    "cached": 12544,
+    "out": 85,
+    "reasoning": 21,
+    "think_chars": 85,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 126.788,
+    "tools": [
+     [
+      "click",
+      1.2569999999999766
+     ]
+    ],
+    "ttft": 31.977999999999994,
+    "model": 33.679000000000016,
+    "in": 1569,
+    "cached": 13952,
+    "out": 202,
+    "reasoning": 154,
+    "think_chars": 635,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 161.724,
+    "tools": [
+     [
+      "type_text",
+      4.825000000000017
+     ]
+    ],
+    "ttft": 9.024000000000001,
+    "model": 11.269000000000005,
+    "in": 1632,
+    "cached": 15488,
+    "out": 315,
+    "reasoning": 249,
+    "think_chars": 1140,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 177.819,
+    "tools": [
+     [
+      "press_key",
+      1.1779999999999973
+     ]
+    ],
+    "ttft": 9.02600000000001,
+    "model": 13.273000000000025,
+    "in": 1810,
+    "cached": 17024,
+    "out": 506,
+    "reasoning": 408,
+    "think_chars": 1713,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 192.27,
+    "tools": [
+     [
+      "press_key",
+      1.2939999999999827
+     ]
+    ],
+    "ttft": 23.783999999999992,
+    "model": 24.278999999999996,
+    "in": 1892,
+    "cached": 18816,
+    "out": 156,
+    "reasoning": 77,
+    "think_chars": 290,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 217.844,
+    "tools": [
+     [
+      "type_text",
+      0.8970000000000198
+     ]
+    ],
+    "ttft": 17.11700000000002,
+    "model": 17.605999999999995,
+    "in": 1624,
+    "cached": 20608,
+    "out": 91,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 236.347,
+    "tools": [
+     [
+      "get_window_state",
+      0.24500000000000455
+     ]
+    ],
+    "ttft": 20.61299999999997,
+    "model": 21.21799999999999,
+    "in": 223,
+    "cached": 22144,
+    "out": 116,
+    "reasoning": 17,
+    "think_chars": 75,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 257.81,
+    "tools": [
+     [
+      "get_window_state",
+      0.20999999999997954
+     ]
+    ],
+    "ttft": 24.291999999999973,
+    "model": 25.420999999999992,
+    "in": 439,
+    "cached": 22272,
+    "out": 163,
+    "reasoning": 63,
+    "think_chars": 269,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 283.441,
+    "tools": [
+     [
+      "click",
+      0.9370000000000118
+     ]
+    ],
+    "ttft": 8.357000000000028,
+    "model": 9.600999999999999,
+    "in": 562,
+    "cached": 22656,
+    "out": 188,
+    "reasoning": 139,
+    "think_chars": 548,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 293.979,
+    "tools": [
+     [
+      "press_key",
+      0.6469999999999914
+     ]
+    ],
+    "ttft": 19.49799999999999,
+    "model": 21.116000000000042,
+    "in": 311,
+    "cached": 23168,
+    "out": 271,
+    "reasoning": 173,
+    "think_chars": 751,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 315.742,
+    "tools": [
+     [
+      "press_key",
+      1.336999999999989
+     ]
+    ],
+    "ttft": 37.84100000000001,
+    "model": 38.718999999999994,
+    "in": 1404,
+    "cached": 23424,
+    "out": 284,
+    "reasoning": 186,
+    "think_chars": 794,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 355.798,
+    "tools": [
+     [
+      "type_text",
+      1.0499999999999545
+     ]
+    ],
+    "ttft": 28.843999999999994,
+    "model": 30.194000000000017,
+    "in": 1463,
+    "cached": 24704,
+    "out": 213,
+    "reasoning": 129,
+    "think_chars": 588,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 387.043,
+    "tools": [
+     [
+      "press_key",
+      1.2409999999999854
+     ]
+    ],
+    "ttft": 31.293000000000006,
+    "model": 31.680999999999983,
+    "in": 312,
+    "cached": 26112,
+    "out": 79,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 419.965,
+    "tools": [
+     [
+      "click",
+      0.8760000000000332
+     ]
+    ],
+    "ttft": 7.817000000000007,
+    "model": 9.072000000000003,
+    "in": 1804,
+    "cached": 26368,
+    "out": 107,
+    "reasoning": 48,
+    "think_chars": 165,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 429.913,
+    "tools": [],
+    "ttft": 15.175000000000011,
+    "model": 16.004999999999995,
+    "in": 192,
+    "cached": 28160,
+    "out": 108,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   }
+  ],
+  "gate": {
+   "actions": 16,
+   "exec_ms": 9371.4,
+   "gate_ms": 10132.4,
+   "obs": 15,
+   "obs_ms": 5124.1,
+   "reviews": [
+    3989.3,
+    681.0,
+    4120.0
+   ],
+   "shots": 1,
+   "px": [
+    1148908
+   ]
+  }
+ },
+ "ow01-libreoffice_calc-7efeb4b1-direct-s0": {
+  "turns": [
+   {
+    "t0": 0.333,
+    "tools": [
+     [
+      "list_windows",
+      0.0129999999999999
+     ]
+    ],
+    "ttft": 1.5070000000000001,
+    "model": 1.716,
+    "in": 105,
+    "cached": 4224,
+    "out": 38,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 0,
+    "new_imgs": []
+   },
+   {
+    "t0": 2.063,
+    "tools": [
+     [
+      "get_window_state",
+      0.3130000000000006
+     ]
+    ],
+    "ttft": 3.0020000000000002,
+    "model": 3.286,
+    "in": 334,
+    "cached": 4224,
+    "out": 72,
+    "reasoning": 8,
+    "think_chars": 30,
+    "imgs_in_ctx": 0,
+    "new_imgs": []
+   },
+   {
+    "t0": 5.669,
+    "tools": [
+     [
+      "click",
+      1.3320000000000007
+     ]
+    ],
+    "ttft": 27.404,
+    "model": 28.711000000000002,
+    "in": 4130,
+    "cached": 4480,
+    "out": 370,
+    "reasoning": 276,
+    "think_chars": 980,
+    "imgs_in_ctx": 1,
+    "new_imgs": [
+     {
+      "kb": 381,
+      "mime": "image/png",
+      "dims": [
+       1396,
+       823
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 35.713,
+    "tools": [
+     [
+      "press_key",
+      0.8770000000000095
+     ]
+    ],
+    "ttft": 35.943999999999996,
+    "model": 36.312999999999995,
+    "in": 473,
+    "cached": 8576,
+    "out": 103,
+    "reasoning": 5,
+    "think_chars": 13,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 72.903,
+    "tools": [
+     [
+      "get_window_state",
+      0.15800000000000125
+     ]
+    ],
+    "ttft": 27.558999999999997,
+    "model": 28.669999999999987,
+    "in": 235,
+    "cached": 8960,
+    "out": 83,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 101.734,
+    "tools": [
+     [
+      "click",
+      1.8620000000000232
+     ]
+    ],
+    "ttft": 68.77900000000001,
+    "model": 70.90599999999999,
+    "in": 939,
+    "cached": 9088,
+    "out": 385,
+    "reasoning": 291,
+    "think_chars": 945,
+    "imgs_in_ctx": 2,
+    "new_imgs": [
+     {
+      "kb": 377,
+      "mime": "image/png",
+      "dims": [
+       1396,
+       823
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 174.509,
+    "tools": [
+     [
+      "type_text",
+      0.9280000000000257
+     ]
+    ],
+    "ttft": 26.233000000000004,
+    "model": 26.875,
+    "in": 497,
+    "cached": 9984,
+    "out": 82,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 2,
+    "new_imgs": []
+   },
+   {
+    "t0": 202.312,
+    "tools": [
+     [
+      "press_key",
+      0.8800000000000523
+     ]
+    ],
+    "ttft": 80.02299999999997,
+    "model": 80.74199999999996,
+    "in": 239,
+    "cached": 10368,
+    "out": 79,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 2,
+    "new_imgs": []
+   },
+   {
+    "t0": 283.935,
+    "tools": [
+     [
+      "type_text",
+      1.0249999999999773
+     ]
+    ],
+    "ttft": 13.629000000000019,
+    "model": 14.374000000000024,
+    "in": 233,
+    "cached": 10496,
+    "out": 147,
+    "reasoning": 60,
+    "think_chars": 212,
+    "imgs_in_ctx": 2,
+    "new_imgs": []
+   },
+   {
+    "t0": 299.335,
+    "tools": [
+     [
+      "press_key",
+      0.875
+     ]
+    ],
+    "ttft": 30.05200000000002,
+    "model": 30.569000000000017,
+    "in": 296,
+    "cached": 10624,
+    "out": 98,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 2,
+    "new_imgs": []
+   },
+   {
+    "t0": 330.779,
+    "tools": [
+     [
+      "get_window_state",
+      0.18500000000000227
+     ]
+    ],
+    "ttft": 44.05500000000001,
+    "model": 44.45800000000003,
+    "in": 181,
+    "cached": 10880,
+    "out": 83,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 2,
+    "new_imgs": []
+   },
+   {
+    "t0": 375.426,
+    "tools": [
+     [
+      "press_key",
+      0.0999999999999659
+     ]
+    ],
+    "ttft": 60.653999999999996,
+    "model": 62.83800000000002,
+    "in": 938,
+    "cached": 11008,
+    "out": 421,
+    "reasoning": 323,
+    "think_chars": 1179,
+    "imgs_in_ctx": 3,
+    "new_imgs": [
+     {
+      "kb": 430,
+      "mime": "image/png",
+      "dims": [
+       1396,
+       823
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 438.364,
+    "tools": []
+   }
+  ],
+  "gate": {
+   "actions": 8,
+   "exec_ms": 7764.099999999999,
+   "gate_ms": 82.69999999999999,
+   "obs": 4,
+   "obs_ms": 406.9,
+   "reviews": [],
+   "shots": 3,
+   "px": [
+    1148908,
+    1148908,
+    1148908
+   ]
+  }
+ },
+ "ow01-libreoffice_calc-7efeb4b1-gate8-s0": {
+  "turns": [
+   {
+    "t0": 0.698,
+    "tools": [
+     [
+      "list_windows",
+      0.03000000000000025
+     ]
+    ],
+    "ttft": 1.8850000000000002,
+    "model": 2.093,
+    "in": 105,
+    "cached": 4224,
+    "out": 41,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 0,
+    "new_imgs": []
+   },
+   {
+    "t0": 2.822,
+    "tools": [
+     [
+      "get_window_state",
+      0.3019999999999996
+     ]
+    ],
+    "ttft": 1.6029999999999998,
+    "model": 2.1790000000000003,
+    "in": 337,
+    "cached": 4224,
+    "out": 74,
+    "reasoning": 10,
+    "think_chars": 42,
+    "imgs_in_ctx": 0,
+    "new_imgs": []
+   },
+   {
+    "t0": 5.308,
+    "tools": [
+     [
+      "press_key",
+      0.4380000000000024
+     ]
+    ],
+    "ttft": 20.789,
+    "model": 23.005,
+    "in": 4147,
+    "cached": 4480,
+    "out": 437,
+    "reasoning": 339,
+    "think_chars": 1153,
+    "imgs_in_ctx": 1,
+    "new_imgs": [
+     {
+      "kb": 381,
+      "mime": "image/png",
+      "dims": [
+       1396,
+       823
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 28.751,
+    "tools": [
+     [
+      "get_window_state",
+      0.15399999999999636
+     ]
+    ],
+    "ttft": 26.666999999999998,
+    "model": 27.151,
+    "in": 3269,
+    "cached": 8576,
+    "out": 113,
+    "reasoning": 12,
+    "think_chars": 53,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 56.059,
+    "tools": [
+     [
+      "run_actions",
+      5.451000000000008
+     ]
+    ],
+    "ttft": 23.982,
+    "model": 27.607,
+    "in": 931,
+    "cached": 11776,
+    "out": 569,
+    "reasoning": 382,
+    "think_chars": 1343,
+    "imgs_in_ctx": 2,
+    "new_imgs": [
+     {
+      "kb": 377,
+      "mime": "image/png",
+      "dims": [
+       1396,
+       823
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 89.118,
+    "tools": [
+     [
+      "get_window_state",
+      0.37700000000000955
+     ]
+    ],
+    "ttft": 21.68400000000001,
+    "model": 23.482,
+    "in": 3606,
+    "cached": 12672,
+    "out": 136,
+    "reasoning": 35,
+    "think_chars": 144,
+    "imgs_in_ctx": 2,
+    "new_imgs": []
+   },
+   {
+    "t0": 112.982,
+    "tools": [
+     [
+      "press_key",
+      0.7439999999999998
+     ]
+    ],
+    "ttft": 40.86699999999999,
+    "model": 42.476,
+    "in": 960,
+    "cached": 16256,
+    "out": 285,
+    "reasoning": 206,
+    "think_chars": 753,
+    "imgs_in_ctx": 3,
+    "new_imgs": [
+     {
+      "kb": 439,
+      "mime": "image/png",
+      "dims": [
+       1396,
+       823
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 156.203,
+    "tools": [
+     [
+      "run_actions",
+      1.0
+     ]
+    ],
+    "ttft": 59.32900000000001,
+    "model": 59.567999999999984,
+    "in": 3142,
+    "cached": 17152,
+    "out": 150,
+    "reasoning": 45,
+    "think_chars": 172,
+    "imgs_in_ctx": 3,
+    "new_imgs": []
+   },
+   {
+    "t0": 216.772,
+    "tools": [
+     [
+      "get_window_state",
+      0.15300000000002
+     ]
+    ],
+    "ttft": 53.108000000000004,
+    "model": 54.045000000000016,
+    "in": 3038,
+    "cached": 20224,
+    "out": 101,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 3,
+    "new_imgs": []
+   },
+   {
+    "t0": 270.973,
+    "tools": [
+     [
+      "press_key",
+      1.7649999999999864
+     ]
+    ],
+    "ttft": 140.63400000000001,
+    "model": 141.048,
+    "in": 997,
+    "cached": 23168,
+    "out": 174,
+    "reasoning": 76,
+    "think_chars": 253,
+    "imgs_in_ctx": 4,
+    "new_imgs": [
+     {
+      "kb": 318,
+      "mime": "image/png",
+      "dims": [
+       1396,
+       823
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 413.787,
+    "tools": []
+   }
+  ],
+  "gate": {
+   "actions": 9,
+   "exec_ms": 6361.8,
+   "gate_ms": 43.400000000000006,
+   "obs": 10,
+   "obs_ms": 3541.6000000000004,
+   "reviews": [],
+   "shots": 4,
+   "px": [
+    1148908,
+    1148908,
+    1148908,
+    1148908
+   ]
+  }
+ },
+ "ow02-libreoffice_writer-0810415c-direct-s0": {
+  "turns": [
+   {
+    "t0": 0.76,
+    "tools": [
+     [
+      "list_windows",
+      0.05500000000000016
+     ]
+    ],
+    "ttft": 1.8299999999999998,
+    "model": 2.123,
+    "in": 84,
+    "cached": 4224,
+    "out": 41,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 0,
+    "new_imgs": []
+   },
+   {
+    "t0": 2.94,
+    "tools": [
+     [
+      "get_window_state",
+      0.32099999999999973
+     ]
+    ],
+    "ttft": 1.424,
+    "model": 1.847,
+    "in": 314,
+    "cached": 4224,
+    "out": 80,
+    "reasoning": 16,
+    "think_chars": 62,
+    "imgs_in_ctx": 0,
+    "new_imgs": []
+   },
+   {
+    "t0": 5.114,
+    "tools": [
+     [
+      "run_actions",
+      1.2379999999999995
+     ]
+    ],
+    "ttft": 5.034999999999999,
+    "model": 8.632000000000001,
+    "in": 4577,
+    "cached": 4480,
+    "out": 639,
+    "reasoning": 512,
+    "think_chars": 2280,
+    "imgs_in_ctx": 1,
+    "new_imgs": [
+     {
+      "kb": 389,
+      "mime": "image/png",
+      "dims": [
+       1396,
+       823
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 14.985,
+    "tools": [
+     [
+      "click",
+      0.4439999999999955
+     ]
+    ],
+    "ttft": 20.9,
+    "model": 25.377000000000002,
+    "in": 3780,
+    "cached": 8960,
+    "out": 536,
+    "reasoning": 423,
+    "think_chars": 1538,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 40.821,
+    "tools": [
+     [
+      "click",
+      1.4849999999999994
+     ]
+    ],
+    "ttft": 27.099000000000004,
+    "model": 29.878,
+    "in": 4341,
+    "cached": 12672,
+    "out": 394,
+    "reasoning": 281,
+    "think_chars": 1216,
+    "imgs_in_ctx": 2,
+    "new_imgs": [
+     {
+      "kb": 389,
+      "mime": "image/png",
+      "dims": [
+       1396,
+       823
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 72.184,
+    "tools": [
+     [
+      "get_window_state",
+      0.1460000000000008
+     ]
+    ],
+    "ttft": 36.958,
+    "model": 37.721000000000004,
+    "in": 580,
+    "cached": 16896,
+    "out": 116,
+    "reasoning": 33,
+    "think_chars": 110,
+    "imgs_in_ctx": 2,
+    "new_imgs": []
+   },
+   {
+    "t0": 110.055,
+    "tools": [
+     [
+      "click",
+      0.8540000000000134
+     ]
+    ],
+    "ttft": 46.02799999999999,
+    "model": 47.072,
+    "in": 933,
+    "cached": 17408,
+    "out": 149,
+    "reasoning": 48,
+    "think_chars": 206,
+    "imgs_in_ctx": 3,
+    "new_imgs": [
+     {
+      "kb": 402,
+      "mime": "image/png",
+      "dims": [
+       1396,
+       823
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 157.982,
+    "tools": [
+     [
+      "get_window_state",
+      0.2879999999999825
+     ]
+    ],
+    "ttft": 43.985000000000014,
+    "model": 44.34100000000001,
+    "in": 273,
+    "cached": 18304,
+    "out": 64,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 3,
+    "new_imgs": []
+   },
+   {
+    "t0": 202.612,
+    "tools": [
+     [
+      "click",
+      1.0989999999999895
+     ]
+    ],
+    "ttft": 49.49000000000001,
+    "model": 50.045000000000016,
+    "in": 5413,
+    "cached": 18560,
+    "out": 90,
+    "reasoning": 25,
+    "think_chars": 76,
+    "imgs_in_ctx": 4,
+    "new_imgs": [
+     {
+      "kb": 55,
+      "mime": "image/png",
+      "dims": [
+       311,
+       692
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 253.756,
+    "tools": [
+     [
+      "list_windows",
+      0.05400000000003047
+     ]
+    ],
+    "ttft": 45.823999999999984,
+    "model": 47.27799999999999,
+    "in": 236,
+    "cached": 23936,
+    "out": 185,
+    "reasoning": 140,
+    "think_chars": 599,
+    "imgs_in_ctx": 4,
+    "new_imgs": []
+   },
+   {
+    "t0": 301.089,
+    "tools": [
+     [
+      "run_actions",
+      0.8430000000000177
+     ]
+    ],
+    "ttft": 34.92700000000002,
+    "model": 38.971000000000004,
+    "in": 350,
+    "cached": 24064,
+    "out": 481,
+    "reasoning": 352,
+    "think_chars": 1608,
+    "imgs_in_ctx": 4,
+    "new_imgs": []
+   },
+   {
+    "t0": 340.904,
+    "tools": [
+     [
+      "list_windows",
+      0.007999999999981355
+     ]
+    ],
+    "ttft": 97.00999999999999,
+    "model": 98.95800000000003,
+    "in": 695,
+    "cached": 24320,
+    "out": 180,
+    "reasoning": 152,
+    "think_chars": 691,
+    "imgs_in_ctx": 4,
+    "new_imgs": []
+   },
+   {
+    "t0": 439.87,
+    "tools": []
+   }
+  ],
+  "gate": {
+   "actions": 7,
+   "exec_ms": 5163.700000000001,
+   "gate_ms": 26.099999999999998,
+   "obs": 8,
+   "obs_ms": 1307.6999999999998,
+   "reviews": [],
+   "shots": 4,
+   "px": [
+    1148908,
+    0,
+    1148908,
+    215212
+   ]
+  }
+ },
+ "ow02-libreoffice_writer-0810415c-gate8-s0": {
+  "turns": [
+   {
+    "t0": 0.512,
+    "tools": [
+     [
+      "list_apps",
+      0.07599999999999962
+     ],
+     [
+      "list_windows",
+      0.08000000000000007
+     ]
+    ],
+    "ttft": 3.255,
+    "model": 3.6119999999999997,
+    "in": 84,
+    "cached": 4224,
+    "out": 56,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 0,
+    "new_imgs": []
+   },
+   {
+    "t0": 4.206,
+    "tools": [
+     [
+      "get_window_state",
+      0.6260000000000003
+     ]
+    ],
+    "ttft": 2.574,
+    "model": 3.0379999999999994,
+    "in": 1831,
+    "cached": 4224,
+    "out": 132,
+    "reasoning": 32,
+    "think_chars": 143,
+    "imgs_in_ctx": 0,
+    "new_imgs": []
+   },
+   {
+    "t0": 7.878,
+    "tools": [
+     [
+      "click",
+      0.629999999999999
+     ]
+    ],
+    "ttft": 18.04,
+    "model": 22.492,
+    "in": 4610,
+    "cached": 6016,
+    "out": 706,
+    "reasoning": 641,
+    "think_chars": 2861,
+    "imgs_in_ctx": 1,
+    "new_imgs": [
+     {
+      "kb": 389,
+      "mime": "image/png",
+      "dims": [
+       1396,
+       823
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 31.0,
+    "tools": [
+     [
+      "run_actions",
+      1.8870000000000005
+     ]
+    ],
+    "ttft": 20.679000000000002,
+    "model": 22.394,
+    "in": 3590,
+    "cached": 10624,
+    "out": 298,
+    "reasoning": 161,
+    "think_chars": 689,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 55.282,
+    "tools": [
+     [
+      "get_window_state",
+      0.13799999999999102
+     ]
+    ],
+    "ttft": 30.792,
+    "model": 31.77300000000001,
+    "in": 3271,
+    "cached": 14208,
+    "out": 146,
+    "reasoning": 44,
+    "think_chars": 191,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 87.195,
+    "tools": [
+     [
+      "click",
+      0.35700000000001353
+     ]
+    ],
+    "ttft": 5.291000000000011,
+    "model": 7.381,
+    "in": 776,
+    "cached": 17408,
+    "out": 239,
+    "reasoning": 174,
+    "think_chars": 752,
+    "imgs_in_ctx": 2,
+    "new_imgs": [
+     {
+      "kb": 297,
+      "mime": "image/png",
+      "dims": [
+       1200,
+       708
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 94.933,
+    "tools": [
+     [
+      "press_key",
+      0.546999999999997
+     ]
+    ],
+    "ttft": 52.94199999999999,
+    "model": 54.52299999999998,
+    "in": 3137,
+    "cached": 18176,
+    "out": 266,
+    "reasoning": 168,
+    "think_chars": 706,
+    "imgs_in_ctx": 2,
+    "new_imgs": []
+   },
+   {
+    "t0": 150.003,
+    "tools": [
+     [
+      "click",
+      0.6299999999999955
+     ]
+    ],
+    "ttft": 68.06700000000001,
+    "model": 68.98400000000001,
+    "in": 2240,
+    "cached": 21248,
+    "out": 161,
+    "reasoning": 96,
+    "think_chars": 374,
+    "imgs_in_ctx": 2,
+    "new_imgs": []
+   },
+   {
+    "t0": 219.618,
+    "tools": [
+     [
+      "get_window_state",
+      0.3919999999999959
+     ]
+    ],
+    "ttft": 72.71199999999999,
+    "model": 73.89600000000002,
+    "in": 3204,
+    "cached": 23424,
+    "out": 181,
+    "reasoning": 79,
+    "think_chars": 367,
+    "imgs_in_ctx": 2,
+    "new_imgs": []
+   },
+   {
+    "t0": 293.909,
+    "tools": [
+     [
+      "run_actions",
+      2.4669999999999845
+     ]
+    ],
+    "ttft": 98.93799999999999,
+    "model": 102.16200000000003,
+    "in": 744,
+    "cached": 26624,
+    "out": 547,
+    "reasoning": 371,
+    "think_chars": 1414,
+    "imgs_in_ctx": 3,
+    "new_imgs": [
+     {
+      "kb": 295,
+      "mime": "image/png",
+      "dims": [
+       1200,
+       708
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 398.538,
+    "tools": []
+   }
+  ],
+  "gate": {
+   "actions": 9,
+   "exec_ms": 4001.8999999999996,
+   "gate_ms": 38.1,
+   "obs": 10,
+   "obs_ms": 2529.9,
+   "reviews": [],
+   "shots": 3,
+   "px": [
+    1148908,
+    849600,
+    849600
+   ]
+  }
+ },
+ "ow03-libreoffice_impress-39be0d19-direct-s0": {
+  "turns": [
+   {
+    "t0": 0.433,
+    "tools": [
+     [
+      "list_windows",
+      0.010000000000000231
+     ]
+    ],
+    "ttft": 1.7169999999999999,
+    "model": 1.894,
+    "in": 90,
+    "cached": 4224,
+    "out": 39,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 0,
+    "new_imgs": []
+   },
+   {
+    "t0": 2.337,
+    "tools": [
+     [
+      "get_window_state",
+      0.2990000000000004
+     ]
+    ],
+    "ttft": 1.8519999999999999,
+    "model": 2.2399999999999998,
+    "in": 317,
+    "cached": 4224,
+    "out": 84,
+    "reasoning": 20,
+    "think_chars": 67,
+    "imgs_in_ctx": 0,
+    "new_imgs": []
+   },
+   {
+    "t0": 4.882,
+    "tools": [
+     [
+      "click",
+      0.07500000000000284
+     ]
+    ],
+    "ttft": 32.264,
+    "model": 33.197,
+    "in": 4664,
+    "cached": 4480,
+    "out": 140,
+    "reasoning": 75,
+    "think_chars": 298,
+    "imgs_in_ctx": 1,
+    "new_imgs": [
+     {
+      "kb": 311,
+      "mime": "image/png",
+      "dims": [
+       1396,
+       823
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 38.155,
+    "tools": [
+     [
+      "get_window_state",
+      0.14700000000000557
+     ]
+    ],
+    "ttft": 25.685000000000002,
+    "model": 26.105999999999995,
+    "in": 246,
+    "cached": 9088,
+    "out": 83,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 64.411,
+    "tools": [
+     [
+      "click",
+      1.8930000000000007
+     ]
+    ],
+    "ttft": 28.072999999999993,
+    "model": 28.896,
+    "in": 950,
+    "cached": 9216,
+    "out": 143,
+    "reasoning": 49,
+    "think_chars": 193,
+    "imgs_in_ctx": 2,
+    "new_imgs": [
+     {
+      "kb": 311,
+      "mime": "image/png",
+      "dims": [
+       1396,
+       823
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 95.201,
+    "tools": [
+     [
+      "get_window_state",
+      0.1419999999999959
+     ]
+    ],
+    "ttft": 20.777,
+    "model": 21.190000000000012,
+    "in": 266,
+    "cached": 10112,
+    "out": 83,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 2,
+    "new_imgs": []
+   },
+   {
+    "t0": 116.535,
+    "tools": [
+     [
+      "click",
+      1.4439999999999884
+     ]
+    ],
+    "ttft": 77.685,
+    "model": 77.822,
+    "in": 842,
+    "cached": 10368,
+    "out": 97,
+    "reasoning": 32,
+    "think_chars": 112,
+    "imgs_in_ctx": 3,
+    "new_imgs": [
+     {
+      "kb": 247,
+      "mime": "image/png",
+      "dims": [
+       1396,
+       823
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 195.802,
+    "tools": [
+     [
+      "get_window_state",
+      0.44599999999999795
+     ]
+    ],
+    "ttft": 53.666,
+    "model": 53.893,
+    "in": 258,
+    "cached": 11136,
+    "out": 64,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 3,
+    "new_imgs": []
+   },
+   {
+    "t0": 250.142,
+    "tools": [
+     [
+      "click",
+      0.021000000000015007
+     ]
+    ],
+    "ttft": 83.84100000000001,
+    "model": 84.94200000000001,
+    "in": 5342,
+    "cached": 11392,
+    "out": 65,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 4,
+    "new_imgs": [
+     {
+      "kb": 36,
+      "mime": "image/png",
+      "dims": [
+       279,
+       467
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 335.106,
+    "tools": [
+     [
+      "click",
+      1.4879999999999995
+     ]
+    ],
+    "ttft": 73.339,
+    "model": 74.108,
+    "in": 239,
+    "cached": 16640,
+    "out": 222,
+    "reasoning": 128,
+    "think_chars": 460,
+    "imgs_in_ctx": 4,
+    "new_imgs": []
+   },
+   {
+    "t0": 410.702,
+    "tools": []
+   }
+  ],
+  "gate": {
+   "actions": 5,
+   "exec_ms": 4696.9,
+   "gate_ms": 136.70000000000002,
+   "obs": 5,
+   "obs_ms": 566.2,
+   "reviews": [],
+   "shots": 4,
+   "px": [
+    1148908,
+    1148908,
+    1148908,
+    130293
+   ]
+  }
+ },
+ "ow03-libreoffice_impress-39be0d19-gate8-s0": {
+  "turns": [
+   {
+    "t0": 0.608,
+    "tools": [
+     [
+      "list_apps",
+      0.051000000000000156
+     ],
+     [
+      "list_windows",
+      0.053999999999999826
+     ]
+    ],
+    "ttft": 2.8329999999999997,
+    "model": 3.169,
+    "in": 90,
+    "cached": 4224,
+    "out": 59,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 0,
+    "new_imgs": []
+   },
+   {
+    "t0": 3.833,
+    "tools": [
+     [
+      "get_window_state",
+      0.3249999999999993
+     ]
+    ],
+    "ttft": 2.4859999999999998,
+    "model": 2.87,
+    "in": 1822,
+    "cached": 4224,
+    "out": 85,
+    "reasoning": 21,
+    "think_chars": 72,
+    "imgs_in_ctx": 0,
+    "new_imgs": []
+   },
+   {
+    "t0": 7.034,
+    "tools": [
+     [
+      "click",
+      0.43799999999999883
+     ]
+    ],
+    "ttft": 6.035000000000001,
+    "model": 6.670000000000001,
+    "in": 4634,
+    "cached": 6016,
+    "out": 131,
+    "reasoning": 20,
+    "think_chars": 67,
+    "imgs_in_ctx": 1,
+    "new_imgs": [
+     {
+      "kb": 311,
+      "mime": "image/png",
+      "dims": [
+       1396,
+       823
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 14.143,
+    "tools": [
+     [
+      "get_window_state",
+      0.1600000000000037
+     ]
+    ],
+    "ttft": 30.511000000000003,
+    "model": 32.852,
+    "in": 2628,
+    "cached": 10624,
+    "out": 269,
+    "reasoning": 168,
+    "think_chars": 757,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 47.158,
+    "tools": [
+     [
+      "click",
+      2.3629999999999995
+     ]
+    ],
+    "ttft": 7.402999999999999,
+    "model": 8.305,
+    "in": 1086,
+    "cached": 13184,
+    "out": 138,
+    "reasoning": 27,
+    "think_chars": 98,
+    "imgs_in_ctx": 2,
+    "new_imgs": [
+     {
+      "kb": 311,
+      "mime": "image/png",
+      "dims": [
+       1396,
+       823
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 57.83,
+    "tools": [
+     [
+      "press_key",
+      1.4610000000000127
+     ]
+    ],
+    "ttft": 69.84400000000001,
+    "model": 72.40599999999999,
+    "in": 3379,
+    "cached": 14208,
+    "out": 408,
+    "reasoning": 310,
+    "think_chars": 1367,
+    "imgs_in_ctx": 3,
+    "new_imgs": [
+     {
+      "kb": 247,
+      "mime": "image/png",
+      "dims": [
+       1396,
+       823
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 131.701,
+    "tools": [
+     [
+      "click",
+      1.9509999999999934
+     ]
+    ],
+    "ttft": 84.906,
+    "model": 85.519,
+    "in": 3613,
+    "cached": 17536,
+    "out": 94,
+    "reasoning": 10,
+    "think_chars": 42,
+    "imgs_in_ctx": 4,
+    "new_imgs": [
+     {
+      "kb": 247,
+      "mime": "image/png",
+      "dims": [
+       1396,
+       823
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 219.171,
+    "tools": [
+     [
+      "press_key",
+      0.9850000000000136
+     ]
+    ],
+    "ttft": 94.09800000000001,
+    "model": 95.08699999999999,
+    "in": 2589,
+    "cached": 21120,
+    "out": 177,
+    "reasoning": 79,
+    "think_chars": 359,
+    "imgs_in_ctx": 4,
+    "new_imgs": []
+   },
+   {
+    "t0": 315.247,
+    "tools": [
+     [
+      "click",
+      0.41900000000003956
+     ]
+    ],
+    "ttft": 112.32799999999997,
+    "model": 113.07099999999997,
+    "in": 3148,
+    "cached": 23680,
+    "out": 109,
+    "reasoning": 14,
+    "think_chars": 50,
+    "imgs_in_ctx": 5,
+    "new_imgs": [
+     {
+      "kb": 271,
+      "mime": "image/png",
+      "dims": [
+       1396,
+       823
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 428.738,
+    "tools": []
+   }
+  ],
+  "gate": {
+   "actions": 6,
+   "exec_ms": 4546.400000000001,
+   "gate_ms": 37.1,
+   "obs": 9,
+   "obs_ms": 3087.7999999999997,
+   "reviews": [],
+   "shots": 5,
+   "px": [
+    1148908,
+    1148908,
+    0,
+    0,
+    0
+   ]
+  }
+ },
+ "ow04-chrome-af630914-direct-s0": {
+  "turns": [
+   {
+    "t0": 0.882,
+    "tools": [
+     [
+      "list_apps",
+      0.05600000000000005
+     ]
+    ],
+    "ttft": 3.2369999999999997,
+    "model": 3.5079999999999996,
+    "in": 109,
+    "cached": 4224,
+    "out": 39,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 0,
+    "new_imgs": []
+   },
+   {
+    "t0": 4.447,
+    "tools": [
+     [
+      "list_windows",
+      0.008000000000000007
+     ]
+    ],
+    "ttft": 1.5709999999999997,
+    "model": 1.9180000000000001,
+    "in": 1782,
+    "cached": 4224,
+    "out": 55,
+    "reasoning": 10,
+    "think_chars": 40,
+    "imgs_in_ctx": 0,
+    "new_imgs": []
+   },
+   {
+    "t0": 6.373,
+    "tools": [
+     [
+      "get_window_state",
+      0.19200000000000017
+     ]
+    ],
+    "ttft": 1.5729999999999995,
+    "model": 1.996999999999999,
+    "in": 223,
+    "cached": 5888,
+    "out": 82,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 0,
+    "new_imgs": []
+   },
+   {
+    "t0": 8.563,
+    "tools": [
+     [
+      "click",
+      0.8840000000000003
+     ]
+    ],
+    "ttft": 2.1449999999999996,
+    "model": 2.8579999999999988,
+    "in": 2157,
+    "cached": 6016,
+    "out": 130,
+    "reasoning": 65,
+    "think_chars": 283,
+    "imgs_in_ctx": 0,
+    "new_imgs": []
+   },
+   {
+    "t0": 12.306,
+    "tools": [
+     [
+      "type_text",
+      1.097999999999999
+     ]
+    ],
+    "ttft": 7.316000000000001,
+    "model": 7.375000000000002,
+    "in": 306,
+    "cached": 8064,
+    "out": 65,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 0,
+    "new_imgs": []
+   },
+   {
+    "t0": 20.78,
+    "tools": [
+     [
+      "press_key",
+      0.8900000000000006
+     ]
+    ],
+    "ttft": 1.7479999999999976,
+    "model": 2.0279999999999987,
+    "in": 159,
+    "cached": 8320,
+    "out": 60,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 0,
+    "new_imgs": []
+   },
+   {
+    "t0": 23.699,
+    "tools": [
+     [
+      "get_window_state",
+      0.33100000000000307
+     ]
+    ],
+    "ttft": 1.9699999999999989,
+    "model": 2.4419999999999966,
+    "in": 134,
+    "cached": 8448,
+    "out": 82,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 0,
+    "new_imgs": []
+   },
+   {
+    "t0": 26.472,
+    "tools": [
+     [
+      "run_actions",
+      2.9540000000000006
+     ]
+    ],
+    "ttft": 3.2749999999999986,
+    "model": 6.786999999999999,
+    "in": 3843,
+    "cached": 8576,
+    "out": 519,
+    "reasoning": 399,
+    "think_chars": 1693,
+    "imgs_in_ctx": 0,
+    "new_imgs": []
+   },
+   {
+    "t0": 36.214,
+    "tools": [
+     [
+      "click",
+      1.698999999999998
+     ]
+    ],
+    "ttft": 2.911999999999999,
+    "model": 6.079000000000001,
+    "in": 3220,
+    "cached": 12416,
+    "out": 533,
+    "reasoning": 468,
+    "think_chars": 1917,
+    "imgs_in_ctx": 0,
+    "new_imgs": []
+   },
+   {
+    "t0": 44.03,
+    "tools": [
+     [
+      "get_window_state",
+      0.2779999999999987
+     ]
+    ],
+    "ttft": 3.8149999999999977,
+    "model": 3.8969999999999985,
+    "in": 620,
+    "cached": 15616,
+    "out": 98,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 0,
+    "new_imgs": []
+   },
+   {
+    "t0": 48.206,
+    "tools": [
+     [
+      "click",
+      0.8780000000000001
+     ]
+    ],
+    "ttft": 6.2719999999999985,
+    "model": 6.695,
+    "in": 755,
+    "cached": 16128,
+    "out": 79,
+    "reasoning": 14,
+    "think_chars": 67,
+    "imgs_in_ctx": 0,
+    "new_imgs": []
+   },
+   {
+    "t0": 55.779,
+    "tools": [
+     [
+      "get_window_state",
+      1.5239999999999938
+     ]
+    ],
+    "ttft": 3.130999999999993,
+    "model": 3.1679999999999993,
+    "in": 272,
+    "cached": 16768,
+    "out": 82,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 0,
+    "new_imgs": []
+   },
+   {
+    "t0": 60.471,
+    "tools": [
+     [
+      "press_key",
+      0.8739999999999952
+     ]
+    ],
+    "ttft": 4.449000000000005,
+    "model": 5.609000000000002,
+    "in": 177,
+    "cached": 17024,
+    "out": 119,
+    "reasoning": 59,
+    "think_chars": 255,
+    "imgs_in_ctx": 0,
+    "new_imgs": []
+   },
+   {
+    "t0": 66.954,
+    "tools": [
+     [
+      "get_window_state",
+      1.061000000000007
+     ]
+    ],
+    "ttft": 5.89500000000001,
+    "model": 6.366,
+    "in": 211,
+    "cached": 17152,
+    "out": 82,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 0,
+    "new_imgs": []
+   },
+   {
+    "t0": 74.381,
+    "tools": [
+     [
+      "press_key",
+      0.8629999999999995
+     ]
+    ],
+    "ttft": 6.024000000000001,
+    "model": 9.358000000000004,
+    "in": 474,
+    "cached": 17280,
+    "out": 461,
+    "reasoning": 401,
+    "think_chars": 1628,
+    "imgs_in_ctx": 1,
+    "new_imgs": [
+     {
+      "kb": 8,
+      "mime": "image/png",
+      "dims": [
+       200,
+       146
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 84.602,
+    "tools": [
+     [
+      "get_window_state",
+      1.0570000000000022
+     ]
+    ],
+    "ttft": 2.9869999999999948,
+    "model": 3.625,
+    "in": 594,
+    "cached": 17664,
+    "out": 82,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 89.284,
+    "tools": [
+     [
+      "press_key",
+      0.10499999999998977
+     ]
+    ],
+    "ttft": 2.5379999999999967,
+    "model": 2.8149999999999977,
+    "in": 571,
+    "cached": 18176,
+    "out": 70,
+    "reasoning": 10,
+    "think_chars": 41,
+    "imgs_in_ctx": 2,
+    "new_imgs": [
+     {
+      "kb": 8,
+      "mime": "image/png",
+      "dims": [
+       200,
+       146
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 92.205,
+    "tools": [
+     [
+      "get_window_state",
+      0.4089999999999918
+     ]
+    ],
+    "ttft": 4.165000000000006,
+    "model": 4.674000000000007,
+    "in": 172,
+    "cached": 18688,
+    "out": 99,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 2,
+    "new_imgs": []
+   },
+   {
+    "t0": 97.291,
+    "tools": [
+     [
+      "click",
+      1.6839999999999975
+     ]
+    ],
+    "ttft": 15.668999999999997,
+    "model": 16.421000000000006,
+    "in": 1209,
+    "cached": 18816,
+    "out": 130,
+    "reasoning": 65,
+    "think_chars": 285,
+    "imgs_in_ctx": 3,
+    "new_imgs": [
+     {
+      "kb": 141,
+      "mime": "image/png",
+      "dims": [
+       1050,
+       853
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 115.397,
+    "tools": [
+     [
+      "type_text",
+      1.0999999999999943
+     ]
+    ],
+    "ttft": 7.572999999999993,
+    "model": 7.882999999999996,
+    "in": 254,
+    "cached": 19968,
+    "out": 66,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 3,
+    "new_imgs": []
+   },
+   {
+    "t0": 124.38,
+    "tools": [
+     [
+      "get_window_state",
+      0.32499999999998863
+     ]
+    ],
+    "ttft": 18.965000000000003,
+    "model": 19.533000000000015,
+    "in": 236,
+    "cached": 20096,
+    "out": 99,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 3,
+    "new_imgs": []
+   },
+   {
+    "t0": 144.241,
+    "tools": [],
+    "ttft": 30.34899999999999,
+    "model": 30.769999999999982,
+    "in": 1339,
+    "cached": 20224,
+    "out": 41,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 4,
+    "new_imgs": [
+     {
+      "kb": 138,
+      "mime": "image/png",
+      "dims": [
+       1050,
+       853
+      ]
+     }
+    ]
+   }
+  ],
+  "gate": {
+   "actions": 12,
+   "exec_ms": 12309.199999999999,
+   "gate_ms": 113.60000000000001,
+   "obs": 10,
+   "obs_ms": 5343.999999999999,
+   "reviews": [],
+   "shots": 4,
+   "px": [
+    29200,
+    29200,
+    895650,
+    895650
+   ]
+  }
+ },
+ "ow04-chrome-af630914-gate8-s0": {
+  "turns": [
+   {
+    "t0": 0.489,
+    "tools": [
+     [
+      "list_apps",
+      0.03299999999999992
+     ]
+    ],
+    "ttft": 2.551,
+    "model": 2.849,
+    "in": 109,
+    "cached": 4224,
+    "out": 36,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 0,
+    "new_imgs": []
+   },
+   {
+    "t0": 3.372,
+    "tools": [
+     [
+      "list_windows",
+      0.01100000000000012
+     ]
+    ],
+    "ttft": 2.1000000000000005,
+    "model": 2.3609999999999998,
+    "in": 1784,
+    "cached": 4224,
+    "out": 55,
+    "reasoning": 10,
+    "think_chars": 40,
+    "imgs_in_ctx": 0,
+    "new_imgs": []
+   },
+   {
+    "t0": 5.746,
+    "tools": [
+     [
+      "get_window_state",
+      0.25399999999999956
+     ]
+    ],
+    "ttft": 2.0039999999999996,
+    "model": 2.295,
+    "in": 225,
+    "cached": 5888,
+    "out": 64,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 0,
+    "new_imgs": []
+   },
+   {
+    "t0": 8.297,
+    "tools": [
+     [
+      "click",
+      1.363999999999999
+     ]
+    ],
+    "ttft": 3.9159999999999986,
+    "model": 4.748999999999999,
+    "in": 2661,
+    "cached": 6016,
+    "out": 147,
+    "reasoning": 63,
+    "think_chars": 281,
+    "imgs_in_ctx": 1,
+    "new_imgs": [
+     {
+      "kb": 57,
+      "mime": "image/png",
+      "dims": [
+       1050,
+       853
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 14.412,
+    "tools": [
+     [
+      "type_text",
+      1.1169999999999973
+     ]
+    ],
+    "ttft": 3.269999999999998,
+    "model": 3.74,
+    "in": 3114,
+    "cached": 8576,
+    "out": 83,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 19.27,
+    "tools": [
+     [
+      "press_key",
+      1.3550000000000004
+     ]
+    ],
+    "ttft": 6.833000000000002,
+    "model": 7.2669999999999995,
+    "in": 169,
+    "cached": 11648,
+    "out": 79,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 27.893,
+    "tools": [
+     [
+      "get_window_state",
+      0.33899999999999864
+     ]
+    ],
+    "ttft": 12.515,
+    "model": 12.950000000000003,
+    "in": 2699,
+    "cached": 11776,
+    "out": 97,
+    "reasoning": 16,
+    "think_chars": 66,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 41.183,
+    "tools": [
+     [
+      "click",
+      1.402000000000001
+     ]
+    ],
+    "ttft": 3.5219999999999985,
+    "model": 3.8939999999999984,
+    "in": 643,
+    "cached": 14464,
+    "out": 84,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 46.479,
+    "tools": [
+     [
+      "get_window_state",
+      0.08200000000000074
+     ]
+    ],
+    "ttft": 9.411999999999999,
+    "model": 10.243000000000002,
+    "in": 2715,
+    "cached": 15104,
+    "out": 125,
+    "reasoning": 24,
+    "think_chars": 110,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 56.807,
+    "tools": [
+     [
+      "scroll",
+      2.6939999999999884
+     ]
+    ],
+    "ttft": 18.247,
+    "model": 18.967,
+    "in": 747,
+    "cached": 17792,
+    "out": 142,
+    "reasoning": 16,
+    "think_chars": 75,
+    "imgs_in_ctx": 2,
+    "new_imgs": [
+     {
+      "kb": 134,
+      "mime": "image/png",
+      "dims": [
+       1050,
+       853
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 78.471,
+    "tools": [
+     [
+      "click",
+      2.1340000000000003
+     ]
+    ],
+    "ttft": 32.80199999999999,
+    "model": 33.941,
+    "in": 3367,
+    "cached": 18432,
+    "out": 197,
+    "reasoning": 103,
+    "think_chars": 427,
+    "imgs_in_ctx": 3,
+    "new_imgs": [
+     {
+      "kb": 143,
+      "mime": "image/png",
+      "dims": [
+       1050,
+       853
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 114.549,
+    "tools": [
+     [
+      "click",
+      1.7760000000000105
+     ]
+    ],
+    "ttft": 43.232,
+    "model": 43.627999999999986,
+    "in": 3397,
+    "cached": 21760,
+    "out": 111,
+    "reasoning": 17,
+    "think_chars": 55,
+    "imgs_in_ctx": 4,
+    "new_imgs": [
+     {
+      "kb": 149,
+      "mime": "image/png",
+      "dims": [
+       1050,
+       853
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 159.958,
+    "tools": [
+     [
+      "click",
+      1.9799999999999898
+     ]
+    ],
+    "ttft": 55.01599999999999,
+    "model": 56.982,
+    "in": 3341,
+    "cached": 25088,
+    "out": 308,
+    "reasoning": 214,
+    "think_chars": 954,
+    "imgs_in_ctx": 5,
+    "new_imgs": [
+     {
+      "kb": 143,
+      "mime": "image/png",
+      "dims": [
+       1050,
+       853
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 218.938,
+    "tools": [
+     [
+      "press_key",
+      1.367999999999995
+     ]
+    ],
+    "ttft": 69.541,
+    "model": 71.40700000000004,
+    "in": 3482,
+    "cached": 28416,
+    "out": 285,
+    "reasoning": 206,
+    "think_chars": 840,
+    "imgs_in_ctx": 6,
+    "new_imgs": [
+     {
+      "kb": 150,
+      "mime": "image/png",
+      "dims": [
+       1050,
+       853
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 291.716,
+    "tools": [
+     [
+      "press_key",
+      1.4330000000000496
+     ]
+    ],
+    "ttft": 84.55700000000002,
+    "model": 85.27299999999997,
+    "in": 3449,
+    "cached": 31872,
+    "out": 99,
+    "reasoning": 20,
+    "think_chars": 96,
+    "imgs_in_ctx": 7,
+    "new_imgs": [
+     {
+      "kb": 148,
+      "mime": "image/png",
+      "dims": [
+       1050,
+       853
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 378.422,
+    "tools": [
+     [
+      "press_key",
+      0.5269999999999868
+     ]
+    ],
+    "ttft": 56.448999999999955,
+    "model": 57.46799999999996,
+    "in": 2801,
+    "cached": 35200,
+    "out": 178,
+    "reasoning": 99,
+    "think_chars": 467,
+    "imgs_in_ctx": 7,
+    "new_imgs": []
+   },
+   {
+    "t0": 436.418,
+    "tools": []
+   }
+  ],
+  "gate": {
+   "actions": 11,
+   "exec_ms": 10626.8,
+   "gate_ms": 174.1,
+   "obs": 14,
+   "obs_ms": 6420.8,
+   "reviews": [],
+   "shots": 7,
+   "px": [
+    895650,
+    895650,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  }
+ },
+ "ow05-libreoffice_calc-abed40dc-direct-s0": {
+  "turns": [
+   {
+    "t0": 0.404,
+    "tools": [
+     [
+      "list_windows",
+      0.010999999999999233
+     ]
+    ],
+    "ttft": 8.602,
+    "model": 8.976,
+    "in": 4341,
+    "cached": 0,
+    "out": 40,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 0,
+    "new_imgs": []
+   },
+   {
+    "t0": 9.393,
+    "tools": [
+     [
+      "get_window_state",
+      0.3260000000000005
+     ]
+    ],
+    "ttft": 4.827,
+    "model": 4.866999999999999,
+    "in": 347,
+    "cached": 4224,
+    "out": 71,
+    "reasoning": 7,
+    "think_chars": 27,
+    "imgs_in_ctx": 0,
+    "new_imgs": []
+   },
+   {
+    "t0": 14.591,
+    "tools": [
+     [
+      "click",
+      0.32399999999999807
+     ]
+    ],
+    "ttft": 13.522,
+    "model": 19.232999999999997,
+    "in": 4151,
+    "cached": 4480,
+    "out": 907,
+    "reasoning": 792,
+    "think_chars": 3157,
+    "imgs_in_ctx": 1,
+    "new_imgs": [
+     {
+      "kb": 259,
+      "mime": "image/png",
+      "dims": [
+       1396,
+       823
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 34.151,
+    "tools": [
+     [
+      "get_window_state",
+      0.17500000000001137
+     ]
+    ],
+    "ttft": 28.852999999999994,
+    "model": 30.847999999999992,
+    "in": 1066,
+    "cached": 8576,
+    "out": 360,
+    "reasoning": 261,
+    "think_chars": 943,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 65.174,
+    "tools": [
+     [
+      "get_window_state",
+      0.20300000000000296
+     ]
+    ],
+    "ttft": 4.344999999999999,
+    "model": 10.682999999999993,
+    "in": 694,
+    "cached": 9600,
+    "out": 789,
+    "reasoning": 690,
+    "think_chars": 2939,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 76.06,
+    "tools": [
+     [
+      "press_key",
+      0.8520000000000039
+     ]
+    ],
+    "ttft": 13.079999999999998,
+    "model": 16.333,
+    "in": 974,
+    "cached": 10240,
+    "out": 467,
+    "reasoning": 360,
+    "think_chars": 1542,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 93.246,
+    "tools": [
+     [
+      "click",
+      0.018999999999991246
+     ]
+    ],
+    "ttft": 13.072000000000003,
+    "model": 13.341000000000008,
+    "in": 588,
+    "cached": 11136,
+    "out": 48,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 106.606,
+    "tools": [
+     [
+      "get_window_state",
+      0.1039999999999992
+     ]
+    ],
+    "ttft": 12.161000000000001,
+    "model": 12.807000000000002,
+    "in": 203,
+    "cached": 11648,
+    "out": 112,
+    "reasoning": 12,
+    "think_chars": 48,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 119.518,
+    "tools": [
+     [
+      "click",
+      0.8109999999999786
+     ]
+    ],
+    "ttft": 10.412000000000006,
+    "model": 10.800000000000011,
+    "in": 1529,
+    "cached": 11776,
+    "out": 59,
+    "reasoning": 11,
+    "think_chars": 39,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 131.129,
+    "tools": [
+     [
+      "get_window_state",
+      0.3760000000000048
+     ]
+    ],
+    "ttft": 10.644000000000005,
+    "model": 10.885999999999996,
+    "in": 267,
+    "cached": 13184,
+    "out": 82,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 142.391,
+    "tools": [
+     [
+      "click",
+      0.020999999999986585
+     ]
+    ],
+    "ttft": 19.843000000000018,
+    "model": 20.926000000000016,
+    "in": 4220,
+    "cached": 13440,
+    "out": 157,
+    "reasoning": 109,
+    "think_chars": 387,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 163.339,
+    "tools": [
+     [
+      "get_window_state",
+      0.07900000000000773
+     ]
+    ],
+    "ttft": 19.521000000000015,
+    "model": 20.924000000000007,
+    "in": 362,
+    "cached": 17536,
+    "out": 220,
+    "reasoning": 137,
+    "think_chars": 528,
+    "imgs_in_ctx": 1,
+    "new_imgs": []
+   },
+   {
+    "t0": 184.343,
+    "tools": [
+     [
+      "click",
+      1.5180000000000007
+     ]
+    ],
+    "ttft": 32.35900000000001,
+    "model": 33.465,
+    "in": 562,
+    "cached": 17792,
+    "out": 202,
+    "reasoning": 108,
+    "think_chars": 324,
+    "imgs_in_ctx": 2,
+    "new_imgs": [
+     {
+      "kb": 58,
+      "mime": "image/png",
+      "dims": [
+       350,
+       594
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 219.327,
+    "tools": [
+     [
+      "press_key",
+      1.5260000000000105
+     ]
+    ],
+    "ttft": 23.12700000000001,
+    "model": 29.373999999999995,
+    "in": 376,
+    "cached": 18304,
+    "out": 969,
+    "reasoning": 890,
+    "think_chars": 3730,
+    "imgs_in_ctx": 2,
+    "new_imgs": []
+   },
+   {
+    "t0": 250.228,
+    "tools": [
+     [
+      "press_key",
+      0.8879999999999768
+     ]
+    ],
+    "ttft": 30.139999999999986,
+    "model": 30.855000000000018,
+    "in": 1198,
+    "cached": 18560,
+    "out": 150,
+    "reasoning": 71,
+    "think_chars": 277,
+    "imgs_in_ctx": 2,
+    "new_imgs": []
+   },
+   {
+    "t0": 281.971,
+    "tools": [
+     [
+      "get_window_state",
+      0.06299999999998818
+     ]
+    ],
+    "ttft": 37.96300000000002,
+    "model": 38.322,
+    "in": 239,
+    "cached": 19712,
+    "out": 83,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 2,
+    "new_imgs": []
+   },
+   {
+    "t0": 320.358,
+    "tools": [
+     [
+      "press_key",
+      0.8380000000000223
+     ]
+    ],
+    "ttft": 31.50400000000002,
+    "model": 34.79599999999999,
+    "in": 430,
+    "cached": 19840,
+    "out": 448,
+    "reasoning": 369,
+    "think_chars": 1460,
+    "imgs_in_ctx": 3,
+    "new_imgs": [
+     {
+      "kb": 58,
+      "mime": "image/png",
+      "dims": [
+       350,
+       594
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 355.992,
+    "tools": [
+     [
+      "get_window_state",
+      0.06700000000000728
+     ]
+    ],
+    "ttft": 16.437999999999988,
+    "model": 16.853999999999985,
+    "in": 537,
+    "cached": 20224,
+    "out": 83,
+    "reasoning": 0,
+    "think_chars": 0,
+    "imgs_in_ctx": 3,
+    "new_imgs": []
+   },
+   {
+    "t0": 372.914,
+    "tools": [
+     [
+      "run_actions",
+      9.127999999999986
+     ]
+    ],
+    "ttft": 24.697000000000003,
+    "model": 26.442000000000007,
+    "in": 344,
+    "cached": 20736,
+    "out": 421,
+    "reasoning": 85,
+    "think_chars": 334,
+    "imgs_in_ctx": 4,
+    "new_imgs": [
+     {
+      "kb": 58,
+      "mime": "image/png",
+      "dims": [
+       350,
+       594
+      ]
+     }
+    ]
+   },
+   {
+    "t0": 408.485,
+    "tools": [
+     [
+      "get_window_state",
+      0.06400000000002137
+     ]
+    ],
+    "ttft": 54.80599999999998,
+    "model": 55.478999999999985,
+    "in": 3461,
+    "cached": 20992,
+    "out": 109,
+    "reasoning": 26,
+    "think_chars": 115,
+    "imgs_in_ctx": 4,
+    "new_imgs": []
+   },
+   {
+    "t0": 464.03,
+    "tools": []
+   }
+  ],
+  "gate": {
+   "actions": 24,
+   "exec_ms": 15298.199999999999,
+   "gate_ms": 98.09999999999998,
+   "obs": 11,
+   "obs_ms": 1522.7999999999997,
+   "reviews": [],
+   "shots": 5,
+   "px": [
+    1148908,
+    207900,
+    207900,
+    207900,
+    207900
+   ]
+  }
+ }
+}
