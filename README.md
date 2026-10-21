@@ -11,6 +11,23 @@ $env:GUI_GATE_CLIENT="claude"; irm https://github.com/cszf1/gui-gate/releases/la
 ```
 `--client` 可选（claude / codex / cursor / pi），不写就只装好并自检，之后再 `gui-gate setup --client ...`。
 
+**必须配置审核模型（v0.9.3 起）**：门里的审核模型可以是任何大模型（协议 chat / responses / anthropic / gemini），
+也可以是决策模型（协议 systemone）。没配好时 MCP 服务直接拒绝启动（stderr 说明怎么配，退出码非 0），
+不存在「不带审核运行」的方式（`GUI_GATE_REVIEWER=off` 已删除，设了也会拒绝启动）。
+- 安装时：有终端就交互式询问 URL、模型名、密钥（密钥存到 `~/.config/gui-gate/reviewer.key`，权限 600），协议自动猜；
+  无人值守用参数或环境变量：
+  `bash -s -- --reviewer-url URL --reviewer-model NAME --reviewer-key-file PATH [--reviewer-protocol P]`，
+  或 `GUI_GATE_REVIEWER_URL / _MODEL / _KEY_FILE / _KEY / _PROTOCOL`（Windows 只能用环境变量），`--no-prompt` 不询问。
+  仍没配的话安装照样完成，但会明确提示「门在配好审核模型前不会启动」；配好了会顺手跑一次 `gui-gate check-reviewer`。
+- 之后配置：写进 `~/.config/gui-gate/reviewer.env`（`KEY=VALUE` 每行一项，门启动时自动读；环境变量优先），
+  或写在 MCP 客户端这条服务的环境变量里：
+  ```
+  GUI_GATE_REVIEWER_URL=https://api.deepseek.com/v1
+  GUI_GATE_REVIEWER_MODEL=deepseek-chat
+  GUI_GATE_REVIEWER_KEY_FILE=/home/you/.config/gui-gate/reviewer.key
+  ```
+  然后 `gui-gate check-reviewer`（只查配置不调 API：`--config-only`）。`gui-gate doctor` 也会报告审核模型是否配好。
+
 两种用法同时提供：**单步**（`click`、`type_text`……每次一个动作）和 **批量**（`run_actions`，一次一串步骤，
 支持 find / for_each / if / read，功能对标 Pi codemode，但不需要 JS 引擎）。每个动作不管哪种方式都过门控。
 `--mode single` 只给单步。Cua Driver 用的是官方预编译版本（macOS、Linux x86_64/arm64、Windows），测试版本 0.37.0。
@@ -49,9 +66,9 @@ Cua Driver 的 66 个工具原样暴露。观察类工具（`get_window_state` �
 - **拦了接着干**：被拒时返回理由 + 安全做法（换名保存、跳过冲突文件、先列出再执行……），
   同一后果换条路做也会被拒；连续 3 次 / 累计 8 次被拒才让 Agent 停下汇报。
 - **独立审核模型**（门里唯一的大模型）：中风险步骤和拿不准的目标都由它判，只看「用户原话 + 具体动作 +
-  界面树/对话框」，看不到对话和主模型的理由。审核只用你自己配置的独立决策模型，通过 API 调用
-  （`GUI_GATE_REVIEWER=api|off`，默认 `api`）：
-  - 配置：`GUI_GATE_REVIEWER_URL/_MODEL/_KEY`（或 `_KEY_FILE`）、`_USER_AGENT`、`_MAX_TOKENS`、
+  界面树/对话框」，看不到对话和主模型的理由。审核只用你自己配置的独立模型，通过 API 调用，且**必须配置**：
+  - 配置（环境变量或 `~/.config/gui-gate/reviewer.env`，另一个文件用 `GUI_GATE_REVIEWER_ENV` 指定）：
+    必填 `GUI_GATE_REVIEWER_URL`、`_MODEL`、`_KEY`（或 `_KEY_FILE`）；可选 `_USER_AGENT`、`_MAX_TOKENS`、`_TIMEOUT`、
     `_PROTOCOL`。URL 可以填基础地址（`.../v1`）或完整接口地址。支持的协议（`_PROTOCOL`，默认 `auto` 按地址和模型名猜）：
 
     | 协议 | 用于 | 请求 |
@@ -63,9 +80,9 @@ Cua Driver 的 66 个工具原样暴露。观察类工具（`get_window_state` �
     | `gemini` | Google Gemini | `POST …/models/<model>:generateContent` |
 
     配好后用 `gui-gate check-reviewer [--cases FILE]` 自检：会显示用的是哪个模型、哪种协议，并跑一条该拒、一条该放的样例。
-  - 没配审核 API（或 `GUI_GATE_REVIEWER=off`）时：需要审核的风险步骤一律拒绝（fail closed），并提示去配置
-    `GUI_GATE_REVIEWER_URL/_MODEL/_KEY`；`gui-gate check-reviewer` 会报告「not configured」。
-    审核 API 配了但没答复时：有人可找就问人，无人值守就拒绝并给出安全做法。
+  - 没配审核模型（缺 URL / 模型 / 密钥，密钥文件读不到或为空，或设了 `GUI_GATE_REVIEWER=off` 之类）：
+    门拒绝启动并说明怎么配；`gui-gate check-reviewer` 报告「not configured」。
+    运行中审核 API 出错或超时（fail closed）：有人可找就问人，无人值守就拒绝并给出安全做法。
   干活的主模型从不审核自己的动作，门也不会借用 Agent 自己的模型。
 - **省观察**：截图只在刚用过坐标点击时附带；动作后紧接着重读同一窗口直接用缓存（`fresh:true` 强制重读）；
   表格里「粘贴覆盖单元格」不再当成覆盖文件。

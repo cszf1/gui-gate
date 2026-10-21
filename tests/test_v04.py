@@ -294,53 +294,115 @@ class ProgramTests(unittest.TestCase):
 
 
 
-class ReviewerIsTheApiModelOnly(unittest.TestCase):
-    """0.9.2: the reviewer is only an independent decision model over its API; the agent's own model is never used."""
+class ReviewerIsRequired(unittest.TestCase):
+    """0.9.3: a reviewer model is required; the gate never runs without one and the agent's own model is never used."""
 
     def send_click(self, c):
         c.call("fake_mutate", elements=[["button", "Send"], ["button", "Increment"], ["text", "x"]])
         s = c.read()
         return c.call("click", element_token=f"{s}:0", gate_ack=True)
 
-    def test_no_api_refuses_and_never_asks_the_agent(self):
-        # a client that offers sampling, an agent CLI behind it, even the old mode names: still no reviewer
-        ans = lambda m: {"role": "assistant", "model": "client-model",
-                         "content": {"type": "text", "text": '{"decision": "allow", "reason": "x"}'}}
-        for mode in ("", "api", "agent", "auto"):
-            c = Client("--human", "deny", "--task", "draft a reply to Bob", capabilities={"sampling": {}}, on_request=ans,
-                       client_name="pi", env={"GUI_GATE_REVIEWER_URL": "", "GUI_GATE_REVIEWER": mode})
+    def serve(self, env, *extra):
+        e = dict(os.environ, GUI_GATE_REVIEWER_ENV=os.path.join(os.path.dirname(os.path.abspath(__file__)), "no-such", "reviewer.env"))
+        for k in ("GUI_GATE_REVIEWER", "GUI_GATE_REVIEWER_URL", "GUI_GATE_REVIEWER_MODEL", "GUI_GATE_REVIEWER_KEY",
+                  "GUI_GATE_REVIEWER_KEY_FILE", "GUI_GATE_REVIEWER_PROTOCOL"):
+            e.pop(k, None)
+        e.update(env)
+        return subprocess.run([BIN, "--child", "true", "--log", "none", *extra], input="", capture_output=True,
+                              text=True, env=e, timeout=30)
+
+    def test_no_reviewer_server_refuses_to_start(self):
+        for env in ({}, {"GUI_GATE_REVIEWER_URL": "http://127.0.0.1:9/v1"},
+                    {"GUI_GATE_REVIEWER_URL": "http://127.0.0.1:9/v1", "GUI_GATE_REVIEWER_MODEL": "m"},
+                    {"GUI_GATE_REVIEWER_MODEL": "m", "GUI_GATE_REVIEWER_KEY": "k"}):
+            p = self.serve(env)
+            self.assertNotEqual(p.returncode, 0, env)
+            self.assertEqual(p.stdout, "")  # nothing served
+            self.assertIn("refusing to start", p.stderr)
+            self.assertIn("GUI_GATE_REVIEWER_URL", p.stderr)
+            self.assertIn("reviewer.env", p.stderr)
+            self.assertIn("gui-gate check-reviewer", p.stderr)
+        for pol in ("direct", "full", "light"):  # baselines need it too: no way to run without a reviewer
+            self.assertNotEqual(self.serve({}, "--policy", pol).returncode, 0, pol)
+
+    def test_off_is_rejected(self):
+        for mode in ("off", "none", "0", "agent", "auto"):
+            p = self.serve({"GUI_GATE_REVIEWER": mode, "GUI_GATE_REVIEWER_URL": "http://127.0.0.1:9/v1",
+                            "GUI_GATE_REVIEWER_MODEL": "m", "GUI_GATE_REVIEWER_KEY": "k"})
+            self.assertNotEqual(p.returncode, 0, mode)
+            self.assertIn(f"GUI_GATE_REVIEWER={mode} is not supported", p.stderr)
+            self.assertIn("cannot be turned off", p.stderr)
+
+    def test_empty_or_missing_key_file_refuses(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            kf = os.path.join(d, "reviewer.key")
+            open(kf, "w").close()
+            base = {"GUI_GATE_REVIEWER_URL": "http://127.0.0.1:9/v1", "GUI_GATE_REVIEWER_MODEL": "m"}
+            p = self.serve(dict(base, GUI_GATE_REVIEWER_KEY_FILE=kf))
+            self.assertNotEqual(p.returncode, 0)
+            self.assertIn("is empty", p.stderr)
+            p = self.serve(dict(base, GUI_GATE_REVIEWER_KEY_FILE=kf + ".gone"))
+            self.assertNotEqual(p.returncode, 0)
+            self.assertIn("cannot read the reviewer key file", p.stderr)
+
+    def test_reviewer_env_file_configures_the_gate(self):
+        import tempfile
+        rev = _Rev("allow")
+        with tempfile.TemporaryDirectory() as d:
+            kf = os.path.join(d, "reviewer.key")
+            with open(kf, "w") as f:
+                f.write("secret-test-key\n")
+            ef = os.path.join(d, "reviewer.env")
+            with open(ef, "w") as f:
+                f.write(f"# reviewer\nexport GUI_GATE_REVIEWER_URL=\"{rev.url}\"\nGUI_GATE_REVIEWER_MODEL='file-model'\n"
+                        f"GUI_GATE_REVIEWER_KEY_FILE={kf}\n")
+            # empty env vars count as unset: the values come from the file
+            env = {"GUI_GATE_REVIEWER_ENV": ef, "GUI_GATE_REVIEWER_URL": "", "GUI_GATE_REVIEWER_MODEL": "",
+                   "GUI_GATE_REVIEWER_KEY": ""}
+            e = {k: v for k, v in os.environ.items() if not k.startswith("GUI_GATE_REVIEWER")}
+            e.update({"GUI_GATE_REVIEWER_ENV": ef, "PYTHONPATH": os.path.dirname(os.path.dirname(os.path.abspath(__file__)))})
+            p = subprocess.run([BIN, "check-reviewer", "--config-only"], capture_output=True, text=True, env=e, timeout=30)
+            self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+            self.assertEqual(json.loads(p.stdout)["reviewer"], "api:chat:file-model")
+            self.assertNotIn("secret-test-key", p.stdout + p.stderr)
+            # the server, with only the file: it starts and its reviewer is the file's model
+            c = Client("--human", "deny", "--task", "draft a reply to Bob", env=env)
             try:
-                r = self.send_click(c)
-                self.assertTrue(r.get("isError"), mode)
-                self.assertEqual(r["structuredContent"]["gate"]["decision"], "deny")
-                self.assertIn("no reviewer API is configured", txt(r))
-                self.assertEqual([m for m in c.requests if m["method"] == "sampling/createMessage"], [])
-                rev = [e for e in c.events() if e.get("ev") == "client"][0]
-                self.assertIsNone(rev["reviewer"])
+                self.assertFalse(self.send_click(c).get("isError"))
+                self.assertEqual(rev.seen[0]["model"], "file-model")
             finally:
                 c.close()
+                rev.close()
 
     def test_check_reviewer_not_configured(self):
-        e = dict(os.environ, GUI_GATE_REVIEWER_URL="", GUI_GATE_REVIEWER="")
-        p = subprocess.run([BIN, "check-reviewer"], capture_output=True, text=True, env=e, timeout=30)
-        self.assertEqual(p.returncode, 1)
-        out = json.loads(p.stdout)
-        self.assertFalse(out["ok"])
-        self.assertFalse(out["configured"])
-        self.assertIn("not configured", out["error"])
-        self.assertNotIn("agent", out["error"])
+        e = {k: v for k, v in os.environ.items() if not k.startswith("GUI_GATE_REVIEWER")}
+        e["GUI_GATE_REVIEWER_ENV"] = "/nonexistent/reviewer.env"
+        for args in ([], ["--config-only"]):
+            p = subprocess.run([BIN, "check-reviewer", *args], capture_output=True, text=True, env=e, timeout=30)
+            self.assertEqual(p.returncode, 1)
+            out = json.loads(p.stdout)
+            self.assertFalse(out["ok"])
+            self.assertFalse(out["configured"])
+            self.assertIn("not configured", out["error"])
+            self.assertIn("will not start", out["error"])
+            self.assertNotIn("agent", out["error"])
+            self.assertIn("GUI_GATE_REVIEWER_URL", p.stderr)
 
-    def test_off_means_no_reviewer_even_with_api(self):
-        rev = _Rev("allow")
-        c = Client("--human", "deny", "--task", "draft a reply to Bob",
-                   env={"GUI_GATE_REVIEWER_URL": rev.url, "GUI_GATE_REVIEWER": "off"})
+    def test_sampling_client_is_never_asked(self):
+        # a client that offers sampling: the reviewer is still only the configured API (here unreachable -> refused)
+        ans = lambda m: {"role": "assistant", "model": "client-model",
+                         "content": {"type": "text", "text": '{"decision": "allow", "reason": "x"}'}}
+        c = Client("--human", "deny", "--task", "draft a reply to Bob", capabilities={"sampling": {}}, on_request=ans,
+                   client_name="pi")
         try:
             r = self.send_click(c)
             self.assertTrue(r.get("isError"))
-            self.assertEqual(rev.seen, [])
+            self.assertEqual(r["structuredContent"]["gate"]["decision"], "deny")
+            self.assertIn("reviewer did not answer", txt(r))
+            self.assertEqual([m for m in c.requests if m["method"] == "sampling/createMessage"], [])
         finally:
             c.close()
-            rev.close()
 
 
 if __name__ == "__main__":

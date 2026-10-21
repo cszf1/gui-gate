@@ -96,9 +96,22 @@ jobs:
         if: runner.os != 'Windows'
         env: {GUI_GATE_VERSION: "${{ github.ref_name }}"}
         run: |
-          curl -fsSL https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/install.sh | bash
+          curl -fsSL https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/install.sh | bash 2>&1 | tee install.log
           export PATH="$HOME/.local/bin:$PATH"
           gui-gate --version
+          # no reviewer yet: the install says so and the gate refuses to start, telling how to configure it
+          grep -q "will NOT start" install.log
+          if gui-gate </dev/null 2> refuse.txt; then echo "gate started without a reviewer" >&2; exit 1; fi
+          cat refuse.txt
+          grep -q "refusing to start" refuse.txt && grep -q "reviewer.env" refuse.txt && grep -q "gui-gate check-reviewer" refuse.txt
+          if GUI_GATE_REVIEWER=off GUI_GATE_REVIEWER_URL=http://127.0.0.1:9/v1 GUI_GATE_REVIEWER_MODEL=m GUI_GATE_REVIEWER_KEY=k gui-gate </dev/null 2> off.txt; then exit 1; fi
+          grep -q "cannot be turned off" off.txt
+          # a dummy reviewer, non-interactively: saved to ~/.config/gui-gate (key file mode 600)
+          curl -fsSL https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/install.sh \
+            | GUI_GATE_REVIEWER_KEY=dummy-key bash -s -- --skip-driver --reviewer-url http://127.0.0.1:9/v1 --reviewer-model dummy
+          gui-gate check-reviewer --config-only
+          test "$(stat -c %a "$HOME/.config/gui-gate/reviewer.key" 2>/dev/null || stat -f %Lp "$HOME/.config/gui-gate/reviewer.key")" = 600
+          ! grep -q dummy-key "$HOME/.config/gui-gate/reviewer.env"
           gui-gate doctor | tee doctor.json || true
           python3 -c "import json; d=json.load(open('doctor.json')); print('driver', d['driver_version'], 'tools', d['driver_tools']); assert (d['driver_tools'] or 0) > 0"
       - name: upgrade from an older release leaves no residue (unix)
@@ -134,6 +147,24 @@ jobs:
           irm https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/install.ps1 | iex
           $exe = Join-Path $env:LOCALAPPDATA 'Programs\gui-gate\bin\gui-gate.exe'
           & $exe --version
+          # no reviewer yet: the gate refuses to start, telling how to configure it
+          New-Item -ItemType File -Force empty.txt | Out-Null
+          $p = Start-Process -FilePath $exe -NoNewWindow -Wait -PassThru -RedirectStandardInput empty.txt -RedirectStandardError refuse.txt -RedirectStandardOutput out.txt
+          Get-Content refuse.txt
+          if ($p.ExitCode -eq 0) { throw "gate started without a reviewer" }
+          if (-not (Select-String -Path refuse.txt -Pattern 'refusing to start' -Quiet)) { throw "no refusal message" }
+          if (-not (Select-String -Path refuse.txt -Pattern 'gui-gate check-reviewer' -Quiet)) { throw "refusal does not say how to check" }
+          # a dummy reviewer, non-interactively (env vars; irm | iex takes no arguments)
+          $env:GUI_GATE_SKIP_DRIVER = '1'
+          $env:GUI_GATE_REVIEWER_URL = 'http://127.0.0.1:9/v1'; $env:GUI_GATE_REVIEWER_MODEL = 'dummy'; $env:GUI_GATE_REVIEWER_KEY = 'dummy-key'
+          irm https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/install.ps1 | iex
+          Remove-Item Env:GUI_GATE_SKIP_DRIVER
+          if ($env:GUI_GATE_REVIEWER_KEY) { throw "the installer left the key in the environment" }
+          & $exe check-reviewer --config-only
+          if ($LASTEXITCODE -ne 0) { throw "reviewer not configured by the installer" }
+          $revEnv = Join-Path $(if ($env:HOME) { $env:HOME } else { $env:USERPROFILE }) '.config\gui-gate\reviewer.env'
+          if (-not (Test-Path $revEnv)) { throw "no $revEnv" }
+          if (Select-String -Path $revEnv -Pattern 'dummy-key' -Quiet) { throw "key written to reviewer.env" }
           $out = & $exe doctor
           $out | Out-File doctor.json
           $d = Get-Content doctor.json -Raw | ConvertFrom-Json

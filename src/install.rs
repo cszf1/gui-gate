@@ -244,7 +244,14 @@ pub fn doctor(cmd: Option<Vec<String>>) -> Value {
         rep["at_spi"] = json!(which("at-spi-bus-launcher").is_some() || Path::new("/usr/libexec/at-spi-bus-launcher").exists()
             || Path::new("/usr/lib/at-spi2-core/at-spi-bus-launcher").exists());
     }
-    let ok = as_i64(rep.get("driver_tools")).unwrap_or(0) > 0 && rep.get("missing_tools").and_then(|m| m.as_array()).map(|a| a.is_empty()).unwrap_or(true);
+    let mut ok = as_i64(rep.get("driver_tools")).unwrap_or(0) > 0 && rep.get("missing_tools").and_then(|m| m.as_array()).map(|a| a.is_empty()).unwrap_or(true);
+    // the gate refuses to start without a reviewer model (the --child test hook checks only the driver)
+    let rv = crate::reviewer::Reviewer::from_env();
+    rep["reviewer"] = json!(rv.backend());
+    if let Some(why) = crate::reviewer::config_problem() {
+        rep["reviewer_error"] = json!(format!("{why}; the gate will not start until a reviewer is set (see `gui-gate check-reviewer --help`)"));
+        ok = ok && cmd.is_some();
+    }
     rep["ok"] = json!(ok);
     if cmd.is_none() {
         let st = updates::status(true, rep.get("driver_version").and_then(|v| v.as_str()).map(String::from));
