@@ -1,0 +1,1 @@
+PI_TIMEOUT=360 PI_MAX_TURNS=30 PI_THINK=off bash /data/workspace/gui-gate/bench/run_bench.sh /data/workspace/runs/osworld-2026-10-20 "direct full gate" /data/workspace/gui-gate/bench/tasks/order.txt "0"
