@@ -271,3 +271,37 @@ def overwrite_dialog(blob: str, label: str, keys: set) -> bool:
         return False
     lab = (label or "").strip().lower().replace("_", "").replace("&", "")
     return lab in CONFIRM_LABELS or bool(keys & {"return", "enter", "kp_enter", "y", "alt+y"})
+
+
+SAVE_LABELS = {"save", "export", "ok", "save as", "保存", "导出", "确定"}
+_VALUE_RX = re.compile(r'value=\\?"([^"\\]{1,400})\\?"')
+_EXT_RX = re.compile(r"\(\*?\.([A-Za-z0-9]{1,6})\)")
+
+
+def save_dialog_target(text: str) -> Optional[str]:
+    """An existing file that a file dialog's Save/Export button would replace, read from the dialog's own
+    fields (a folder field + a file-name field, extension from the name or the file-type filter)."""
+    if not text:
+        return None
+    vals = [v.strip() for v in _VALUE_RX.findall(text)]
+    dirs, names, full = [], [], []
+    for v in vals:
+        if not v or len(v) > 300 or re.fullmatch(r"[0-9.]+", v):
+            continue
+        p = os.path.expanduser(v)
+        if p.startswith("/"):
+            (dirs if os.path.isdir(p) else full).append(p)
+        elif "/" not in v and "\n" not in v:
+            names.append(v)
+    exts = list(dict.fromkeys(e.lower() for e in _EXT_RX.findall(text)))
+    for f in full:
+        if _nonempty_file(f):
+            return f
+    for d in dirs:
+        for n in names:
+            cands = [n] if os.path.splitext(n)[1] else [f"{n}.{e}" for e in exts[:1]]
+            for c in cands:
+                p = os.path.join(d, c)
+                if _nonempty_file(p):
+                    return p
+    return None

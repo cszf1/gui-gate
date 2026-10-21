@@ -128,3 +128,28 @@ class ScreenshotOnlyReadTests(unittest.TestCase):
         self.assertIsNotNone(o)
         self.assertTrue(o.with_screenshot)
         self.assertIs(st.latest_for(77, 5), o)
+
+
+class SaveDialogTests(unittest.TestCase):
+    def test_export_over_existing(self):
+        d = tempfile.mkdtemp()
+        with open(os.path.join(d, "Report.pdf"), "w") as f:
+            f.write("signed")
+        with open(os.path.join(d, "Report.docx"), "w") as f:
+            f.write("doc")
+        txt = (f'- dialog = "Export"\n  - [0] text "{d}" value="{d}" [actions=[activate]]\n'
+               '  - [2] combo box "PDF - Portable Document Format (.pdf)"\n'
+               '  - [44] text "Report" value="Report" [actions=[activate]]\n  - [47] button "Export"')
+        self.assertEqual(sidefx.save_dialog_target(txt), os.path.join(d, "Report.pdf"))
+        self.assertIsNone(sidefx.save_dialog_target(txt.replace('value="Report"', 'value="Report2"')))
+        txt2 = txt.replace("(.pdf)", "(.odt)")
+        self.assertIsNone(sidefx.save_dialog_target(txt2))
+        from gui_gate.features import Target, assess_risk
+        from gui_gate.state import GateState
+        st = GateState()
+        res = {"structuredContent": {"snapshot_id": "s00000005", "pid": 4243, "window_id": 9, "tree_markdown": txt},
+               "content": [{"type": "text", "text": txt}]}
+        o = st.record_observation({"pid": 4243, "window_id": 9}, res)
+        btn = o.elements.get(47)
+        t = Target(kind="token", pid=4243, window_id=9, snapshot="s00000005", index=47, element=btn, obs=o)
+        self.assertEqual(assess_risk("click", {}, t, [], st)[1], "high")

@@ -203,6 +203,12 @@ def _newest_obs_blob(st: GateState, pid) -> str:
     return _obs_blob(max(obs, key=lambda x: x.t))
 
 
+def _newest_obs_text(st: GateState, pid) -> str:
+    cut = time.time() - 30
+    obs = [o for k, o in st.latest_by_window.items() if k.split(":")[0] == str(pid) and o.t >= cut]
+    return max(obs, key=lambda x: x.t).text if obs else ""
+
+
 def _obs_blob(o) -> str:
     return (o.text or "")[:8000] + " " + " ".join(e.label for e in o.elements.values())[:4000]
 
@@ -260,6 +266,15 @@ def assess_risk(tool: str, args: dict, t: Target, steps: list, st: GateState):
             blob = _obs_blob(tg.obs) if tg.obs else _newest_obs_blob(st, tg.pid)
             if sidefx.overwrite_dialog(blob, label, set()):
                 bump("high", f'"{label[:30]}" confirms replacing an existing file')
+        if tl in ("click", "double_click", "press_key") and tg.pid is not None:
+            lab = label.strip().lower().replace("_", "").replace("&", "").rstrip(".")
+            enter = tl == "press_key" and bool({str(k).lower() for k in (a.get("keys") or [])} | {str(a.get("key") or "").lower()}
+                                                & {"return", "enter", "kp_enter"})
+            if lab in sidefx.SAVE_LABELS or enter:
+                src = (tg.obs.text if (tg.obs and tl != "press_key") else "") or _newest_obs_text(st, tg.pid)
+                hit = sidefx.save_dialog_target(src) if ("dialog" in src[:400] or "Save" in src or "Export" in src) else None
+                if hit:
+                    bump("high", f"saving here would replace the existing file {hit}")
         if tl in ("click", "double_click") and not label and tg.pid is not None and tg.kind == "pixel":
             if sidefx.OVERWRITE_CTX.search(_newest_obs_blob(st, tg.pid)):
                 bump("medium", "pixel click inside a dialog that asks to replace an existing file")
