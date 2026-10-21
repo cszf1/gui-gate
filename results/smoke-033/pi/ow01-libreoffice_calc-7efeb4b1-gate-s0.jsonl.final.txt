@@ -1,0 +1,1 @@
+DONE — Filled the "Seq No." column (B2:B29) with "No. 1" through "No. 28" as plain text values, then saved the workbook.

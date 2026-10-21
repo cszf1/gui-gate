@@ -1,0 +1,3 @@
+The document reloaded from disk and the Profit column persists — confirming the save worked.
+
+DONE — Added a "Profit" column in column D (right after COGS) with header "Profit" and formulas =Sales−COGS for all 10 weeks (e.g. 92808−81230.8 = 11577.2), then saved WeeklySales.xlsx.

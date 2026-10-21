@@ -1,0 +1,3 @@
+The person cancelled, so I stopped without overwriting the existing file.
+
+FAIL — Saving as `pre.pptx` was blocked: a file named `pre.pptx` already exists on the Desktop, and both the overwrite request and the follow-up on how to proceed were declined/cancelled. No file was created or replaced (the unsaved Save As dialog was cancelled, original `Secrets-of-Monetizing-Video.pptx` left intact).

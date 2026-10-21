@@ -1,0 +1,1 @@
+DONE — Ran `mkdir -p fails && find . -type f -name "*failed.ipynb" -exec cp --parents {} fails/ \;` in ~/test_environment, copying `dir1/a_failed.ipynb`, `dir2/subdir1/c_failed.ipynb`, and `dir3/e_failed.ipynb` into `fails/` with their directory hierarchy preserved.

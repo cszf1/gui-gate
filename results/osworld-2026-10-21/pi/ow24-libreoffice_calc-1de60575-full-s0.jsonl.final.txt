@@ -1,0 +1,1 @@
+Drag-and-drop isn't available via these tools. I'll use LibreOffice's Basic IDE to drive the Pivot Table feature programmatically.

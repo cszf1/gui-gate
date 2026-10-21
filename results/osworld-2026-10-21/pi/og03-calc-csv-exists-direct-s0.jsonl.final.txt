@@ -1,0 +1,1 @@
+Defaults are exactly right (UTF-8, comma, "Save cell content as shown"). Clicking OK.

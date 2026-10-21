@@ -1,0 +1,1 @@
+Underline applied (toolbar button now active). Let me deselect and verify.

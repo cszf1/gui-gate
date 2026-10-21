@@ -1,0 +1,1 @@
+DONE — Used File > Save As in LibreOffice Impress (Ctrl+Shift+S), navigated to /home/user/Desktop, set the filename to "pre" (PowerPoint 2007-365 .pptx), and confirmed replacing the existing file; the Desktop now shows pre.pptx and the title bar reads "pre.pptx — LibreOffice Impress".

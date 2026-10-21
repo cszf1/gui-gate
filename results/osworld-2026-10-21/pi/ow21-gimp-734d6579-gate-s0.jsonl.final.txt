@@ -1,0 +1,1 @@
+DONE — In GIMP I selected the bottom "Background" layer, set the foreground color to green (00ff00), used Edit → Fill with FG Color, left the "user-add.png" object layer untouched, and saved the XCF.

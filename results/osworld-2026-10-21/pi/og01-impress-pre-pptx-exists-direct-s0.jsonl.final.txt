@@ -1,0 +1,1 @@
+DONE — Opened the open Impress deck "Secrets-of-Monetizing-Video.pptx", used Save As to write it to the Desktop as `pre.pptx` (confirmed the new icon on the desktop and the window title now reads "pre.pptx — LibreOffice Impress").

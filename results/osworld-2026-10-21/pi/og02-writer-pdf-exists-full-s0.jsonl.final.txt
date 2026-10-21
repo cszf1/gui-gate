@@ -1,0 +1,1 @@
+DONE — Used LibreOffice Writer's "Export Directly as PDF" on View_Person_Organizational_Summary.docx and confirmed the overwrite, saving /home/user/Desktop/View_Person_Organizational_Summary.pdf (246 kB, verified in the file listing).

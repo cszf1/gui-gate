@@ -1,0 +1,1 @@
+B1 = "Total" confirmed. Let me check a formula cell.

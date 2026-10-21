@@ -1,0 +1,1 @@
+DONE — In GIMP I converted the open image (`gate.jpeg`) to CMYK using **Colors → Components → Decompose…** with Color model set to **CMYK** and "Decompose to layers" enabled, producing the new CMYK document `gate-CMYK.xcf` with separate cyan, magenta, yellow and black channel layers.

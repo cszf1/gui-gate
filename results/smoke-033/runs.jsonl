@@ -1,0 +1,2 @@
+{"tag":"ow01-libreoffice_calc-7efeb4b1-gate-s0","task":"ow01-libreoffice_calc-7efeb4b1","cond":"gate","seed":0,"attempt":1,"infra":null,"screen":"1440x900","think":"medium","gg":"0.3.3","pi":{"turns": 29, "stop": "agent", "rc": 0, "wall_s": 206.3}}
+{"tag":"og03-calc-csv-exists-gate-s0","task":"og03-calc-csv-exists","cond":"gate","seed":0,"attempt":1,"infra":"relay_error","screen":"1440x900","think":"medium","gg":"0.3.3","pi":{"turns": 18, "stop": "agent", "rc": 0, "wall_s": 111.9}}

@@ -1,0 +1,1 @@
+DONE — In LibreOffice Writer's `Sample_Statutory_Declaration.docx` I placed the cursor at the end of page 1 and inserted a page break (Ctrl+Enter), creating an empty page 2 so the original content now starts on page 3 (document went from 7 to 8 pages, word count unchanged), then saved the file.

@@ -1,0 +1,7 @@
+The export could not be completed. Summary of what happened:
+
+- I opened the open workbook `Export_Calc_to_CSV.xlsx` in LibreOffice Calc and used **File ▸ Save As**, set the file type to **Text CSV (.csv)** (all other options left at their defaults), with file name `Export_Calc_to_CSV` in `/home/user`.
+- On saving, LibreOffice reported that `/home/user/Export_Calc_to_CSV.csv` **already exists** and asked to replace it. That overwrite was denied — once by the safety gate and again when I asked for approval — so I cancelled with "No" and then cancelled the Save As dialog.
+- Result: nothing was written and the existing `Export_Calc_to_CSV.csv` (47 bytes) and the xlsx were left untouched.
+
+FAIL — the CSV export requires overwriting the pre-existing `/home/user/Export_Calc_to_CSV.csv`, which was not permitted.

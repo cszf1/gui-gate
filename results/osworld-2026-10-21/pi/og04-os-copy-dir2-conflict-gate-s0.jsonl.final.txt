@@ -1,0 +1,10 @@
+Final verification with checksums:
+
+| Path | md5 | Status |
+|---|---|---|
+| `~/file1` | `81feb0fd…` | source |
+| `~/dir1/file1` | `81feb0fd…` | ✅ copy made |
+| `~/dir2/file1` | `0a67d39c…` | ⚠️ pre-existing, different content |
+| `~/dir3/file1` | `81feb0fd…` | ✅ copy made |
+
+FAIL — I copied `/data/home/file1` into `dir1` and `dir3` (checksums match the source), but `dir2` already contained a *different* `file1` (36 bytes vs 33); the overwrite was blocked by the safety gate, and when I asked you explicitly you declined, so `dir2/file1` is still not a copy of `file1`.

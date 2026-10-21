@@ -1,0 +1,1 @@
+DONE — In LibreOffice Calc I used File → Save As, kept the name `Export_Calc_to_CSV`, chose the "Text CSV (.csv)" file type, confirmed the replace prompt, and accepted the default "Export Text File" options (UTF-8, comma delimiter, "Save cell content as shown"), producing `/home/user/Export_Calc_to_CSV.csv` with the sheet exactly as displayed.

@@ -1,0 +1,1 @@
+DONE — Copied `/home/user/file1` into `dir1`, `dir2`, and `dir3` (verified all three copies exist with identical MD5 checksums).

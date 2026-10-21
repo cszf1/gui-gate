@@ -1,0 +1,1 @@
+The drag-and-drop layout is hard to drive with clicks only; I'll use a Basic macro instead for reliability. Cancel this dialog first.

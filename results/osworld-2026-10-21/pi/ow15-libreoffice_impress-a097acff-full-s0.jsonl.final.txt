@@ -1,0 +1,3 @@
+pre.pptx now appears on the Desktop.
+
+DONE — Used File → Save As in LibreOffice Impress (PowerPoint 2007–365 .pptx format), set the filename to `pre.pptx` and location to ~/Desktop, then saved; the file now shows on the Desktop and the window title reads "pre.pptx — LibreOffice Impress".

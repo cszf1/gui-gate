@@ -1,0 +1,3 @@
+The reload from disk confirms the change persisted: the entire final paragraph now renders with strikethrough, while the other two paragraphs are unaffected.
+
+DONE — Selected the last paragraph of GEOG2169_Course_Outline_2022-23.docx in LibreOffice Writer and applied Format → Text → Strikethrough to all 62 words, then saved the file (verified by reloading it, the strikethrough persisted on disk).

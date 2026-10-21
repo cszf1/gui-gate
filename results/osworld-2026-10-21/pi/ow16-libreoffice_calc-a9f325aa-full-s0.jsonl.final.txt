@@ -1,0 +1,1 @@
+Column C now holds literal values (formula bar shows "Minions In Black", no formula). Saving the file.

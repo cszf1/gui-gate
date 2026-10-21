@@ -1,0 +1,3 @@
+Font size is now set to **Very large** in `chrome://settings/appearance` — the largest option available.
+
+DONE — Opened Chrome Settings → Appearance and changed the "Font size" dropdown from "Medium (Recommended)" to "Very large" (the largest preset), which sets the browser's default font size for all pages.

@@ -1,0 +1,1 @@
+The rows field didn't take focus. I'll use the rows "+" button three times.

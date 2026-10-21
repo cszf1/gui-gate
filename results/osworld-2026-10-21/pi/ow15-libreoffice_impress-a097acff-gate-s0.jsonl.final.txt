@@ -1,0 +1,1 @@
+DONE — Used Save As in LibreOffice Impress to save the open presentation as pre.pptx in the Desktop folder (verified: 2.46 MB "MS PowerPoint Document", window title now "pre.pptx — LibreOffice Impress").

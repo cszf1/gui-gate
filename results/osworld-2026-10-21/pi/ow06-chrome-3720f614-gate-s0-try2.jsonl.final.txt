@@ -1,0 +1,1 @@
+FAIL — Xenothian does not exist as a language in Chrome's built-in language list. I opened Chrome (`chrome://settings/languages`), used "Add languages" and searched both "Xenothian" and "Atlantis": the list is a fixed set of real Chromium locales with no custom-entry option, so Chrome's UI language cannot be set to Xenothian via its built-in settings.

@@ -1,0 +1,3 @@
+The blank page is inserted and the document saved (the Save toolbar icon shows no unsaved-changes marker and no format dialog is pending).
+
+DONE — In LibreOffice Writer, I placed the cursor at the end of page 1 and pressed Ctrl+Enter to insert a page break, creating an empty page 2 (now "Page 1 and 2 of 8", word count unchanged at 972), then saved the document.

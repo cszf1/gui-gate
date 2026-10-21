@@ -1,0 +1,3 @@
+The Font size dropdown now shows **"Very large"** (the largest available option), which is saved automatically in Chromium's preferences.
+
+DONE — Set Chromium's default font size at chrome://settings/appearance to "Very large" (the maximum option) so pages render with the biggest default text.

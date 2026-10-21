@@ -1,0 +1,3 @@
+Searched Chrome's built-in "Add languages" list for **Xenothian** — the search returns no matches (empty list), because Chrome only offers real, translated locales and no Xenothian locale exists.
+
+FAIL — Chrome's built-in settings have no "Xenothian" language option (search returned zero results), so the interface language cannot be set to it.

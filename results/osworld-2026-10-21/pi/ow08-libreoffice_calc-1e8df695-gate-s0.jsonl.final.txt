@@ -1,0 +1,1 @@
+DONE — Added a "Profit" column in column D (immediately right of COGS) in `/home/user/WeeklySales.xlsx`, filled D2:D11 with formulas `=B2-C2` … `=B11-C11` (e.g. Week 1: 92,808 − 81,230.8 = 11,577.2) and saved the file.

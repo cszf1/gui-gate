@@ -1,0 +1,1 @@
+I'll test whether VLC's dark-palette option affects the volume slider's color.

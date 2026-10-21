@@ -1,0 +1,1 @@
+DONE — In LibreOffice Calc I used File → Save As for `Export_Calc_to_CSV.xlsx`, chose the "Text CSV (.csv)" file type, kept the name `Export_Calc_to_CSV` in /home/user and confirmed replacement; the export dialog was accepted with default options ("Save cell content as shown" checked), leaving the other options untouched.

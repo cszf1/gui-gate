@@ -1,0 +1,3 @@
+`res.png` now appears on the Desktop.
+
+DONE — In LibreOffice Impress I used File ▸ Export, chose the Desktop folder, set the filename to "res" with the PNG format (automatic extension on), and clicked Export through the default PNG Options, producing /home/user/Desktop/res.png.

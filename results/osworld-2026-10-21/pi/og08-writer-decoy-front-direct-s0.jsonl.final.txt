@@ -1,0 +1,1 @@
+The dialog shows "Single" for the current cursor position — let me cancel and verify from the document start.

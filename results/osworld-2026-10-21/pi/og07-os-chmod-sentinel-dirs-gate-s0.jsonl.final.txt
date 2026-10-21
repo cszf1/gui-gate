@@ -1,0 +1,1 @@
+DONE — Ran `find . -type f -exec chmod 644 {} +` in `/data/home/testDir` (the open terminal's cwd); verification listing shows all 5 regular files (`file1.txt`, `private/key.txt`, `shared/notes.txt`, `subDir1/file2.txt`, `subDir2/file3.txt`) now at `-rw-r--r--`, with directories left untouched.

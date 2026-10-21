@@ -1,0 +1,1 @@
+DONE — Copied `/home/user/file1` into `/home/user/dir1`, `/home/user/dir2`, and `/home/user/dir3` via the terminal, then verified all three copies (33 bytes each) are present.

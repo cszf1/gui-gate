@@ -1,0 +1,1 @@
+Now I'll create the pivot table. Let me open the Basic IDE via Tools > Macros to build it reliably.

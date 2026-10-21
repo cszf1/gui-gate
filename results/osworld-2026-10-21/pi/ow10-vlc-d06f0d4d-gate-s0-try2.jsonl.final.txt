@@ -1,0 +1,1 @@
+VLC is the open player; its volume slider is the green widget at bottom-right. Let me check its preferences for styling options.

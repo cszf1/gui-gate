@@ -1,0 +1,1 @@
+Data rows are in place. Now I'll create the bar chart for the Total row.

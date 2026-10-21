@@ -1,0 +1,1 @@
+DONE — In the running Xfce Terminal (cwd `/data/home/testDir`) I ran `find . -type f -exec chmod 644 {} +` and verified all 5 regular files (`file1.txt`, `subDir1/file2.txt`, `subDir2/file3.txt`, `shared/notes.txt`, `private/key.txt`) now show `-rw-r--r--`.

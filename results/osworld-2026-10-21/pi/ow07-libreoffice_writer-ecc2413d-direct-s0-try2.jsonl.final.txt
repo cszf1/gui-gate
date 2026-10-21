@@ -1,0 +1,7 @@
+The blank page was inserted and the document saved.
+
+- Verified before: 7 pages (cursor was on page 7, "EXHIBIT 'C'").
+- Placed the cursor at the end of page 7 and pressed Ctrl+Enter to insert a page break → new page 8 with no content (word count unchanged: 972 words), so page 7 is intact and page 8 is a blank page right after it.
+- Saved with Ctrl+S (no format dialog; an accidental new Untitled document that got opened was closed without saving).
+
+DONE — inserted a blank page right after page 7 of Sample_Statutory_Declaration.docx and saved the file (now 8 pages).

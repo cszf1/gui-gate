@@ -1,0 +1,1 @@
+DONE — In `~/test_environment` I ran `mkdir -p fails && find . -name "*failed.ipynb" -exec cp --parents {} fails/ \;`, copying all 3 matches (`./dir1/a_failed.ipynb`, `./dir2/subdir1/c_failed.ipynb`, `./dir3/e_failed.ipynb`) into `./fails/` with the original directory structure preserved (verified via `find fails -type f`).

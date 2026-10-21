@@ -1,0 +1,1 @@
+LibreOffice Calc has `EntireSummerSales.xlsx` open. Let me inspect its contents.

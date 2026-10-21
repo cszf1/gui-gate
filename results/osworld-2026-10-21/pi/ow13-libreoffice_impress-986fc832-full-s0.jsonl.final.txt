@@ -1,0 +1,1 @@
+Body text is now dark red and underlined. Now the title: press Escape and double-click into it.
