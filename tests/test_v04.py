@@ -145,6 +145,26 @@ class ReviewerTests(unittest.TestCase):
         finally:
             c.close()
 
+    def test_reviewer_sees_recent_actions_and_logs_what_it_got(self):
+        rev = _Rev("deny")
+        c = Client("--human", "deny", "--task", "draft a reply to Bob", env=dict(os.environ, GUI_GATE_REVIEWER_URL=rev.url))
+        try:
+            c.call("fake_mutate", elements=[["button", "Send"], ["button", "Increment"], ["text", "x"]])
+            s = c.read()
+            c.call("click", element_token=f"{s}:1")
+            c.call("type_text", pid=4242, window_id=777, text="hello Bob")
+            s = c.read(fresh=True)
+            c.call("click", element_token=f"{s}:0")
+            prompt = rev.seen[-1]["messages"][1]["content"]
+            self.assertIn("recent_actions", prompt)
+            self.assertIn("hello Bob", prompt)
+            self.assertIn("Increment", prompt)
+            ev = [e for e in c.events() if e.get("ev") == "action"][-1]
+            self.assertEqual(len(ev["risk_gate"]["reviewer_sent"]["recent_actions"]), 2)
+        finally:
+            c.close()
+            rev.close()
+
     def test_reviewer_allow(self):
         r, _ = self.run_send("allow")
         self.assertFalse(r.get("isError"), txt(r))
