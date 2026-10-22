@@ -505,6 +505,7 @@ const PROPS: &str = "org.freedesktop.DBus.Properties";
 pub const ROLE_FRAME: u32 = 23;
 pub const ROLE_TABLE: u32 = 55;
 pub const ROLE_TERMINAL: u32 = 60;
+pub const ROLE_STATUS_BAR: u32 = 54;
 const STATE_ACTIVE: u32 = 1;
 const STATE_FOCUSED: u32 = 12;
 const STATE_SHOWING: u32 = 25;
@@ -936,6 +937,55 @@ pub fn terminal_text(pid: i64, title: &str, budget: Duration) -> Result<String, 
     } else {
         format!("[gate] Terminal text (last lines of the visible screen; newest at the bottom):\n{tail}")
     })
+}
+
+/// Name and description of every child of the status bar(s) in pid's window (LibreOffice puts its "document
+/// modified" indicator there).
+#[cfg(unix)]
+pub fn status_bar_texts(pid: i64, title: &str, budget: Duration) -> Result<Vec<String>, String> {
+    let mut a = Atspi::open(budget)?;
+    let app = a.app_of_pid(pid).ok_or("app not on the accessibility bus")?;
+    let bars = scoped(&mut a, &app, title, &[ROLE_STATUS_BAR], 3000);
+    let mut out = vec![];
+    for (b, _) in bars.iter().take(2) {
+        let r = a.bus.call_many(&[call(&b.0, &b.1, ACC, "GetChildren", vec![])]);
+        let kids: Vec<Obj> = r.into_iter().next().and_then(|x| x.ok()).map(|v| v.first().map(|a| a.items().iter().filter_map(|x| x.obj()).collect()).unwrap_or_default()).unwrap_or_default();
+        let mut calls = vec![];
+        for k in kids.iter().take(40) {
+            calls.push(Atspi::get_prop(k, ACC, "Name"));
+            calls.push(Atspi::get_prop(k, ACC, "Description"));
+        }
+        for r in a.bus.call_many(&calls) {
+            if let Some(t) = r.ok().and_then(|v| v.first().and_then(|x| x.str()).map(String::from)).filter(|t| !t.trim().is_empty()) {
+                out.push(one_line(&t, 160));
+            }
+        }
+    }
+    Ok(out)
+}
+
+/// The title of the window that has the ACTIVE state on the accessibility bus, if any.
+#[cfg(unix)]
+pub fn active_window(budget: Duration) -> Result<Option<String>, String> {
+    let mut a = Atspi::open(budget)?;
+    let r = a.bus.call_many(&[call("org.a11y.atspi.Registry", "/org/a11y/atspi/accessible/root", ACC, "GetChildren", vec![])]);
+    let apps: Vec<Obj> = r.into_iter().next().and_then(|x| x.ok()).and_then(|v| v.first().map(|a| a.items().iter().filter_map(|v| v.obj()).collect())).unwrap_or_default();
+    for app in apps.iter().take(60) {
+        if let Some((_, name, _)) = a.windows(app).into_iter().find(|w| w.2) {
+            return Ok(Some(name));
+        }
+    }
+    Ok(None)
+}
+
+#[cfg(not(unix))]
+pub fn status_bar_texts(_pid: i64, _title: &str, _budget: Duration) -> Result<Vec<String>, String> {
+    Err("AT-SPI is Linux only".into())
+}
+
+#[cfg(not(unix))]
+pub fn active_window(_budget: Duration) -> Result<Option<String>, String> {
+    Err("AT-SPI is Linux only".into())
 }
 
 #[cfg(not(unix))]

@@ -126,6 +126,13 @@ pub fn filter_apps(res: &mut Value, kthread: &dyn Fn(i64) -> bool) -> usize {
 
 re!(occluded_rx, r#"element \[(\d+)\] \(pid \d+\) has a snapshot frame at \((-?\d+), (-?\d+)\), but that screen point is owned by ([\w ]+?) "([^"]*)" rather than the observed element"#);
 
+/// GUI_GATE_CHECK_DONE=0 removes the check_done tool.
+pub fn check_done_enabled() -> bool {
+    std::env::var("GUI_GATE_CHECK_DONE").map(|v| v != "0").unwrap_or(true)
+}
+
+const DESKTOP_WINDOWS: &[&str] = &["Desktop", "xfce4-panel", "xfdesktop", "Xfce4-panel", ""];
+
 /// GUI_GATE_STEP_INSIST=0 turns off "a re-sent doubted step runs".
 fn step_insist_enabled() -> bool {
     std::env::var("GUI_GATE_STEP_INSIST").map(|v| v != "0").unwrap_or(true)
@@ -439,6 +446,8 @@ pub struct Inner {
     pub seen_rows: HashMap<String, (String, HashSet<String>)>,
     /// the last few executed actions, summarised for the reviewer
     pub recent: Vec<Value>,
+    pub plan: Vec<(String, bool)>,   // set_plan milestones (text, done)
+    pub plan_verdict: String,
     pub risk_info: Value,
     pub cur_ack: bool,
 }
@@ -583,6 +592,9 @@ fn augment_tools(result: &mut Value, shared: &Arc<Mutex<Shared>>, toolset: &str,
     if crate::command::enabled() {
         all.push(crate::command::tool_schema());
     }
+    if check_done_enabled() {
+        all.push(crate::done::tool_schema());
+    }
     if batch_mode != "off" {
         all.push(batch::run_actions_tool());
     }
@@ -636,7 +648,7 @@ impl Gate {
                 want_shot: HashSet::new(), seen_pids: HashSet::new(), fg_sticky: false, pixel_pids: HashSet::new(),
                 probe_disabled: false, denied_effects: HashMap::new(), step_doubted: HashSet::new(), acted: false, read_streak: 0, hinted: HashSet::new(), cells_seen: HashMap::new(), term_seen: HashMap::new(), denials_consec: 0, denials_total: 0,
                 task_locked, task_source, in_batch: false, batch_ctx: Value::Null, pix_age: HashMap::new(),
-                last_auto: HashMap::new(), seen_rows: HashMap::new(), recent: vec![], risk_info: Value::Null, cur_ack: false,
+                last_auto: HashMap::new(), seen_rows: HashMap::new(), recent: vec![], plan: vec![], plan_verdict: String::new(), risk_info: Value::Null, cur_ack: false,
             }),
             shared, out, log: Arc::new(EventLog::new(log_path)), child: Mutex::new(child), child_cmd,
             init_params: Mutex::new(None), client_elicit, client_pending, restarts: AtomicU64::new(0), human,
@@ -787,6 +799,7 @@ impl Gate {
                 "gate_config" => me.config(&args),
                 "request_human" => me.request_human(&args),
                 "gate_task" => me.set_task(&args),
+                "check_done" => me.check_done(&args),
                 "run_actions" => {
                     let mut inn = me.inner.lock().unwrap_or_else(|e| e.into_inner());
                     batch::run_actions(&me, &mut inn, &args)
@@ -2162,6 +2175,152 @@ impl Gate {
         inn.task_locked = true;
         self.log.write(json!({"ev": "task", "source": "agent", "chars": req.chars().count()}));
         text_result("[gate] Noted.", false)
+    }
+
+    /// Evidence for the agent's own completion decision (no model; the gate never says "done" or "not done").
+    fn check_done(&self, args: &Value) -> Value {
+        let t0 = Instant::now();
+        let mut inn = self.inner.lock().unwrap_or_else(|e| e.into_inner());
+        let task = inn.cfg.task.clone();
+        let start = crate::sidefx::session_start();
+        let home = home();
+        let mut ev: Vec<String> = vec![];
+        let mut gaps: Vec<String> = vec![];
+        let mut kinds: Vec<&str> = vec![];
+        // the folders a bare name in the task usually means
+        let mut roots = vec![home.clone(), format!("{home}/Desktop"), format!("{home}/Documents")];
+        let wins = self.all_windows(&mut inn);
+        for (p, _, _) in &wins {
+            if crate::sidefx::is_terminal(*p) {
+                let c = crate::sidefx::shell_cwd(*p);
+                if !roots.contains(&c) {
+                    roots.push(c);
+                }
+            }
+        }
+        let mut named: Vec<String> = crate::done::task_paths(&task);
+        for f in args.get("files").and_then(|v| v.as_array()).cloned().unwrap_or_default() {
+            let f = pystr(Some(&f));
+            if !f.trim().is_empty() && !named.contains(&f) {
+                named.push(f);
+            }
+        }
+        if task.is_empty() {
+            ev.push("Task: not known to the gate (no --task / gate_task), so only the general checks below ran.".into());
+        }
+        if !named.is_empty() {
+            ev.push("Paths named in the task (or passed in files):".into());
+            let mut any_changed = false;
+            let mut pending: Vec<(String, &str)> = vec![];
+            for n in named.iter().take(8) {
+                let (line, gap) = crate::done::path_evidence(n, &roots, start);
+                ev.push(line);
+                match gap {
+                    Some(g) if g.contains("does not exist") => pending.push((g, "missing_path")),
+                    Some(g) => {
+                        if crate::done::asks_to_produce(&task) && named.len() == 1 {
+                            pending.push((g, "path_unchanged"));
+                        }
+                    }
+                    None => any_changed = true,
+                }
+            }
+            // a rename / move leaves its source missing by design: a missing path is a gap only when nothing else
+            // the task names changed
+            for (g, k) in pending {
+                if k == "missing_path" && any_changed {
+                    continue;
+                }
+                gaps.push(g);
+                kinds.push(k);
+            }
+            if !any_changed && named.len() > 1 && crate::done::asks_to_produce(&task) {
+                gaps.push("the task asks to produce or change something, but none of the paths it names changed during this session".into());
+                kinds.push("path_unchanged");
+            }
+        }
+        if let Some(st) = start {
+            let ch = crate::done::changed_since(&home, st, 10);
+            if ch.is_empty() {
+                ev.push("Files changed under the home folder during this session: none".into());
+            } else {
+                ev.push(format!("Files changed under the home folder during this session (newest first): {}",
+                    ch.iter().map(|(p, n, _)| format!("{} ({n} B)", crate::sidefx::relpath(p, &home))).collect::<Vec<_>>().join(", ")));
+            }
+        }
+        let shown: Vec<&(i64, i64, String)> = wins.iter().filter(|w| !DESKTOP_WINDOWS.contains(&w.2.as_str())).collect();
+        if !shown.is_empty() {
+            ev.push(format!("Open windows: {}", shown.iter().map(|w| format!("\"{}\"", trunc(&w.2, 70))).collect::<Vec<_>>().join(", ")));
+        }
+        if let Ok(Some(a)) = crate::atspi::active_window(Duration::from_millis(800)) {
+            ev.push(format!("Active window: \"{}\"", trunc(&a, 80)));
+        }
+        for (p, w, title) in shown.iter().take(6) {
+            if crate::done::title_unsaved(title) {
+                gaps.push(format!("window \"{}\" shows an unsaved-changes marker", trunc(title, 60)));
+                kinds.push("unsaved_title");
+            }
+            if title.contains("LibreOffice") {
+                if let Ok(texts) = crate::atspi::status_bar_texts(*p, title, Duration::from_millis(800)) {
+                    if crate::done::status_says_modified(&texts) == Some(true) {
+                        gaps.push(format!("LibreOffice reports unsaved changes in \"{}\" (save it if the task's result must be in the file)", trunc(title, 60)));
+                        kinds.push("unsaved_doc");
+                    }
+                }
+                if is_spreadsheet_app(*p) {
+                    let key = format!("{p}:{w}");
+                    if let Some(c) = self.tree_extra(&mut inn, *p, &key, &format!("frame = \"{title}\"\n(cell grid)\ncell grid not expanded"), false) {
+                        ev.push(trunc(&c, 1800));
+                    }
+                }
+            }
+            if crate::sidefx::is_terminal(*p) {
+                if let Ok(tt) = crate::atspi::terminal_text(*p, title, Duration::from_millis(800)) {
+                    ev.push(crate::atspi::tail_lines(&tt, 10));
+                    let low = tt.to_lowercase();
+                    if ["no such file", "permission denied", "command not found", "error:", "traceback (most recent call last)", "fatal:"].iter().any(|k| low.contains(k)) {
+                        gaps.push("the terminal text shows an error message (see the tail above)".into());
+                        kinds.push("terminal_error");
+                    }
+                }
+            }
+        }
+        let executed = inn.stat("executed") as i64;
+        ev.push(format!("This session: {executed} action(s) executed, {} failed, {} refused by the gate.", inn.stat("exec_errors") as i64, inn.stat("denials") as i64));
+        if executed == 0 {
+            gaps.push("no action has been executed in this session".into());
+            kinds.push("no_action");
+        }
+        if let Some(last) = inn.recent.last() {
+            if truthy(last.get("failed")) {
+                gaps.push(format!("your last action failed: {} {} -> {}", s(last, "tool"), s(last, "target"), s(last, "result")));
+                kinds.push("last_failed");
+            }
+        }
+        if !inn.denied_effects.is_empty() {
+            let eff: Vec<String> = inn.denied_effects.keys().take(3).cloned().collect();
+            ev.push(format!("The gate refused (not done, and must not be reached another way): {}", eff.join("; ")));
+        }
+        let open_ms: Vec<String> = inn.plan.iter().filter(|m| !m.1).map(|m| m.0.clone()).collect();
+        if !open_ms.is_empty() {
+            gaps.push(format!("plan milestones not marked done: {}", open_ms.join("; ")));
+            kinds.push("plan_open");
+        }
+        let mut txt = String::from("[check_done] Evidence for your own decision (the gate does not judge the task; it cannot see formatting, colours or whether content is right):\n");
+        txt.push_str(&ev.join("\n"));
+        if gaps.is_empty() {
+            txt.push_str("\nPossible gaps: none found in what the gate can see.");
+        } else {
+            txt.push_str("\nPossible gaps (check each before replying DONE):");
+            for g in &gaps {
+                txt.push_str(&format!("\n- {g}"));
+            }
+        }
+        inn.inc("check_done");
+        self.log.write(json!({"ev": "check_done", "gaps": gaps.len(), "kinds": kinds, "named": named.len(), "ms": round_to(t0.elapsed().as_secs_f64() * 1000.0, 1)}));
+        let mut r = text_result(txt, false);
+        r["structuredContent"] = json!({"gaps": gaps, "kinds": kinds});
+        r
     }
 
     fn request_human(&self, args: &Value) -> Value {
