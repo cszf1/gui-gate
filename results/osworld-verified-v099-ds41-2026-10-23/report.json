@@ -1,0 +1,101 @@
+{
+ "summary": {
+  "expected": 361,
+  "rows": 0,
+  "valid": 0,
+  "infra": 0,
+  "success": 0,
+  "score_sum": 0,
+  "rate_official": 0.0,
+  "rate_valid": null,
+  "infra_kinds": {},
+  "domains": {},
+  "stops": {},
+  "turns_mean": null,
+  "turns_median": null,
+  "wall_mean_s": null,
+  "wall_median_s": null,
+  "wall_total_h": 0.0,
+  "tok_in": 0,
+  "tok_cache": 0,
+  "tok_out": 0,
+  "screenshots": 0,
+  "tool_calls": 0,
+  "tools": {},
+  "request_human_calls": 0,
+  "final_fail_answers": 0,
+  "reviewer": {
+   "calls": 0,
+   "decisions": {},
+   "ms_mean": null,
+   "ms_median": null
+  },
+  "roles": {
+   "feasibility": {
+    "invocations": 0,
+    "http_calls": 0,
+    "errors": 0,
+    "ms_mean": null,
+    "ms_median": null,
+    "timed": 0,
+    "runs_using": 0
+   },
+   "planner": {
+    "invocations": 0,
+    "http_calls": 0,
+    "errors": 0,
+    "ms_mean": null,
+    "ms_median": null,
+    "timed": 0,
+    "runs_using": 0
+   },
+   "verifier": {
+    "invocations": 0,
+    "http_calls": 0,
+    "errors": 0,
+    "ms_mean": null,
+    "ms_median": null,
+    "timed": 0,
+    "runs_using": 0
+   },
+   "judge": {
+    "invocations": 0,
+    "http_calls": 0,
+    "errors": 0,
+    "ms_mean": null,
+    "ms_median": null,
+    "timed": 0,
+    "runs_using": 0
+   },
+   "search": {
+    "invocations": 0,
+    "http_calls": 0,
+    "errors": 0,
+    "ms_mean": null,
+    "ms_median": null,
+    "timed": 0,
+    "runs_using": 0
+   },
+   "compact": {
+    "invocations": 0,
+    "http_calls": 0,
+    "errors": 0,
+    "ms_mean": null,
+    "ms_median": null,
+    "timed": 0,
+    "runs_using": 0
+   },
+   "grounder": {
+    "invocations": 0,
+    "http_calls": 0,
+    "errors": 0,
+    "ms_mean": null,
+    "ms_median": null,
+    "timed": 0,
+    "runs_using": 0
+   }
+  },
+  "gate": {}
+ },
+ "tasks": []
+}

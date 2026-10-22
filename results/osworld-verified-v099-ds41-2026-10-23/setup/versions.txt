@@ -1,0 +1,13 @@
+gui-gate 0.9.9
+cua-driver 0.38.0
+pi 1.3.0
+OSWorld f9885c9 Merge pull request #660 from xlang-ai/fix/pr-505-rev
+repo 2cf8b01 0.9.9: zero residue on macOS - PATH line in exactly 
+LibreOffice 25.2.3.2 520(Build:2)
+GNU Image Manipulation Program version 3.0.4
+VLC version 3.0.24 Vetinari (3.0.24-rc1-0-g6de05adcba)
+Mozilla Thunderbird 140.17.0esr
+1.143.0
+Chromium 155.0.8059.79 
+Linux instabox-gui-pi3 6.18.54-instabox #1 SMP PREEMPT_DYNAMIC 2026-09-25 00:00:00 UTC x86_64 GNU/Linux
+PRETTY_NAME="Debian GNU/Linux 13 (trixie)"
