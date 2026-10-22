@@ -88,21 +88,26 @@ pub fn kill_tree(child: &mut Child) {
     unregister(pid);
 }
 
+/// Kill one registered command group at once (async-signal-safe on unix: only kill(2)).
+fn kill_id(id: i32) {
+    if id <= 0 {
+        return;
+    }
+    #[cfg(unix)]
+    unsafe {
+        sys::kill(-id, sys::SIGKILL);
+    }
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        let _ = Command::new("taskkill").args(["/T", "/F", "/PID", &id.to_string()]).creation_flags(0x0800_0000).output();
+    }
+}
+
 /// Kill every registered command group now (async-signal-safe on unix: only atomics and kill(2)).
 pub fn kill_all() {
     for s in LIVE.iter() {
-        let id = s.swap(0, Ordering::SeqCst);
-        if id > 0 {
-            #[cfg(unix)]
-            unsafe {
-                sys::kill(-id, sys::SIGKILL);
-            }
-            #[cfg(windows)]
-            {
-                use std::os::windows::process::CommandExt;
-                let _ = Command::new("taskkill").args(["/T", "/F", "/PID", &id.to_string()]).creation_flags(0x0800_0000).output();
-            }
-        }
+        kill_id(s.swap(0, Ordering::SeqCst));
     }
 }
 
@@ -231,7 +236,9 @@ mod tests {
         std::thread::sleep(std::time::Duration::from_millis(200));
         let pg = ch.id() as i32;
         assert!(alive(pg));
-        kill_all();
+        // what kill_all does for each registered slot (kill_all itself would also hit other tests' commands)
+        unregister(ch.id());
+        kill_id(pg);
         let _ = ch.wait();
         std::thread::sleep(std::time::Duration::from_millis(200));
         // no process of that group is left
