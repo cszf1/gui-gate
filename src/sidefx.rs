@@ -300,6 +300,58 @@ fn cp_like(argv: &[String], cwd: &str) -> Option<Effect> {
     Some(("high".into(), format!("`{tool}` would overwrite existing file(s): {}{more}", names.join(", "))))
 }
 
+static SESSION_START: OnceLock<std::time::SystemTime> = OnceLock::new();
+
+/// Remember when this gate started: paths created or modified after it are the agent's own work, not user data.
+pub fn mark_session_start() {
+    let _ = SESSION_START.set(std::time::SystemTime::now());
+}
+
+/// True when the path was created/changed during this gate session (the agent's own work, so moving it is harmless).
+fn session_owned(path: &str, start: Option<std::time::SystemTime>) -> bool {
+    let Some(start) = start else { return false };
+    fs::symlink_metadata(path).and_then(|m| m.modified()).map(|t| t >= start).unwrap_or(false)
+}
+
+/// `mv` (or `rsync --remove-source-files`) of an existing path that predates this session: the user's data
+/// disappears from where it was (og10: `mv instructor-embedding instructor-embedding.bak && git clone ...`).
+fn move_away(argv: &[String], cwd: &str) -> Option<Effect> {
+    let tool = basename(&argv[0]);
+    if tool == "rsync" && !argv.iter().any(|a| a == "--remove-source-files") {
+        return None;
+    }
+    let mut pos: Vec<String> = vec![];
+    let mut target_dir: Option<String> = None;
+    let mut i = 1;
+    while i < argv.len() {
+        let a = &argv[i];
+        if a == "-t" || a == "--target-directory" {
+            target_dir = argv.get(i + 1).cloned();
+            i += 2;
+            continue;
+        }
+        if let Some(v) = a.strip_prefix("--target-directory=") {
+            target_dir = Some(v.to_string());
+        } else if !(a.starts_with('-') && a.len() > 1) {
+            pos.push(a.clone());
+        }
+        i += 1;
+    }
+    let (srcs, dest) = match target_dir {
+        Some(t) => (pos.clone(), t),
+        None if pos.len() >= 2 => (pos[..pos.len() - 1].to_vec(), pos[pos.len() - 1].clone()),
+        None => return None,
+    };
+    let moved: Vec<String> = expand(&srcs, cwd).into_iter().filter(|x| exists(x) && !session_owned(x, SESSION_START.get().copied())).collect();
+    if moved.is_empty() {
+        return None;
+    }
+    let names: Vec<String> = moved.iter().take(3).map(|c| relpath(c, cwd)).collect();
+    let more = if moved.len() > 3 { " ..." } else { "" };
+    Some(("high".into(), format!("`{tool}` would move the existing {}{more} away (to {}); it is no longer where it was",
+        names.join(", "), relpath(&p(&dest, cwd), cwd))))
+}
+
 fn run_find(args: &[String], cwd: &str) -> Option<Vec<u8>> {
     let mut child = Command::new(&args[0]).args(&args[1..]).current_dir(cwd).stdin(Stdio::null())
         .stdout(Stdio::piped()).stderr(Stdio::null()).spawn().ok()?;
@@ -509,7 +561,8 @@ pub fn shell_effects(cmdline: &str, cwd: &str) -> Option<Effect> {
         let tool = argv.first().map(|a| basename(a)).unwrap_or_default();
         if r.is_none() {
             r = match tool.as_str() {
-                "cp" | "mv" | "rsync" | "install" => cp_like(&argv, cwd),
+                "cp" | "install" => cp_like(&argv, cwd),
+                "mv" | "rsync" => cp_like(&argv, cwd).or_else(|| move_away(&argv, cwd)),
                 "find" => find_exec(&argv, cwd),
                 "chmod" => chmod(&argv, false),
                 "rm" => {
@@ -667,6 +720,24 @@ mod tests {
         assert_eq!(lvl(shell_effects("chmod -R 755 .", &d)).as_deref(), Some("medium"));
         assert!(shell_effects("find . -type f -exec chmod 644 {} \\;", &d).is_none());
         assert!(shell_effects("chmod 644 file1", &d).is_none());
+    }
+
+    #[test]
+    fn mv_moves_existing_data_away() {
+        let d = setup();
+        let r = shell_effects("mv dir2 dir2.bak && git clone https://x/y dir2", &d).unwrap();
+        assert_eq!(r.0, "high");
+        assert!(r.1.contains("would move the existing dir2"), "{}", r.1);
+        // overwrite still reported as an overwrite
+        assert!(shell_effects("mv file1 dir2", &d).unwrap().1.contains("overwrite"));
+        assert!(shell_effects("mv nothere x", &d).is_none());
+        assert!(shell_effects("mv /tmp/gg-nonexistent-scratch/* dir1/", &d).is_none());
+        assert!(shell_effects("rsync -a dir1/ dir3/", &d).is_none());
+        assert_eq!(lvl(shell_effects("rsync -a --remove-source-files dir1/ dir3/", &d)).as_deref(), Some("high"));
+        let before = std::time::SystemTime::now() - Duration::from_secs(3600);
+        assert!(session_owned(&format!("{d}/dir2"), Some(before)));
+        assert!(!session_owned(&format!("{d}/dir2"), Some(std::time::SystemTime::now() + Duration::from_secs(3600))));
+        assert!(!session_owned(&format!("{d}/dir2"), None));
     }
 
     #[test]
