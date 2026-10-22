@@ -1,0 +1,62 @@
+T1 CALL list_apps {}
+T1 CALL list_windows {}
+   -> ✅ Found 156 app(s): 122 running, 34 installed-not-running. / - systemd (pid 1) / - kthreadd (pid 2) / - pool_workqueue_release (pid 3) / - kworker/R-rcu_gp (pid 4) / - kworker/R-sync_wq (pid 5) / - kworker/R-kvfree_rcu_reclaim (pid 6) / - kworker/R-slub_flushwq (pid 7) / - kworker/R-netns (pid 8) / - kworker/0:0H-events_highpri (pid 10) / - kworker/R-mm_percpu_wq (pid 13) / - ksoftirqd/0 (pid 14) / - rcu_preempt (pid 15)
+   -> Found 7 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=42001879 pid=82341 "Application Finder" 580x422+435+281 app=Xfce4-appfinder /   window_id=29360245 pid=142527 "LibreOffice_Open_Source_Word_Processing.docx — LibreOffice Writer" 1440x849+0+51 app=libreoffice-writer / 
+T2 CALL get_window_state {"pid": 142527}
+   -> window_id=29360245 pid=142527 elements=128 walk_ms=141 snapshot_id=s00000001 / element_token for row [N] = s00000001:N (row [1] is "s00000001:1") /  / - frame = "LibreOffice_Open_Source_Word_Processing.docx — LibreOffice Writer" /       - [0] button "" (description "Close Document") [actions=[click]] /             - [1] menu "File" [actions=[click]] (closed menu, 31 items; click it to open) /             - [2
+T3 CALL click {"pid": 142527, "element_token": "s00000001:71"}
+   -> Clicked element [71] (pid 142527). | A popup menu is open, so pid 142527 holds a keyboard grab until it closes.
+T4 CALL get_window_state {"pid": 142527}
+   -> window_id=29360245 pid=142527 elements=121 walk_ms=150 snapshot_id=s00000002 / element_token for row [N] = s00000002:N (row [1] is "s00000002:1") /  / - frame = "LibreOffice_Open_Source_Word_Processing.docx — LibreOffice Writer" /       - [0] button "" (description "Close Document") [actions=[click]] /             - [1] menu "File" [actions=[click]] (closed menu, 31 items; click it to open) /             - [2
+T5 CALL click {"pid": 142527, "element_token": "s00000002:17"}
+   -> Clicked element [17] (pid 142527) with a real pointer click (delivery_mode=background, path=x11_xsendevent); not verified — confirm with a screenshot.
+T6 CALL get_window_state {"pid": 142527}
+   -> window_id=29360245 pid=142527 elements=121 walk_ms=165 snapshot_id=s00000003 / element_token for row [N] = s00000003:N (row [1] is "s00000003:1") /  / - frame = "LibreOffice_Open_Source_Word_Processing.docx — LibreOffice Writer" /       - [0] button "" (description "Close Document") [actions=[click]] /             - [1] menu "File" [actions=[click]] (closed menu, 31 items; click it to open) /             - [2
+T7 CALL list_windows {}
+   -> Found 7 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=42001879 pid=82341 "Application Finder" 580x422+435+281 app=Xfce4-appfinder /   window_id=29360245 pid=142527 "LibreOffice_Open_Source_Word_Processing.docx — LibreOffice Writer" 1440x849+0+51 app=libreoffice-writer / 
+T8 CALL run_actions {"steps": [{"tool": "click", "args": {"pid": 142527, "element_token": "s00000003:17"}, "expect": {"title_contains": "LibreOffice"}}], "pid": 142527}
+   -> [gate] run_actions: 1 GUI action(s) ran. All done. / 1. click: ok - Clicked element [17] (pid 142527) with a real pointer click (delivery_mode=background, path=x11_xsendevent); not verified — confirm with a screenshot. | [gate] Window right after the action (snapshot s00000004; tokens are s00000004:N, older tokens are stale). Nothing in the tree changed since snapshot s00000003 (149 rows); its [N] a
+T9 CALL press_key {"key": "i", "modifiers": ["alt"], "pid": 142527}
+   -> Pressed key 'i' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T10 CALL get_window_state {"pid": 142527, "max_elements": 400}
+   -> Warning: truncated output (original token count: 6469) / Total output lines: 350 /  / window_id=29372542 pid=142527 elements=315 walk_ms=262 snapshot_id=s00000005 / element_token for row [N] = s00000005:N (row [1] is "s00000005:1") /  / - frame = "LibreOffice_Open_Source_Word_Processing.docx — LibreOffice Writer" /       - [0] button "" (description "Close Document") [actions=[click]] /             - [1] menu "Fi
+T11 CALL get_window_state {"pid": 142527, "query": "Footer", "tree_format": "elements"}
+   -> window_id=29372542 pid=142527 elements=315 walk_ms=272 snapshot_id=s00000006 /  / (tree is in structuredContent.elements; pass tree_format "markdown" for the compact text rendering) | Invalidated snapshots s00000005: their element_tokens are stale.
+T12 CALL get_window_state {"pid": 142527, "query": "Footer", "tree_format": "markdown"}
+   -> window_id=29372542 pid=142527 elements=315 walk_ms=266 snapshot_id=s00000007 / element_token for row [N] = s00000007:N (row [4] is "s00000007:4") /  / - frame = "LibreOffice_Open_Source_Word_Processing.docx — LibreOffice Writer" /       - [0] button "" (description "Close Document") [actions=[click]] /             - [4] menu "Insert" [actions=[click]] /               - [193] menu "Header and Footer" [actions=
+T13 CALL click {"element_token": "s00000007:193", "pid": 142527}
+   -> ERR click: element [193] (pid 142527) has a snapshot frame at (301, 696), but that screen point is owned by document text "LibreOffice_Open_Source_Word_Processing - LibreOffice Document" rather than the observed element; a real pointer click there would hit the wrong control. Re-snapshot with get_window_state, or click by pixel from a screenshot.
+T14 CALL get_window_state {"pid": 142527, "query": "Header and Footer"}
+   -> window_id=29372542 pid=142527 elements=315 walk_ms=266 snapshot_id=s00000008 / element_token for row [N] = s00000008:N (row [4] is "s00000008:4") /  / - frame = "LibreOffice_Open_Source_Word_Processing.docx — LibreOffice Writer" /       - [0] button "" (description "Close Document") [actions=[click]] /             - [4] menu "Insert" [actions=[click]] /               - [193] menu "Header and Footer" [actions=
+T15 CALL click {"element_token": "s00000008:193", "pid": 142527}
+   -> ERR click: element [193] (pid 142527) has a snapshot frame at (301, 696), but that screen point is owned by document text "LibreOffice_Open_Source_Word_Processing - LibreOffice Document" rather than the observed element; a real pointer click there would hit the wrong control. Re-snapshot with get_window_state, or click by pixel from a screenshot.
+T16 CALL get_window_state {"pid": 142527, "max_depth": 3, "max_elements": 60}
+   -> window_id=29372542 pid=142527 elements=1 walk_ms=6 snapshot_id=s00000009 / element_token for row [N] = s00000009:N (row [0] is "s00000009:0") /  / - frame = "LibreOffice_Open_Source_Word_Processing.docx — LibreOffice Writer" /       - [0] button "" (description "Close Document") [actions=[click]] /       - root pane = "LibreOffice_Open_Source_Word_Processing.docx — LibreOffice Writer" /  | Invalidated snapsho
+T17 CALL press_key {"key": "i", "modifiers": ["alt"], "pid": 142527}
+   -> Pressed key 'i' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T18 CALL get_window_state {"max_depth": 4, "max_elements": 80, "pid": 142527, "query": "Header"}
+   -> window_id=29372542 pid=142527 elements=3 walk_ms=7 /  /  | Invalidated snapshots s00000009: their element_tokens are stale.
+T19 CALL get_window_state {"max_depth": 4, "max_elements": 100, "pid": 142527}
+   -> window_id=29372542 pid=142527 elements=3 walk_ms=9 snapshot_id=s0000000b / element_token for row [N] = s0000000b:N (row [1] is "s0000000b:1") /  / - frame = "LibreOffice_Open_Source_Word_Processing.docx — LibreOffice Writer" /       - [0] button "" (description "Close Document") [actions=[click]] /         - [1] scroll bar "" value="0.0" [actions=[]] (unlabelled scroll bar; 1st of 2 scroll bars in this wind
+T20 CALL press_key {"key": "i", "modifiers": ["alt"], "pid": 142527}
+   -> Pressed key 'i' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T21 CALL get_window_state {"max_elements": 250, "pid": 142527, "query": "Insert"}
+   -> window_id=29372542 pid=142527 elements=315 walk_ms=279 snapshot_id=s0000000c / element_token for row [N] = s0000000c:N (row [4] is "s0000000c:4") /  / - frame = "LibreOffice_Open_Source_Word_Processing.docx — LibreOffice Writer" /       - [0] button "" (description "Close Document") [actions=[click]] /             - [4] menu "Insert" [actions=[click]] /               - [6] menu "More Breaks" [actions=[click]]
+T22 CALL press_key {"key": "h", "pid": 142527}
+   -> Pressed key 'h' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T23 CALL get_window_state {"max_elements": 250, "pid": 142527, "query": "Header"}
+   -> window_id=29372646 pid=142527 elements=57 walk_ms=243 snapshot_id=s0000000d / element_token for row [N] = s0000000d:N (row [30] is "s0000000d:30") /  / - dialog = "Hyperlink" /       - [30] page tab "New Document" [actions=[]] /             - panel = "New Document" /               - label = "Further Settings" /                 - combo box = "File:" /                   - [33] combo box "File:" (description "Enter 
+T24 CALL press_key {"key": "escape", "pid": 142527}
+   -> Pressed key 'escape' as a real key event (delivery_mode=foreground, focus_after=same_pid); not verified — confirm with a screenshot. [pid-only target resolved to window 29372646 "Hyperlink" (an open dialog)]
+T25 CALL press_key {"key": "i", "modifiers": ["alt"], "pid": 142527}
+   -> Pressed key 'i' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T26 CALL get_window_state {"max_elements": 300, "pid": 142527, "query": "Header"}
+   -> window_id=29372542 pid=142527 elements=315 walk_ms=234 snapshot_id=s0000000e / element_token for row [N] = s0000000e:N (row [4] is "s0000000e:4") /  / - frame = "LibreOffice_Open_Source_Word_Processing.docx — LibreOffice Writer" /       - [0] button "" (description "Close Document") [actions=[click]] /             - [4] menu "Insert" [actions=[click]] /               - [193] menu "Header and Footer" [actions=
+T27 CALL click {"element_token": "s0000000e:193", "pid": 142527}
+   -> ERR click: element [193] (pid 142527) has a snapshot frame at (301, 696), but that screen point is owned by document text "LibreOffice_Open_Source_Word_Processing - LibreOffice Document" rather than the observed element; a real pointer click there would hit the wrong control. Re-snapshot with get_window_state, or click by pixel from a screenshot.
+T28 CALL get_window_state {"max_elements": 320, "pid": 142527, "query": "menu"}
+   -> window_id=29372542 pid=142527 elements=315 walk_ms=304 snapshot_id=s0000000f / element_token for row [N] = s0000000f:N (row [1] is "s0000000f:1") /  / - frame = "LibreOffice_Open_Source_Word_Processing.docx — LibreOffice Writer" /       - [0] button "" (description "Close Document") [actions=[click]] /             - [1] menu "File" [actions=[click]] (closed menu, 31 items; click it to open) /             - [2
+T29 CALL press_key {"key": "end", "pid": 142527}
+   -> Pressed key 'end' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T30 CALL press_key {"key": "up", "pid": 142527}
+T30 CALL press_key {"key": "up", "pid": 142527}

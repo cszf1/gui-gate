@@ -1,0 +1,65 @@
+T1 CALL list_apps {}
+T1 CALL list_windows {}
+   -> ✅ Found 154 app(s): 119 running, 35 installed-not-running. / - systemd (pid 1) / - kthreadd (pid 2) / - pool_workqueue_release (pid 3) / - kworker/R-rcu_gp (pid 4) / - kworker/R-sync_wq (pid 5) / - kworker/R-kvfree_rcu_reclaim (pid 6) / - kworker/R-slub_flushwq (pid 7) / - kworker/R-netns (pid 8) / - kworker/0:0H-events_highpri (pid 10) / - kworker/R-mm_percpu_wq (pid 13) / - ksoftirqd/0 (pid 14) / - rcu_preempt (pid 15)
+   -> Found 7 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=14680181 pid=118016 "SalesRep.xlsx — LibreOffice Calc" 1440x849+0+51 app=libreoffice-calc /   window_id=14697678 pid=118016 "BlankFrontDecoy.xlsx — LibreOffice Calc" 1440x849+0+51 app=libreoffice-calc /   window_id=12
+T2 CALL get_window_state {"pid": 118016, "window_id": 14680181}
+   -> Warning: truncated output (original token count: 5139) / Total output lines: 261 /  / window_id=14680181 pid=118016 elements=208 walk_ms=2071 snapshot_id=s00000001 / element_token for row [N] = s00000001:N (row [1] is "s00000001:1"); this read stops at row [207], so rows past it from a larger read are not in s00000001 / ⚠️ PARTIAL TREE: the 2000 ms timeout_ms budget ran out after 593 node(s) (41 discovered 
+T3 CALL get_window_state {"pid": 118016, "query": "Sheet", "max_elements": 5000}
+   -> window_id=14697678 pid=118016 elements=174 walk_ms=2052 snapshot_id=s00000002 / element_token for row [N] = s00000002:N (row [6] is "s00000002:6"); this read stops at row [139], so rows past it from a larger read are not in s00000002 / ⚠️ PARTIAL TREE: the 2000 ms timeout_ms budget ran out after 492 node(s) (71 discovered but not visited). Every element listed is real; elements after the cut are missi
+T4 CALL list_windows {"pid": 7657}
+T4 CALL get_window_state {"pid": 118016, "query": "Sheet1", "max_depth": 4}
+   -> Found 0 windows:
+   -> window_id=14697678 pid=118016 elements=4 walk_ms=83 /  /  | Invalidated snapshots s00000002: their element_tokens are stale.
+T5 CALL get_window_state {"pid": 118016, "window_id": 14680181, "tree_format": "elements", "max_depth": 5, "max_elements": 1000, "fresh": true}
+   -> window_id=14680181 pid=118016 elements=26 walk_ms=339 snapshot_id=s00000004 /  / (tree is in structuredContent.elements; pass tree_format "markdown" for the compact text rendering) | Invalidated snapshots s00000001: their element_tokens are stale.
+T6 CALL get_window_state {"fresh": true, "max_depth": 5, "pid": 118016, "window_id": 14680181}
+   -> window_id=14680181 pid=118016 elements=26 walk_ms=375 snapshot_id=s00000005 / element_token for row [N] = s00000005:N (row [1] is "s00000005:1") /  / - frame = "SalesRep.xlsx — LibreOffice Calc" /         - [0] scroll bar "" value="0.0" [actions=[]] (unlabelled scroll bar; 1st of 2 scroll bars in this window) /         - [1] scroll bar "" value="0.0" [actions=[]] (unlabelled scroll bar; 2nd of 2 scroll bars
+T7 CALL get_window_state {"pid": 118016, "window_id": 14680181, "query": "Total", "max_elements": 2000}
+T7 CALL get_window_state {"pid": 118016, "window_id": 14680181, "query": "Month", "max_elements": 2000}
+   -> window_id=14680181 pid=118016 elements=111 walk_ms=1062 / ⚠️ PARTIAL TREE: the 1000 ms timeout_ms budget ran out after 311 node(s) (13 discovered but not visited). Every element listed is real; elements after the cut are missing. If the element you need is absent, retry with a larger timeout_ms (e.g. 5000) or narrow with query / max_depth. /  /  | Invalidated snapshots s00000006: their element_tokens ar
+   -> window_id=14680181 pid=118016 elements=109 walk_ms=1023 / ⚠️ PARTIAL TREE: the 1000 ms timeout_ms budget ran out after 300 node(s) (24 discovered but not visited). Every element listed is real; elements after the cut are missing. If the element you need is absent, retry with a larger timeout_ms (e.g. 5000) or narrow with query / max_depth. /  /  | Invalidated snapshots s00000005: their element_tokens ar
+T8 CALL list_windows {}
+   -> Found 7 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=14680181 pid=118016 "SalesRep.xlsx — LibreOffice Calc" 1440x849+0+51 app=libreoffice-calc /   window_id=14697678 pid=118016 "BlankFrontDecoy.xlsx — LibreOffice Calc" 1440x849+0+51 app=libreoffice-calc /   window_id=12
+T9 CALL click {"pid": 118016, "window_id": 14680181, "x": 300, "y": 300}
+   -> Clicked at (309.5, 309.5) × 1 (delivery_mode=background, path=x11_atspi); selected: table cell "D5" (Selection.SelectChild on its container, read back as selected) — the item is selected. [window_point=(309, 309) screen_point=(309, 360)] | A popup menu is open, so pid 118016 holds a keyboard grab until it closes.
+T10 CALL get_window_state {"fresh": true, "max_elements": 3000, "pid": 118016, "window_id": 14680181}
+   -> window_id=14680181 pid=118016 elements=132 walk_ms=1021 snapshot_id=s00000008 / element_token for row [N] = s00000008:N (row [1] is "s00000008:1"); this read stops at row [131], so rows past it from a larger read are not in s00000008 / ⚠️ PARTIAL TREE: the 1000 ms timeout_ms budget ran out after 360 node(s) (23 discovered but not visited). Every element listed is real; elements after the cut are missi
+T11 CALL press_key {"key": "Home", "modifiers": ["ctrl"], "pid": 118016, "window_id": 14680181}
+   -> Pressed key 'Home' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T12 CALL get_window_state {"fresh": true, "max_elements": 150, "pid": 118016, "query": "Average", "window_id": 14680181}
+   -> window_id=14680181 pid=118016 elements=91 walk_ms=1028 / ⚠️ PARTIAL TREE: the 1000 ms timeout_ms budget ran out after 250 node(s) (71 discovered but not visited). Every element listed is real; elements after the cut are missing. If the element you need is absent, retry with a larger timeout_ms (e.g. 5000) or narrow with query / max_depth. /  /  | Invalidated snapshots s00000008: their element_tokens are
+T13 CALL get_window_state {"fresh": true, "pid": 118016, "window_id": 14680181}
+   -> window_id=14680181 pid=118016 elements=91 walk_ms=1047 snapshot_id=s0000000a / element_token for row [N] = s0000000a:N (row [1] is "s0000000a:1"); this read stops at row [90], so rows past it from a larger read are not in s0000000a / ⚠️ PARTIAL TREE: the 1000 ms timeout_ms budget ran out after 246 node(s) (73 discovered but not visited). Every element listed is real; elements after the cut are missing
+T14 CALL run_actions {"pid": 118016, "steps": [{"read": {"label_contains": "Average"}}], "window_id": 14680181}
+   -> [gate] run_actions: 0 GUI action(s) ran. All done. / read: (nothing matched)
+T15 CALL get_window_state {"pid": 82341}
+   -> ERR No windows found for pid 82341. Provide window_id.
+T16 CALL list_windows {"app": "Finder"}
+   -> Found 0 windows:
+T17 CALL get_window_state {"pid": 6966, "window_id": 12582915}
+   -> window_id=12582915 pid=6966 elements=7 walk_ms=158 snapshot_id=s0000000d / element_token for row [N] = s0000000d:N (row [1] is "s0000000d:1") /  /       - [0] toggle button "Applications" [actions=[click]] /           - [1] toggle button "SalesRep.xlsx — LibreOffice Calc" [actions=[click]] /           - [2] toggle button "BlankFrontDecoy.xlsx — LibreOffice Calc" [actions=[click]] /           - [3] toggle butt
+T18 CALL click {"element_token": "s0000000d:0", "pid": 6966}
+   -> Clicked element [0] (pid 6966) with a real pointer click (delivery_mode=foreground, focus_after=target); appeared: popup window 12877987 "xfce4-panel" (10x10 at -100,-100), popup window 12630876 "xfce4-panel" (185x374 at -6,22); closed: window 12583286 "xfce4-panel". [window_point=(51, 13) screen_point=(51, 13)]
+T19 CALL get_window_state {"pid": 6966, "window_id": 12630876}
+   -> window_id=12630876 pid=6966 elements=14 walk_ms=357 snapshot_id=s0000000e / element_token for row [N] = s0000000e:N (row [1] is "s0000000e:1") /  /     - [0] menu item "Run Program..." [actions=[click]] /     - [1] menu item "Terminal Emulator" [actions=[click]] /     - [2] menu item "File Manager" [actions=[click]] /     - [3] menu item "Mail Reader" [actions=[click]] /     - [4] menu item "Web Browser" [actio
+T20 CALL click {"element_token": "s0000000e:1", "pid": 6966}
+   -> ERR foreground_unavailable: window 0xc0bb5c did not become the active, focused window within 800ms (active=0xc00003, focus_within_target=true, input focus: 0xc0bb5c (Xfce4-panel, pid 6966 xfce4-panel)); no input was sent. The window may be minimized, on another workspace, or blocked by a modal dialog — bring_to_front it or target that dialog instead
+T21 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=14697678 pid=118016 "BlankFrontDecoy.xlsx — LibreOffice Calc" 1440x849+0+51 app=libreoffice-calc /   window_id=14680181 pid=118016 "SalesRep.xlsx — LibreOffice Calc" 1440x849+0+51 app=libreoffice-calc /   window_id=12
+T22 CALL get_window_state {"fresh": true, "max_elements": 2000, "pid": 118016, "window_id": 14680181}
+   -> window_id=14680181 pid=118016 elements=75 walk_ms=1029 snapshot_id=s0000000f / element_token for row [N] = s0000000f:N (row [1] is "s0000000f:1"); this read stops at row [74], so rows past it from a larger read are not in s0000000f / ⚠️ PARTIAL TREE: the 1000 ms timeout_ms budget ran out after 194 node(s) (59 discovered but not visited). Every element listed is real; elements after the cut are missing
+T23 CALL click {"pid": 118016, "window_id": 14680181, "x": 60, "y": 130}
+   -> Clicked at (61.9, 134.1) × 1 (delivery_mode=foreground, path=x11_xtest_fg); not verified — confirm with a screenshot. [window_point=(61, 134) screen_point=(62, 185)]
+T24 CALL press_key {"key": "f2", "pid": 118016, "window_id": 14680181}
+   -> Pressed key 'f2' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T25 CALL get_window_state {"fresh": true, "max_elements": 300, "pid": 118016, "window_id": 14680181}
+   -> window_id=14680181 pid=118016 elements=116 walk_ms=1023 snapshot_id=s00000010 / element_token for row [N] = s00000010:N (row [1] is "s00000010:1"); this read stops at row [115], so rows past it from a larger read are not in s00000010 / ⚠️ PARTIAL TREE: the 1000 ms timeout_ms budget ran out after 338 node(s) (11 discovered but not visited). Every element listed is real; elements after the cut are missi
+T26 CALL click {"element_token": "s00000010:58", "pid": 118016}
+   -> ERR click: element [58] (pid 118016) has a snapshot frame at (1363, 216), but that screen point is owned by tool bar "Formula Tool Bar" rather than the observed element; a real pointer click there would hit the wrong control. Re-snapshot with get_window_state, or click by pixel from a screenshot.
+T27 CALL click {"pid": 118016, "window_id": 14680181, "x": 95, "y": 120}
+   -> Clicked at (98.0, 123.8) × 1 (delivery_mode=foreground, path=x11_xtest_fg); not verified — confirm with a screenshot. [window_point=(97, 123) screen_point=(98, 175)]
+T28 CALL get_window_state {"fresh": true, "max_elements": 400, "pid": 118016, "window_id": 14680181}
+   -> window_id=14680181 pid=118016 elements=202 walk_ms=1027 snapshot_id=s00000011 / element_token for row [N] = s00000011:N (row [1] is "s00000011:1"); this read stops at row [201], so rows past it from a larger read are not in s00000011 / ⚠️ PARTIAL TREE: the 1000 ms timeout_ms budget ran out after 583 node(s) (51 discovered but not visited). Every element listed is real; elements after the cut are missi
+T29 CALL press_key {"key": "Right", "modifiers": ["ctrl", "alt"], "pid": 6966}
+   -> Pressed key 'Right' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. [pid-only target resolved to window 12582915 "xfce4-panel"]
+T30 CALL list_windows {}

@@ -1,0 +1,61 @@
+T1 CALL list_apps {}
+T1 CALL list_windows {}
+   -> ✅ Found 156 app(s): 123 running, 33 installed-not-running. / - instabox-guest- (pid 1097) / - Xvnc (pid 6862) / - xfce4-session (pid 6891) / - xfwm4 (pid 6956) / - xfsettingsd (pid 6961) / - Panel (pid 6966) / - xfdesktop (pid 6982) / - wrapper-2.0 (pid 6992) / - wrapper-2.0 (pid 6997) / - instabox-term (pid 7657) / - bash (pid 7671) / - bash (pid 7882) / - python (pid 7884) / - python (pid 7895) / - Application Finder (pid 82
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651610 pid=144538 "About the Xfce Desktop Environment" 550x600+5+56 app=Xfce4-about /   window_id=37748739 pid=148111 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+565+56 app=Xfce4-terminal /   wind
+T2 CALL get_window_state {"pid": 148111, "tree_format": "markdown"}
+   -> window_id=37748739 pid=148111 elements=20 walk_ms=60 snapshot_id=s00000001 / element_token for row [N] = s00000001:N (row [1] is "s00000001:1") /  / - frame = "Terminal - sandbox@instabox-gui-pi2: /data/workspace" /       - [0] menu "File" [actions=[click]] (closed menu, 0 items; click it to open) /       - [1] menu "Edit" [actions=[click]] (closed menu, 0 items; click it to open) /       - [2] menu "View" [a
+T3 CALL click {"pid": 148111, "window_id": 37748739, "element_token": "s00000001:7"}
+   -> Clicked element [7] (pid 148111). | The application opened its own window 37748801 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" and it now holds the focus (focus_outcome=same_app_dialog, left in place); pid-only type_text/press_key go to that window. | [gate] Window right after the action (snapshot s00000002; tokens are s00000002:N, older tokens are stale). / A new window/dialog opened (wi
+T4 CALL type_text {"text": "find . -type f -exec chmod 644 {} +", "pid": 148111, "window_id": 37748801}
+   -> Typed 35 character(s) (terminal emulator: pty/XTest key events).
+T5 CALL press_key {"key": "enter", "pid": 148111, "window_id": 37748801}
+   -> Pressed key 'enter' (delivery_mode=foreground). | [gate] Window right after the action (snapshot s00000003; tokens are s00000003:N, older tokens are stale). Nothing in the tree changed since snapshot s00000002 (21 rows); its [N] are valid as s00000003:N. / 
+T6 CALL type_text {"text": "find . -type f ! -perm 644 -print; echo \"---\"; find . -type f | wc -l", "pid": 148111, "window_id": 37748801}
+   -> Typed 69 character(s) (terminal emulator: pty/XTest key events).
+T7 CALL press_key {"key": "enter", "pid": 148111, "window_id": 37748801}
+   -> Pressed key 'enter' (delivery_mode=foreground). | [gate] Window right after the action (snapshot s00000004; tokens are s00000004:N, older tokens are stale). Nothing in the tree changed since snapshot s00000003 (21 rows); its [N] are valid as s00000004:N. / 
+T8 CALL get_window_state {"pid": 148111, "window_id": 37748801, "tree_format": "elements", "max_depth": 3}
+   -> window_id=37748801 pid=148111 elements=7 walk_ms=24 snapshot_id=s00000006 /  / (tree is in structuredContent.elements; pass tree_format "markdown" for the compact text rendering) | Invalidated snapshots s00000005: their element_tokens are stale.
+T9 CALL type_text {"text": "pwd; if [ -z \"$(find . -type f ! -perm 644 -print -quit)\" ]; then printf '\\033]0;VERIFIED-OK:%s\\007' \"$PWD\"; else printf '\\033]0;VERIFIED-FAIL\\007'; fi", "pid": 148111, "window_id": 37748801}
+   -> Typed 151 character(s) (terminal emulator: pty/XTest key events).
+T10 CALL press_key {"key": "enter", "pid": 148111, "window_id": 37748801}
+   -> Pressed key 'enter' (delivery_mode=foreground). | [gate] Window right after the action (snapshot s00000007; tokens are s00000007:N, older tokens are stale). Nothing in the tree changed since snapshot s00000004 (21 rows); its [N] are valid as s00000007:N. / 
+T11 CALL list_windows {"app": "Terminal"}
+   -> Found 2 windows: /   window_id=37748739 pid=148111 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+565+56 app=Xfce4-terminal /   window_id=37748801 pid=148111 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+618+412 app=Xfce4-terminal
+T12 CALL type_text {"text": "find . -type f -exec chmod 644 {} +; n_total=$(find . -type f | wc -l); n_bad=$(find . -type f ! -perm 644 | wc -l); zenity --info --title=Verify --text=\"total=$n_total bad=$n_bad\"", "pid": 148111, "window_id": 37748801}
+   -> Typed 180 character(s) (terminal emulator: pty/XTest key events).
+T13 CALL press_key {"key": "enter", "pid": 148111, "window_id": 37748801}
+   -> Pressed key 'enter' (delivery_mode=foreground). | [gate] Window right after the action (snapshot s00000008; tokens are s00000008:N, older tokens are stale). Nothing in the tree changed since snapshot s00000007 (21 rows); its [N] are valid as s00000008:N. / 
+T14 CALL list_windows {}
+   -> Found 8 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651610 pid=144538 "About the Xfce Desktop Environment" 550x600+5+56 app=Xfce4-about /   window_id=37748739 pid=148111 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+565+56 app=Xfce4-terminal /   wind
+T15 CALL get_window_state {"pid": 148111, "window_id": 37748801, "query": "bad="}
+   -> window_id=37748801 pid=148111 elements=20 walk_ms=46 /  /  | Invalidated snapshots s00000009: their element_tokens are stale.
+T16 CALL type_text {"text": "pwd; n_total=$(find . -type f | wc -l); n_bad=$(find . -type f ! -perm 644 | wc -l); xmessage -center \"cwd=$(pwd) total=$n_total bad=$n_bad\"", "pid": 148111, "window_id": 37748801}
+   -> Typed 140 character(s) (terminal emulator: pty/XTest key events).
+T17 CALL press_key {"key": "enter", "pid": 148111, "window_id": 37748801}
+   -> Pressed key 'enter' (delivery_mode=foreground). | [gate] Window right after the action (snapshot s0000000b; tokens are s0000000b:N, older tokens are stale). Nothing in the tree changed since snapshot s00000008 (21 rows); its [N] are valid as s0000000b:N. / 
+T18 CALL list_windows {}
+   -> Found 8 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651610 pid=144538 "About the Xfce Desktop Environment" 550x600+5+56 app=Xfce4-about /   window_id=37748739 pid=148111 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+565+56 app=Xfce4-terminal /   wind
+T19 CALL get_window_state {"pid": 148348, "tree_format": "markdown"}
+   -> window_id=33554468 pid=148348 elements=1 walk_ms=469 snapshot_id=s0000000c / element_token for row [N] = s0000000c:N (row [0] is "s0000000c:0") /  / - [0] window "xmessage" [actions=[activate]] / 
+T20 CALL type_text {"text": "n_total=$(find . -type f | wc -l); n_bad=$(find . -type f ! -perm 644 | wc -l); printf 'cwd=%s\\ntotal=%s\\nbad=%s\\n' \"$(pwd)\" \"$n_total\" \"$n_bad\" > /tmp/res.txt; mousepad /tmp/res.txt", "pid": 148111, "window_id": 37748801}
+   -> Typed 182 character(s) (terminal emulator: pty/XTest key events).
+T21 CALL press_key {"key": "enter", "pid": 148111, "window_id": 37748801}
+   -> Pressed key 'enter' (delivery_mode=foreground). | [gate] Window right after the action (snapshot s0000000d; tokens are s0000000d:N, older tokens are stale). Nothing in the tree changed since snapshot s0000000b (21 rows); its [N] are valid as s0000000d:N. / 
+T22 CALL list_windows {}
+   -> Found 8 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651610 pid=144538 "About the Xfce Desktop Environment" 550x600+5+56 app=Xfce4-about /   window_id=37748739 pid=148111 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+565+56 app=Xfce4-terminal /   wind
+T23 CALL list_apps {}
+   -> ✅ Found 158 app(s): 125 running, 33 installed-not-running. / - instabox-guest- (pid 1097) / - Xvnc (pid 6862) / - xfce4-session (pid 6891) / - xfwm4 (pid 6956) / - xfsettingsd (pid 6961) / - Panel (pid 6966) / - xfdesktop (pid 6982) / - wrapper-2.0 (pid 6992) / - wrapper-2.0 (pid 6997) / - instabox-term (pid 7657) / - bash (pid 7671) / - bash (pid 7882) / - python (pid 7884) / - python (pid 7895) / - Application Finder (pid 82
+T24 CALL type_text {"text": "python3 -c 'import tkinter as tk; r=tk.Tk(); t=tk.Text(r); t.pack(); t.insert(\"1.0\", open(\"/tmp/res.txt\").read()); r.title(\"RES\"); r.mainloop()'", "pid": 148111, "window_id": 37748801}
+   -> Typed 144 character(s) (terminal emulator: pty/XTest key events).
+T25 CALL press_key {"key": "enter", "pid": 148111, "window_id": 37748801}
+   -> Pressed key 'enter' (delivery_mode=foreground). | [gate] Window right after the action (snapshot s0000000e; tokens are s0000000e:N, older tokens are stale). Nothing in the tree changed since snapshot s0000000d (21 rows); its [N] are valid as s0000000e:N. / 
+T26 CALL list_windows {}
+   -> Found 8 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651610 pid=144538 "About the Xfce Desktop Environment" 550x600+5+56 app=Xfce4-about /   window_id=37748739 pid=148111 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+565+56 app=Xfce4-terminal /   wind
+T27 CALL type_text {"text": "leafpad /tmp/res.txt", "pid": 148111, "window_id": 37748801}
+   -> Typed 20 character(s) (terminal emulator: pty/XTest key events).
+T28 CALL press_key {"key": "enter", "pid": 148111, "window_id": 37748801}
+   -> Pressed key 'enter' (delivery_mode=foreground). | [gate] Window right after the action (snapshot s0000000f; tokens are s0000000f:N, older tokens are stale). Only rows that changed since snapshot s0000000e are shown (3 of 21 rows, with their parents); every other row is unchanged and keeps its [N], so s0000000f:N tokens work for those too. / - frame = "Terminal - sandbox@instabox-gui-pi2: /data/works
+T29 CALL list_windows {}
+   -> Found 8 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651610 pid=144538 "About the Xfce Desktop Environment" 550x600+5+56 app=Xfce4-about /   window_id=37748739 pid=148111 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+565+56 app=Xfce4-terminal /   wind
+T30 CALL type_text {"text": "n_total=$(find . -type f | wc -l); n_bad=$(find . -type f ! -perm 644 | wc -l); xmessage -title \"cwd=$(pwd) total=$n_total bad=$n_bad\" -buttons OK -center \"done\"", "pid": 148111, "window_id": 37748801}

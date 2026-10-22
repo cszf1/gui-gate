@@ -1,0 +1,59 @@
+T1 CALL list_apps {}
+   -> ✅ Found 156 app(s): 123 running, 33 installed-not-running. / - systemd (pid 1) / - kthreadd (pid 2) / - pool_workqueue_release (pid 3) / - kworker/R-rcu_gp (pid 4) / - kworker/R-sync_wq (pid 5) / - kworker/R-kvfree_rcu_reclaim (pid 6) / - kworker/R-slub_flushwq (pid 7) / - kworker/R-netns (pid 8) / - kworker/0:0H-events_highpri (pid 10) / - kworker/R-mm_percpu_wq (pid 13) / - ksoftirqd/0 (pid 14) / - rcu_preempt (pid 15)
+T2 CALL list_windows {}
+   -> Found 7 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=41981814 pid=82341 "Application Finder" 580x100+435+442 app=Xfce4-appfinder /   window_id=35651587 pid=105570 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+5+412 app=Xfce4-terminal /   window_id=12582
+T3 CALL get_window_state {"pid": 105570}
+   -> window_id=35651587 pid=105570 elements=20 walk_ms=119 snapshot_id=s00000001 / element_token for row [N] = s00000001:N (row [1] is "s00000001:1") /  / - frame = "Terminal - sandbox@instabox-gui-pi2: /data/workspace" /       - [0] menu "File" [actions=[click]] (closed menu, 0 items; click it to open) /       - [1] menu "Edit" [actions=[click]] (closed menu, 0 items; click it to open) /       - [2] menu "View" [
+T4 CALL click {"pid": 105570, "element_token": "s00000001:17"}
+   -> Clicked element [17] (pid 105570) with a real pointer click (delivery_mode=background, path=x11_xsendevent); not verified — confirm with a screenshot.
+T5 CALL type_text {"pid": 105570, "text": "echo HELLO_RY_123"}
+   -> Typed 17 character(s) (terminal emulator: pty/XTest key events).
+T6 CALL press_key {"pid": 105570, "key": "enter"}
+   -> Pressed key 'enter' (delivery_mode=foreground).
+T7 CALL get_window_state {"pid": 105570, "query": "HELLO_RY_123"}
+   -> window_id=35651587 pid=105570 elements=20 walk_ms=27 /  /  | Invalidated snapshots s00000001: their element_tokens are stale.
+T8 CALL list_apps {}
+   -> ✅ Found 156 app(s): 123 running, 33 installed-not-running. / - systemd (pid 1) / - kthreadd (pid 2) / - pool_workqueue_release (pid 3) / - kworker/R-rcu_gp (pid 4) / - kworker/R-sync_wq (pid 5) / - kworker/R-kvfree_rcu_reclaim (pid 6) / - kworker/R-slub_flushwq (pid 7) / - kworker/R-netns (pid 8) / - kworker/0:0H-events_highpri (pid 10) / - kworker/R-mm_percpu_wq (pid 13) / - ksoftirqd/0 (pid 14) / - rcu_preempt (pid 15)
+T9 CALL get_window_state {"pid": 82341}
+   -> window_id=41981814 pid=82341 elements=155 walk_ms=216 snapshot_id=s00000003 / element_token for row [N] = s00000003:N (row [1] is "s00000003:1") /  / - frame = "Application Finder" /       - [0] text "" [actions=[activate]] (unlabelled text; 1st of 1 text in this window) /         - icon = "go-down-symbolic" /           - [1] table column header "" [actions=[click]] /           - [2] table cell "" [actions=[exp
+T10 CALL type_text {"pid": 105570, "text": "cd; { echo \"=== PWD ===\"; pwd; echo \"=== HOME ===\"; echo $HOME; echo \"=== LS CURRENT ===\"; ls -la; echo \"=== FIND / ===\"; find / -name '*failed.ipynb' 2>/dev/null; echo \"=== FIND /tmp ===\"; find /tmp -name '*failed.ipynb' 2>/dev/null; echo \"=== END ===\"; } > /tmp
+   -> Typed 292 character(s) (terminal emulator: pty/XTest key events).
+T11 CALL press_key {"pid": 105570, "key": "enter"}
+   -> Pressed key 'enter' (delivery_mode=foreground).
+T12 CALL click {"pid": 82341, "element_token": "s00000003:0"}
+   -> Clicked element [0] (pid 82341) with a real pointer click (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. [window_point=(317, 33) screen_point=(752, 475)]
+T13 CALL type_text {"pid": 82341, "text": "chromium --new-window file:///tmp/report.txt"}
+   -> Typed 44 character(s) as real key events (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T14 CALL press_key {"pid": 82341, "key": "enter"}
+   -> Pressed key 'enter' as a real key event (delivery_mode=foreground, focus_after=elsewhere); not verified — confirm with a screenshot.
+T15 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651587 pid=105570 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+5+412 app=Xfce4-terminal /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+929 app=Xfce4-panel /   window_id=12582915 pid=6966 
+T16 CALL list_windows {"app": "chrom"}
+   -> Found 0 windows:
+T17 CALL list_apps {"all": true}
+   -> ✅ Found 162 app(s): 129 running, 33 installed-not-running. / - systemd (pid 1) / - kthreadd (pid 2) / - pool_workqueue_release (pid 3) / - kworker/R-rcu_gp (pid 4) / - kworker/R-sync_wq (pid 5) / - kworker/R-kvfree_rcu_reclaim (pid 6) / - kworker/R-slub_flushwq (pid 7) / - kworker/R-netns (pid 8) / - kworker/0:0H-events_highpri (pid 10) / - kworker/R-mm_percpu_wq (pid 13) / - ksoftirqd/0 (pid 14) / - rcu_preempt (pid 15)
+T18 CALL list_windows {"app": "chrom"}
+   -> Found 0 windows:
+T19 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651587 pid=105570 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+5+412 app=Xfce4-terminal /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+969 app=Xfce4-panel /   window_id=12582915 pid=6966 
+T20 CALL list_windows {"app": "Chromium"}
+   -> Found 1 windows: /   window_id=33554435 pid=105718 "Untitled - Chromium" 1050x853+10+37 app=Chromium
+T21 CALL get_window_state {"pid": 105718}
+   -> window_id=33554435 pid=105718 elements=41 walk_ms=272 snapshot_id=s00000004 / element_token for row [N] = s00000004:N (row [1] is "s00000004:1") /  / - [0] frame "report.txt - Chromium" [actions=[doDefault,showContextMenu]] /   - [1] panel "￼￼" [actions=[doDefault,showContextMenu]] /     - [2] panel "￼￼￼￼￼" [actions=[doDefault,showContextMenu]] /       - [3] button "Minimize" [actions=[press,showContextMenu]]
+T22 CALL type_text {"pid": 105570, "text": "cd; { echo \"=== WS REALPATH ===\"; readlink -f /data/workspace; echo \"=== LS WS ===\"; ls -la /data/workspace; echo \"=== FIND WS FAILED ===\"; find /data/workspace -name '*failed.ipynb' 2>/dev/null; echo \"=== TREE test_environment ===\"; find /data/home/test_environment 
+   -> Typed 443 character(s) (terminal emulator: pty/XTest key events).
+T23 CALL press_key {"pid": 105570, "key": "enter"}
+   -> Pressed key 'enter' (delivery_mode=foreground).
+T24 CALL click {"pid": 105718, "element_token": "s00000004:13"}
+   -> Clicked element [13] (pid 105718) with a real pointer click (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. [window_point=(573, 68) screen_point=(583, 105)]
+T25 CALL type_text {"pid": 105718, "text": "file:///tmp/report2.txt"}
+   -> Typed 23 character(s) as real key events (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T26 CALL press_key {"pid": 105718, "key": "enter"}
+   -> Pressed key 'enter' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T27 CALL get_window_state {"pid": 105718, "query": "MARKER_END"}
+   -> window_id=33554435 pid=105718 elements=42 walk_ms=235 snapshot_id=s00000005 / element_token for row [N] = s00000005:N (row [0] is "s00000005:0") /  / === MARKER_END === / === MARKER_END === /  | Invalidated snapshots s00000004: their element_tokens are stale.
+T28 CALL get_window_state {"pid": 105718}
+   -> window_id=33554435 pid=105718 elements=42 walk_ms=363 snapshot_id=s00000006 / element_token for row [N] = s00000006:N (row [1] is "s00000006:1") /  / - [0] frame "report2.txt - Chromium" [actions=[doDefault,showContextMenu]] /   - [1] panel "￼￼" [actions=[doDefault,showContextMenu]] /     - [2] panel "￼￼￼￼￼" [actions=[doDefault,showContextMenu]] /       - [3] button "Minimize" [actions=[press,showContextMenu]
+T29 CALL type_text {"pid": 105570, "text": "cd; { echo \"=== AGENTS.md ===\"; cat /data/home/AGENTS.md; echo; echo \"=== MACHINE.md ===\"; cat /data/home/MACHINE.md; echo; echo \"=== SETUP.sh ===\"; cat /data/home/setup.sh; echo \"=== MARKER_END2 ===\"; } > /tmp/report3.txt; echo REPORT3_DONE"}
+   -> Typed 241 character(s) (terminal emulator: pty/XTest key events).
+T30 CALL press_key {"pid": 105570, "key": "enter"}

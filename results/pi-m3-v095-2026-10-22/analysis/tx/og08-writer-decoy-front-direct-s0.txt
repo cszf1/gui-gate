@@ -1,0 +1,64 @@
+T1 CALL list_windows {}
+   -> Found 7 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=14680181 pid=114545 "Novels_Intro_Packet.docx — LibreOffice Writer" 1440x849+0+51 app=libreoffice-writer /   window_id=14691776 pid=114545 "Untitled_notes.docx — LibreOffice Writer" 1440x849+0+51 app=libreoffice-wri
+T2 CALL get_window_state {"pid": 114545, "window_id": 14680181}
+T2 CALL get_window_state {"pid": 114545, "window_id": 14691776}
+   -> Warning: truncated output (original token count: 6228) / Total output lines: 296 /  / window_id=14680181 pid=114545 elements=242 walk_ms=1884 snapshot_id=s00000002 / element_token for row [N] = s00000002:N (row [1] is "s00000002:1") /  / - frame = "Novels_Intro_Packet.docx — LibreOffice Writer" /             - [0] menu "File" [actions=[click]] (closed menu, 31 items; click it to open) /             - [1] menu "Ed
+   -> Warning: truncated output (original token count: 6228) / Total output lines: 296 /  / window_id=14691776 pid=114545 elements=242 walk_ms=1437 snapshot_id=s00000001 / element_token for row [N] = s00000001:N (row [1] is "s00000001:1") /  / - frame = "Novels_Intro_Packet.docx — LibreOffice Writer" /             - [0] menu "File" [actions=[click]] (closed menu, 31 items; click it to open) /             - [1] menu "Ed
+T3 CALL get_window_state {"pid": 114545, "window_id": 14680181, "query": "Line Spacing", "tree_format": "both"}
+   -> window_id=14680181 pid=114545 elements=165 walk_ms=1061 snapshot_id=s00000003 / ⚠️ PARTIAL TREE: the 1000 ms timeout_ms budget ran out after 380 node(s) (32 discovered but not visited). Every element listed is real; elements after the cut are missing. If the element you need is absent, retry with a larger timeout_ms (e.g. 5000) or narrow with query / max_depth. /  / - frame = "Novels_Intro_Packet.docx —
+T4 CALL get_window_state {"max_elements": 500, "pid": 114545, "tree_format": "both", "window_id": 14680181}
+   -> window_id=14680181 pid=114545 elements=135 walk_ms=1027 snapshot_id=s00000004 / ⚠️ PARTIAL TREE: the 1000 ms timeout_ms budget ran out after 328 node(s) (18 discovered but not visited). Every element listed is real; elements after the cut are missing. If the element you need is absent, retry with a larger timeout_ms (e.g. 5000) or narrow with query / max_depth. /  / - frame = "Novels_Intro_Packet.docx —
+T5 SAY I'll work with the Novels_Intro_Packet.docx document, which has multiple paragraphs. Let me select the first two paragraphs and apply double line spacing.
+
+First, place the cursor in the first paragraph:
+T5 CALL click {"element_token": "s00000004:24", "pid": 114545}
+   -> Clicked element [24] (pid 114545) with a real pointer click (delivery_mode=background, path=x11_xsendevent); not verified — confirm with a screenshot.
+T6 CALL press_key {"key": "home", "pid": 114545, "window_id": 14680181}
+   -> Pressed key 'home' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T7 CALL press_key {"key": "down", "modifiers": ["ctrl", "shift"], "pid": 114545, "window_id": 14680181}
+   -> Pressed key 'down' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T8 CALL press_key {"key": "down", "modifiers": ["ctrl", "shift"], "pid": 114545, "window_id": 14680181}
+   -> Pressed key 'down' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T9 CALL click {"element_token": "s00000004:128", "pid": 114545}
+   -> Clicked element [128] (pid 114545) with a real pointer click (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. [window_point=(1329, 59) screen_point=(1329, 110)]
+T10 CALL get_window_state {"pid": 114545, "query": "Double", "tree_format": "both", "window_id": 14680181}
+   -> window_id=14680181 pid=114545 elements=132 walk_ms=1068 / ⚠️ PARTIAL TREE: the 1000 ms timeout_ms budget ran out after 301 node(s) (17 discovered but not visited). Every element listed is real; elements after the cut are missing. If the element you need is absent, retry with a larger timeout_ms (e.g. 5000) or narrow with query / max_depth. /  /  | Invalidated snapshots s00000004: their element_tokens ar
+T11 CALL get_window_state {"max_elements": 400, "pid": 114545, "tree_format": "both", "window_id": 14680181}
+   -> window_id=14680181 pid=114545 elements=107 walk_ms=1049 snapshot_id=s00000006 / ⚠️ PARTIAL TREE: the 1000 ms timeout_ms budget ran out after 217 node(s) (17 discovered but not visited). Every element listed is real; elements after the cut are missing. If the element you need is absent, retry with a larger timeout_ms (e.g. 5000) or narrow with query / max_depth. /  / - frame = "Novels_Intro_Packet.docx —
+T12 CALL list_windows {}
+   -> Found 7 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=14691776 pid=114545 "Untitled_notes.docx — LibreOffice Writer" 1440x849+0+51 app=libreoffice-writer /   window_id=14680181 pid=114545 "Novels_Intro_Packet.docx — LibreOffice Writer" 1440x849+0+51 app=libreoffice-wri
+T13 CALL click {"element_token": "s00000006:4", "pid": 114545}
+   -> Clicked element [4] (pid 114545) with a real pointer click (delivery_mode=foreground, focus_after=target); appeared: popup window 14712016 "LibreOffice 25.2" (311x692 at 175,71). [window_point=(212, 13) screen_point=(212, 64)]
+T14 CALL get_window_state {"pid": 114545, "query": "Paragraph", "tree_format": "both", "window_id": 14712016}
+   -> window_id=14712016 pid=114545 elements=217 walk_ms=2132 snapshot_id=s00000007 / ⚠️ PARTIAL TREE: the 2000 ms timeout_ms budget ran out after 515 node(s) (16 discovered but not visited). Every element listed is real; elements after the cut are missing. If the element you need is absent, retry with a larger timeout_ms (e.g. 5000) or narrow with query / max_depth. /  / - frame = "Novels_Intro_Packet.docx —
+T15 CALL click {"element_token": "s00000007:45", "pid": 114545}
+   -> ERR click: element [45] (pid 114545) has a snapshot frame at (331, 266), but that screen point is owned by document text "Novels_Intro_Packet - LibreOffice Document" rather than the observed element; a real pointer click there would hit the wrong control. Re-snapshot with get_window_state, or click by pixel from a screenshot.
+T16 CALL get_window_state {"pid": 114545, "query": "Paragraph...", "tree_format": "both", "window_id": 14680181}
+   -> window_id=14680181 pid=114545 elements=118 walk_ms=1045 snapshot_id=s00000008 / ⚠️ PARTIAL TREE: the 1000 ms timeout_ms budget ran out after 252 node(s) (31 discovered but not visited). Every element listed is real; elements after the cut are missing. If the element you need is absent, retry with a larger timeout_ms (e.g. 5000) or narrow with query / max_depth. /  / - frame = "Novels_Intro_Packet.docx —
+T17 CALL click {"element_token": "s00000008:45", "pid": 114545}
+   -> ERR click: element [45] (pid 114545) has a snapshot frame at (331, 266), but that screen point is owned by document text "Novels_Intro_Packet - LibreOffice Document" rather than the observed element; a real pointer click there would hit the wrong control. Re-snapshot with get_window_state, or click by pixel from a screenshot.
+T18 CALL get_window_state {"pid": 114545, "query": "Paragraph...", "tree_format": "both", "window_id": 14712016}
+   -> window_id=14712016 pid=114545 elements=152 walk_ms=1062 snapshot_id=s00000009 / ⚠️ PARTIAL TREE: the 1000 ms timeout_ms budget ran out after 352 node(s) (48 discovered but not visited). Every element listed is real; elements after the cut are missing. If the element you need is absent, retry with a larger timeout_ms (e.g. 5000) or narrow with query / max_depth. /  / - frame = "Novels_Intro_Packet.docx —
+T19 CALL get_window_state {"max_elements": 500, "pid": 114545, "tree_format": "both", "window_id": 14680181}
+   -> window_id=14680181 pid=114545 elements=69 walk_ms=1060 snapshot_id=s0000000a / ⚠️ PARTIAL TREE: the 1000 ms timeout_ms budget ran out after 179 node(s) (17 discovered but not visited). Every element listed is real; elements after the cut are missing. If the element you need is absent, retry with a larger timeout_ms (e.g. 5000) or narrow with query / max_depth. /  / - frame = "Novels_Intro_Packet.docx — 
+T20 CALL click {"element_token": "s0000000a:25", "pid": 114545}
+   -> ERR click: element [25] (pid 114545) has a snapshot frame at (331, 114), but that screen point is owned by button "Paste" rather than the observed element; a real pointer click there would hit the wrong control. Re-snapshot with get_window_state, or click by pixel from a screenshot.
+T21 CALL press_key {"key": "escape", "pid": 114545}
+   -> Pressed key 'escape' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. [pid-only target resolved to window 14680181 "Novels_Intro_Packet.docx — LibreOffice Writer"]
+T22 CALL get_window_state {"pid": 114545, "query": "Line Spacing", "tree_format": "both", "window_id": 14680181}
+   -> window_id=14680181 pid=114545 elements=102 walk_ms=1084 / ⚠️ PARTIAL TREE: the 1000 ms timeout_ms budget ran out after 204 node(s) (30 discovered but not visited). Every element listed is real; elements after the cut are missing. If the element you need is absent, retry with a larger timeout_ms (e.g. 5000) or narrow with query / max_depth. /  /  | Invalidated snapshots s0000000a: their element_tokens ar
+T23 CALL get_window_state {"max_elements": 500, "pid": 114545, "tree_format": "both", "window_id": 14680181}
+   -> window_id=14680181 pid=114545 elements=83 walk_ms=1093 snapshot_id=s0000000c / ⚠️ PARTIAL TREE: the 1000 ms timeout_ms budget ran out after 170 node(s) (64 discovered but not visited). Every element listed is real; elements after the cut are missing. If the element you need is absent, retry with a larger timeout_ms (e.g. 5000) or narrow with query / max_depth. /  / - frame = "Novels_Intro_Packet.docx — 
+T24 CALL run_actions {"pid": 114545, "steps": [{"tool": "click", "args": {"target": {"label": "Format"}}, "expect": {"title_contains": "Format"}}, {"tool": "click", "args": {"target": {"label": "Spacing"}}}, {"tool": "click", "args": {"target": {"label": "Line Spacing: 2"}}}], "window_id": 14680181}
+   -> ERR [gate] run_actions: 0 GUI action(s) ran. STOPPED: step 1: "Format" matches 2 elements; add a role or use an element_token. Steps after it did NOT run. / 
+T25 CALL run_actions {"pid": 114545, "steps": [{"tool": "click", "args": {"target": {"label": "Format", "role": "menu"}}}, {"tool": "click", "args": {"target": {"label": "Spacing"}}}, {"tool": "click", "args": {"target": {"label": "Line Spacing: 2"}}}], "window_id": 14680181}
+   -> ERR [gate] run_actions: 0 GUI action(s) ran. STOPPED: step 1: "Format" matches 2 elements; add a role or use an element_token. Steps after it did NOT run. / 
+T26 CALL click {"element_token": "s0000000c:4", "pid": 114545}
+   -> ERR element_token is stale; call get_window_state again to refresh; current snapshots for pid 114545: s00000001 (window 14691776), s00000009 (window 14712016), s0000000e (window 14680181)
+T27 CALL get_window_state {"pid": 114545, "query": "Format", "tree_format": "both", "window_id": 14680181}
+   -> window_id=14680181 pid=114545 elements=70 walk_ms=1061 snapshot_id=s0000000f / ⚠️ PARTIAL TREE: the 1000 ms timeout_ms budget ran out after 130 node(s) (15 discovered but not visited). Every element listed is real; elements after the cut are missing. If the element you need is absent, retry with a larger timeout_ms (e.g. 5000) or narrow with query / max_depth. /  / - frame = "Novels_Intro_Packet.docx — 
+T28 CALL click {"element_token": "s0000000f:4", "pid": 114545}
+   -> Clicked element [4] (pid 114545) with a real pointer click (delivery_mode=foreground, focus_after=target); appeared: popup window 14712016 "LibreOffice 25.2" (311x692 at 175,71). [window_point=(212, 13) screen_point=(212, 64)]
+T29 CALL press_key {"key": "down", "pid": 114545}
+   -> Pressed key 'down' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. [pid-only target resolved to window 14680181 "Novels_Intro_Packet.docx — LibreOffice Writer"]
+T30 CALL press_key {"key": "down", "pid": 114545}

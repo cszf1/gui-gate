@@ -1,0 +1,54 @@
+T1 CALL list_apps {}
+T1 CALL list_windows {}
+   -> ✅ Found 156 app(s): 121 running, 35 installed-not-running. / - systemd (pid 1) / - kthreadd (pid 2) / - pool_workqueue_release (pid 3) / - kworker/R-rcu_gp (pid 4) / - kworker/R-sync_wq (pid 5) / - kworker/R-kvfree_rcu_reclaim (pid 6) / - kworker/R-slub_flushwq (pid 7) / - kworker/R-netns (pid 8) / - kworker/0:0H-events_highpri (pid 10) / - kworker/R-mm_percpu_wq (pid 13) / - ksoftirqd/0 (pid 14) / - rcu_preempt (pid 15)
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=41957591 pid=82341 "Application Finder" 580x422+435+281 app=Xfce4-appfinder /   window_id=14680181 pid=103671 "189_4.pptx — LibreOffice Impress" 1440x849+0+51 app=libreoffice-impress /   window_id=12582915 pid=6966 "xfce4-panel" 1440x27+0+0 app=Xfce4-panel /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+
+T2 CALL get_window_state {"pid": 103671}
+   -> window_id=14680181 pid=103671 elements=175 walk_ms=1950 snapshot_id=s00000001 / element_token for row [N] = s00000001:N (row [1] is "s00000001:1") /  / - frame = "189_4.pptx — LibreOffice Impress" /       - [0] button "" (description "Close Document") [actions=[click]] /             - [1] menu "File" [actions=[click]] (closed menu, 30 items; click it to open) /             - [2] menu "Edit" [actions=[click]] 
+T3 CALL click {"pid": 103671, "element_token": "s00000001:60"}
+   -> Clicked element [60] (pid 103671) with a real pointer click (delivery_mode=background, path=x11_xsendevent); not verified — confirm with a screenshot.
+T4 CALL get_window_state {"pid": 103671, "include_screenshot": false, "since": "s00000001"}
+   -> window_id=14680181 pid=103671 elements=143 walk_ms=1121 snapshot_id=s00000002 / this read stops at row [142]: rows past it from a larger read are not in s00000002 / ⚠️ PARTIAL TREE: the 1000 ms timeout_ms budget ran out after 299 node(s) (30 discovered but not visited). Every element listed is real; elements after the cut are missing. If the element you need is absent, retry with a larger timeout_ms (
+T5 CALL get_window_state {"pid": 103671, "include_screenshot": false, "query": "Slide", "fresh": true}
+   -> window_id=14680181 pid=103671 elements=129 walk_ms=1075 snapshot_id=s00000003 / element_token for row [N] = s00000003:N (row [6] is "s00000003:6"); this read stops at row [107], so rows past it from a larger read are not in s00000003 / ⚠️ PARTIAL TREE: the 1000 ms timeout_ms budget ran out after 282 node(s) (47 discovered but not visited). Every element listed is real; elements after the cut are missi
+T6 CALL get_window_state {"pid": 103671, "include_screenshot": false, "fresh": true, "max_depth": 30, "max_elements": 5000}
+   -> window_id=14680181 pid=103671 elements=123 walk_ms=1073 snapshot_id=s00000004 / element_token for row [N] = s00000004:N (row [1] is "s00000004:1"); this read stops at row [122], so rows past it from a larger read are not in s00000004 / ⚠️ PARTIAL TREE: the 1000 ms timeout_ms budget ran out after 263 node(s) (9 discovered but not visited). Every element listed is real; elements after the cut are missin
+T7 CALL click {"count": 2, "element_token": "s00000004:60", "pid": 103671}
+   -> Clicked element [60] (pid 103671) with a real pointer click (delivery_mode=background, path=x11_xsendevent); not verified — confirm with a screenshot.
+T8 CALL get_window_state {"pid": 103671, "include_screenshot": false, "query": "of 2", "fresh": true}
+   -> window_id=14680181 pid=103671 elements=102 walk_ms=1064 / ⚠️ PARTIAL TREE: the 1000 ms timeout_ms budget ran out after 216 node(s) (14 discovered but not visited). Every element listed is real; elements after the cut are missing. If the element you need is absent, retry with a larger timeout_ms (e.g. 5000) or narrow with query / max_depth. /  /  | Invalidated snapshots s00000004: their element_tokens ar
+T9 CALL get_window_state {"fresh": true, "include_screenshot": false, "pid": 103671, "query": "Slide"}
+   -> window_id=14680181 pid=103671 elements=127 walk_ms=1047 snapshot_id=s00000006 / element_token for row [N] = s00000006:N (row [6] is "s00000006:6"); this read stops at row [107], so rows past it from a larger read are not in s00000006 / ⚠️ PARTIAL TREE: the 1000 ms timeout_ms budget ran out after 272 node(s) (4 discovered but not visited). Every element listed is real; elements after the cut are missin
+T10 CALL press_key {"key": "pagedown", "pid": 103671}
+   -> Pressed key 'pagedown' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T11 CALL get_window_state {"fresh": true, "include_screenshot": false, "max_depth": 15, "pid": 103671}
+   -> window_id=14680181 pid=103671 elements=84 walk_ms=1047 snapshot_id=s00000007 / element_token for row [N] = s00000007:N (row [1] is "s00000007:1"); this read stops at row [83], so rows past it from a larger read are not in s00000007 / ⚠️ PARTIAL TREE: the 1000 ms timeout_ms budget ran out after 193 node(s) (19 discovered but not visited). Every element listed is real; elements after the cut are missing
+T12 CALL click {"element_token": "s00000007:26", "pid": 103671}
+   -> Clicked element [26] (pid 103671) with a real pointer click (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. [window_point=(328, 220) screen_point=(328, 271)]
+T13 CALL press_key {"key": "a", "modifiers": ["ctrl"], "pid": 103671}
+   -> Pressed key 'a' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T14 CALL type_text {"pid": 103671, "text": "Online Shopping"}
+   -> Typed 15 character(s) as real key events (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T15 CALL get_window_state {"fresh": true, "include_screenshot": false, "max_depth": 12, "pid": 103671, "query": "PlaceHolder"}
+   -> window_id=14680181 pid=103671 elements=86 walk_ms=1025 snapshot_id=s00000008 / element_token for row [N] = s00000008:N (row [12] is "s00000008:12"); this read stops at row [27], so rows past it from a larger read are not in s00000008 / ⚠️ PARTIAL TREE: the 1000 ms timeout_ms budget ran out after 215 node(s) (48 discovered but not visited). Every element listed is real; elements after the cut are missi
+T16 CALL get_window_state {"fresh": true, "include_screenshot": false, "max_depth": 8, "pid": 103671, "query": "Online"}
+   -> window_id=14680181 pid=103671 elements=86 walk_ms=963 /  /  | Invalidated snapshots s00000008: their element_tokens are stale.
+T17 CALL get_window_state {"fresh": true, "include_screenshot": false, "max_depth": 8, "pid": 103671, "query": "Click to add"}
+   -> window_id=14680181 pid=103671 elements=58 walk_ms=1041 / ⚠️ PARTIAL TREE: the 1000 ms timeout_ms budget ran out after 134 node(s) (29 discovered but not visited). Every element listed is real; elements after the cut are missing. If the element you need is absent, retry with a larger timeout_ms (e.g. 5000) or narrow with query / max_depth. /  /  | Invalidated snapshots s00000009: their element_tokens are
+T18 CALL get_window_state {"fresh": true, "include_screenshot": false, "pid": 103671, "query": "Paragraph"}
+   -> window_id=14680181 pid=103671 elements=110 walk_ms=1062 snapshot_id=s0000000b / element_token for row [N] = s0000000b:N (row [12] is "s0000000b:12"); this read stops at row [28], so rows past it from a larger read are not in s0000000b / ⚠️ PARTIAL TREE: the 1000 ms timeout_ms budget ran out after 279 node(s) (39 discovered but not visited). Every element listed is real; elements after the cut are miss
+T19 CALL get_window_state {"fresh": true, "include_screenshot": false, "pid": 103671, "query": "PlaceHolder", "tree_format": "elements"}
+   -> window_id=14680181 pid=103671 elements=107 walk_ms=1054 snapshot_id=s0000000c / ⚠️ PARTIAL TREE: the 1000 ms timeout_ms budget ran out after 274 node(s) (41 discovered but not visited). Every element listed is real; elements after the cut are missing. If the element you need is absent, retry with a larger timeout_ms (e.g. 5000) or narrow with query / max_depth. /  / (tree is in structuredContent.element
+T20 CALL get_window_state {"fresh": true, "include_screenshot": false, "max_depth": 8, "pid": 103671, "query": "Online"}
+   -> window_id=14680181 pid=103671 elements=86 walk_ms=1092 /  /  | Invalidated snapshots s0000000c: their element_tokens are stale.
+T21 CALL get_window_state {"fresh": true, "include_screenshot": false, "pid": 103671, "query": "Paragraph"}
+   -> window_id=14680181 pid=103671 elements=78 walk_ms=1083 snapshot_id=s0000000e / element_token for row [N] = s0000000e:N (row [12] is "s0000000e:12"); this read stops at row [28], so rows past it from a larger read are not in s0000000e / ⚠️ PARTIAL TREE: the 1000 ms timeout_ms budget ran out after 198 node(s) (40 discovered but not visited). Every element listed is real; elements after the cut are missi
+T22 SAY Title verified on slide 2: "Online Shopping" in the title placeholder. Let me save the document.
+T22 CALL press_key {"key": "s", "modifiers": ["ctrl"], "pid": 103671}
+   -> Pressed key 's' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T23 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=41957591 pid=82341 "Application Finder" 580x422+435+281 app=Xfce4-appfinder /   window_id=14680181 pid=103671 "189_4.pptx — LibreOffice Impress" 1440x849+0+51 app=libreoffice-impress /   window_id=12582915 pid=6966 "xfce4-panel" 1440x27+0+0 app=Xfce4-panel /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+
+T24 CALL press_key {"key": "escape", "pid": 103671}
+   -> Pressed key 'escape' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T25 CALL get_window_state {"fresh": true, "include_screenshot": false, "pid": 103671, "query": "Properties"}
+   -> window_id=14680181 pid=103671 elements=111 walk_ms=1050 snapshot_id=s0000000f / element_token for row [N] = s0000000f:N (row [12] is "s0000000f:12"); this read stops at row [47], so rows past it from a larger read are not in s0000000f / ⚠️ PARTIAL TREE: the 1000 ms timeout_ms budget ran out after 282 node(s) (38 discovered but not visited). Every element listed is real; elements after the cut are miss
+T26 SAY DONE — Navigated to slide 2 and replaced its title placeholder text with "Online Shopping", which uses the same placeholder (same position, color, and font size) as slide 1's title.

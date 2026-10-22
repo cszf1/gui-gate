@@ -1,0 +1,62 @@
+T1 CALL list_apps {}
+T1 CALL list_windows {}
+   -> ✅ Found 158 app(s): 124 running, 34 installed-not-running. / - instabox-guest- (pid 1097) / - Xvnc (pid 6862) / - xfce4-session (pid 6891) / - xfwm4 (pid 6956) / - xfsettingsd (pid 6961) / - Panel (pid 6966) / - xfdesktop (pid 6982) / - wrapper-2.0 (pid 6992) / - wrapper-2.0 (pid 6997) / - instabox-term (pid 7657) / - bash (pid 7671) / - bash (pid 7882) / - python (pid 7884) / - python (pid 7895) / - Application Finder (pid 82
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651587 pid=111919 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+5+412 app=Xfce4-terminal /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+969 app=Xfce4-panel /   window_id=12582915 pid=6966 
+T2 CALL get_window_state {"pid": 111919}
+   -> window_id=35651587 pid=111919 elements=20 walk_ms=107 snapshot_id=s00000001 / element_token for row [N] = s00000001:N (row [1] is "s00000001:1") /  / - frame = "Terminal - sandbox@instabox-gui-pi2: /data/workspace" /       - [0] menu "File" [actions=[click]] (closed menu, 0 items; click it to open) /       - [1] menu "Edit" [actions=[click]] (closed menu, 0 items; click it to open) /       - [2] menu "View" [
+T3 SAY I'll use the open terminal to inspect and modify the filesystem. Let me first check the terminal's current state and the working directory.
+T3 CALL type_text {"element_token": "s00000001:17", "text": "pwd"}
+   -> Typed 3 character(s) (terminal emulator: pty/XTest key events).
+T4 CALL press_key {"element_token": "s00000001:17", "key": "enter"}
+   -> Pressed key 'enter' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. | [gate] Window right after the action (snapshot s00000002; tokens are s00000002:N, older tokens are stale). Nothing in the tree changed since snapshot s00000001 (21 rows); its [N] are valid as s00000002:N. / 
+T5 CALL get_window_state {"pid": 111919, "tree_format": "both"}
+   -> window_id=35651587 pid=111919 elements=20 walk_ms=147 snapshot_id=s00000003 /  / - frame = "Terminal - sandbox@instabox-gui-pi2: /data/workspace" /       - [0] menu "File" [actions=[click]] (closed menu, 0 items; click it to open) /       - [1] menu "Edit" [actions=[click]] (closed menu, 0 items; click it to open) /       - [2] menu "View" [actions=[click]] (closed menu, 0 items; click it to open) /       - [
+T6 CALL get_window_state {"pid": 111919, "query": "pwd"}
+   -> window_id=35651587 pid=111919 elements=20 walk_ms=68 /  /  | Invalidated snapshots s00000004: their element_tokens are stale.
+T7 CALL get_window_state {"pid": 6982, "max_dimension": 900}
+   -> window_id=16777260 pid=6982 elements=0 walk_ms=15 snapshot_id=s00000006 / element_token for row [N] = s00000006:N (row [0] is "s00000006:0") /  / - frame = "Desktop" / 
+T8 CALL type_text {"element_token": "s00000003:17", "text": "echo TESTREAD > /tmp/_read_test.txt && ls -la /tmp > /tmp/_lstmp.txt && echo DONE"}
+   -> Typed 81 character(s) (terminal emulator: pty/XTest key events). | [gate] your token was stale; re-bound to s00000007:17 from a fresh tree read. Older tokens for this window are now stale.
+T9 CALL press_key {"element_token": "s00000007:17", "key": "enter"}
+   -> Pressed key 'enter' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. | [gate] Window right after the action (snapshot s00000009; tokens are s00000009:N, older tokens are stale). Nothing in the tree changed since snapshot s00000003 (21 rows); its [N] are valid as s00000009:N. / 
+T10 CALL type_text {"element_token": "s00000009:17", "text": "mousepad /tmp/_lstmp.txt &"}
+   -> Typed 26 character(s) (terminal emulator: pty/XTest key events).
+T11 CALL press_key {"element_token": "s00000009:17", "key": "enter"}
+   -> Pressed key 'enter' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. | [gate] Window right after the action (snapshot s0000000a; tokens are s0000000a:N, older tokens are stale). Nothing in the tree changed since snapshot s00000009 (21 rows); its [N] are valid as s0000000a:N. / 
+T12 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651587 pid=111919 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+5+412 app=Xfce4-terminal /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+969 app=Xfce4-panel /   window_id=12582915 pid=6966 
+T13 CALL list_apps {"all": true}
+   -> ✅ Found 158 app(s): 124 running, 34 installed-not-running. / - systemd (pid 1) / - kthreadd (pid 2) / - pool_workqueue_release (pid 3) / - kworker/R-rcu_gp (pid 4) / - kworker/R-sync_wq (pid 5) / - kworker/R-kvfree_rcu_reclaim (pid 6) / - kworker/R-slub_flushwq (pid 7) / - kworker/R-netns (pid 8) / - kworker/0:0H-events_highpri (pid 10) / - kworker/R-mm_percpu_wq (pid 13) / - ksoftirqd/0 (pid 14) / - rcu_preempt (pid 15)
+T14 CALL type_text {"element_token": "s00000009:17", "text": "printf '\\033]0;TITLETEST\\007'"}
+   -> Typed 29 character(s) (terminal emulator: pty/XTest key events). | [gate] your token was stale; re-bound to s0000000b:17 from a fresh tree read. Older tokens for this window are now stale.
+T15 CALL press_key {"element_token": "s0000000b:17", "key": "enter"}
+   -> Pressed key 'enter' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. | [gate] Window right after the action (snapshot s0000000d; tokens are s0000000d:N, older tokens are stale). Nothing in the tree changed since snapshot s0000000a (21 rows); its [N] are valid as s0000000d:N. / 
+T16 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651587 pid=111919 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+5+412 app=Xfce4-terminal /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+969 app=Xfce4-panel /   window_id=12582915 pid=6966 
+T17 CALL get_window_state {"pid": 111919, "query": "TITLETEST"}
+   -> window_id=35651587 pid=111919 elements=20 walk_ms=83 /  /  | Invalidated snapshots s0000000e: their element_tokens are stale.
+T18 CALL type_text {"element_token": "s0000000d:17", "text": "printf '\\033]0;HELLOXYZ\\007'; sleep 30"}
+   -> Typed 38 character(s) (terminal emulator: pty/XTest key events). | [gate] your token was stale; re-bound to s00000010:17 from a fresh tree read. Older tokens for this window are now stale.
+T19 CALL press_key {"element_token": "s00000010:17", "key": "enter"}
+   -> Pressed key 'enter' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. | [gate] Window right after the action (snapshot s00000012; tokens are s00000012:N, older tokens are stale). Only rows that changed since snapshot s0000000d are shown (3 of 21 rows, with their parents); every other row is unchanged and keeps its [N], so s00000012:N toke
+T20 CALL press_key {"element_token": "s00000012:17", "key": "c", "modifiers": ["ctrl"]}
+   -> Pressed key 'c' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. | [gate] Window right after the action (snapshot s00000013; tokens are s00000013:N, older tokens are stale). Only rows that changed since snapshot s00000012 are shown (3 of 21 rows, with their parents); every other row is unchanged and keeps its [N], so s00000013:N tokens w
+T21 CALL type_text {"element_token": "s00000013:17", "text": "printf '\\033]0;%s\\007' \"$(ls -A /tmp)\"; sleep 8"}
+   -> Typed 47 character(s) (terminal emulator: pty/XTest key events).
+T22 CALL press_key {"element_token": "s00000013:17", "key": "enter"}
+   -> Pressed key 'enter' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. | [gate] Window right after the action (snapshot s00000015; tokens are s00000015:N, older tokens are stale). Only rows that changed since snapshot s00000013 are shown (3 of 21 rows, with their parents); every other row is unchanged and keeps its [N], so s00000015:N toke
+T23 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651587 pid=111919 "Terminal" 817x483+5+412 app=Xfce4-terminal /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+969 app=Xfce4-panel /   window_id=12582915 pid=6966 "xfce4-panel" 1440x27+0+0 app=Xfce4-panel /   
+T24 CALL type_text {"element_token": "s00000015:17", "text": "printf '\\033]0;CHK_12345\\007'; sleep 6"}
+   -> Typed 38 character(s) (terminal emulator: pty/XTest key events).
+T25 CALL press_key {"element_token": "s00000015:17", "key": "enter"}
+   -> Pressed key 'enter' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. | [gate] Window right after the action (snapshot s00000016; tokens are s00000016:N, older tokens are stale). Nothing in the tree changed since snapshot s00000015 (21 rows); its [N] are valid as s00000016:N. / 
+T26 CALL get_window_state {"pid": 111919, "query": "CHK"}
+   -> window_id=35651587 pid=111919 elements=20 walk_ms=35 /  /  | Invalidated snapshots s00000017: their element_tokens are stale.
+T27 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651587 pid=111919 "Terminal" 817x483+5+412 app=Xfce4-terminal /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+969 app=Xfce4-panel /   window_id=12582915 pid=6966 "xfce4-panel" 1440x27+0+0 app=Xfce4-panel /   
+T28 CALL type_text {"element_token": "s00000017:17", "text": "printf '\\033]0;CHANNEL_TEST_99\\007'; sleep 20"}
+   -> ERR [gate] Not executed: no observation of this window has passed through the gate. Re-read the window without a screenshot (get_window_state , include_screenshot:false, since:"latest") and retry with the fresh token.
+T29 CALL get_window_state {"pid": 111919, "tree_format": "markdown", "since": "latest", "include_screenshot": false}
+   -> window_id=35651587 pid=111919 elements=20 walk_ms=38 snapshot_id=s00000019 /  / since s00000016: 0 added, 2 changed, 0 removed. Use element_tokens s00000019:N for + and ~ rows and unchanged rows; - ids are from s00000016. / ~ frame = "Terminal - CHK_12345" / ~ [17] terminal "Terminal" (description "CHK_12345") [actions=[menu]] | Invalidated snapshots s00000018: their element_tokens are stale.
+T30 CALL type_text {"element_token": "s00000019:17", "text": "printf '\\033]0;%s\\007' \"$(ls -la /tmp | tr '\\n' '|' | cut -c1-240)\"; sleep 20"}

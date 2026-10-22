@@ -1,0 +1,61 @@
+T1 CALL list_windows {}
+T1 CALL list_apps {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=14680181 pid=130180 "41_3.pptx — LibreOffice Impress" 1440x849+0+51 app=libreoffice-impress /   window_id=12582915 pid=6966 "xfce4-panel" 1440x27+0+0 app=Xfce4-panel /   window_id=12582926 pid=6966 "xfce4-panel" 306x4
+   -> ✅ Found 154 app(s): 119 running, 35 installed-not-running. / - systemd (pid 1) / - kthreadd (pid 2) / - pool_workqueue_release (pid 3) / - kworker/R-rcu_gp (pid 4) / - kworker/R-sync_wq (pid 5) / - kworker/R-kvfree_rcu_reclaim (pid 6) / - kworker/R-slub_flushwq (pid 7) / - kworker/R-netns (pid 8) / - kworker/0:0H-events_highpri (pid 10) / - kworker/R-mm_percpu_wq (pid 13) / - ksoftirqd/0 (pid 14) / - rcu_preempt (pid 15)
+T2 CALL get_window_state {"pid": 130180, "tree_format": "markdown"}
+   -> window_id=14680181 pid=130180 elements=149 walk_ms=218 snapshot_id=s00000001 / element_token for row [N] = s00000001:N (row [1] is "s00000001:1") /  / - frame = "41_3.pptx — LibreOffice Impress" /       - [0] button "" (description "Close Document") [actions=[click]] /             - [1] menu "File" [actions=[click]] (closed menu, 30 items; click it to open) /             - [2] menu "Edit" [actions=[click]] (c
+T3 CALL click {"element_token": "s00000001:34"}
+   -> Clicked element [34] (pid 130180) with a real pointer click (delivery_mode=background, path=x11_xsendevent); not verified — confirm with a screenshot.
+T4 CALL get_window_state {"pid": 130180, "tree_format": "markdown", "fresh": true}
+   -> window_id=14680181 pid=130180 elements=149 walk_ms=270 snapshot_id=s00000002 / element_token for row [N] = s00000002:N (row [1] is "s00000002:1") /  / - frame = "41_3.pptx — LibreOffice Impress" /       - [0] button "" (description "Close Document") [actions=[click]] /             - [1] menu "File" [actions=[click]] (closed menu, 30 items; click it to open) /             - [2] menu "Edit" [actions=[click]] (c
+T5 CALL click {"element_token": "s00000001:34", "count": 2}
+   -> ERR element_token is stale or unknown; call get_window_state again to refresh (a current token names its own pid).
+T6 CALL click {"count": 2, "element_token": "s00000002:34"}
+   -> Clicked element [34] (pid 130180) with a real pointer click (delivery_mode=background, path=x11_xsendevent); not verified — confirm with a screenshot.
+T7 CALL get_window_state {"fresh": true, "pid": 130180, "tree_format": "markdown"}
+   -> window_id=14680181 pid=130180 elements=149 walk_ms=227 snapshot_id=s00000003 / element_token for row [N] = s00000003:N (row [1] is "s00000003:1") /  / - frame = "41_3.pptx — LibreOffice Impress" /       - [0] button "" (description "Close Document") [actions=[click]] /             - [1] menu "File" [actions=[click]] (closed menu, 30 items; click it to open) /             - [2] menu "Edit" [actions=[click]] (c
+T8 CALL get_window_state {"fresh": true, "max_elements": 200, "pid": 130180, "tree_format": "elements"}
+   -> window_id=14680181 pid=130180 elements=149 walk_ms=242 snapshot_id=s00000004 /  / (tree is in structuredContent.elements; pass tree_format "markdown" for the compact text rendering) | Invalidated snapshots s00000003: their element_tokens are stale.
+T9 CALL get_window_state {"fresh": true, "pid": 130180, "query": "Features", "tree_format": "elements"}
+   -> window_id=14680181 pid=130180 elements=149 walk_ms=202 snapshot_id=s00000005 /  / (tree is in structuredContent.elements; pass tree_format "markdown" for the compact text rendering) | Invalidated snapshots s00000004: their element_tokens are stale.
+T10 CALL press_key {"key": "pagedown", "window_id": 14680181, "pid": 130180}
+   -> Pressed key 'pagedown' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T11 CALL get_window_state {"fresh": true, "pid": 130180, "query": "Slide 1 of", "tree_format": "markdown"}
+   -> window_id=14680181 pid=130180 elements=150 walk_ms=189 /  /  | Invalidated snapshots s00000005: their element_tokens are stale.
+T12 CALL get_window_state {"fresh": true, "pid": 130180, "query": "of 3", "tree_format": "markdown"}
+   -> window_id=14680181 pid=130180 elements=150 walk_ms=234 snapshot_id=s00000007 / element_token for row [N] = s00000007:N (row [12] is "s00000007:12") /  / - frame = "41_3.pptx — LibreOffice Impress" /       - root pane = "41_3.pptx — LibreOffice Impress" /         - [12] scroll bar "" value="0.0" [actions=[]] (unlabelled scroll bar; 2nd of 10 scroll bars in this window) /           - label = "Slide 2 of 3" /  | I
+T13 CALL press_key {"key": "pagedown", "pid": 130180, "window_id": 14680181}
+   -> Pressed key 'pagedown' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T14 CALL get_window_state {"fresh": true, "pid": 130180, "query": "of 3", "tree_format": "markdown"}
+   -> window_id=14680181 pid=130180 elements=150 walk_ms=232 snapshot_id=s00000008 / element_token for row [N] = s00000008:N (row [12] is "s00000008:12") /  / - frame = "41_3.pptx — LibreOffice Impress" /       - root pane = "41_3.pptx — LibreOffice Impress" /         - [12] scroll bar "" value="0.0" [actions=[]] (unlabelled scroll bar; 2nd of 10 scroll bars in this window) /           - label = "Slide 3 of 3" /  | I
+T15 CALL get_window_state {"fresh": true, "pid": 130180, "tree_format": "markdown"}
+   -> window_id=14680181 pid=130180 elements=150 walk_ms=226 snapshot_id=s00000009 / element_token for row [N] = s00000009:N (row [1] is "s00000009:1") /  / - frame = "41_3.pptx — LibreOffice Impress" /       - [0] button "" (description "Close Document") [actions=[click]] /             - [1] menu "File" [actions=[click]] (closed menu, 30 items; click it to open) /             - [2] menu "Edit" [actions=[click]] (c
+T16 CALL click {"element_token": "s00000009:138", "pid": 130180}
+   -> ERR click: element [138] (pid 130180) has a snapshot frame at (802, 71), but that screen point is owned by menu bar (unnamed) rather than the observed element; a real pointer click there would hit the wrong control. Re-snapshot with get_window_state, or click by pixel from a screenshot.
+T17 CALL click {"element_token": "s00000009:16", "pid": 130180}
+   -> ERR click: element [16] (pid 130180) has a snapshot frame at (141, 61), but that screen point is owned by menu "Insert" rather than the observed element; a real pointer click there would hit the wrong control. Re-snapshot with get_window_state, or click by pixel from a screenshot.
+T18 CALL click {"element_token": "s00000009:4", "pid": 130180}
+   -> Clicked element [4] (pid 130180) with a real pointer click (delivery_mode=foreground, focus_after=target); appeared: popup window 14704820 "LibreOffice 25.2" (279x467 at 122,71). [window_point=(155, 13) screen_point=(155, 64)]
+T19 CALL get_window_state {"fresh": true, "pid": 130180, "query": "Table", "tree_format": "markdown"}
+   -> window_id=14704820 pid=130180 elements=335 walk_ms=309 snapshot_id=s0000000a / element_token for row [N] = s0000000a:N (row [4] is "s0000000a:4") /  / - frame = "41_3.pptx — LibreOffice Impress" /       - [0] button "" (description "Close Document") [actions=[click]] /             - [4] menu "Insert" [actions=[click]] /               - [8] menu item "Table..." [actions=[click]] /               - [170] menu "For
+T20 CALL click {"element_token": "s0000000a:8"}
+   -> ERR click: element [8] (pid 130180) has a snapshot frame at (262, 164), but that screen point is owned by tool bar "Drawing" rather than the observed element; a real pointer click there would hit the wrong control. Re-snapshot with get_window_state, or click by pixel from a screenshot.
+T21 CALL click {"window_id": 14704820, "x": 140, "y": 93, "pid": 130180}
+   -> ERR foreground_unavailable: window 0xe060b4 did not become the active, focused window within 800ms (active=0xe00075, focus_within_target=true, input focus: 0xe060b4 (Soffice, pid 130180 soffice.bin)); no input was sent. The window may be minimized, on another workspace, or blocked by a modal dialog — bring_to_front it or target that dialog instead [window_point=(140, 93) screen_point=(262, 164)]
+T22 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=14680181 pid=130180 "41_3.pptx — LibreOffice Impress" 1440x849+0+51 app=libreoffice-impress /   window_id=12582915 pid=6966 "xfce4-panel" 1440x27+0+0 app=Xfce4-panel /   window_id=12582926 pid=6966 "xfce4-panel" 306x4
+T23 CALL get_window_state {"fresh": true, "pid": 130180, "tree_format": "markdown", "query": "Insert"}
+   -> window_id=14704820 pid=130180 elements=335 walk_ms=314 snapshot_id=s0000000b / element_token for row [N] = s0000000b:N (row [4] is "s0000000b:4") /  / - frame = "41_3.pptx — LibreOffice Impress" /       - [0] button "" (description "Close Document") [actions=[click]] /             - [4] menu "Insert" [actions=[click]] /       - root pane = "41_3.pptx — LibreOffice Impress" /         - [197] scroll bar "" value=
+T24 CALL get_window_state {"fresh": true, "max_elements": 500, "pid": 130180, "query": "", "tree_format": "markdown"}
+   -> Warning: truncated output (original token count: 7453) / Total output lines: 397 /  / window_id=14704820 pid=130180 elements=335 walk_ms=248 snapshot_id=s0000000c / element_token for row [N] = s0000000c:N (row [1] is "s0000000c:1") /  / - frame = "41_3.pptx — LibreOffice Impress" /       - [0] button "" (description "Close Document") [actions=[click]] /             - [1] menu "File" [actions=[click]] (closed menu
+T25 CALL press_key {"key": "down", "pid": 130180, "window_id": 14704820}
+   -> ERR foreground_unavailable: window 0xe060b4 did not become the active, focused window within 1.5s (active=0xe00075, focus_within_target=true, input focus: 0xe060b4 (Soffice, pid 130180 soffice.bin)); no input was sent. The window may be minimized, on another workspace, or blocked by a modal dialog — bring_to_front it or target that dialog instead
+T26 CALL press_key {"key": "down"}
+   -> Pressed key 'down' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T27 CALL click {"element_token": "s0000000c:8"}
+   -> ERR click: element [8] (pid 130180) has a snapshot frame at (262, 164), but that screen point is owned by tool bar "Drawing" rather than the observed element; a real pointer click there would hit the wrong control. Re-snapshot with get_window_state, or click by pixel from a screenshot.
+T28 CALL press_key {"key": "down"}
+   -> Pressed key 'down' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T29 CALL press_key {"key": "down"}
+   -> Pressed key 'down' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T30 CALL press_key {"key": "enter"}

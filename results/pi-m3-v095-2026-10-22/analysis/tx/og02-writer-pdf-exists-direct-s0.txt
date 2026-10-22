@@ -1,0 +1,59 @@
+T1 CALL list_windows {}
+   -> Found 5 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=14680181 pid=96123 "View_Person_Organizational_Summary.docx — LibreOffice Writer" 1440x849+0+51 app=libreoffice-writer /   window_id=12582915 pid=6966 "xfce4-panel" 1440x27+0+0 app=Xfce4-panel /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+969 app=Xfce4-panel /   window_id=12583286 pid=6966 "xfce4-p
+T2 CALL get_window_state {"pid": 96123}
+   -> window_id=14680181 pid=96123 elements=146 walk_ms=1294 snapshot_id=s00000001 / element_token for row [N] = s00000001:N (row [1] is "s00000001:1") /  / - frame = "View_Person_Organizational_Summary.docx — LibreOffice Writer" /       - [0] button "" (description "Close Document") [actions=[click]] /             - [1] menu "File" [actions=[click]] (closed menu, 31 items; click it to open) /             - [2] men
+T3 CALL click {"pid": 96123, "element_token": "s00000001:95"}
+   -> Clicked element [95] (pid 96123). | The application opened its own window 14691656 "Export" and it now holds the focus (focus_outcome=same_app_dialog, left in place); pid-only type_text/press_key go to that window. A popup menu is open, so pid 96123 holds a keyboard grab until it closes.
+T4 CALL get_window_state {"pid": 96123, "include_screenshot": false}
+   -> window_id=14691656 pid=96123 elements=52 walk_ms=1985 snapshot_id=s00000002 / element_token for row [N] = s00000002:N (row [1] is "s00000002:1") /  / - dialog = "Export" /             - [0] text "/home/user/Desktop" value="/home/user/Desktop" [actions=[activate]] /               - [1] text "" [actions=[activate]] (unlabelled text; 2nd of 4 texts in this window) /             - [2] combo box "" [actions=[click
+T5 CALL click {"element_token": "s00000002:47", "pid": 96123}
+   -> Clicked element [47] (pid 96123). | The application opened its own window 14698978 "" and it now holds the focus (focus_outcome=same_app_dialog, left in place); pid-only type_text/press_key go to that window.
+T6 CALL get_window_state {"pid": 96123}
+   -> window_id=14698978 pid=96123 elements=1 walk_ms=2006 snapshot_id=s00000003 / element_token for row [N] = s00000003:N (row [0] is "s00000003:0"); this read stops at row [0], so rows past it from a larger read are not in s00000003 / ⚠️ PARTIAL TREE: the application stopped answering its accessibility API after 0 node(s) (0 discovered but not visited). Every element listed is real; elements after the cut
+T7 CALL get_window_state {"window_id": 14691656, "pid": 96123}
+   -> window_id=14691656 pid=96123 elements=1 walk_ms=1006 snapshot_id=s00000004 / element_token for row [N] = s00000004:N (row [0] is "s00000004:0"); this read stops at row [0], so rows past it from a larger read are not in s00000004 / ⚠️ PARTIAL TREE: the application stopped answering its accessibility API after 0 node(s) (0 discovered but not visited). Every element listed is real; elements after the cut
+T8 CALL get_window_state {"pid": 96123, "window_id": 14698978, "fresh": true}
+   -> window_id=14698978 pid=96123 elements=1 walk_ms=1003 snapshot_id=s00000005 / element_token for row [N] = s00000005:N (row [0] is "s00000005:0"); this read stops at row [0], so rows past it from a larger read are not in s00000005 / ⚠️ PARTIAL TREE: the application stopped answering its accessibility API after 0 node(s) (0 discovered but not visited). Every element listed is real; elements after the cut
+T9 CALL get_window_state {"fresh": true, "pid": 96123, "query": "Replace", "window_id": 14698978}
+   -> window_id=14698978 pid=96123 elements=1 walk_ms=1004 / ⚠️ PARTIAL TREE: the application stopped answering its accessibility API after 0 node(s) (0 discovered but not visited). Every element listed is real; elements after the cut are missing. If the element you need is absent, retry with a larger timeout_ms (e.g. 5000) or narrow with query / max_depth. /  /  | Invalidated snapshots s00000005: their eleme
+T10 CALL press_key {"key": "enter", "pid": 96123}
+   -> Pressed key 'enter' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. [pid-only target resolved to window 14698978 "" (an open dialog)]
+T11 CALL get_window_state {"fresh": true, "pid": 96123}
+   -> window_id=14698978 pid=96123 elements=1 walk_ms=1011 snapshot_id=s00000007 / element_token for row [N] = s00000007:N (row [0] is "s00000007:0"); this read stops at row [0], so rows past it from a larger read are not in s00000007 / ⚠️ PARTIAL TREE: the application stopped answering its accessibility API after 0 node(s) (0 discovered but not visited). Every element listed is real; elements after the cut
+T12 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=14680181 pid=96123 "View_Person_Organizational_Summary.docx — LibreOffice Writer" 1440x849+0+51 app=libreoffice-writer /   window_id=14691656 pid=96123 "Export" 782x444+334+282 app=Soffice /   window_id=14698978 pid=96123 "" 546x115+457+475 app=Soffice /   window_id=12582915 pid=6966 "xfce4-panel" 1440x27+0+0
+T13 CALL get_window_state {"fresh": true, "max_depth": 5, "pid": 96123, "window_id": 14698978}
+   -> window_id=14698978 pid=96123 elements=1 walk_ms=1005 snapshot_id=s00000008 / element_token for row [N] = s00000008:N (row [0] is "s00000008:0"); this read stops at row [0], so rows past it from a larger read are not in s00000008 / ⚠️ PARTIAL TREE: the application stopped answering its accessibility API after 0 node(s) (0 discovered but not visited). Every element listed is real; elements after the cut
+T14 CALL click {"coordinate_frame": "desktop", "x": 730, "y": 532}
+   -> ERR click: x,y given with no pid/window_id requires scope="desktop"; use get_desktop_state to read true screen pixels first.
+T15 CALL click {"coordinate_frame": "desktop", "pid": 96123, "x": 730, "y": 532}
+   -> Clicked at (273.0, 57.0) × 1 (delivery_mode=foreground, path=x11_xtest_fg); not verified — confirm with a screenshot. [window_point=(273, 57) screen_point=(730, 532)] [pid-only target resolved to window 14698978 "" (an open dialog)]
+T16 CALL press_key {"key": "enter", "pid": 96123}
+   -> Pressed key 'enter' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. [pid-only target resolved to window 14698978 "" (an open dialog)]
+T17 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=14680181 pid=96123 "View_Person_Organizational_Summary.docx — LibreOffice Writer" 1440x849+0+51 app=libreoffice-writer /   window_id=14691656 pid=96123 "Export" 782x444+334+282 app=Soffice /   window_id=14698978 pid=96123 "" 546x115+457+475 app=Soffice /   window_id=12582915 pid=6966 "xfce4-panel" 1440x27+0+0
+T18 CALL press_key {"key": "tab", "pid": 96123}
+   -> Pressed key 'tab' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. [pid-only target resolved to window 14698978 "" (an open dialog)]
+T19 CALL press_key {"key": "enter", "pid": 96123}
+   -> Pressed key 'enter' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. [pid-only target resolved to window 14698978 "" (an open dialog)]
+T20 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=14680181 pid=96123 "View_Person_Organizational_Summary.docx — LibreOffice Writer" 1440x849+0+51 app=libreoffice-writer /   window_id=14691656 pid=96123 "Export" 782x444+334+282 app=Soffice /   window_id=14698978 pid=96123 "" 546x115+457+475 app=Soffice /   window_id=12582915 pid=6966 "xfce4-panel" 1440x27+0+0
+T21 CALL click {"coordinate_frame": "desktop", "pid": 96123, "x": 860, "y": 562}
+   -> Clicked at (403.0, 87.0) × 1 (delivery_mode=foreground, path=x11_xtest_fg); not verified — confirm with a screenshot. [window_point=(403, 87) screen_point=(860, 562)] [pid-only target resolved to window 14698978 "" (an open dialog)]
+T22 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=14680181 pid=96123 "View_Person_Organizational_Summary.docx — LibreOffice Writer" 1440x849+0+51 app=libreoffice-writer /   window_id=14691656 pid=96123 "Export" 782x444+334+282 app=Soffice /   window_id=14698978 pid=96123 "" 546x115+457+475 app=Soffice /   window_id=12582915 pid=6966 "xfce4-panel" 1440x27+0+0
+T23 CALL run_actions {"steps": [{"find": {"role": "push button"}, "as": "rows", "max": 20}]}
+   -> ERR [gate] run_actions: 0 GUI action(s) ran. STOPPED: bad step {"find":{"role":"push button"},"as":"rows","max":20}: find/if/read need a pid (give one at the top level). Steps after it did NOT run. / 
+T24 CALL run_actions {"pid": 96123, "steps": [{"find": {"role": "push button"}, "as": "rows", "max": 20}]}
+   -> [gate] run_actions: 0 GUI action(s) ran. All done. / find -> rows: 0 match(es)
+T25 CALL click {"coordinate_frame": "desktop", "pid": 96123, "x": 757, "y": 563}
+   -> Clicked at (300.0, 88.0) × 1 (delivery_mode=foreground, path=x11_xtest_fg); not verified — confirm with a screenshot. [window_point=(300, 88) screen_point=(757, 563)] [pid-only target resolved to window 14698978 "" (an open dialog)]
+T26 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=14680181 pid=96123 "View_Person_Organizational_Summary.docx — LibreOffice Writer" 1440x849+0+51 app=libreoffice-writer /   window_id=14691656 pid=96123 "Export" 782x444+334+282 app=Soffice /   window_id=14698978 pid=96123 "" 546x115+457+475 app=Soffice /   window_id=12582915 pid=6966 "xfce4-panel" 1440x27+0+0
+T27 CALL press_key {"key": "escape", "pid": 96123}
+   -> Pressed key 'escape' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. [pid-only target resolved to window 14698978 "" (an open dialog)]
+T28 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=14680181 pid=96123 "View_Person_Organizational_Summary.docx — LibreOffice Writer" 1440x849+0+51 app=libreoffice-writer /   window_id=14691656 pid=96123 "Export" 782x444+334+282 app=Soffice /   window_id=14698978 pid=96123 "" 546x115+457+475 app=Soffice /   window_id=12582915 pid=6966 "xfce4-panel" 1440x27+0+0
+T29 CALL press_key {"key": "r", "modifiers": ["alt"], "pid": 96123}
+   -> Pressed key 'r' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. [pid-only target resolved to window 14698978 "" (an open dialog)]
+T30 CALL list_windows {}

@@ -1,0 +1,68 @@
+T1 CALL list_apps {}
+T1 CALL list_windows {}
+   -> ✅ Found 156 app(s): 119 running, 37 installed-not-running. / - instabox-guest- (pid 1097) / - Xvnc (pid 6862) / - xfce4-session (pid 6891) / - xfwm4 (pid 6956) / - xfsettingsd (pid 6961) / - Panel (pid 6966) / - xfdesktop (pid 6982) / - wrapper-2.0 (pid 6992) / - wrapper-2.0 (pid 6997) / - instabox-term (pid 7657) / - bash (pid 7671) / - bash (pid 7882) / - python (pid 7884) / - python (pid 7895) / - Application Finder (pid 82
+   -> Found 3 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+851 app=Xfce4-panel /   window_id=12582915 pid=6966 "xfce4-panel" 1440x27+0+0 app=Xfce4-panel
+T2 SAY Chrome isn't running yet. Let me find and launch it.
+T2 CALL list_apps {"all": true}
+   -> ✅ Found 156 app(s): 119 running, 37 installed-not-running. / - systemd (pid 1) / - kthreadd (pid 2) / - pool_workqueue_release (pid 3) / - kworker/R-rcu_gp (pid 4) / - kworker/R-sync_wq (pid 5) / - kworker/R-kvfree_rcu_reclaim (pid 6) / - kworker/R-slub_flushwq (pid 7) / - kworker/R-netns (pid 8) / - kworker/0:0H-events_highpri (pid 10) / - kworker/R-mm_percpu_wq (pid 13) / - ksoftirqd/0 (pid 14) / - rcu_preempt (pid 15)
+T3 CALL get_window_state {"pid": 82341}
+   -> ERR No windows found for pid 82341. Provide window_id.
+T4 CALL list_windows {}
+T4 CALL get_window_state {"pid": 7657, "window_id": 12582926}
+   -> Found 3 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+851 app=Xfce4-panel /   window_id=12582915 pid=6966 "xfce4-panel" 1440x27+0+0 app=Xfce4-panel
+   -> ERR Window target pid 7657, window_id 12582926 is stale or no longer running; refresh list_windows.
+T5 CALL get_window_state {"pid": 6982, "window_id": 16777260}
+   -> window_id=16777260 pid=6982 elements=0 walk_ms=23 snapshot_id=s00000001 / element_token for row [N] = s00000001:N (row [0] is "s00000001:0") /  / - frame = "Desktop" / 
+T6 CALL get_window_state {"pid": 6966, "window_id": 12582926}
+T6 CALL get_window_state {"pid": 6966, "window_id": 12582915}
+   -> window_id=12582926 pid=6966 elements=6 walk_ms=243 snapshot_id=s00000003 / element_token for row [N] = s00000003:N (row [1] is "s00000003:1") /  /       - [0] toggle button "Show Desktop" (description "Minimize all open windows and show the desktop") [actions=[click]] /         - [1] button "Terminal Emulator" (description "Use the command line") [actions=[click]] /         - [2] button "File Manager" (desc
+   -> window_id=12582915 pid=6966 elements=3 walk_ms=204 snapshot_id=s00000002 / element_token for row [N] = s00000002:N (row [1] is "s00000002:1") /  /       - [0] toggle button "Applications" [actions=[click]] /       - [1] toggle button "2026-10-22" [actions=[click]] /                 - [2] toggle button "sandbox" [actions=[click]] / 
+T7 CALL click {"pid": 6966, "window_id": 12582926, "element_token": "s00000003:3"}
+   -> Clicked element [3] (pid 6966). | A popup menu is open, so pid 6966 holds a keyboard grab until it closes. | [gate] Window right after the action (snapshot s00000004; tokens are s00000004:N, older tokens are stale). Nothing in the tree changed since snapshot s00000003 (6 rows); its [N] are valid as s00000004:N. / 
+T8 CALL get_window_state {"pid": 6966, "window_id": 12582926, "fresh": true}
+   -> window_id=12582926 pid=6966 elements=6 walk_ms=120 snapshot_id=s00000005 / element_token for row [N] = s00000005:N (row [1] is "s00000005:1") /  /       - [0] toggle button "Show Desktop" (description "Minimize all open windows and show the desktop") [actions=[click]] /         - [1] button "Terminal Emulator" (description "Use the command line") [actions=[click]] /         - [2] button "File Manager" (desc
+T9 CALL list_windows {}
+   -> Found 3 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+851 app=Xfce4-panel /   window_id=12582915 pid=6966 "xfce4-panel" 1440x27+0+0 app=Xfce4-panel
+T10 CALL press_key {"key": "escape", "pid": 6966, "window_id": 12582926}
+   -> Pressed key 'escape' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. | [gate] Window right after the action (snapshot s00000006; tokens are s00000006:N, older tokens are stale). Nothing in the tree changed since snapshot s00000005 (6 rows); its [N] are valid as s00000006:N. / 
+T11 CALL list_windows {}
+T11 CALL list_apps {"all": false}
+   -> Found 3 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=12582915 pid=6966 "xfce4-panel" 1440x27+0+0 app=Xfce4-panel /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+851 app=Xfce4-panel
+   -> ✅ Found 156 app(s): 119 running, 37 installed-not-running. / - instabox-guest- (pid 1097) / - Xvnc (pid 6862) / - xfce4-session (pid 6891) / - xfwm4 (pid 6956) / - xfsettingsd (pid 6961) / - Panel (pid 6966) / - xfdesktop (pid 6982) / - wrapper-2.0 (pid 6992) / - wrapper-2.0 (pid 6997) / - instabox-term (pid 7657) / - bash (pid 7671) / - bash (pid 7882) / - python (pid 7884) / - python (pid 7895) / - Application Finder (pid 82
+T12 CALL click {"element_token": "s00000003:1", "pid": 6966, "window_id": 12582926}
+   -> Clicked element [1] (pid 6966) with a real pointer click (delivery_mode=foreground, focus_after=elsewhere); not verified — confirm with a screenshot. [window_point=(81, 25) screen_point=(648, 876)] | [gate] your token was stale; re-bound to s00000007:1 from a fresh tree read. Older tokens for this window are now stale. | [gate] Window right after the action (snapshot s00000008; tokens are s0000000
+T13 CALL list_windows {}
+   -> Found 4 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457283 pid=98998 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+5+56 app=Xfce4-terminal /   window_id=12582915 pid=6966 "xfce4-panel" 1440x27+0+0 app=Xfce4-panel /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+851 app=Xfce4-panel
+T14 CALL get_window_state {"pid": 98998, "window_id": 31457283}
+   -> window_id=31457283 pid=98998 elements=20 walk_ms=162 snapshot_id=s00000009 / element_token for row [N] = s00000009:N (row [1] is "s00000009:1") /  / - frame = "Terminal - sandbox@instabox-gui-pi2: /data/workspace" /       - [0] menu "File" [actions=[click]] (closed menu, 0 items; click it to open) /       - [1] menu "Edit" [actions=[click]] (closed menu, 0 items; click it to open) /       - [2] menu "View" [a
+T15 CALL type_text {"element_token": "s00000009:17", "pid": 98998, "text": "for b in google-chrome google-chrome-stable chromium chromium-browser firefox; do command -v $b && $b --version 2>/dev/null; done; ls /usr/share/applications 2>/dev/null | grep -i -E 'chrome|chromium|firefox'"}
+   -> Typed 208 character(s) (terminal emulator: pty/XTest key events).
+T16 CALL press_key {"key": "enter", "pid": 98998, "window_id": 31457283}
+   -> Pressed key 'enter' (delivery_mode=foreground). | [gate] Window right after the action (snapshot s0000000a; tokens are s0000000a:N, older tokens are stale). Nothing in the tree changed since snapshot s00000009 (21 rows); its [N] are valid as s0000000a:N. / 
+T17 CALL get_window_state {"fresh": true, "pid": 98998, "window_id": 31457283}
+   -> window_id=31457283 pid=98998 elements=20 walk_ms=155 snapshot_id=s0000000b / element_token for row [N] = s0000000b:N (row [1] is "s0000000b:1") /  / - frame = "Terminal - sandbox@instabox-gui-pi2: /data/workspace" /       - [0] menu "File" [actions=[click]] (closed menu, 0 items; click it to open) /       - [1] menu "Edit" [actions=[click]] (closed menu, 0 items; click it to open) /       - [2] menu "View" [a
+T18 CALL click {"element_token": "s00000008:3", "pid": 6966, "window_id": 12582926}
+   -> Clicked element [3] (pid 6966) with a real pointer click (delivery_mode=foreground, focus_after=target); closed: popup window 12768292 "xfce4-panel" (229x70 at 534,782). [window_point=(177, 25) screen_point=(744, 876)] | [gate] Window right after the action (snapshot s0000000c; tokens are s0000000c:N, older tokens are stale). Nothing in the tree changed since snapshot s00000008 (6 rows); its [N] a
+T19 CALL list_windows {}
+   -> Found 5 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457283 pid=98998 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+5+56 app=Xfce4-terminal /   window_id=35651587 pid=99070 "DuckDuckGo Private Search Engine - Chromium" 1050x853+10+37 app=Chromium /   window_id=12582915 pid=6966 "xfce4-panel" 1440x27+0+0 app=Xfce4-panel /   window_id=12582926 
+T20 CALL click {"element_token": "s0000000c:4", "pid": 6966, "window_id": 12582926}
+   -> Clicked element [4] (pid 6966) with a real pointer click (delivery_mode=foreground, focus_after=elsewhere); closed: popup window 12770581 "xfce4-panel" (186x70 at 651,782). [window_point=(225, 25) screen_point=(792, 876)] | [gate] Window right after the action (snapshot s0000000d; tokens are s0000000d:N, older tokens are stale). Nothing in the tree changed since snapshot s0000000c (6 rows); its [N
+T21 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457283 pid=98998 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+5+56 app=Xfce4-terminal /   window_id=35651587 pid=99070 "DuckDuckGo Private Search Engine - Chromium" 1050x853+10+37 app=Chromium /   window_id=41957591 pid=82341 "Application Finder" 580x422+435+281 app=Xfce4-appfinder /   win
+T22 CALL get_window_state {"pid": 82341, "window_id": 41957591}
+   -> window_id=41957591 pid=82341 elements=156 walk_ms=1141 snapshot_id=s0000000e / element_token for row [N] = s0000000e:N (row [1] is "s0000000e:1") /  / - frame = "Application Finder" /       - [0] text "" [actions=[activate]] (unlabelled text; 1st of 1 text in this window) /         - icon = "go-up-symbolic" /     - [1] split pane "" value="180.0" [actions=[]] /           - [2] table column header "" [actions=[c
+T23 CALL get_window_state {"pid": 99070, "window_id": 35651587}
+   -> window_id=35651587 pid=99070 elements=126 walk_ms=2020 snapshot_id=s0000000f / element_token for row [N] = s0000000f:N (row [1] is "s0000000f:1"); this read stops at row [125], so rows past it from a larger read are not in s0000000f / ⚠️ PARTIAL TREE: the 2000 ms timeout_ms budget ran out after 346 node(s) (1 discovered but not visited). Every element listed is real; elements after the cut are missing
+T24 CALL click {"element_token": "s0000000f:13", "pid": 99070, "window_id": 35651587}
+   -> Clicked element [13] (pid 99070) with a real pointer click (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. [window_point=(570, 68) screen_point=(580, 105)] | [gate] Window right after the action (snapshot s00000010; tokens are s00000010:N, older tokens are stale). The tree is partial here (grid/canvas); read with include_screenshot:true before aiming by x/
+T25 CALL type_text {"element_token": "s00000010:13", "pid": 99070, "text": "chrome://settings/languages", "window_id": 35651587}
+   -> Typed 27 character(s) as real key events (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T26 CALL press_key {"key": "enter", "pid": 99070, "window_id": 35651587}
+   -> Pressed key 'enter' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. | [gate] Window right after the action (snapshot s00000011; tokens are s00000011:N, older tokens are stale). The tree is partial here (grid/canvas); read with include_screenshot:true before aiming by x/y. / - [0] frame "Settings - Languages - Chromium" [actions=[doDefault
+T27 CALL get_window_state {"query": "language", "pid": 99070, "window_id": 35651587, "fresh": true}
+   -> window_id=35651587 pid=99070 elements=44 walk_ms=1013 snapshot_id=s00000012 / element_token for row [N] = s00000012:N (row [1] is "s00000012:1"); this read stops at row [28], so rows past it from a larger read are not in s00000012 / ⚠️ PARTIAL TREE: the 1000 ms timeout_ms budget ran out after 154 node(s) (32 discovered but not visited). Every element listed is real; elements after the cut are missing.
+T28 CALL get_window_state {"fresh": true, "max_elements": 3000, "pid": 99070, "window_id": 35651587}
+   -> window_id=35651587 pid=99070 elements=48 walk_ms=1027 snapshot_id=s00000013 / element_token for row [N] = s00000013:N (row [1] is "s00000013:1"); this read stops at row [47], so rows past it from a larger read are not in s00000013 / ⚠️ PARTIAL TREE: the 1000 ms timeout_ms budget ran out after 159 node(s) (47 discovered but not visited). Every element listed is real; elements after the cut are missing.
+T29 CALL get_window_state {"fresh": true, "max_depth": 30, "query": "Add", "pid": 99070, "window_id": 35651587}
+   -> window_id=35651587 pid=99070 elements=35 walk_ms=1019 snapshot_id=s00000014 / element_token for row [N] = s00000014:N (row [1] is "s00000014:1"); this read stops at row [14], so rows past it from a larger read are not in s00000014 / ⚠️ PARTIAL TREE: the 1000 ms timeout_ms budget ran out after 144 node(s) (34 discovered but not visited). Every element listed is real; elements after the cut are missing.
+T30 CALL get_window_state {"fresh": true, "query": "Add languages", "pid": 99070, "window_id": 35651587}

@@ -1,0 +1,63 @@
+T1 CALL list_apps {}
+T1 CALL list_windows {}
+   -> ✅ Found 156 app(s): 122 running, 34 installed-not-running. / - instabox-guest- (pid 1097) / - Xvnc (pid 6862) / - xfce4-session (pid 6891) / - xfwm4 (pid 6956) / - xfsettingsd (pid 6961) / - Panel (pid 6966) / - xfdesktop (pid 6982) / - wrapper-2.0 (pid 6992) / - wrapper-2.0 (pid 6997) / - instabox-term (pid 7657) / - bash (pid 7671) / - bash (pid 7882) / - python (pid 7884) / - python (pid 7895) / - Application Finder (pid 82
+   -> Found 5 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651587 pid=142019 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+5+56 app=Xfce4-terminal /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+851 app=Xfce4-panel /   window_id=12582915 pid=6966 "
+T2 CALL get_window_state {"pid": 142019, "window_id": 35651587}
+   -> window_id=35651587 pid=142019 elements=20 walk_ms=23 snapshot_id=s00000001 / element_token for row [N] = s00000001:N (row [1] is "s00000001:1") /  / - frame = "Terminal - sandbox@instabox-gui-pi2: /data/workspace" /       - [0] menu "File" [actions=[click]] (closed menu, 0 items; click it to open) /       - [1] menu "Edit" [actions=[click]] (closed menu, 0 items; click it to open) /       - [2] menu "View" [a
+T3 CALL click {"pid": 142019, "element_token": "s00000001:17"}
+   -> Clicked element [17] (pid 142019) with a real pointer click (delivery_mode=background, path=x11_xsendevent); not verified — confirm with a screenshot. | [gate] Window right after the action (snapshot s00000002; tokens are s00000002:N, older tokens are stale). Nothing in the tree changed since snapshot s00000001 (21 rows); its [N] are valid as s00000002:N. / 
+T4 CALL type_text {"pid": 142019, "text": "pwd; echo '---'; ls -la; echo '---'; find . -name '*failed.ipynb' | head -50"}
+   -> Typed 76 character(s) (terminal emulator: pty/XTest key events).
+T5 CALL press_key {"pid": 142019, "key": "enter"}
+   -> Pressed key 'enter' (delivery_mode=foreground). | [gate] Window right after the action (snapshot s00000003; tokens are s00000003:N, older tokens are stale). Only rows that changed since snapshot s00000002 are shown (3 of 21 rows, with their parents); every other row is unchanged and keeps its [N], so s00000003:N tokens work for those too. / - frame = "Terminal - sandbox@instabox-gui-pi2: /data/works
+T6 CALL get_window_state {"pid": 142019, "tree_format": "elements", "query": "terminal"}
+   -> window_id=35651587 pid=142019 elements=20 walk_ms=23 snapshot_id=s00000005 /  / (tree is in structuredContent.elements; pass tree_format "markdown" for the compact text rendering) | Invalidated snapshots s00000004: their element_tokens are stale.
+T7 CALL get_window_state {"pid": 82341}
+   -> ERR No windows found for pid 82341. Provide window_id.
+T8 CALL type_text {"pid": 142019, "text": "printf '\\033]0;CWD:%s\\007' \"$(pwd)\""}
+T8 CALL list_windows {}
+   -> Typed 35 character(s) (terminal emulator: pty/XTest key events).
+   -> Found 5 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651587 pid=142019 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+5+56 app=Xfce4-terminal /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+851 app=Xfce4-panel /   window_id=12582915 pid=6966 "
+T9 CALL press_key {"pid": 142019, "key": "enter"}
+   -> Pressed key 'enter' (delivery_mode=foreground). | [gate] Window right after the action (snapshot s00000006; tokens are s00000006:N, older tokens are stale). Only rows that changed since snapshot s00000003 are shown (3 of 21 rows, with their parents); every other row is unchanged and keeps its [N], so s00000006:N tokens work for those too. / - frame = "Terminal - sandbox@instabox-gui-pi2: /data/works
+T10 CALL list_windows {}
+   -> Found 5 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651587 pid=142019 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+5+56 app=Xfce4-terminal /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+851 app=Xfce4-panel /   window_id=12582915 pid=6966 "
+T11 CALL type_text {"pid": 142019, "text": "printf '\\033]0;ZZZ-Hello-123\\007'"}
+   -> Typed 33 character(s) (terminal emulator: pty/XTest key events).
+T12 CALL press_key {"pid": 142019, "key": "enter"}
+   -> Pressed key 'enter' (delivery_mode=foreground). | [gate] Window right after the action (snapshot s00000007; tokens are s00000007:N, older tokens are stale). Only rows that changed since snapshot s00000006 are shown (3 of 21 rows, with their parents); every other row is unchanged and keeps its [N], so s00000007:N tokens work for those too. / - frame = "Terminal - sandbox@instabox-gui-pi2: /data/works
+T13 CALL list_windows {}
+   -> Found 5 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651587 pid=142019 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+5+56 app=Xfce4-terminal /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+851 app=Xfce4-panel /   window_id=12582915 pid=6966 "
+T14 CALL type_text {"pid": 142019, "text": "{ echo \"=== pwd ===\"; pwd; echo \"=== finds in /data/workspace ===\"; ( cd /data/workspace && find . -name '*failed.ipynb' 2>/dev/null | sort ); echo \"=== finds in /tmp ===\"; ( cd /tmp && find . -name '*failed.ipynb' 2>/dev/null | sort ); } > /tmp/fail_report.txt 2>&1; m
+   -> Typed 299 character(s) (terminal emulator: pty/XTest key events).
+T15 CALL press_key {"pid": 142019, "key": "enter"}
+   -> Pressed key 'enter' (delivery_mode=foreground). | [gate] Window right after the action (snapshot s00000008; tokens are s00000008:N, older tokens are stale). Only rows that changed since snapshot s00000007 are shown (3 of 21 rows, with their parents); every other row is unchanged and keeps its [N], so s00000008:N tokens work for those too. / - frame = "Terminal - sandbox@instabox-gui-pi2: /data/works
+T16 CALL list_windows {}
+   -> Found 5 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651587 pid=142019 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+5+56 app=Xfce4-terminal /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+851 app=Xfce4-panel /   window_id=12582915 pid=6966 "
+T17 CALL list_windows {}
+   -> Found 5 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651587 pid=142019 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+5+56 app=Xfce4-terminal /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+851 app=Xfce4-panel /   window_id=12582915 pid=6966 "
+T18 CALL type_text {"pid": 142019, "text": "zenity --text-info --width=750 --height=550 --filename=/tmp/fail_report.txt &"}
+   -> Typed 77 character(s) (terminal emulator: pty/XTest key events).
+T19 CALL press_key {"pid": 142019, "key": "enter"}
+   -> Pressed key 'enter' (delivery_mode=foreground). | [gate] Window right after the action (snapshot s00000009; tokens are s00000009:N, older tokens are stale). Only rows that changed since snapshot s00000008 are shown (3 of 21 rows, with their parents); every other row is unchanged and keeps its [N], so s00000009:N tokens work for those too. / - frame = "Terminal - sandbox@instabox-gui-pi2: /data/works
+T20 CALL list_windows {}
+   -> Found 5 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651587 pid=142019 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+5+56 app=Xfce4-terminal /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+851 app=Xfce4-panel /   window_id=12582915 pid=6966 "
+T21 CALL type_text {"pid": 142019, "text": "xfce4-appfinder &"}
+   -> Typed 17 character(s) (terminal emulator: pty/XTest key events).
+T22 CALL press_key {"pid": 142019, "key": "enter"}
+   -> Pressed key 'enter' (delivery_mode=foreground). | [gate] Window right after the action (snapshot s0000000a; tokens are s0000000a:N, older tokens are stale). Only rows that changed since snapshot s00000009 are shown (3 of 21 rows, with their parents); every other row is unchanged and keeps its [N], so s0000000a:N tokens work for those too. / - frame = "Terminal - sandbox@instabox-gui-pi2: /data/works
+T23 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651587 pid=142019 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+5+56 app=Xfce4-terminal /   window_id=42001879 pid=82341 "Application Finder" 580x422+435+281 app=Xfce4-appfinder /   window_id=125829
+T24 CALL get_window_state {"pid": 82341, "window_id": 42001879}
+   -> window_id=42001879 pid=82341 elements=156 walk_ms=136 snapshot_id=s0000000b / element_token for row [N] = s0000000b:N (row [1] is "s0000000b:1") /  / - frame = "Application Finder" /       - [0] text "" [actions=[activate]] (unlabelled text; 1st of 1 text in this window) /         - icon = "go-up-symbolic" /     - [1] split pane "" value="180.0" [actions=[]] /           - [2] table column header "" [actions=[cl
+T25 CALL type_text {"pid": 142019, "text": "libreoffice --writer --norestore --nodefault /tmp/fail_report.txt &"}
+   -> Typed 67 character(s) (terminal emulator: pty/XTest key events).
+T26 CALL press_key {"pid": 142019, "key": "enter"}
+   -> Pressed key 'enter' (delivery_mode=foreground). | [gate] Window right after the action (snapshot s0000000c; tokens are s0000000c:N, older tokens are stale). Only rows that changed since snapshot s0000000a are shown (3 of 21 rows, with their parents); every other row is unchanged and keeps its [N], so s0000000c:N tokens work for those too. / - frame = "Terminal - sandbox@instabox-gui-pi2: /data/works
+T27 CALL list_windows {}
+   -> Found 7 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651587 pid=142019 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+5+56 app=Xfce4-terminal /   window_id=42001879 pid=82341 "Application Finder" 580x422+435+281 app=Xfce4-appfinder /   window_id=377488
+T28 CALL get_window_state {"pid": 142265, "window_id": 37748853, "max_elements": 300}
+   -> window_id=37748853 pid=142265 elements=122 walk_ms=202 snapshot_id=s0000000d / element_token for row [N] = s0000000d:N (row [1] is "s0000000d:1") /  / - frame = "fail_report.txt — LibreOffice Writer" /       - [0] button "" (description "Close Document") [actions=[click]] /             - [1] menu "File" [actions=[click]] (closed menu, 31 items; click it to open) /             - [2] menu "Edit" [actions=[click
+T29 CALL type_text {"pid": 142019, "text": "{ echo \"=== ipynb files (all) ===\"; find / -path /proc -prune -o -path /sys -prune -o -path /dev -prune -o -path /run -prune -o -name '*ipynb' -print 2>/dev/null | sort; echo \"=== done ===\"; } > /tmp/fail_report2.txt 2>&1; libreoffice --writer --norestore --nodefault /tm
+   -> Typed 291 character(s) (terminal emulator: pty/XTest key events).
+T30 CALL press_key {"pid": 142019, "key": "enter"}

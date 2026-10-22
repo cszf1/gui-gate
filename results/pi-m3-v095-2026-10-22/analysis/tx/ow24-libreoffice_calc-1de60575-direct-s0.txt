@@ -1,0 +1,64 @@
+T1 SAY I'll start by looking at what's on the desktop and what apps are available.
+T1 CALL list_apps {}
+T1 CALL list_windows {}
+   -> ✅ Found 153 app(s): 118 running, 35 installed-not-running. / - systemd (pid 1) / - kthreadd (pid 2) / - pool_workqueue_release (pid 3) / - kworker/R-rcu_gp (pid 4) / - kworker/R-sync_wq (pid 5) / - kworker/R-kvfree_rcu_reclaim (pid 6) / - kworker/R-slub_flushwq (pid 7) / - kworker/R-netns (pid 8) / - kworker/0:0H-events_highpri (pid 10) / - kworker/R-mm_percpu_wq (pid 13) / - ksoftirqd/0 (pid 14) / - rcu_preempt (pid 15)
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=29360245 pid=125938 "EntireSummerSales.xlsx — LibreOffice Calc" 1440x849+0+51 app=libreoffice-calc /   window_id=12582915 pid=6966 "xfce4-panel" 1440x27+0+0 app=Xfce4-panel /   window_id=12582926 pid=6966 "xfce4-panel
+T2 CALL get_window_state {"pid": 125938}
+   -> window_id=29360245 pid=125938 elements=117 walk_ms=327 snapshot_id=s00000001 / element_token for row [N] = s00000001:N (row [1] is "s00000001:1"); this read stops at row [116], so rows past it from a larger read are not in s00000001 / ⚠️ PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 336 node(s) (0 discovered but not visited)
+T3 CALL get_window_state {"pid": 7657}
+   -> ERR No windows found for pid 7657. Provide window_id.
+T4 CALL list_windows {"app": "instabox"}
+T4 CALL list_windows {"app": "term"}
+   -> Found 0 windows:
+   -> Found 0 windows:
+T5 CALL list_apps {"all": true}
+   -> ✅ Found 153 app(s): 118 running, 35 installed-not-running. / - systemd (pid 1) / - kthreadd (pid 2) / - pool_workqueue_release (pid 3) / - kworker/R-rcu_gp (pid 4) / - kworker/R-sync_wq (pid 5) / - kworker/R-kvfree_rcu_reclaim (pid 6) / - kworker/R-slub_flushwq (pid 7) / - kworker/R-netns (pid 8) / - kworker/0:0H-events_highpri (pid 10) / - kworker/R-mm_percpu_wq (pid 13) / - ksoftirqd/0 (pid 14) / - rcu_preempt (pid 15)
+T6 CALL click {"pid": 125938, "element_token": "s00000001:59"}
+   -> Clicked element [59] (pid 125938). | A popup menu is open, so pid 125938 holds a keyboard grab until it closes.
+T7 CALL get_window_state {"pid": 125938, "max_depth": 40}
+   -> window_id=29360245 pid=125938 elements=110 walk_ms=181 snapshot_id=s00000002 / element_token for row [N] = s00000002:N (row [1] is "s00000002:1"); this read stops at row [109], so rows past it from a larger read are not in s00000002 / ⚠️ PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 312 node(s) (0 discovered but not visited)
+T8 CALL click {"pid": 125938, "window_id": 29360245, "x": 400, "y": 400}
+   -> Clicked at (412.6, 412.6) × 1 (delivery_mode=background, path=x11_atspi); selected: table cell "D1088" (Selection.SelectChild on its container, read back as selected) — the item is selected. [window_point=(412, 412) screen_point=(413, 464)] | focus: cell O1090
+T9 CALL press_key {"pid": 125938, "key": "home", "modifiers": ["ctrl"], "window_id": 29360245}
+   -> Pressed key 'home' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T10 CALL get_window_state {"pid": 125938, "max_depth": 8, "include_screenshot": false}
+   -> window_id=29360245 pid=125938 elements=87 walk_ms=147 snapshot_id=s00000003 / element_token for row [N] = s00000003:N (row [1] is "s00000003:1"); this read stops at row [86], so rows past it from a larger read are not in s00000003 / ⚠️ PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 246 node(s) (0 discovered but not visited). 
+T11 CALL get_window_state {"pid": 82341, "max_depth": 30}
+   -> ERR No windows found for pid 82341. Provide window_id.
+T12 CALL press_key {"key": "home", "modifiers": ["ctrl"], "pid": 125938, "window_id": 29360245}
+   -> Pressed key 'home' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T13 CALL click {"element_token": "s00000003:53", "pid": 125938}
+   -> ERR click: element [53] (pid 125938) has a snapshot frame at (932, 71), but that screen point is owned by menu bar (unnamed) rather than the observed element; a real pointer click there would hit the wrong control. Re-snapshot with get_window_state, or click by pixel from a screenshot.
+T14 CALL get_window_state {"max_depth": 12, "pid": 125938, "include_screenshot": false}
+   -> window_id=29360245 pid=125938 elements=90 walk_ms=277 snapshot_id=s00000004 / element_token for row [N] = s00000004:N (row [1] is "s00000004:1"); this read stops at row [89], so rows past it from a larger read are not in s00000004 / ⚠️ PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 282 node(s) (0 discovered but not visited). 
+T15 CALL click {"element_token": "s00000004:56", "pid": 125938}
+   -> ERR click: element [56] (pid 125938) has a snapshot frame at (932, 71), but that screen point is owned by menu bar (unnamed) rather than the observed element; a real pointer click there would hit the wrong control. Re-snapshot with get_window_state, or click by pixel from a screenshot.
+T16 CALL press_key {"key": "i", "modifiers": ["alt"], "pid": 125938, "window_id": 29360245}
+   -> Pressed key 'i' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T17 CALL get_window_state {"include_screenshot": false, "max_depth": 20, "pid": 125938}
+   -> Warning: truncated output (original token count: 5702) / Total output lines: 306 /  / window_id=29387697 pid=125938 elements=250 walk_ms=281 snapshot_id=s00000005 / element_token for row [N] = s00000005:N (row [1] is "s00000005:1"); this read stops at row [249], so rows past it from a larger read are not in s00000005 / ⚠️ PARTIAL TREE: the max_elements node budget ran out after 465 node(s) (54 discovered bu
+T18 CALL click {"element_token": "s00000005:8", "pid": 125938}
+   -> ERR click: element [8] (pid 125938) has a snapshot frame at (296, 164), but that screen point is owned by panel "Font Name" rather than the observed element; a real pointer click there would hit the wrong control. Re-snapshot with get_window_state, or click by pixel from a screenshot.
+T19 CALL press_key {"key": "p", "pid": 125938, "window_id": 29360245}
+   -> Pressed key 'p' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T20 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=29360245 pid=125938 "EntireSummerSales.xlsx — LibreOffice Calc" 1440x849+0+51 app=libreoffice-calc /   window_id=29387767 pid=125938 "Special Characters" 904x559+273+225 app=Soffice /   window_id=12582915 pid=6966 "xf
+T21 CALL get_window_state {"include_screenshot": false, "max_depth": 30, "pid": 125938, "window_id": 29387767}
+   -> window_id=29387767 pid=125938 elements=13 walk_ms=169 snapshot_id=s00000006 / element_token for row [N] = s00000006:N (row [1] is "s00000006:1"); this read stops at row [12], so rows past it from a larger read are not in s00000006 / ⚠️ PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 397 node(s) (0 discovered but not visited). 
+T22 CALL press_key {"key": "escape", "pid": 125938, "window_id": 29387767}
+   -> Pressed key 'escape' as a real key event (delivery_mode=foreground, focus_after=same_pid); not verified — confirm with a screenshot.
+T23 CALL press_key {"key": "i", "modifiers": ["alt"], "pid": 125938, "window_id": 29360245}
+   -> Pressed key 'i' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T24 CALL press_key {"key": "home", "pid": 125938, "window_id": 29360245}
+   -> Pressed key 'home' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T25 CALL press_key {"key": "down", "pid": 125938, "window_id": 29360245}
+   -> Pressed key 'down' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T26 CALL press_key {"key": "down", "pid": 125938, "window_id": 29360245}
+   -> Pressed key 'down' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T27 CALL press_key {"key": "down", "pid": 125938, "window_id": 29360245}
+   -> Pressed key 'down' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T28 CALL press_key {"key": "enter", "pid": 125938, "window_id": 29360245}
+   -> Pressed key 'enter' as a real key event (delivery_mode=foreground, focus_after=same_pid); not verified — confirm with a screenshot.
+T29 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=29360245 pid=125938 "EntireSummerSales.xlsx — LibreOffice Calc" 1440x849+0+51 app=libreoffice-calc /   window_id=29421462 pid=125938 "Select Source" 282x173+584+418 app=Soffice /   window_id=12582915 pid=6966 "xfce4-p
+T30 CALL get_window_state {"include_screenshot": false, "max_depth": 30, "pid": 125938, "window_id": 29421462}

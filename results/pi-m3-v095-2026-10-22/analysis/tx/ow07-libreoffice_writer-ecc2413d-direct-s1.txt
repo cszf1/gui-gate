@@ -1,0 +1,55 @@
+T1 CALL list_apps {}
+   -> ✅ Found 158 app(s): 123 running, 35 installed-not-running. / - systemd (pid 1) / - kthreadd (pid 2) / - pool_workqueue_release (pid 3) / - kworker/R-rcu_gp (pid 4) / - kworker/R-sync_wq (pid 5) / - kworker/R-kvfree_rcu_reclaim (pid 6) / - kworker/R-slub_flushwq (pid 7) / - kworker/R-netns (pid 8) / - kworker/0:0H-events_highpri (pid 10) / - kworker/R-mm_percpu_wq (pid 13) / - ksoftirqd/0 (pid 14) / - rcu_preempt (pid 15)
+T2 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=29360245 pid=136877 "Sample_Statutory_Declaration.docx — LibreOffice Writer" 1440x849+0+51 app=libreoffice-writer /   window_id=12582915 pid=6966 "xfce4-panel" 1440x27+0+0 app=Xfce4-panel /   window_id=12582926 pid=69
+T3 CALL get_window_state {"pid": 136877}
+   -> window_id=29360245 pid=136877 elements=124 walk_ms=127 snapshot_id=s00000001 / element_token for row [N] = s00000001:N (row [1] is "s00000001:1") /  / - frame = "Sample_Statutory_Declaration.docx — LibreOffice Writer" /       - [0] button "" (description "Close Document") [actions=[click]] /             - [1] menu "File" [actions=[click]] (closed menu, 31 items; click it to open) /             - [2] menu "Edi
+T4 CALL get_window_state {"pid": 136877, "tree_format": "elements"}
+   -> window_id=29360245 pid=136877 elements=124 walk_ms=110 snapshot_id=s00000002 /  / (tree is in structuredContent.elements; pass tree_format "markdown" for the compact text rendering) | Invalidated snapshots s00000001: their element_tokens are stale.
+T5 CALL click {"pid": 136877, "element_token": "s00000002:29"}
+   -> Clicked element [29] (pid 136877) with a real pointer click (delivery_mode=background, path=x11_xsendevent); not verified — confirm with a screenshot.
+T6 CALL get_window_state {"pid": 136877, "query": "Page", "since": "latest"}
+   -> window_id=29360245 pid=136877 elements=124 walk_ms=149 snapshot_id=s00000003 / since=latest: no earlier read of this window with the same query, max_elements and max_depth; full read follows. / element_token for row [N] = s00000003:N (row [13] is "s00000003:13") /  / - frame = "Sample_Statutory_Declaration.docx — LibreOffice Writer" /       - root pane = "Sample_Statutory_Declaration.docx — LibreOffice Writ
+T7 CALL press_key {"pid": 136877, "key": "down", "modifiers": ["ctrl"]}
+   -> Pressed key 'down' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T8 CALL get_window_state {"pid": 136877, "query": "Page", "since": "latest"}
+   -> window_id=29360245 pid=136877 elements=124 walk_ms=147 snapshot_id=s00000004 /  / no change since s00000003. Rows and indices are as before; use snapshot_id s00000004 in element_tokens (s00000004:N). | Invalidated snapshots s00000003: their element_tokens are stale.
+T9 CALL press_key {"pid": 136877, "key": "down", "modifiers": ["ctrl"]}
+T9 CALL press_key {"pid": 136877, "key": "down", "modifiers": ["ctrl"]}
+T9 CALL press_key {"pid": 136877, "key": "down", "modifiers": ["ctrl"]}
+T9 CALL press_key {"pid": 136877, "key": "down", "modifiers": ["ctrl"]}
+T9 CALL press_key {"pid": 136877, "key": "down", "modifiers": ["ctrl"]}
+T9 CALL press_key {"pid": 136877, "key": "down", "modifiers": ["ctrl"]}
+   -> Pressed key 'down' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+   -> Pressed key 'down' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+   -> Pressed key 'down' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+   -> Pressed key 'down' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+   -> Pressed key 'down' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+   -> Pressed key 'down' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T10 CALL get_window_state {"pid": 136877, "query": "Page", "since": "latest"}
+   -> window_id=29360245 pid=136877 elements=128 walk_ms=163 snapshot_id=s00000005 / since=s00000004: most of the tree changed; full read follows. / element_token for row [N] = s00000005:N (row [13] is "s00000005:13") /  / - frame = "Sample_Statutory_Declaration.docx — LibreOffice Writer" /       - root pane = "Sample_Statutory_Declaration.docx — LibreOffice Writer" /         - [13] scroll bar "" value="0.0" [actio
+T11 CALL press_key {"pid": 136877, "key": "up"}
+T11 CALL press_key {"pid": 136877, "key": "enter", "modifiers": ["ctrl"]}
+   -> Pressed key 'up' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+   -> Pressed key 'enter' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T12 CALL get_window_state {"pid": 136877, "query": "Page", "since": "latest"}
+   -> window_id=29360245 pid=136877 elements=129 walk_ms=176 snapshot_id=s00000006 /  / since s00000005: 0 added, 2 changed, 0 removed. Use element_tokens s00000006:N for + and ~ rows and unchanged rows; - ids are from s00000005. / ~ [34] scroll bar "" value="27240.0" [actions=[]] (unlabelled scroll bar; 3rd of 7 scroll bars in this window) / ~ label = "Pages 2 and 3 of 8" / reindexed: [89-89] -> [90-90] | Invali
+T13 CALL get_window_state {"pid": 136877, "since": "latest"}
+   -> window_id=29360245 pid=136877 elements=129 walk_ms=145 snapshot_id=s00000007 /  / since s00000002: 8 added, 5 changed, 4 removed. Use element_tokens s00000007:N for + and ~ rows and unchanged rows; - ids are from s00000002. / + [26] paragraph "In the matter of " value="In the matter of " [actions=[]] / + [27] paragraph "Trade Mark Application No. ____________" value="Trade Mark Application No. ___________
+T14 CALL press_key {"pid": 136877, "key": "home", "modifiers": ["ctrl"]}
+   -> Pressed key 'home' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T15 CALL get_window_state {"pid": 136877, "since": "latest"}
+   -> window_id=29360245 pid=136877 elements=125 walk_ms=110 snapshot_id=s00000008 /  / since s00000007: 3 added, 5 changed, 7 removed. Use element_tokens s00000008:N for + and ~ rows and unchanged rows; - ids are from s00000007. / + [25] paragraph "Sample Statutory Declaration" value="Sample Statutory Declaration" [actions=[]] / + [27] paragraph "Copyright © 2022 Intellectual Property Office of Singapore" valu
+T16 CALL scroll {"pid": 136877, "direction": "down", "by": "line", "amount": 12}
+   -> Scrolled down 12 ticks (delivery_mode=foreground).
+T17 CALL get_window_state {"pid": 136877, "since": "latest"}
+   -> window_id=29360245 pid=136877 elements=122 walk_ms=143 snapshot_id=s00000009 /  / since s00000008: 1 added, 3 changed, 4 removed. Use element_tokens s00000009:N for + and ~ rows and unchanged rows; - ids are from s00000008. / + [25] paragraph "TRADE MARKS ACT 1998 (2020 Rev. Ed.)" value="TRADE MARKS ACT 1998 (2020 Rev. Ed.)" [actions=[]] / ~ [26] paragraph "" value=" " [actions=[]] / ~ [27] scroll bar "" va
+T18 CALL scroll {"pid": 136877, "direction": "down", "by": "line", "amount": 20}
+   -> Scrolled down 20 ticks (delivery_mode=foreground).
+T19 CALL get_window_state {"pid": 136877, "since": "latest"}
+   -> window_id=29360245 pid=136877 elements=120 walk_ms=114 snapshot_id=s0000000a /  / since s00000009: 0 added, 2 changed, 2 removed. Use element_tokens s0000000a:N for + and ~ rows and unchanged rows; - ids are from s00000009. / ~ [25] scroll bar "" value="24000.0" [actions=[]] (unlabelled scroll bar; 3rd of 7 scroll bars in this window) / ~ label = "Page 2 of 8" / - [25] paragraph "TRADE MARKS ACT 1998 (2020 
+T20 CALL press_key {"pid": 136877, "key": "s", "modifiers": ["ctrl"]}
+   -> Pressed key 's' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T21 CALL get_window_state {"pid": 136877, "query": "Page", "since": "latest"}
+   -> window_id=29360245 pid=136877 elements=120 walk_ms=140 snapshot_id=s0000000b /  / since s00000006: 0 added, 2 changed, 1 removed. Use element_tokens s0000000b:N for + and ~ rows and unchanged rows; - ids are from s00000006. / ~ [25] scroll bar "" value="24000.0" [actions=[]] (unlabelled scroll bar; 3rd of 7 scroll bars in this window) / ~ label = "Page 2 of 8" / - [33] paragraph "" [actions=[]] / reindexed: [
+T22 SAY DONE — Inserted a blank page immediately after page 1 of Sample_Statutory_Declaration.docx (document went from 7 to 8 pages, page 2 is blank) and saved.

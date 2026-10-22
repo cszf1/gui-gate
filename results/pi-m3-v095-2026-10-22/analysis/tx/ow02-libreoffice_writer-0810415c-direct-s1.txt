@@ -1,0 +1,59 @@
+T1 CALL list_apps {}
+   -> ✅ Found 154 app(s): 119 running, 35 installed-not-running. / - systemd (pid 1) / - kthreadd (pid 2) / - pool_workqueue_release (pid 3) / - kworker/R-rcu_gp (pid 4) / - kworker/R-sync_wq (pid 5) / - kworker/R-kvfree_rcu_reclaim (pid 6) / - kworker/R-slub_flushwq (pid 7) / - kworker/R-netns (pid 8) / - kworker/0:0H-events_highpri (pid 10) / - kworker/R-mm_percpu_wq (pid 13) / - ksoftirqd/0 (pid 14) / - rcu_preempt (pid 15)
+T2 CALL list_windows {"app": "LibreOffice"}
+   -> Found 1 windows: /   window_id=29360245 pid=128044 "Novels_Intro_Packet.docx — LibreOffice Writer" 1440x849+0+51 app=libreoffice-writer
+T3 CALL get_window_state {"pid": 128044, "tree_format": "markdown"}
+   -> window_id=29360245 pid=128044 elements=131 walk_ms=148 snapshot_id=s00000001 / element_token for row [N] = s00000001:N (row [1] is "s00000001:1") /  / - frame = "Novels_Intro_Packet.docx — LibreOffice Writer" /       - [0] button "" (description "Close Document") [actions=[click]] /             - [1] menu "File" [actions=[click]] (closed menu, 31 items; click it to open) /             - [2] menu "Edit" [actio
+T4 CALL get_window_state {"pid": 128044, "tree_format": "elements", "query": "paragraph"}
+   -> window_id=29360245 pid=128044 elements=131 walk_ms=152 snapshot_id=s00000002 /  / (tree is in structuredContent.elements; pass tree_format "markdown" for the compact text rendering) | Invalidated snapshots s00000001: their element_tokens are stale.
+T5 CALL click {"element_token": "s00000002:75", "pid": 128044}
+   -> Clicked element [75] (pid 128044). | A popup menu is open, so pid 128044 holds a keyboard grab until it closes.
+T6 CALL get_window_state {"pid": 128044}
+   -> window_id=29360245 pid=128044 elements=124 walk_ms=167 snapshot_id=s00000003 / element_token for row [N] = s00000003:N (row [1] is "s00000003:1") /  / - frame = "Novels_Intro_Packet.docx — LibreOffice Writer" /       - [0] button "" (description "Close Document") [actions=[click]] /             - [1] menu "File" [actions=[click]] (closed menu, 31 items; click it to open) /             - [2] menu "Edit" [actio
+T7 CALL click {"element_token": "s00000003:25", "count": 3, "pid": 128044}
+   -> Clicked element [25] (pid 128044) with a real pointer click (delivery_mode=background, path=x11_xsendevent); not verified — confirm with a screenshot.
+T8 CALL click {"element_token": "s00000003:27", "count": 3, "modifier": ["shift"], "pid": 128044}
+   -> Clicked element [27] (pid 128044) with a real pointer click (delivery_mode=background, path=x11_xsendevent); not verified — confirm with a screenshot.
+T9 CALL get_window_state {"pid": 128044, "query": "Copy"}
+   -> window_id=29360245 pid=128044 elements=124 walk_ms=162 snapshot_id=s00000004 / element_token for row [N] = s00000004:N (row [13] is "s00000004:13") /  / - frame = "Novels_Intro_Packet.docx — LibreOffice Writer" /       - root pane = "Novels_Intro_Packet.docx — LibreOffice Writer" /         - [13] scroll bar "" value="0.0" [actions=[]] (unlabelled scroll bar; 2nd of 3 scroll bars in this window) /           - 
+T10 CALL click {"element_token": "s00000004:25", "pid": 128044}
+   -> Clicked element [25] (pid 128044) with a real pointer click (delivery_mode=background, path=x11_xsendevent); not verified — confirm with a screenshot.
+T11 CALL click {"element_token": "s00000004:122", "pid": 128044}
+   -> Clicked element [122] (pid 128044). | A popup menu is open, so pid 128044 holds a keyboard grab until it closes.
+T12 CALL get_window_state {"pid": 128044, "query": "Double"}
+   -> window_id=29372284 pid=128044 elements=5 walk_ms=129 /  / 
+T13 CALL list_windows {"pid": 128044}
+   -> Found 1 windows: /   window_id=29360245 pid=128044 "Novels_Intro_Packet.docx — LibreOffice Writer" 1440x849+0+51 app=libreoffice-writer
+T14 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=29360245 pid=128044 "Novels_Intro_Packet.docx — LibreOffice Writer" 1440x849+0+51 app=libreoffice-writer /   window_id=12582915 pid=6966 "xfce4-panel" 1440x27+0+0 app=Xfce4-panel /   window_id=12582926 pid=6966 "xfce4
+T15 CALL get_window_state {"pid": 128044, "tree_format": "markdown"}
+   -> window_id=29372284 pid=128044 elements=5 walk_ms=183 snapshot_id=s00000006 / element_token for row [N] = s00000006:N (row [1] is "s00000006:1") /  /                     - panel = "Custom Value" /                           - [0] combo box "Line Spacing:" [actions=[click]] /                         - label = "Value:" /                         - label = "Line Spacing:" /                       - label = "Custom Val
+T16 CALL click {"element_token": "s00000006:1", "pid": 128044}
+   -> Clicked element [1] (pid 128044).
+T17 CALL get_window_state {"pid": 128044, "tree_format": "markdown"}
+   -> window_id=29360245 pid=128044 elements=125 walk_ms=171 snapshot_id=s00000007 / element_token for row [N] = s00000007:N (row [1] is "s00000007:1") /  / - frame = "Novels_Intro_Packet.docx — LibreOffice Writer" /       - [0] button "" (description "Close Document") [actions=[click]] /             - [1] menu "File" [actions=[click]] (closed menu, 31 items; click it to open) /             - [2] menu "Edit" [actio
+T18 CALL click {"element_token": "s00000007:27", "pid": 128044}
+   -> Clicked element [27] (pid 128044) with a real pointer click (delivery_mode=background, path=x11_xsendevent); not verified — confirm with a screenshot.
+T19 CALL click {"element_token": "s00000007:123", "pid": 128044}
+   -> Clicked element [123] (pid 128044). | A popup menu is open, so pid 128044 holds a keyboard grab until it closes.
+T20 CALL get_window_state {"pid": 128044, "tree_format": "markdown"}
+   -> window_id=29373227 pid=128044 elements=5 walk_ms=192 snapshot_id=s00000008 / element_token for row [N] = s00000008:N (row [1] is "s00000008:1") /  /                     - panel = "Custom Value" /                           - [0] combo box "Line Spacing:" [actions=[click]] /                         - label = "Value:" /                         - label = "Line Spacing:" /                       - label = "Custom Val
+T21 CALL click {"element_token": "s00000008:1", "pid": 128044}
+   -> Clicked element [1] (pid 128044).
+T22 CALL get_window_state {"pid": 128044, "tree_format": "markdown"}
+   -> window_id=29360245 pid=128044 elements=125 walk_ms=193 snapshot_id=s00000009 / element_token for row [N] = s00000009:N (row [1] is "s00000009:1") /  / - frame = "Novels_Intro_Packet.docx — LibreOffice Writer" /       - [0] button "" (description "Close Document") [actions=[click]] /             - [1] menu "File" [actions=[click]] (closed menu, 31 items; click it to open) /             - [2] menu "Edit" [actio
+T23 CALL click {"element_token": "s00000009:5", "pid": 128044}
+   -> Clicked element [5] (pid 128044). | A popup menu is open, so pid 128044 holds a keyboard grab until it closes.
+T24 CALL get_window_state {"pid": 128044, "tree_format": "markdown"}
+   -> Warning: truncated output (original token count: 5586) / Total output lines: 295 /  / window_id=29373698 pid=128044 elements=187 walk_ms=221 snapshot_id=s0000000a / element_token for row [N] = s0000000a:N (row [1] is "s0000000a:1") /  / - frame = "Novels_Intro_Packet.docx — LibreOffice Writer" /       - [0] button "" (description "Close Document") [actions=[click]] /             - [1] menu "File" [actions=[click]
+T25 CALL click {"element_token": "s0000000a:30", "pid": 128044}
+   -> Clicked element [30] (pid 128044).
+T26 CALL get_window_state {"pid": 128044, "query": "Format"}
+   -> window_id=29360245 pid=128044 elements=125 walk_ms=163 snapshot_id=s0000000b / element_token for row [N] = s0000000b:N (row [5] is "s0000000b:5") /  / - frame = "Novels_Intro_Packet.docx — LibreOffice Writer" /       - [0] button "" (description "Close Document") [actions=[click]] /             - [5] menu "Format" [actions=[click]] (closed menu, 32 items; click it to open) /       - root pane = "Novels_Intro_
+T27 CALL click {"element_token": "s0000000b:5", "pid": 128044}
+   -> Clicked element [5] (pid 128044). | A popup menu is open, so pid 128044 holds a keyboard grab until it closes.
+T28 CALL get_window_state {"pid": 128044, "query": "Paragraph"}
+   -> window_id=29373698 pid=128044 elements=187 walk_ms=235 snapshot_id=s0000000c / element_token for row [N] = s0000000c:N (row [5] is "s0000000c:5") /  / - frame = "Novels_Intro_Packet.docx — LibreOffice Writer" /       - [0] button "" (description "Close Document") [actions=[click]] /             - [5] menu "Format" [actions=[click]] /               - [26] menu "Spacing" [actions=[click]] /                 - [31]
+T29 CALL click {"element_token": "s0000000c:46", "pid": 128044}
+   -> Clicked element [46] (pid 128044).
+T30 CALL get_window_state {"pid": 128044, "query": "Spacing"}

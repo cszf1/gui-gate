@@ -1,0 +1,61 @@
+T1 CALL list_apps {}
+T1 CALL list_windows {}
+   -> ✅ Found 156 app(s): 122 running, 34 installed-not-running. / - systemd (pid 1) / - kthreadd (pid 2) / - pool_workqueue_release (pid 3) / - kworker/R-rcu_gp (pid 4) / - kworker/R-sync_wq (pid 5) / - kworker/R-kvfree_rcu_reclaim (pid 6) / - kworker/R-slub_flushwq (pid 7) / - kworker/R-netns (pid 8) / - kworker/0:0H-events_highpri (pid 10) / - kworker/R-mm_percpu_wq (pid 13) / - ksoftirqd/0 (pid 14) / - rcu_preempt (pid 15)
+   -> Found 7 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651610 pid=144538 "About the Xfce Desktop Environment" 550x600+5+56 app=Xfce4-about /   window_id=14680181 pid=163469 "EntireSummerSales.xlsx — LibreOffice Calc" 1440x849+0+51 app=libreoffice-calc /   window_id=1258
+T2 CALL get_window_state {"pid": 163469}
+   -> window_id=14680181 pid=163469 elements=117 walk_ms=140 snapshot_id=s00000001 / element_token for row [N] = s00000001:N (row [1] is "s00000001:1"); this read stops at row [116], so rows past it from a larger read are not in s00000001 / ⚠️ PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 336 node(s) (0 discovered but not visited)
+T3 CALL click {"pid": 163469, "x": 150, "y": 260}
+   -> Clicked at (154.7, 268.2) × 1 (delivery_mode=background, path=x11_atspi); selected: table cell "A1078" (Selection.SelectChild on its container, read back as selected) — the item is selected. [window_point=(154, 268) screen_point=(155, 319)] | A popup menu is open, so pid 163469 holds a keyboard grab until it closes.
+T4 CALL get_window_state {"pid": 163469}
+   -> window_id=14680181 pid=163469 elements=117 walk_ms=159 snapshot_id=s00000002 / element_token for row [N] = s00000002:N (row [1] is "s00000002:1"); this read stops at row [116], so rows past it from a larger read are not in s00000002 / ⚠️ PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 336 node(s) (0 discovered but not visited)
+T5 CALL press_key {"pid": 163469, "key": "Home", "modifiers": ["ctrl"]}
+   -> Pressed key 'Home' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T6 CALL get_window_state {"pid": 163469, "query": "A1"}
+   -> window_id=14680181 pid=163469 elements=117 walk_ms=170 / ⚠️ PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 336 node(s) (0 discovered but not visited). Every element listed is real; elements after the cut are missing. If the element you need is absent, retry with a larger timeout_ms (e.g. 5000) or narrow with query / max_dep
+T7 CALL get_window_state {"pid": 163469, "max_depth": 6}
+   -> window_id=14680181 pid=163469 elements=85 walk_ms=102 snapshot_id=s00000004 / element_token for row [N] = s00000004:N (row [1] is "s00000004:1") /  / - frame = "EntireSummerSales.xlsx — LibreOffice Calc" /       - [0] button "" (description "Close Document") [actions=[click]] /             - [1] menu "File" [actions=[click]] /             - [2] menu "Edit" [actions=[click]] /             - [3] menu "View" [acti
+T8 CALL press_key {"key": "End", "modifiers": ["ctrl", "shift"], "pid": 163469}
+   -> Pressed key 'End' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T9 CALL click {"element_token": "s00000004:51", "pid": 163469}
+   -> ERR click: element [51] (pid 163469) has a snapshot frame at (932, 71), but that screen point is owned by menu bar (unnamed) rather than the observed element; a real pointer click there would hit the wrong control. Re-snapshot with get_window_state, or click by pixel from a screenshot.
+T10 CALL get_window_state {"max_depth": 4, "pid": 163469}
+   -> window_id=14680181 pid=163469 elements=3 walk_ms=9 snapshot_id=s00000005 / element_token for row [N] = s00000005:N (row [1] is "s00000005:1") /  / - frame = "EntireSummerSales.xlsx — LibreOffice Calc" /       - [0] button "" (description "Close Document") [actions=[click]] /         - [1] scroll bar "" value="0.0" [actions=[]] (unlabelled scroll bar; 1st of 2 scroll bars in this window) /         - [2] scroll
+T11 CALL get_window_state {"max_depth": 8, "pid": 163469, "query": "Data"}
+   -> window_id=14680181 pid=163469 elements=89 walk_ms=125 snapshot_id=s00000006 / element_token for row [N] = s00000006:N (row [8] is "s00000006:8"); this read stops at row [21], so rows past it from a larger read are not in s00000006 / ⚠️ PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 249 node(s) (0 discovered but not visited). 
+T12 CALL click {"element_token": "s00000006:8", "pid": 163469}
+   -> Clicked element [8] (pid 163469) with a real pointer click (delivery_mode=foreground, focus_after=target); appeared: popup window 14711124 "LibreOffice 25.2" (298x543 at 346,71). [window_point=(376, 13) screen_point=(376, 64)]
+T13 CALL get_window_state {"window_id": 14711124, "pid": 163469}
+   -> window_id=14711124 pid=163469 elements=158 walk_ms=188 snapshot_id=s00000007 / element_token for row [N] = s00000007:N (row [1] is "s00000007:1"); this read stops at row [157], so rows past it from a larger read are not in s00000007 / ⚠️ PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 397 node(s) (0 discovered but not visited)
+T14 CALL click {"element_token": "s00000007:20", "pid": 163469}
+   -> ERR foreground_unavailable: window 0xe07954 did not become the active, focused window within 800ms (active=0xe00075, focus_within_target=true, input focus: 0xe07954 (Soffice, pid 163469 soffice.bin)); no input was sent. The window may be minimized, on another workspace, or blocked by a modal dialog — bring_to_front it or target that dialog instead
+T15 CALL list_windows {}
+   -> Found 7 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651610 pid=144538 "About the Xfce Desktop Environment" 550x600+5+56 app=Xfce4-about /   window_id=14680181 pid=163469 "EntireSummerSales.xlsx — LibreOffice Calc" 1440x849+0+51 app=libreoffice-calc /   window_id=1258
+T16 CALL press_key {"key": "escape", "pid": 163469}
+   -> Pressed key 'escape' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T17 CALL get_window_state {"pid": 163469, "query": "Pivot Table", "tree_format": "elements"}
+   -> window_id=14680181 pid=163469 elements=119 walk_ms=194 snapshot_id=s00000008 / ⚠️ PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 336 node(s) (0 discovered but not visited). Every element listed is real; elements after the cut are missing. If the element you need is absent, retry with a larger timeout_ms (e.g. 5000) or narro
+T18 CALL get_window_state {"pid": 163469, "query": "Pivot", "tree_format": "markdown"}
+   -> window_id=14680181 pid=163469 elements=119 walk_ms=163 snapshot_id=s00000009 / element_token for row [N] = s00000009:N (row [13] is "s00000009:13"); this read stops at row [83], so rows past it from a larger read are not in s00000009 / ⚠️ PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 336 node(s) (0 discovered but not visited
+T19 CALL click {"element_token": "s00000009:83", "pid": 163469}
+   -> ERR click: element [83] (pid 163469) has a snapshot frame at (932, 71), but that screen point is owned by menu bar (unnamed) rather than the observed element; a real pointer click there would hit the wrong control. Re-snapshot with get_window_state, or click by pixel from a screenshot.
+T20 CALL press_key {"key": "d", "modifiers": ["alt"], "pid": 163469}
+   -> Pressed key 'd' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T21 CALL get_window_state {"max_depth": 4, "pid": 163469, "query": "Pivot"}
+   -> window_id=14711124 pid=163469 elements=3 walk_ms=6 /  /  | Invalidated snapshots s00000007: their element_tokens are stale.
+T22 CALL get_window_state {"max_depth": 8, "pid": 163469}
+   -> window_id=14711124 pid=163469 elements=128 walk_ms=115 snapshot_id=s0000000b / element_token for row [N] = s0000000b:N (row [1] is "s0000000b:1"); this read stops at row [127], so rows past it from a larger read are not in s0000000b / ⚠️ PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 310 node(s) (0 discovered but not visited)
+T23 CALL press_key {"key": "p", "pid": 163469}
+   -> Pressed key 'p' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T24 CALL press_key {"key": "right", "pid": 163469}
+   -> Pressed key 'right' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T25 CALL press_key {"key": "enter", "pid": 163469}
+   -> Pressed key 'enter' as a real key event (delivery_mode=foreground, focus_after=same_pid); not verified — confirm with a screenshot.
+T26 CALL list_windows {}
+   -> Found 8 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651610 pid=144538 "About the Xfce Desktop Environment" 550x600+5+56 app=Xfce4-about /   window_id=14680181 pid=163469 "EntireSummerSales.xlsx — LibreOffice Calc" 1440x849+0+51 app=libreoffice-calc /   window_id=1471
+T27 CALL get_window_state {"pid": 163469, "window_id": 14711268}
+   -> window_id=14711268 pid=163469 elements=18 walk_ms=200 snapshot_id=s0000000c / element_token for row [N] = s0000000c:N (row [1] is "s0000000c:1"); this read stops at row [17], so rows past it from a larger read are not in s0000000c / ⚠️ PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 399 node(s) (0 discovered but not visited). 
+T28 CALL get_window_state {"pid": 163469, "window_id": 14711279}
+   -> window_id=14711279 pid=163469 elements=1 walk_ms=186 snapshot_id=s0000000d / element_token for row [N] = s0000000d:N (row [0] is "s0000000d:0"); this read stops at row [0], so rows past it from a larger read are not in s0000000d / ⚠️ PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 399 node(s) (0 discovered but not visited). Ev
+T29 CALL click {"element_token": "s0000000d:0", "pid": 163469, "window_id": 14711279}
+   -> Clicked element [0] (pid 163469) with a real pointer click (delivery_mode=foreground, focus_after=same_pid); closed: window 14711279. [window_point=(729, 556) screen_point=(729, 556)]
+T30 CALL click {"element_token": "s0000000c:17", "pid": 163469, "window_id": 14711268}
