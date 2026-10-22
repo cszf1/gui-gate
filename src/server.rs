@@ -18,7 +18,7 @@ use crate::updates;
 use crate::util::*;
 use regex::Regex;
 use serde_json::{json, Value};
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeSet, HashMap, HashSet};
 use std::io::BufRead;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::mpsc::{channel, Sender};
@@ -74,6 +74,120 @@ fn gate_tools() -> Vec<Value> {
 }
 
 /// Trim a long description at a sentence boundary (each turn resends them all).
+/// readline: ctrl+e (end of line), ctrl+u (kill to line start) - works in bash, zsh (emacs mode), fish, sh/dash with editing.
+pub fn clear_line_keys() -> Vec<(&'static str, Vec<&'static str>)> {
+    vec![("e", vec!["ctrl"]), ("u", vec!["ctrl"])]
+}
+
+re!(app_line, r"^- (.+) \(pid (\d+)\)\s*$");
+re!(noise_app, r"^(kworker/|ksoftirqd/|migration/|cpuhp/|rcu_|irq/|jbd2/|kthreadd$|pool_workqueue|kdevtmpfs$|kauditd$|khungtaskd$|oom_reaper$|kcompactd|ksmd$|khugepaged$|watchdogd$|kswapd|psimon$|idle_inject/|kblockd$|scsi_|card\d|systemd|\(sd-pam\)$|dbus-daemon$|dbus-broker|agetty$|sshd$|sshd-session$|\(udev-worker\)$|containerd|dockerd$|dconf-service$|at-spi|ssh-agent$|gpg-agent$|polkitd$|udisksd$|rtkit-daemon$|cron$|rsyslogd$|gvfs|xdg-permission-|xdg-document-|gui-gate$|cua-driver$)");
+
+/// A process without a command line is a kernel thread (live check on the controlled machine).
+pub fn proc_is_kernel_thread(pid: i64) -> bool {
+    match std::fs::read(format!("/proc/{pid}/cmdline")) {
+        Ok(b) => b.is_empty(),
+        Err(_) => false,
+    }
+}
+
+/// Drop kernel threads and system daemons from a list_apps result (text lines and structured list).
+/// Returns how many entries were hidden. Apps the agent can work with (anything with a desktop name, shells,
+/// interpreters, terminals) stay.
+pub fn filter_apps(res: &mut Value, kthread: &dyn Fn(i64) -> bool) -> usize {
+    let noise = |name: &str, pid: i64| noise_app().is_match(name.trim()) || (pid > 2 && kthread(pid));
+    let mut hidden = 0;
+    if let Some(items) = res.get_mut("content").and_then(|c| c.as_array_mut()) {
+        for it in items.iter_mut() {
+            let Some(tx) = it.get("text").and_then(|x| x.as_str()) else { continue };
+            let mut kept = vec![];
+            for line in tx.lines() {
+                if let Some(c) = app_line().captures(line) {
+                    if noise(&c[1], c[2].parse().unwrap_or(0)) {
+                        hidden += 1;
+                        continue;
+                    }
+                }
+                kept.push(line);
+            }
+            it["text"] = json!(kept.join("\n"));
+        }
+    }
+    if let Some(sc) = res.get_mut("structuredContent").and_then(|v| v.as_object_mut()) {
+        for (_, v) in sc.iter_mut() {
+            if let Some(arr) = v.as_array_mut() {
+                if arr.iter().all(|x| x.get("name").is_some() && x.get("pid").is_some()) {
+                    arr.retain(|x| !noise(x.get("name").and_then(|n| n.as_str()).unwrap_or(""), as_i64(x.get("pid")).unwrap_or(0)));
+                }
+            }
+        }
+    }
+    hidden
+}
+
+re!(occluded_rx, r#"element \[(\d+)\] \(pid \d+\) has a snapshot frame at \((-?\d+), (-?\d+)\), but that screen point is owned by ([\w ]+?) "([^"]*)" rather than the observed element"#);
+
+const FOCUS_HEAL_TOOLS: &[&str] = &["click", "double_click", "right_click", "press_key", "hotkey", "type_text", "scroll", "set_value"];
+
+/// The driver could not focus the target window and says it sent nothing, so one retry cannot double an effect.
+pub fn focus_lost(txt: &str) -> bool {
+    let head: String = txt.chars().take(600).collect();
+    head.contains("foreground_unavailable") && head.contains("no input was sent")
+}
+
+/// A token click the driver refused because another control owns the element's point:
+/// (desktop x, desktop y, owner role, owner label).
+pub fn occlusion(txt: &str) -> Option<(i64, i64, String, String)> {
+    let c = occluded_rx().captures(txt)?;
+    Some((c[2].parse().ok()?, c[3].parse().ok()?, c[4].trim().to_string(), c[5].to_string()))
+}
+
+/// The menu a row of a tree markdown sits under (nearest less-indented row whose role is "menu").
+pub fn parent_menu(tree: &str, idx: i64) -> Option<String> {
+    let rowrx = Regex::new(r#"^(\s*)- \[(\d+)\] ([\w ]+?) "([^"]*)""#).ok()?;
+    let lines: Vec<&str> = tree.lines().collect();
+    let pos = lines.iter().position(|l| rowrx.captures(l).map(|c| c[2].parse::<i64>().ok() == Some(idx)).unwrap_or(false))?;
+    let mut ind = rowrx.captures(lines[pos])?[1].len();
+    for l in lines[..pos].iter().rev() {
+        let Some(c) = rowrx.captures(l) else { continue };
+        if c[1].len() < ind {
+            if c[3].trim() == "menu" && !c[4].is_empty() {
+                return Some(c[4].to_string());
+            }
+            ind = c[1].len();
+        }
+    }
+    None
+}
+
+/// Which rows of a fresh tree to send when the agent already saw `seen` for this window: the rows it has not seen
+/// (new or changed, compared verbatim incl. their [N] index, so tokens of unchanged rows stay valid with the new
+/// snapshot id) plus their ancestors for context. None = send the whole tree (nothing seen yet, or >= thr changed).
+pub fn tree_delta(seen: &HashSet<String>, cur: &[&str], thr: f64) -> Option<Vec<usize>> {
+    if seen.is_empty() || cur.is_empty() {
+        return None;
+    }
+    let changed: Vec<usize> = (0..cur.len()).filter(|&i| !cur[i].trim().is_empty() && !seen.contains(cur[i])).collect();
+    if changed.len() as f64 >= thr * cur.len() as f64 {
+        return None;
+    }
+    let indent = |l: &str| l.len() - l.trim_start().len();
+    let mut keep: BTreeSet<usize> = changed.iter().copied().collect();
+    for &i in &changed {
+        let mut ind = indent(cur[i]);
+        for j in (0..i).rev() {
+            if ind == 0 {
+                break;
+            }
+            let d = indent(cur[j]);
+            if d < ind && !cur[j].trim().is_empty() {
+                keep.insert(j);
+                ind = d;
+            }
+        }
+    }
+    Some(keep.into_iter().collect())
+}
+
 pub fn short(text: &str, limit: usize) -> String {
     if text.chars().count() <= limit {
         return text.to_string();
@@ -177,6 +291,10 @@ pub struct Inner {
     pub batch_ctx: Value,
     pub pix_age: HashMap<i64, i64>,
     pub last_auto: HashMap<i64, Value>,
+    /// tree rows the agent has already been shown, per "pid:window_id" (for auto-observe diffs): (snapshot, rows)
+    pub seen_rows: HashMap<String, (String, HashSet<String>)>,
+    /// the last few executed actions, summarised for the reviewer
+    pub recent: Vec<Value>,
     pub risk_info: Value,
     pub cur_ack: bool,
 }
@@ -303,6 +421,9 @@ fn augment_tools(result: &mut Value, shared: &Arc<Mutex<Shared>>, toolset: &str,
         if name == "get_window_state" {
             props.insert("fresh".into(), json!({"type": "boolean", "description": "Force a new read even though nothing was done since the tree that came back with your last action."}));
         }
+        if name == "list_apps" {
+            props.insert("all".into(), json!({"type": "boolean", "description": "Also list kernel threads and system daemons (hidden by default)."}));
+        }
         if is_gated(&name) {
             props.insert("gate_confirm".into(), json!({"type": "string", "description": "Confirmation code the gate gave for a high-risk action, only after the user approved it."}));
         }
@@ -368,7 +489,7 @@ impl Gate {
                 want_shot: HashSet::new(), seen_pids: HashSet::new(), fg_sticky: false, pixel_pids: HashSet::new(),
                 probe_disabled: false, denied_effects: HashMap::new(), denials_consec: 0, denials_total: 0,
                 task_locked, task_source, in_batch: false, batch_ctx: Value::Null, pix_age: HashMap::new(),
-                last_auto: HashMap::new(), risk_info: Value::Null, cur_ack: false,
+                last_auto: HashMap::new(), seen_rows: HashMap::new(), recent: vec![], risk_info: Value::Null, cur_ack: false,
             }),
             shared, out, log: Arc::new(EventLog::new(log_path)), child: Mutex::new(child), child_cmd,
             init_params: Mutex::new(None), client_elicit, client_pending, restarts: AtomicU64::new(0), human,
@@ -580,7 +701,20 @@ impl Gate {
                 }
             }
         }
+        let all_apps = name == "list_apps" && truthy(args.get("all"));
+        if name == "list_apps" {
+            if let Some(o) = args.as_object_mut() {
+                o.remove("all");
+            }
+        }
         let mut res = self.tool(&mut inn, name, &args, 120.0);
+        if name == "list_apps" && inn.cfg.policy == "gate" && !all_apps && !is_error(&res) {
+            let hidden = filter_apps(&mut res, &|p| proc_is_kernel_thread(p));
+            if hidden > 0 {
+                inn.add("apps_hidden", hidden as f64);
+                push_text(&mut res, format!("[gate] {hidden} kernel threads / system daemons hidden; call list_apps with all:true to see everything."));
+            }
+        }
         if name == "get_window_state" && text_of(&res).contains("PARTIAL TREE") {
             if let Some(p) = pid {
                 inn.pixel_pids.insert(p);
@@ -596,6 +730,15 @@ impl Gate {
             } else {
                 inn.inc("screenshots_skipped");
                 push_text(&mut res, "[gate] screenshot omitted (the element tree is enough here); call again with include_screenshot:true if you need pixels.".into());
+            }
+        }
+        if name == "get_window_state" && inn.cfg.tree_diff && !is_error(&res) {
+            let scv = sc(&res);
+            if let (Some(p), Some(md)) = (as_i64(scv.get("pid")).or(pid), scv.get("tree_markdown").and_then(|v| v.as_str())) {
+                let k = format!("{p}:{}", as_i64(scv.get("window_id")).or(as_i64(args.get("window_id"))).unwrap_or(0));
+                if args.get("query").is_none() && args.get("since").is_none() && !md.trim().is_empty() {
+                    inn.seen_rows.insert(k, (pystr(scv.get("snapshot_id")), md.lines().map(String::from).collect()));
+                }
             }
         }
         if name == "get_window_state" {
@@ -731,6 +874,108 @@ impl Gate {
         Some((Some(format!("{}:{}", ob.snapshot_id, cands[0].index)), Some(cands[0].clone())))
     }
 
+    /// The driver refused a token click because another control owns the element's point. One gate-side retry:
+    ///  * the owner is the same control (same label, a duplicate accessible object): click that desktop point;
+    ///  * an open menu covers it: Escape, re-read, re-bind the token, click again;
+    ///  * the target sat in a menu that has closed since the read: re-open that menu, re-bind, click the item.
+    /// Returns the result to hand back (successful retry, or the original error plus a note) and what was tried.
+    fn heal_occlusion(&self, inn: &mut Inner, ctx: &ActionCtx, args: &Value, err_txt: &str) -> Option<(Value, String)> {
+        let (x, y, orole, olab) = occlusion(err_txt)?;
+        let t = &ctx.target;
+        let pid = t.pid?;
+        let el = t.element.clone()?;
+        let wid = t.window_id.or(t.obs.and_then(|o| inn.state.get(o).window_id)).filter(|w| *w != 0);
+        let mut base = json!({"pid": pid});
+        if let Some(w) = wid {
+            base["window_id"] = json!(w);
+        }
+        for k in ["count", "button", "modifiers", "modifier"] {
+            if let Some(v) = args.get(k) {
+                base[k] = v.clone();
+            }
+        }
+        let same = !olab.trim().is_empty() && authz::norm(&olab) == authz::norm(&el.label);
+        inn.inc("occlusion_heals_tried");
+        if same {
+            let mut a = base.clone();
+            a["x"] = json!(x);
+            a["y"] = json!(y);
+            a["coordinate_frame"] = json!("desktop");
+            let r = self.tool(inn, "click", &a, 30.0);
+            if !is_error(&r) {
+                inn.inc("occlusion_heals");
+                let mut r = r;
+                push_text(&mut r, format!("[gate] The token click was refused because a duplicate \"{olab}\" object owns that point; the gate clicked the same control at its desktop point ({x},{y}) instead."));
+                return Some((r, "same_control_pixel".into()));
+            }
+            return None;
+        }
+        let parent = t.obs.and_then(|o| parent_menu(&inn.state.get(o).text, el.index));
+        let mut opened = String::new();
+        if orole == "menu" {
+            let mut k = base.clone();
+            k["key"] = json!("Escape");
+            if is_error(&self.tool(inn, "press_key", &k, 10.0)) {
+                return None;
+            }
+            std::thread::sleep(Duration::from_millis(200));
+        } else if let (Some(pm), true) = (parent.clone(), el.role.contains("item") || el.role == "menu") {
+            // the menu that held the item has closed: open it again from a fresh read
+            let mut menu_ctx = ctx.clone();
+            if let Some(e) = menu_ctx.target.element.as_mut() {
+                e.role = "menu".into();
+                e.label = pm.clone();
+            }
+            let Some((Some(mtok), _)) = self.refresh(inn, &menu_ctx) else {
+                return Some((self.closed_menu_note(err_txt, &el.label, Some(&pm)), "closed_menu_note".into()));
+            };
+            let mut a = base.clone();
+            a["element_token"] = json!(mtok);
+            if is_error(&self.tool(inn, "click", &a, 30.0)) {
+                return Some((self.closed_menu_note(err_txt, &el.label, Some(&pm)), "closed_menu_note".into()));
+            }
+            std::thread::sleep(Duration::from_millis(250));
+            opened = pm;
+        } else {
+            return None;
+        }
+        match self.refresh(inn, ctx) {
+            Some((Some(tok), _)) => {
+                let mut a = base.clone();
+                a["element_token"] = json!(tok.clone());
+                let r = self.tool(inn, "click", &a, 30.0);
+                if is_error(&r) {
+                    return None;
+                }
+                inn.inc("occlusion_heals");
+                let mut r = r;
+                let how = if opened.is_empty() {
+                    format!("the open menu \"{olab}\" covered it; the gate pressed Escape, re-read the window and clicked it again ({tok})")
+                } else {
+                    format!("its menu \"{opened}\" had closed; the gate re-opened that menu and clicked the item ({tok})")
+                };
+                push_text(&mut r, format!("[gate] Your click on \"{}\" was first refused: {how}. Older tokens for this window are stale.", el.label));
+                Some((r, if opened.is_empty() { "escape_retry".into() } else { "reopen_menu".into() }))
+            }
+            _ if !opened.is_empty() => Some((text_result(format!("{err_txt}\n[gate] The menu that held \"{}\" had closed; the gate opened \"{opened}\" again but the item is not in it now: read the fresh tree below and pick the item from it.", el.label), true), "reopened_item_missing".into())),
+            _ => None,
+        }
+    }
+
+    /// What the reviewer gets besides the action: the last 3 executed actions and, in a terminal, the command
+    /// line Enter would submit.
+    fn review_context(&self, inn: &Inner, ctx: &ActionCtx) -> (Value, Option<String>) {
+        let line = ctx.target.pid.filter(|p| crate::sidefx::is_terminal(*p))
+            .map(|p| inn.state.last_typed.get(&p).cloned().unwrap_or_default());
+        (json!(inn.recent.clone()), line)
+    }
+
+    fn closed_menu_note(&self, err_txt: &str, label: &str, parent: Option<&str>) -> Value {
+        let p = parent.map(|p| format!("open the menu \"{p}\" again and then click \"{label}\" in the same run_actions call, or use its keyboard shortcut"))
+            .unwrap_or_else(|| format!("open its menu again, then click \"{label}\" in the same run_actions call"));
+        text_result(format!("{err_txt}\n[gate] The menu that held \"{label}\" is closed now, so its old position belongs to another control: {p}."), true)
+    }
+
     fn heal(&self, inn: &mut Inner, ctx: &ActionCtx) -> Option<String> {
         let el = ctx.target.element.as_ref()?;
         if el.label.is_empty() || ctx.target.pid.is_none() {
@@ -814,7 +1059,8 @@ impl Gate {
                 break;
             }
             if dec.option == "wait" && waited {
-                dec = Decision::new("look_light", dec.p_direct, "UI still busy after waiting", "grey");
+                let why = if fget(&f, "loading_cue") > 0.5 { "UI still busy after waiting" } else { "the window had not settled after waiting" };
+                dec = Decision::new("look_light", dec.p_direct, why, "grey");
                 break;
             }
             match dec.option.as_str() {
@@ -823,6 +1069,12 @@ impl Gate {
                     check_res = self.check(inn, &ctx, Some(&mut args));
                     ctx = build_ctx(name, &args, &inn.state);
                     f = features(&ctx, &inn.state, wc, wadd, check_res, None);
+                    if waited {
+                        // the wait already let the popup/loading settle; do not count it a second time
+                        // (v094: 5 menu clicks went wait -> check(pass) -> wait -> refused "UI still busy")
+                        f["last_popup"] = 0.0;
+                        f["loading_cue"] = 0.0;
+                    }
                     if inn.probe_disabled {
                         f["loading_cue"] = 1.0;
                     }
@@ -941,6 +1193,33 @@ impl Gate {
         if opt == "direct" {
             let t0 = Instant::now();
             let mut res = self.tool(inn, name, &args, 120.0);
+            // (also inside a batch: a healed step lets the rest of the batch run instead of stopping it)
+            if name == "click" && is_error(&res) && inn.cfg.policy == "gate" {
+                if let Some((r2, how)) = self.heal_occlusion(inn, &ctx, &args, &text_of(&res)) {
+                    event["occlusion_heal"] = json!(how);
+                    res = r2;
+                }
+            }
+            if is_error(&res) && inn.cfg.policy == "gate" && FOCUS_HEAL_TOOLS.contains(&name) && focus_lost(&text_of(&res)) {
+                if let Some(p) = t.pid {
+                    let mut b = json!({"pid": p});
+                    if let Some(w) = t.window_id.filter(|w| *w != 0) {
+                        b["window_id"] = json!(w);
+                    }
+                    let _ = self.tool(inn, "bring_to_front", &b, 10.0);
+                    std::thread::sleep(Duration::from_millis(300));
+                    inn.inc("focus_heals_tried");
+                    let r2 = self.tool(inn, name, &args, 120.0);
+                    if !is_error(&r2) {
+                        inn.inc("focus_heals");
+                        event["focus_heal"] = json!(true);
+                        res = r2;
+                        push_text(&mut res, "[gate] The window did not take focus at first (nothing was sent); the gate brought it to the front and sent the step once more.".into());
+                    } else {
+                        event["focus_heal"] = json!(false);
+                    }
+                }
+            }
             let ms = t0.elapsed().as_secs_f64() * 1000.0;
             inn.add("driver_ms", ms);
             inn.inc("executed");
@@ -958,7 +1237,9 @@ impl Gate {
             if rec.is_error {
                 inn.inc("exec_errors");
             }
-            let retro_aid = inn.state.last_action().filter(|prev| prev.key == rec.key && !prev.is_error && rec.t - prev.t < 60.0).map(|p| p.aid);
+            // (walking a list with the same arrow/Tab key is not a repeat of a step that did not work)
+            let retro_aid = inn.state.last_action().filter(|prev| prev.key == rec.key && !prev.is_error && rec.t - prev.t < 60.0)
+                .filter(|_| !crate::decide::is_nav_key(&ctx)).map(|p| p.aid);
             if let Some(aid) = retro_aid {
                 // the agent sent the same action again: the previous one most likely did not do what it wanted
                 self.log.write(json!({"ev": "retro_repeat", "aid": aid}));
@@ -968,6 +1249,14 @@ impl Gate {
             }
             let popup = rec.popup;
             inn.state.record_action(rec);
+            let keys_v = if truthy(args.get("keys")) { args.get("keys").cloned() } else { args.get("key").cloned() };
+            let typed_v = if truthy(args.get("text")) { pystr(args.get("text")) } else { pystr(args.get("value")) };
+            inn.recent.push(json!({"tool": name, "target": format!("{} \"{}\"", t.the_role(), trunc(t.the_label(), 60)),
+                "typed_text": trunc(&typed_v, 120), "keys": keys_v, "modifiers": args.get("modifiers"),
+                "failed": err, "result": trunc(&txt.lines().next().unwrap_or("").to_string(), 140)}));
+            if inn.recent.len() > 3 {
+                inn.recent.remove(0);
+            }
             inn.denials_consec = 0;
             let has_xy = args.get("x").is_some() && args.get("y").is_some();
             if let Some(p) = t.pid {
@@ -1077,6 +1366,17 @@ impl Gate {
             "deny" => self.deny_text(inn, &ctx, &dec, "refused"),
             _ => format!("[gate] Not executed: {}.", dec.reason),
         };
+        // a refused risky Enter in a terminal leaves the typed command on the input line: the next command the
+        // agent types would be appended to it and refused again (og04 loop). Clear the line and say so.
+        // (deny / risk_review go through deny_text, which clears it too)
+        let mut text = text;
+        if ctx.risk.is_some() && opt == "ask_human" {
+            if let Some(p) = t.pid {
+                if let Some(note) = self.clear_terminal_line(inn, p, t.window_id) {
+                    text.push_str(&note);
+                }
+            }
+        }
         event["executed"] = json!(false);
         event["gate_ms"] = json!(round_to(gate_ms, 1));
         self.log.write(event);
@@ -1101,6 +1401,29 @@ impl Gate {
             }
         }
         res
+    }
+
+    /// Erase what the agent typed on a terminal's input line (End, then kill to line start). Returns the note for
+    /// the agent, or None when this is not a terminal or nothing was typed since the last Enter.
+    fn clear_terminal_line(&self, inn: &mut Inner, pid: i64, window_id: Option<i64>) -> Option<String> {
+        let typed = inn.state.last_typed.get(&pid).cloned().unwrap_or_default();
+        if typed.trim().is_empty() || !crate::sidefx::is_terminal(pid) {
+            return None;
+        }
+        for k in clear_line_keys() {
+            let mut a = json!({"pid": pid, "key": k.0, "modifiers": k.1});
+            if let Some(w) = window_id.filter(|w| *w != 0) {
+                a["window_id"] = json!(w);
+            }
+            let r = self.tool(inn, "press_key", &a, 10.0);
+            if is_error(&r) {
+                return None;
+            }
+        }
+        inn.state.last_typed.insert(pid, String::new());
+        inn.inc("lines_cleared");
+        self.log.write(json!({"ev": "line_cleared", "aid": inn.aid, "pid": pid, "text": trunc(&typed, 200)}));
+        Some(" The gate has cleared the refused command from the terminal's input line (it was not run); type your next command on the empty line.".into())
     }
 
     // ------------------------------------------------------------------ observe after an action
@@ -1166,18 +1489,46 @@ impl Gate {
             md = body.trim().lines().filter(|x| !x.starts_with("window_id=") && !x.starts_with("element_token for row"))
                 .collect::<Vec<_>>().join("\n");
         }
-        let mut lines: Vec<&str> = md.lines().collect();
+        let all_lines: Vec<&str> = md.lines().collect();
+        let snap0 = pystr(scv.get("snapshot_id"));
+        let wkey_s = format!("{pid}:{}", as_i64(scv.get("window_id")).or(as_i64(a.get("window_id"))).unwrap_or(0));
+        // changes only: rows the agent already saw for this window (same text, same [N]) are left out
+        let mut delta_note = String::new();
+        let mut lines: Vec<&str> = all_lines.clone();
+        if inn.cfg.tree_diff && note.is_empty() {
+            if let Some((prev_snap, seen)) = inn.seen_rows.get(&wkey_s) {
+                if let Some(idx) = tree_delta(seen, &all_lines, 0.5) {
+                    let shown: Vec<&str> = idx.iter().map(|&i| all_lines[i]).collect();
+                    delta_note = format!(" Only rows that changed since snapshot {prev_snap} are shown ({} of {} rows, with their parents); every other row is unchanged and keeps its [N], so {snap0}:N tokens work for those too.",
+                                         shown.len(), all_lines.len());
+                    if shown.is_empty() {
+                        delta_note = format!(" Nothing in the tree changed since snapshot {prev_snap} ({} rows); its [N] are valid as {snap0}:N.", all_lines.len());
+                    }
+                    lines = shown;
+                    inn.inc("tree_diffs");
+                }
+            }
+        }
         let mut more = String::new();
         if lines.len() > MAX_TREE_LINES {
             more = format!("\n... ({} more rows; call get_window_state for the full tree)", lines.len() - MAX_TREE_LINES);
             lines.truncate(MAX_TREE_LINES);
         }
+        if inn.cfg.tree_diff {
+            // what the agent has now seen of this window: shown rows + earlier rows that are still identical
+            let prev: HashSet<String> = inn.seen_rows.get(&wkey_s).filter(|_| note.is_empty()).map(|x| x.1.clone()).unwrap_or_default();
+            let shown: HashSet<&str> = lines.iter().copied().collect();
+            let seen: HashSet<String> = all_lines.iter().filter(|l| shown.contains(*l) || prev.contains(**l)).map(|l| l.to_string()).collect();
+            inn.seen_rows.insert(wkey_s.clone(), (snap0.clone(), seen));
+        }
+        inn.add("auto_obs_chars", lines.iter().map(|l| l.len() + 1).sum::<usize>() as f64);
+        inn.add("auto_obs_chars_full", all_lines.iter().take(MAX_TREE_LINES).map(|l| l.len() + 1).sum::<usize>() as f64);
         let mut busy = if loading_rx().is_match(&md) { " The UI still looks busy.".to_string() } else { String::new() };
         if partial && !shot {
             busy.push_str(" The tree is partial here (grid/canvas); read with include_screenshot:true before aiming by x/y.");
         }
         let snap = pystr(scv.get("snapshot_id"));
-        push_text(res, format!("[gate] Window right after the action (snapshot {snap}; tokens are {snap}:N, older tokens are stale).{busy}\n{note}{}{more}", lines.join("\n")));
+        push_text(res, format!("[gate] Window right after the action (snapshot {snap}; tokens are {snap}:N, older tokens are stale).{busy}{delta_note}\n{note}{}{more}", lines.join("\n")));
         if shot {
             if let Some(imgs) = r.get("content").and_then(|c| c.as_array()) {
                 let imgs: Vec<Value> = imgs.iter().filter(|c| s(c, "type") == "image").cloned().collect();
@@ -1190,7 +1541,8 @@ impl Gate {
         let aid = inn.aid;
         inn.last_auto.insert(pid, json!({"aid": aid, "t": now(), "wid": a.get("window_id"), "shot": shot, "snap": snap, "truncated": !more.is_empty()}));
         self.log.write(json!({"ev": "obs", "tool": "get_window_state", "auto": true, "ms": round_to(t0.elapsed().as_secs_f64() * 1000.0, 1),
-                              "screenshot": shot, "px": 0, "snapshot": snap, "pid": pid, "trimmed": !shot, "new_window": !note.is_empty()}));
+                              "screenshot": shot, "px": 0, "snapshot": snap, "pid": pid, "trimmed": !shot, "new_window": !note.is_empty(),
+                              "rows": all_lines.len(), "rows_sent": lines.len(), "diff": !delta_note.is_empty()}));
     }
 
     // ------------------------------------------------------------------ risk
@@ -1211,10 +1563,17 @@ impl Gate {
             let keys = if truthy(ctx.args.get("keys")) { ctx.args.get("keys").cloned() } else { ctx.args.get("key").cloned() };
             let action = json!({"tool": ctx.tool, "target_kind": t.kind, "target_role": t.the_role(), "target_label": t.the_label(),
                 "x": t.x, "y": t.y, "typed_text": trunc(&pystr(ctx.args.get("text")), 300), "keys": keys, "why_doubted": dec.reason});
+            let mut action = action;
+            let (recent, line) = self.review_context(inn, ctx);
+            action["recent_actions"] = recent;
+            if let Some(l) = line {
+                action["terminal_input_line"] = json!(trunc(&l, 300));
+            }
             let window = t.pid.and_then(|p| inn.state.latest_for(Some(p), t.window_id)).map(|o| inn.state.get(o).text.clone()).unwrap_or_default();
             inn.inc("reviews");
             let r = rv.check_step(&inn.cfg.task, &action, &window);
             *judge = r.clone().unwrap_or(json!({"error": "reviewer did not answer"}));
+            judge["sent"] = json!({"action": action, "window_tail": tail(&window, 4000)});
             if let Some(r) = r {
                 if s(&r, "decision") == "allow" {
                     inn.inc("review_allowed");
@@ -1270,8 +1629,15 @@ impl Gate {
             let action = json!({"tool": ctx.tool, "target_role": t.the_role(), "target_label": label, "rule_that_fired": risk,
                 "risk_level": ctx.risk_level, "typed_text": trunc(&pystr(ctx.args.get("text")), 300), "keys": keys,
                 "window_titles": titles.iter().take(4).collect::<Vec<_>>(), "dialog_text": tail(&dialog, 1500)});
+            let mut action = action;
+            let (recent, line) = self.review_context(inn, ctx);
+            action["recent_actions"] = recent;
+            if let Some(l) = line {
+                action["terminal_input_line"] = json!(trunc(&l, 300));
+            }
             let r = rv.review(&inn.cfg.task, &action);
             inn.risk_info["reviewer"] = r.clone().unwrap_or(Value::Null);
+            inn.risk_info["reviewer_sent"] = action.clone();
             inn.inc("reviews");
             if let Some(r) = r {
                 if s(&r, "decision") == "allow" {
@@ -1307,12 +1673,16 @@ impl Gate {
         let key = inn.risk_info.get("effect").and_then(|e| e.as_str()).map(String::from)
             .unwrap_or_else(|| authz::effect_key(&risk, &self.dialog_text(inn, ctx)));
         inn.denied_effects.insert(key, who.to_string());
+        let cleared = match (ctx.target.pid, ctx.risk.is_some()) {
+            (Some(p), true) => self.clear_terminal_line(inn, p, ctx.target.window_id).unwrap_or_default(),
+            _ => String::new(),
+        };
         if inn.denials_consec >= inn.cfg.deny_consecutive || inn.denials_total >= inn.cfg.deny_total {
             inn.inc("deny_escalations");
-            return format!("[gate] Not executed: {who} ({}). The gate has now refused {} risky step(s) ({} in a row): stop here and tell the user what you wanted to do and why.",
+            return format!("[gate] Not executed: {who} ({}). The gate has now refused {} risky step(s) ({} in a row): stop here and tell the user what you wanted to do and why.{cleared}",
                            dec.reason, inn.denials_total, inn.denials_consec);
         }
-        format!("[gate] Not executed: {who} ({}). Do not retry it or reach the same result another way (another button, key or command). Instead: {}.",
+        format!("[gate] Not executed: {who} ({}). Do not retry it or reach the same result another way (another button, key or command). Instead: {}.{cleared}",
                 dec.reason, authz::alternative(&risk))
     }
 
@@ -1336,7 +1706,7 @@ impl Gate {
         inn.inc("dup_reads_saved");
         let snap = pystr(c.get("snap"));
         self.log.write(json!({"ev": "obs", "tool": "get_window_state", "cached": true, "snapshot": snap, "pid": pid, "screenshot": false, "ms": 0}));
-        Some(json!({"content": [{"type": "text", "text": format!("[gate] Nothing has been done since snapshot {snap}, which came back with your last action (same window, its tokens {snap}:N are current). Use that tree. Call again with fresh:true only if you really need a new read.")}],
+        Some(json!({"content": [{"type": "text", "text": format!("[gate] Nothing has been done since snapshot {snap}, which came back with your last action (same window, its tokens {snap}:N are current). Use that tree (when it listed only changed rows, the other rows are as in your earlier reads, same [N]). Call again with fresh:true only if you really need a new read.")}],
                     "structuredContent": {"snapshot_id": snap, "pid": pid, "window_id": c.get("wid"), "cached": true}}))
     }
 
@@ -1462,6 +1832,88 @@ mod tests {
         assert!(fast_path(&ctx, &f).is_some());
         f.insert("obs_had_shot", 0.0);
         assert!(fast_path(&ctx, &f).is_none());
+    }
+
+    #[test]
+    fn occlusion_parse_and_parent_menu() {
+        let e = "click: element [95] (pid 48238) has a snapshot frame at (161, 71), but that screen point is owned by menu \"Insert\" rather than the observed element; a real pointer click there would hit the wrong control.";
+        assert_eq!(occlusion(e), Some((161, 71, "menu".into(), "Insert".into())));
+        let e2 = "click: element [3] (pid 1) has a snapshot frame at (5, 6), but that screen point is owned by table cell \"B4\" rather than the observed element";
+        assert_eq!(occlusion(e2).unwrap().2, "table cell");
+        assert!(occlusion("click failed: target_occluded").is_none());
+        let tree = "- [0] menu bar \"\"\n  - [1] menu \"File\" [actions=[click]]\n    - [2] menu item \"Open...\"\n    - [3] menu \"Export As\"\n      - [4] menu item \"Export Directly as PDF\"\n  - [5] menu \"Edit\"";
+        assert_eq!(parent_menu(tree, 2).as_deref(), Some("File"));
+        assert_eq!(parent_menu(tree, 4).as_deref(), Some("Export As"));
+        assert_eq!(parent_menu(tree, 1), None);
+        assert_eq!(parent_menu(tree, 99), None);
+    }
+
+    #[test]
+    fn tree_delta_rows() {
+        let prev = "- frame \"A\"\n  - [0] button \"OK\"\n  - [1] text \"count=0\"\n  - [2] button \"Cancel\"\n  - [3] list \"L\"\n    - [4] item \"x\"";
+        let seen: HashSet<String> = prev.lines().map(String::from).collect();
+        let cur_s = prev.replace("count=0", "count=1").replace("item \"x\"", "item \"y\"");
+        let cur: Vec<&str> = cur_s.lines().collect();
+        let idx = tree_delta(&seen, &cur, 0.5).unwrap();
+        let rows: Vec<&str> = idx.iter().map(|&i| cur[i]).collect();
+        assert_eq!(rows, vec!["- frame \"A\"", "  - [1] text \"count=1\"", "  - [3] list \"L\"", "    - [4] item \"y\""]);
+        // a shifted index counts as changed (its token would point elsewhere)
+        let shifted: Vec<&str> = vec!["- frame \"A\"", "  - [1] button \"OK\"", "  - [2] text \"count=0\"", "  - [3] button \"Cancel\"", "  - [4] list \"L\"", "    - [5] item \"x\""];
+        assert!(tree_delta(&seen, &shifted, 0.5).is_none());
+        assert!(tree_delta(&HashSet::new(), &cur, 0.5).is_none());
+        let same: Vec<&str> = prev.lines().collect();
+        assert_eq!(tree_delta(&seen, &same, 0.5), Some(vec![]));
+    }
+
+    /// Offline harness: GG_DIFFSIM=<jsonl of recorded tree reads> GG_DIFFSIM_OUT=<out> cargo test -- --ignored diffsim
+    /// Feeds recorded auto-observe blocks and agent reads through tree_delta with the same seen-row bookkeeping
+    /// as auto_observe/passthrough and writes the chars each auto-observe would have sent.
+    #[test]
+    #[ignore]
+    fn diffsim() {
+        let (Ok(inp), Ok(outp)) = (std::env::var("GG_DIFFSIM"), std::env::var("GG_DIFFSIM_OUT")) else { return };
+        let thr: f64 = std::env::var("GG_DIFFSIM_THR").ok().and_then(|v| v.parse().ok()).unwrap_or(0.5);
+        let mut seen: HashMap<String, HashSet<String>> = HashMap::new();
+        let mut out = String::new();
+        for line in std::fs::read_to_string(inp).unwrap().lines() {
+            let r: Value = serde_json::from_str(line).unwrap();
+            let key = r["key"].as_str().unwrap().to_string();
+            let rows: Vec<String> = r["rows"].as_array().unwrap().iter().map(|x| x.as_str().unwrap().to_string()).collect();
+            let all: Vec<&str> = rows.iter().map(|x| x.as_str()).collect();
+            if r["kind"] == "read" {
+                seen.insert(key, rows.iter().cloned().collect());
+                continue;
+            }
+            let nw = r["new_window"].as_bool().unwrap_or(false);
+            let prev = if nw { HashSet::new() } else { seen.get(&key).cloned().unwrap_or_default() };
+            let mut lines: Vec<&str> = all.clone();
+            let mut extra = 0;
+            if !nw {
+                if let Some(idx) = tree_delta(&prev, &all, thr) {
+                    lines = idx.iter().map(|&i| all[i]).collect();
+                    extra = 230; // the "only rows that changed" note
+                }
+            }
+            lines.truncate(MAX_TREE_LINES);
+            let shown: HashSet<&str> = lines.iter().copied().collect();
+            seen.insert(key, all.iter().filter(|l| shown.contains(*l) || prev.contains(**l)).map(|l| l.to_string()).collect());
+            let chars = r["head"].as_u64().unwrap_or(0) as usize + extra + lines.iter().map(|l| l.chars().count() + 1).sum::<usize>();
+            out.push_str(&format!("{}\t{}\n", r["id"].as_str().unwrap(), chars));
+        }
+        std::fs::write(outp, out).unwrap();
+    }
+
+    #[test]
+    fn list_apps_noise_is_hidden() {
+        let txt = "Found 7 app(s)\n- systemd (pid 1)\n- kworker/0:1-events (pid 24585)\n- dbus-daemon (pid 6879)\n- LibreOffice Calc (pid 51200)\n- bash (pid 7671)\n- instabox-term (pid 7657)\n- weird-thread (pid 99)";
+        let mut r = json!({"content": [{"type": "text", "text": txt}], "structuredContent": {"apps": [
+            {"name": "systemd", "pid": 1}, {"name": "LibreOffice Calc", "pid": 51200}, {"name": "weird-thread", "pid": 99}]}});
+        let n = filter_apps(&mut r, &|p| p == 99);
+        assert_eq!(n, 4);
+        let t = r["content"][0]["text"].as_str().unwrap();
+        assert!(t.contains("LibreOffice Calc") && t.contains("bash") && t.contains("instabox-term") && t.starts_with("Found"));
+        assert!(!t.contains("kworker") && !t.contains("systemd") && !t.contains("weird-thread"));
+        assert_eq!(r["structuredContent"]["apps"].as_array().unwrap().len(), 1);
     }
 
     #[test]

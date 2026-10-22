@@ -78,6 +78,7 @@ fn main() {
         }
     }
     cleanup::startup();
+    sidefx::mark_session_start();
     let mut cfg = GateConfig::from_env();
     let (mut mode, mut task_file, mut weights, mut log, mut driver, mut child) = (None, None, None, None, None, None);
     let mut driver_args: Vec<String> = vec![];

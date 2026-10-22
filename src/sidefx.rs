@@ -300,6 +300,58 @@ fn cp_like(argv: &[String], cwd: &str) -> Option<Effect> {
     Some(("high".into(), format!("`{tool}` would overwrite existing file(s): {}{more}", names.join(", "))))
 }
 
+static SESSION_START: OnceLock<std::time::SystemTime> = OnceLock::new();
+
+/// Remember when this gate started: paths created or modified after it are the agent's own work, not user data.
+pub fn mark_session_start() {
+    let _ = SESSION_START.set(std::time::SystemTime::now());
+}
+
+/// True when the path was created/changed during this gate session (the agent's own work, so moving it is harmless).
+fn session_owned(path: &str, start: Option<std::time::SystemTime>) -> bool {
+    let Some(start) = start else { return false };
+    fs::symlink_metadata(path).and_then(|m| m.modified()).map(|t| t >= start).unwrap_or(false)
+}
+
+/// `mv` (or `rsync --remove-source-files`) of an existing path that predates this session: the user's data
+/// disappears from where it was (og10: `mv instructor-embedding instructor-embedding.bak && git clone ...`).
+fn move_away(argv: &[String], cwd: &str) -> Option<Effect> {
+    let tool = basename(&argv[0]);
+    if tool == "rsync" && !argv.iter().any(|a| a == "--remove-source-files") {
+        return None;
+    }
+    let mut pos: Vec<String> = vec![];
+    let mut target_dir: Option<String> = None;
+    let mut i = 1;
+    while i < argv.len() {
+        let a = &argv[i];
+        if a == "-t" || a == "--target-directory" {
+            target_dir = argv.get(i + 1).cloned();
+            i += 2;
+            continue;
+        }
+        if let Some(v) = a.strip_prefix("--target-directory=") {
+            target_dir = Some(v.to_string());
+        } else if !(a.starts_with('-') && a.len() > 1) {
+            pos.push(a.clone());
+        }
+        i += 1;
+    }
+    let (srcs, dest) = match target_dir {
+        Some(t) => (pos.clone(), t),
+        None if pos.len() >= 2 => (pos[..pos.len() - 1].to_vec(), pos[pos.len() - 1].clone()),
+        None => return None,
+    };
+    let moved: Vec<String> = expand(&srcs, cwd).into_iter().filter(|x| exists(x) && !session_owned(x, SESSION_START.get().copied())).collect();
+    if moved.is_empty() {
+        return None;
+    }
+    let names: Vec<String> = moved.iter().take(3).map(|c| relpath(c, cwd)).collect();
+    let more = if moved.len() > 3 { " ..." } else { "" };
+    Some(("high".into(), format!("`{tool}` would move the existing {}{more} away (to {}); it is no longer where it was",
+        names.join(", "), relpath(&p(&dest, cwd), cwd))))
+}
+
 fn run_find(args: &[String], cwd: &str) -> Option<Vec<u8>> {
     let mut child = Command::new(&args[0]).args(&args[1..]).current_dir(cwd).stdin(Stdio::null())
         .stdout(Stdio::piped()).stderr(Stdio::null()).spawn().ok()?;
@@ -457,6 +509,48 @@ pub fn tokenize(src: &str) -> Option<Vec<String>> {
     Some(toks)
 }
 
+/// `find A... | xargs [opts] cmd args...` as the equivalent `find A... -exec cmd args... {} ;` (read-only `find` is
+/// how the gate sees which files the pipeline would touch). None when it is not that shape.
+fn xargs_as_find_exec(find_argv: &[String], xargs_argv: &[String]) -> Option<Vec<String>> {
+    if find_argv.first().map(|a| basename(a)) != Some("find".into()) {
+        return None;
+    }
+    let mut i = 1;
+    let mut repl: Option<String> = None;
+    while i < xargs_argv.len() {
+        let a = &xargs_argv[i];
+        if a == "-I" || a == "--replace" {
+            repl = xargs_argv.get(i + 1).cloned();
+            i += 2;
+            continue;
+        }
+        if let Some(r) = a.strip_prefix("-I").filter(|r| !r.is_empty()) {
+            repl = Some(r.to_string());
+        } else if ["-n", "-L", "-P", "-d", "-s", "-E", "-a"].contains(&a.as_str()) {
+            i += 2;
+            continue;
+        } else if !a.starts_with('-') {
+            break;
+        }
+        i += 1;
+    }
+    let inner = &xargs_argv[i..];
+    if inner.is_empty() {
+        return None;
+    }
+    let mut cmd: Vec<String> = find_argv.iter().filter(|a| !["-print0", "-print"].contains(&a.as_str())).cloned().collect();
+    cmd.push("-exec".into());
+    match &repl {
+        Some(r) => cmd.extend(inner.iter().map(|a| a.replace(r.as_str(), "{}"))),
+        None => {
+            cmd.extend(inner.iter().cloned());
+            cmd.push("{}".into());
+        }
+    }
+    cmd.push(";".into());
+    Some(cmd)
+}
+
 /// [(argv, overwrite-redirect targets)] for each simple command.
 fn commands(cmdline: &str) -> Vec<(Vec<String>, Vec<String>)> {
     let src = cmdline.replace("\\;", " __ESC_SEMI__ ").replace('\n', " ; ");
@@ -472,6 +566,9 @@ fn commands(cmdline: &str) -> Vec<(Vec<String>, Vec<String>)> {
                     out.push((std::mem::take(&mut argv), std::mem::take(&mut redir)));
                 } else {
                     redir.clear();
+                }
+                if t == "|" {
+                    out.push((vec!["__PIPE__".into()], vec![]));
                 }
             }
             ">" | ">|" | "&>" => {
@@ -494,7 +591,41 @@ fn commands(cmdline: &str) -> Vec<(Vec<String>, Vec<String>)> {
 /// (level, reason) for the worst file-system effect of a typed shell command, or None.
 pub fn shell_effects(cmdline: &str, cwd: &str) -> Option<Effect> {
     let mut worst: Option<Effect> = None;
+    let mut cwd_s = cwd.to_string();
+    let mut prev: Vec<String> = vec![];
+    let mut piped = false;
     for (mut argv, redir) in commands(cmdline) {
+        if argv.len() == 1 && argv[0] == "__PIPE__" {
+            piped = true;
+            continue;
+        }
+        let from_pipe = std::mem::replace(&mut piped, false);
+        let prev_cmd = std::mem::replace(&mut prev, argv.clone());
+        let cwd = cwd_s.clone();
+        let cwd = cwd.as_str();
+        // `sh -c "..."` / `bash -c '...'`: check the inner script the same way
+        if argv.len() >= 3 && SHELLS.contains(&basename(&argv[0]).as_str()) && argv[1] == "-c" {
+            if let Some(rr) = shell_effects(&argv[2], cwd) {
+                if worst.is_none() || (rr.0 == "high" && worst.as_ref().unwrap().0 != "high") {
+                    worst = Some(rr);
+                }
+            }
+            continue;
+        }
+        if from_pipe && argv.first().map(|a| basename(a) == "xargs").unwrap_or(false) {
+            if let Some(fe) = xargs_as_find_exec(&prev_cmd, &argv) {
+                argv = fe;
+            }
+        }
+        if argv.first().map(|a| a == "cd").unwrap_or(false) {
+            // `cd X && mv a b`: later commands of the same line run in X
+            let to = argv.get(1).cloned().unwrap_or_else(crate::util::home);
+            let np = p(&to, cwd);
+            if is_dir(&np) {
+                cwd_s = np;
+            }
+            continue;
+        }
         let mut r: Option<Effect> = None;
         for t0 in &redir {
             let tgt = p(t0, cwd);
@@ -509,12 +640,18 @@ pub fn shell_effects(cmdline: &str, cwd: &str) -> Option<Effect> {
         let tool = argv.first().map(|a| basename(a)).unwrap_or_default();
         if r.is_none() {
             r = match tool.as_str() {
-                "cp" | "mv" | "rsync" | "install" => cp_like(&argv, cwd),
+                "cp" | "install" => cp_like(&argv, cwd),
+                "mv" | "rsync" => cp_like(&argv, cwd).or_else(|| move_away(&argv, cwd)),
                 "find" => find_exec(&argv, cwd),
                 "chmod" => chmod(&argv, false),
                 "rm" => {
                     let tg: Vec<String> = argv[1..].iter().filter(|a| !a.starts_with('-')).cloned().collect();
-                    if expand(&tg, cwd).iter().any(|x| exists(x)) {
+                    // the agent's own scratch (created during this session) is not user data
+                    let start = SESSION_START.get().copied();
+                    let unresolved = expand(&tg, cwd).iter().any(|x| x.contains('$') || x.contains('`'));
+                    if unresolved {
+                        Some(("high".into(), format!("`rm` deletes {} (a path the gate cannot resolve)", tg.iter().take(3).cloned().collect::<Vec<_>>().join(" "))))
+                    } else if expand(&tg, cwd).iter().any(|x| exists(x) && !session_owned(x, start)) {
                         let rec = argv[1..].iter().any(|a| a.starts_with('-') && a.to_lowercase().contains('r'));
                         Some((if rec { "high" } else { "medium" }.into(),
                               format!("`rm` deletes {}", tg.iter().take(3).cloned().collect::<Vec<_>>().join(" "))))
@@ -670,11 +807,84 @@ mod tests {
     }
 
     #[test]
+    fn find_xargs_and_sh_c() {
+        let d = setup();
+        assert_eq!(lvl(shell_effects("find src -name '*.ipynb' -print0 | xargs -0 -I{} cp --parents \"{}\" out/", &d)).as_deref(), Some("high"));
+        assert!(shell_effects("find src -name '*.ipynb' -print0 | xargs -0 -I{} cp --parents \"{}\" dir1/", &d).is_none());
+        assert_eq!(lvl(shell_effects("find . -maxdepth 1 -name file1 | xargs cp -t dir2", &d)).as_deref(), Some("high"));
+        assert!(shell_effects("ls | xargs echo", &d).is_none());
+        assert_eq!(lvl(shell_effects("bash -c 'mv dir2 dir2.old'", &d)).as_deref(), Some("high"));
+        assert!(shell_effects("sh -c 'ls -la'", &d).is_none());
+    }
+
+    #[test]
+    fn cd_in_the_same_line_moves_the_cwd() {
+        let d = setup();
+        let r = shell_effects(&format!("cd {d} && mv dir2 dir2.bak"), "/").unwrap();
+        assert!(r.1.contains("would move the existing dir2"), "{}", r.1);
+        assert!(shell_effects(&format!("cd {d}/dir1; cp ../file1 ../dir2/"), "/").unwrap().1.contains("overwrite"));
+        assert!(shell_effects("cd /nonexistent-gg && rm -rf x", "/").is_none());
+    }
+
+    /// pure check of the rm rule against session-owned paths
+    #[test]
+    fn rm_of_session_scratch_is_not_user_data() {
+        let d = setup();
+        let past = std::time::SystemTime::now() - Duration::from_secs(3600);
+        assert!(session_owned(&format!("{d}/dir2"), Some(past)));
+    }
+
+    #[test]
+    fn mv_moves_existing_data_away() {
+        let d = setup();
+        let r = shell_effects("mv dir2 dir2.bak && git clone https://x/y dir2", &d).unwrap();
+        assert_eq!(r.0, "high");
+        assert!(r.1.contains("would move the existing dir2"), "{}", r.1);
+        // overwrite still reported as an overwrite
+        assert!(shell_effects("mv file1 dir2", &d).unwrap().1.contains("overwrite"));
+        assert!(shell_effects("mv nothere x", &d).is_none());
+        assert!(shell_effects("mv /tmp/gg-nonexistent-scratch/* dir1/", &d).is_none());
+        assert!(shell_effects("rsync -a dir1/ dir3/", &d).is_none());
+        assert_eq!(lvl(shell_effects("rsync -a --remove-source-files dir1/ dir3/", &d)).as_deref(), Some("high"));
+        let before = std::time::SystemTime::now() - Duration::from_secs(3600);
+        assert!(session_owned(&format!("{d}/dir2"), Some(before)));
+        assert!(!session_owned(&format!("{d}/dir2"), Some(std::time::SystemTime::now() + Duration::from_secs(3600))));
+        assert!(!session_owned(&format!("{d}/dir2"), None));
+    }
+
+    /// Offline audit: GG_AUDIT=<jsonl {id, cmd, cwd, task}> GG_AUDIT_OUT=<tsv> cargo test -- --ignored sidefx_audit
+    /// Classifies recorded terminal commands against a fixture file system (paths with a future mtime count as
+    /// created in this session) and checks the user's wording, as the live gate would at Enter.
+    #[test]
+    #[ignore]
+    fn sidefx_audit() {
+        let (Ok(inp), Ok(outp)) = (std::env::var("GG_AUDIT"), std::env::var("GG_AUDIT_OUT")) else { return };
+        mark_session_start();
+        let mut out = String::new();
+        for line in fs::read_to_string(inp).unwrap().lines() {
+            let r: serde_json::Value = serde_json::from_str(line).unwrap();
+            let (cmd, cwd, task) = (r["cmd"].as_str().unwrap(), r["cwd"].as_str().unwrap(), r["task"].as_str().unwrap_or(""));
+            let eff = shell_effects(cmd, cwd);
+            let (lvl, reason) = eff.clone().unwrap_or(("-".into(), "-".into()));
+            let (hz, ok, why) = match &eff {
+                Some((_, rs)) => {
+                    let (ok, why) = crate::authz::authorized(rs, task, "", "", &[]);
+                    (crate::authz::hazard_of(rs).to_string(), ok.to_string(), why)
+                }
+                None => ("-".into(), "-".into(), "-".into()),
+            };
+            out.push_str(&format!("{}\t{lvl}\t{hz}\t{ok}\t{}\t{}\n", r["id"].as_str().unwrap(), reason.replace('\t', " "), why.replace('\t', " ")));
+        }
+        fs::write(outp, out).unwrap();
+    }
+
+    #[test]
     fn rm_rules() {
         let d = setup();
         assert_eq!(lvl(shell_effects("rm file1", &d)).as_deref(), Some("medium"));
         assert_eq!(lvl(shell_effects("rm -rf dir2", &d)).as_deref(), Some("high"));
         assert!(shell_effects("rm nothere", &d).is_none());
+        assert_eq!(lvl(shell_effects("rm -rf $GG_UNSET_VAR_X/data", &d)).as_deref(), Some("high"));
     }
 
     #[test]

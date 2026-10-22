@@ -145,6 +145,26 @@ class ReviewerTests(unittest.TestCase):
         finally:
             c.close()
 
+    def test_reviewer_sees_recent_actions_and_logs_what_it_got(self):
+        rev = _Rev("deny")
+        c = Client("--human", "deny", "--task", "draft a reply to Bob", env=dict(os.environ, GUI_GATE_REVIEWER_URL=rev.url))
+        try:
+            c.call("fake_mutate", elements=[["button", "Send"], ["button", "Increment"], ["text", "x"]])
+            s = c.read()
+            c.call("click", element_token=f"{s}:1")
+            c.call("type_text", pid=4242, window_id=777, text="hello Bob")
+            s = c.read(fresh=True)
+            c.call("click", element_token=f"{s}:0")
+            prompt = rev.seen[-1]["messages"][1]["content"]
+            self.assertIn("recent_actions", prompt)
+            self.assertIn("hello Bob", prompt)
+            self.assertIn("Increment", prompt)
+            ev = [e for e in c.events() if e.get("ev") == "action"][-1]
+            self.assertEqual(len(ev["risk_gate"]["reviewer_sent"]["recent_actions"]), 2)
+        finally:
+            c.close()
+            rev.close()
+
     def test_reviewer_allow(self):
         r, _ = self.run_send("allow")
         self.assertFalse(r.get("isError"), txt(r))
@@ -403,6 +423,169 @@ class ReviewerIsRequired(unittest.TestCase):
             self.assertEqual([m for m in c.requests if m["method"] == "sampling/createMessage"], [])
         finally:
             c.close()
+
+
+class TerminalLineTests(unittest.TestCase):
+    """0.9.5: a refused Enter in a terminal clears the typed command from the input line (og04 loop)."""
+
+    def setUp(self):
+        import shutil, tempfile, time
+        self.tmp = tempfile.mkdtemp()
+        self.old = os.path.join(self.tmp, "userdir")
+        os.makedirs(self.old)
+        old_t = time.time() - 3600
+        os.utime(self.old, (old_t, old_t))
+        fake_term = os.path.join(self.tmp, "fake-xterm")
+        shutil.copy("/bin/sleep", fake_term)
+        self.term = subprocess.Popen([fake_term, "300"])
+        self.c = None
+
+    def tearDown(self):
+        self.term.kill()
+        if self.c:
+            self.c.close()
+
+    def test_refused_enter_clears_line(self):
+        pid = self.term.pid
+        self.c = Client("--human", "deny", "--task", "clone the repo to my home folder", env={"FAKE_PID": str(pid)})
+        self.c.call("get_window_state", pid=pid, window_id=777)
+        cmd = f"mv {self.old} {self.old}.bak"
+        r = self.c.call("type_text", pid=pid, window_id=777, text=cmd)
+        self.assertFalse(r.get("isError"), txt(r))
+        r = self.c.call("press_key", pid=pid, window_id=777, key="Return")
+        self.assertTrue(r.get("isError"), txt(r))
+        self.assertIn("cleared the refused command", txt(r))
+        self.assertIn("do not move", txt(r))
+        keys = json.loads(txt(self.c.call("fake_state")))["keys"]
+        self.assertEqual(keys[-2:], ["ctrl+e", "ctrl+u"])
+        ev = [e for e in self.c.events() if e.get("ev") == "line_cleared"]
+        self.assertEqual([e["text"] for e in ev], [cmd])
+        # the next (safe) command is checked on its own, not appended to the refused one
+        self.c.call("type_text", pid=pid, window_id=777, text="ls")
+        r = self.c.call("press_key", pid=pid, window_id=777, key="Return")
+        self.assertFalse(r.get("isError"), txt(r))
+
+    def test_rm_of_own_scratch_runs_rm_of_user_data_refused(self):
+        import time
+        pid = self.term.pid
+        self.c = Client("--human", "deny", "--task", "clone the repo", env={"FAKE_PID": str(pid)})
+        self.c.call("get_window_state", pid=pid, window_id=777)
+        time.sleep(0.05)
+        scratch = os.path.join(self.tmp, "scratch-clone")
+        os.makedirs(scratch)  # created after the gate started: the agent's own work
+        r = self.c.call("type_text", pid=pid, window_id=777, text=f"rm -rf {scratch}")
+        self.assertFalse(r.get("isError"), txt(r))
+        r = self.c.call("press_key", pid=pid, window_id=777, key="Return")
+        self.assertFalse(r.get("isError"), txt(r))
+        self.c.call("type_text", pid=pid, window_id=777, text=f"rm -rf {self.old}")
+        r = self.c.call("press_key", pid=pid, window_id=777, key="Return")
+        self.assertTrue(r.get("isError"), txt(r))
+        self.assertIn("`rm` deletes", txt(r))
+
+    def test_rename_task_authorizes_move(self):
+        pid = self.term.pid
+        self.c = Client("--human", "deny", "--task", f"rename the folder userdir to userdir2", env={"FAKE_PID": str(pid)})
+        self.c.call("get_window_state", pid=pid, window_id=777)
+        self.c.call("type_text", pid=pid, window_id=777, text=f"mv {self.old} {self.old}2")
+        r = self.c.call("press_key", pid=pid, window_id=777, key="Return")
+        self.assertFalse(r.get("isError"), txt(r))
+
+
+class OcclusionHealTests(unittest.TestCase):
+    """0.9.5: a token click refused because another control owns its point is retried once by the gate."""
+
+    def tearDown(self):
+        self.c.close()
+
+    def state(self):
+        return json.loads(txt(self.c.call("fake_state")))
+
+    def test_open_menu_covering_target_escape_and_retry(self):
+        self.c = Client("--human", "deny")
+        s = self.c.read()
+        self.c.call("fake_mutate", occlude_next=["menu", "Insert"])
+        r = self.c.call("click", element_token=f"{s}:0")
+        self.assertFalse(r.get("isError"), txt(r))
+        self.assertIn("pressed Escape", txt(r))
+        st = self.state()
+        self.assertIn("Escape", st["keys"])
+        self.assertEqual(st["clicked"], ["Increment"])
+        ev = [e for e in self.c.events() if e.get("ev") == "action"][-1]
+        self.assertEqual(ev.get("occlusion_heal"), "escape_retry")
+        self.assertFalse(ev.get("is_error"))
+
+    def test_duplicate_object_same_label_clicked_by_desktop_point(self):
+        self.c = Client("--human", "deny")
+        s = self.c.read()
+        self.c.call("fake_mutate", occlude_next=["menu", "Increment"])
+        r = self.c.call("click", element_token=f"{s}:0")
+        self.assertFalse(r.get("isError"), txt(r))
+        self.assertEqual(self.state()["clicked"], ["xy:161,71:desktop"])
+
+    def test_focus_lost_brought_to_front_and_retried_once(self):
+        self.c = Client("--human", "deny")
+        s = self.c.read()
+        self.c.call("fake_mutate", fg_fail_next=1)
+        r = self.c.call("click", element_token=f"{s}:0")
+        self.assertFalse(r.get("isError"), txt(r))
+        self.assertIn("brought it to the front", txt(r))
+        st = self.state()
+        self.assertEqual(st["front"], [4242])
+        self.assertEqual(st["clicked"], ["Increment"])
+        self.c.call("fake_mutate", fg_fail_next=2)
+        s = self.c.read(fresh=True)
+        r = self.c.call("click", element_token=f"{s}:0")
+        self.assertTrue(r.get("isError"))  # only one retry
+        self.assertEqual(self.state()["clicked"], ["Increment"])
+
+    def test_heal_inside_batch_lets_the_batch_go_on(self):
+        self.c = Client("--human", "deny")
+        s = self.c.read()
+        self.c.call("fake_mutate", occlude_next=["menu", "Insert"])
+        r = self.c.call("run_actions", pid=4242, window_id=777, steps=[
+            {"tool": "click", "args": {"element_token": f"{s}:0"}},
+            {"tool": "press_key", "args": {"key": "Tab"}}])
+        self.assertFalse(r.get("isError"), txt(r))
+        self.assertIn("2 GUI action(s) ran", txt(r))
+
+    def test_other_owner_not_retried(self):
+        self.c = Client("--human", "deny")
+        s = self.c.read()
+        self.c.call("fake_mutate", occlude_next=["table cell", "B4"])
+        r = self.c.call("click", element_token=f"{s}:0")
+        self.assertTrue(r.get("isError"))
+        self.assertEqual(self.state()["clicked"], [])
+
+
+class TreeDiffTests(unittest.TestCase):
+    """0.9.5: auto-observe sends only the rows of the window the agent has not seen yet."""
+
+    def tearDown(self):
+        self.c.close()
+
+    def test_auto_observe_sends_changed_rows_only(self):
+        self.c = Client("--human", "deny")
+        s = self.c.read()
+        r = self.c.call("click", element_token=f"{s}:0")  # Increment: only the count row changes
+        t = txt(r)
+        self.assertIn("Only rows that changed", t)
+        self.assertIn('count=1', t)
+        self.assertNotIn('"Delete file"', t)
+        obs = [e for e in self.c.events() if e.get("ev") == "obs" and e.get("auto")][-1]
+        self.assertTrue(obs["diff"])
+        self.assertLess(obs["rows_sent"], obs["rows"])
+        # the unchanged row's index is valid with the new snapshot id
+        newsnap = t.split("(snapshot ")[1].split(";")[0]
+        r2 = self.c.call("click", element_token=f"{newsnap}:0")
+        self.assertFalse(r2.get("isError"), txt(r2))
+        self.assertIn("count=2", txt(r2))
+
+    def test_diff_off_by_env(self):
+        self.c = Client("--human", "deny", env={"GUI_GATE_TREE_DIFF": "0"})
+        s = self.c.read()
+        t = txt(self.c.call("click", element_token=f"{s}:0"))
+        self.assertNotIn("Only rows that changed", t)
+        self.assertIn('"Delete file"', t)
 
 
 if __name__ == "__main__":

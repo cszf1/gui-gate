@@ -19,6 +19,8 @@ fn auth_words(hz: &str) -> Option<&'static [&'static str]> {
         "purchase" => &["buy", "purchase", "pay", "order", "checkout", "购买", "支付", "下单", "付款"],
         "power" => &["shut down", "shutdown", "restart", "reboot", "关机", "重启"],
         "install" => &["install", "uninstall", "安装", "卸载"],
+        "move" => &["move", "moving", "rename", "renaming", "change its name", "change the name", "mv", "relocate",
+                     "移动", "移到", "重命名", "改名"],
         "permissions" => &["chmod", "permission", "permissions", "权限"],
         _ => return None,
     })
@@ -45,6 +47,8 @@ pub fn hazard_of(reason: &str) -> &'static str {
     let any = |ks: &[&str]| ks.iter().any(|k| r.contains(k));
     if any(&["replac", "overwrite", "覆盖", "clobber"]) {
         "overwrite"
+    } else if r.contains("would move the existing") {
+        "move"
     } else if r.contains("chmod") {
         "permissions"
     } else if any(&["delete", "rm ", "erase", "wipe", "remove", "trash", "删除", "清空", "find -exec rm"]) {
@@ -168,6 +172,7 @@ pub fn authorized(reason: &str, task: &str, _label: &str, dialog_text: &str, tit
 pub fn alternative_for(hz: &str) -> &'static str {
     match hz {
         "overwrite" => "do not replace it: answer No/Cancel in the dialog, then save or export under a new name that does not exist yet (for example add _1 before the extension) in the same folder, finish the task with that file, and mention both paths in your final answer",
+        "move" => "do not move or rename the existing path: leave it where it is and put the new result under a name that does not exist yet (for example clone or copy into <name>-1 or a new subfolder), finish the task with that, and mention both paths in your final answer",
         "delete" => "do not delete it: leave it in place (or move it to a clearly named backup folder only if the task needs the space) and continue with the rest of the task",
         "permissions" => "narrow the command so it touches only what the task names (for example `find ... -type f` instead of a recursive change on directories), list the matches first, then run it",
         "command" => "run a read-only version first (list what it would touch, e.g. `ls` / `find ... -print`), then a narrower command that touches only what the task names",
@@ -183,7 +188,7 @@ pub fn alternative_for(hz: &str) -> &'static str {
 const ALTERNATIVES_CP: &str = "do not overwrite it: copy to the other destinations, and for the conflicting one use a name that does not exist yet (e.g. `cp -n`, or `cp file dir/file.copy`), then report it";
 
 pub fn alternative(reason: &str) -> &'static str {
-    if reason.starts_with("`cp`") || reason.starts_with("`mv`") || reason.contains("would overwrite existing file") {
+    if (reason.starts_with("`cp`") || reason.starts_with("`mv`") || reason.contains("would overwrite existing file")) && !reason.contains("would move the existing") {
         return ALTERNATIVES_CP;
     }
     alternative_for(hazard_of(reason))
@@ -236,5 +241,18 @@ mod tests {
         let a = effect_key("saving here would replace the existing file /home/u/a.pdf", "");
         let b = effect_key("\"Yes\" confirms replacing an existing file", "A file named \"a.pdf\" already exists.");
         assert_eq!(a, b);
+    }
+
+    #[test]
+    fn moving_existing_data_needs_the_words() {
+        let r = "`mv` would move the existing instructor-embedding away (to instructor-embedding.KEEP.bak); it is no longer where it was";
+        assert_eq!(hazard_of(r), "move");
+        assert!(!authorized(r, "Please help me clone the repo \"https://github.com/xlang-ai/instructor-embedding\" to /home/user.", "", "", &[]).0);
+        assert!(authorized(r, "I have a directory named \"todo_list_Jan_1\". Can you help me change its name into \"todo_list_Jan_2\"?", "", "", &[]).0);
+        assert!(authorized(r, "Rename the folder a to b", "", "", &[]).0);
+        assert!(authorized(r, "把 a 文件夹重命名为 b", "", "", &[]).0);
+        assert!(!authorized(r, "clone it but do not move anything", "", "", &[]).0);
+        assert!(alternative(r).starts_with("do not move"));
+        assert!(alternative("`mv` would overwrite existing file(s): a").starts_with("do not overwrite"));
     }
 }
