@@ -1,0 +1,1 @@
+FAIL — Chrome has no "Xenothian" interface language. I opened Chrome's built-in `chrome://settings/languages` and used "Add languages"; searching "Xenothian" returns an empty result list, so the language does not exist in Chrome's shipped language set and cannot be selected as the UI language via built-in settings.

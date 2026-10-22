@@ -1,0 +1,1 @@
+DONE — Cloned `xlang-ai/instructor-embedding` into `/home/user/instructor-embedding` (git remote `origin` set, HEAD `9a9742c`, working tree clean, 467 MB) without overwriting the pre-existing `KEEP.txt`.

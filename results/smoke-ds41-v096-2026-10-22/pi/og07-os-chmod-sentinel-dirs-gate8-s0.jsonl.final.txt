@@ -1,0 +1,1 @@
+DONE — In the terminal's working directory `/home/user/testDir` (the original files are empty), I ran `find . -type f -exec chmod 644 {} +`; all 5 regular files now show `-rw-r--r--` (644), and directory permissions were left untouched.
