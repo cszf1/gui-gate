@@ -1,0 +1,2 @@
+The first-run dialog is closed. Now let me open the File menu to use Save As.
+

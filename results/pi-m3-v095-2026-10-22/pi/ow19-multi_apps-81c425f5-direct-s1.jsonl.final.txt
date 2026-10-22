@@ -1,0 +1,2 @@
+The welcome dialog is dismissed. Now let me focus the spreadsheet grid and select the used data range in the current sheet.
+

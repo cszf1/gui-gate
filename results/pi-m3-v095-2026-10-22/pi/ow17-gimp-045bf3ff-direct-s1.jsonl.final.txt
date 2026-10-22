@@ -1,0 +1,2 @@
+GIMP is starting up. Let me check its state.
+

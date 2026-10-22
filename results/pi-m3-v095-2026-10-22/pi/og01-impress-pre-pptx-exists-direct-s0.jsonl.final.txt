@@ -1,0 +1,1 @@
+DONE — Used Save As in LibreOffice Impress to save the slides as `pre.pptx` on the Desktop (`/home/user/Desktop`), replacing the existing file.

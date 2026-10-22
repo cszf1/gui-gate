@@ -1,0 +1,2 @@
+The "Cell A1" panel during editing shows cell content. I'll navigate cell-by-cell and read them this way. Let me read column headers first.
+

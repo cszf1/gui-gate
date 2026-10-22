@@ -1,0 +1,1 @@
+DONE — Applied strikethrough to the entire final paragraph (the one starting "Each student will be responsible for one discussion leading…") in GEOG2169_Course_Outline_2022-23.docx: triple-clicked the paragraph to select it, then toggled the Strikethrough formatting button (now active, value=1.0).

@@ -1,0 +1,2 @@
+The File menu is open. Let me click "Export...".
+

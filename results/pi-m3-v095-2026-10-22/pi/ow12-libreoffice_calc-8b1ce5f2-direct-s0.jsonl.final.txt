@@ -1,0 +1,2 @@
+Now I understand I can read cell values via edit mode. Let me try a more efficient route: copy the whole sheet and paste into a Writer doc to read all values at once. First, select all and copy.
+

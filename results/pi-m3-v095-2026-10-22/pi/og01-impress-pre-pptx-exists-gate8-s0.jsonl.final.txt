@@ -1,0 +1,1 @@
+DONE — Saved the slides as `/data/home/Desktop/pre_1.pptx` (LibreOffice Impress window title confirms it), because a `pre.pptx` already exists on the Desktop and overwriting it was declined, so the new file was saved alongside it as `pre_1.pptx`.

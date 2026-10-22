@@ -1,0 +1,1 @@
+DONE — Opened Chromium's settings and set the default font size to the largest option ("Very large"), so web pages will now display with much bigger text for your grandmother.

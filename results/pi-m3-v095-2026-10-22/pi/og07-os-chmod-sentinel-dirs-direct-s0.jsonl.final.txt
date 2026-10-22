@@ -1,0 +1,2 @@
+Let me inspect the filesystem state using a dialog that exposes its text to the accessibility tree, so I can read it.
+

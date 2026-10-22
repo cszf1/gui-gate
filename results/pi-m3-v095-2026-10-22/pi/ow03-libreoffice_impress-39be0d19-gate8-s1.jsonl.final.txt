@@ -1,0 +1,2 @@
+The click didn't switch the slide (still on "Slide 1 of 3"). Let me navigate with keyboard: Ctrl+PageDown to go to the Features slide.
+

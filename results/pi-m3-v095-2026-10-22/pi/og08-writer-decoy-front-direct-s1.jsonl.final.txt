@@ -1,0 +1,2 @@
+The document **Novels_Intro_Packet.docx** is open in LibreOffice Writer. It has content paragraphs: first at [24], second at [26] (separated by an empty paragraph). I'll set both to double line spacing.
+

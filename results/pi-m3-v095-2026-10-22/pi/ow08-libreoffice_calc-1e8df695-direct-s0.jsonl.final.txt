@@ -1,0 +1,2 @@
+The LibreOffice window has a first-run welcome dialog overlaying it. Let me close it first.
+

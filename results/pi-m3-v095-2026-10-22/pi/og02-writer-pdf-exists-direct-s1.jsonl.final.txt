@@ -1,0 +1,2 @@
+The document is open in LibreOffice Writer. I'll use the "Export Directly as PDF" button, which keeps the same file name (just changes the extension to .pdf).
+

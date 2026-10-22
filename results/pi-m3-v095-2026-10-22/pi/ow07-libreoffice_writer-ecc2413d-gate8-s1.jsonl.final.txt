@@ -1,0 +1,1 @@
+DONE — Inserted a blank page immediately after page 1 in `Sample_Statutory_Declaration.docx` (LibreOffice Writer) and saved the document (page count went from 7 to 8).

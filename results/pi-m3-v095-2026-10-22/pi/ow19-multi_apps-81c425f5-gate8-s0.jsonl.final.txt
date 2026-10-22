@@ -1,0 +1,2 @@
+I can see LibreOffice Calc is open with the price list spreadsheet. Let me start by closing the first-run welcome dialog and inspecting the sheet.
+

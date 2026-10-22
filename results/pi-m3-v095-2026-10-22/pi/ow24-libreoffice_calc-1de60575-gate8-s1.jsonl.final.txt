@@ -1,0 +1,2 @@
+The spreadsheet grid isn't exposed via AT-SPI. Let me navigate to specific cells using the Name Box to read the data headers.
+

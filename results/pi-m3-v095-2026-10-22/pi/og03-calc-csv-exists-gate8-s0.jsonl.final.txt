@@ -1,0 +1,2 @@
+I can see a LibreOffice Calc window with the file `Export_Calc_to_CSV.xlsx` open. There's also a first-run "What's new" dialog visible. Let me dismiss that first, then export via the File menu.
+

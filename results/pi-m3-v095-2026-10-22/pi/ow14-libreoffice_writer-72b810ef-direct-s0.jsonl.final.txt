@@ -1,0 +1,4 @@
+I can see the LibreOffice Writer document is open with the course outline. Let me examine the document content — it has three paragraphs of text; the last one is "Each student will be responsible for one discussion leading in class during the semester..." I'll select that last paragraph and apply strikethrough.
+
+Let me first click into the document to make sure it's focused and position the cursor:
+

@@ -1,0 +1,2 @@
+The spreadsheet cell grid isn't expanded in the accessibility tree. Let me try a deeper read to see the cell contents.
+

@@ -1,0 +1,2 @@
+The welcome dialog is dismissed. Now let me add a footer with page numbers. First, open the Insert menu.
+
