@@ -35,6 +35,13 @@ pub fn run_actions_tool() -> Value {
     })
 }
 
+/// 0.9.7 GUI_GATE_PICK adds pick_one to run_actions.
+pub fn add_pick_one(t: &mut Value) {
+    t["inputSchema"]["properties"]["pick_one"] = json!({"type": "boolean", "description": "true: the steps are 2-6 ALTERNATIVE candidates for one next action (e.g. a toolbar click, a shortcut, a menu path); the gate runs only the one most likely to work."});
+    let d = t["description"].as_str().unwrap_or("").to_string();
+    t["description"] = json!(format!("{d} With pick_one:true the steps are alternatives for ONE next action and only the best-rated one runs (use it when you are unsure which way works)."));
+}
+
 pub fn norm_label(s: &str) -> String {
     let s = s.replace(['_', '&', '\u{2026}'], "").replace("...", "");
     s.split_whitespace().collect::<Vec<_>>().join(" ").to_lowercase()
@@ -394,11 +401,73 @@ impl<'a> Program<'a> {
     }
 }
 
+/// 0.9.7 GUI_GATE_PICK (GTA1 step-level test-time scaling, Agent S3 bBoN at step level): the steps are alternative
+/// candidates for ONE next action. The gate ranks them by the predictor's P(direct succeeds), minus risk and
+/// loop-breaker penalties; the judge role (when configured) picks among the safe ones; the chosen candidate then runs
+/// through the normal gate (risk path, reviewer, ask-human unchanged). Trajectory-level best-of-N is not done: a real
+/// desktop cannot be forked or reset, and every rollout's side effects would really happen.
+pub fn pick_one(g: &Gate, inn: &mut Inner, args: &Value, steps: &[Value]) -> Value {
+    let pid = as_i64(args.get("pid"));
+    let wid = as_i64(args.get("window_id"));
+    let mut cands: Vec<(usize, String, Value, f64, f64, String)> = vec![]; // (n, tool, args, p, score, risk)
+    for (i, st) in steps.iter().take(6).enumerate() {
+        let tool = s(st, "tool").to_string();
+        if !is_gated(&tool) || NOT_IN_BATCH.contains(&tool.as_str()) {
+            return text_result(format!("[gate] pick_one: candidate {} must be a single action step {{tool, args}} (got {:?})", i + 1, tool), true);
+        }
+        let mut a = st.get("args").cloned().filter(|a| a.is_object()).unwrap_or(json!({}));
+        if a.get("pid").is_none() { if let Some(p) = pid { a["pid"] = json!(p); } }
+        if a.get("window_id").is_none() { if let Some(w) = wid { a["window_id"] = json!(w); } }
+        let ctx = crate::features::build_ctx(&tool, &a, &inn.state);
+        let f = crate::features::features(&ctx, &inn.state, None, None, None, None);
+        let p = crate::decide::p_direct(&f, &inn.cfg);
+        let risk = ctx.risk_level.clone().unwrap_or_default();
+        let mut sc = p - match risk.as_str() { "high" => 1.0, "medium" => 0.3, _ => 0.0 };
+        if inn.lb.blocks(&ctx.signature) { sc -= 1.0; }
+        if inn.lb.level >= 1 && crate::loopbreak::mode_of(&tool, &ctx.target.kind) == inn.lb.dominant_mode() { sc -= 0.15; }
+        cands.push((i + 1, tool, a, p, sc, risk));
+    }
+    if cands.len() < 2 {
+        return text_result("[gate] pick_one needs 2-6 candidate steps", true);
+    }
+    let mut order: Vec<usize> = (0..cands.len()).collect();
+    order.sort_by(|a, b| cands[*b].4.partial_cmp(&cands[*a].4).unwrap().then(a.cmp(b)));
+    let mut chosen = order[0];
+    let mut why = "highest estimate".to_string();
+    if let Some(role) = g.roles.get("judge") {
+        let window = inn.state.latest_for(pid, wid).map(|o| trunc(&inn.state.get(o).text, 3000)).unwrap_or_default();
+        let list: Vec<String> = cands.iter().map(|c| format!("{}. {} {} (estimated chance to work {:.0}%{})", c.0, c.1, trunc(&c.2.to_string(), 200), c.3 * 100.0, if c.5.is_empty() { String::new() } else { format!(", {} risk", c.5) })).collect();
+        let prompt = format!("TASK: {}\n\nWINDOW:\n{window}\n\nRECENT STEPS:\n{}\n\nCANDIDATES:\n{}", inn.cfg.task,
+                             inn.recent.iter().rev().take(6).rev().map(|r| r.to_string()).collect::<Vec<_>>().join("\n"), list.join("\n"));
+        let (fin, _, calls, err) = crate::roles::probe_agent(role, crate::roles::JUDGE_PICK_SYSTEM, &prompt, &|| String::new(), false);
+        g.log.write(json!({"ev": "role", "role": "judge", "use": "pick", "calls": calls, "pick": fin.as_ref().and_then(|f| f.get("pick")).cloned(), "error": err}));
+        if let Some(n) = fin.as_ref().and_then(|f| as_i64(f.get("pick"))) {
+            if let Some(k) = cands.iter().position(|c| c.0 as i64 == n) {
+                // the judge cannot prefer a risky candidate over a safe one
+                if cands[k].5.is_empty() || cands.iter().all(|c| !c.5.is_empty()) {
+                    chosen = k;
+                    why = format!("judge ({}): {}", role.backend(), pystr(fin.as_ref().unwrap().get("reason")));
+                }
+            }
+        }
+    }
+    inn.inc("picks");
+    let ranking: Vec<String> = order.iter().map(|k| { let c = &cands[*k]; format!("{}. {} P={:.2}{}", c.0, c.1, c.3, if c.5.is_empty() { String::new() } else { format!(" ({} risk)", c.5) }) }).collect();
+    g.log.write(json!({"ev": "pick", "n": cands.len(), "chosen": cands[chosen].0, "why": why}));
+    let (n, tool, a) = (cands[chosen].0, cands[chosen].1.clone(), cands[chosen].2.clone());
+    let mut r = g.gated(inn, &tool, a);
+    push_text(&mut r, format!("[gate] pick_one: ran candidate {n} ({why}); ranking: {}.", ranking.join("; ")));
+    r
+}
+
 pub fn run_actions(g: &Gate, inn: &mut Inner, args: &Value) -> Value {
     let steps: Vec<Value> = match args.get("steps").and_then(|s| s.as_array()) {
         Some(s) if !s.is_empty() => s.clone(),
         _ => return text_result("run_actions needs a non-empty `steps` list", true),
     };
+    if truthy(args.get("pick_one")) && crate::v097::on("PICK") {
+        return pick_one(g, inn, args, &steps);
+    }
     let pid = as_i64(args.get("pid"));
     let wid = as_i64(args.get("window_id"));
     let b = Batch {

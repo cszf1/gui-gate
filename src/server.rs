@@ -169,6 +169,34 @@ pub fn plan_line(plan: &[(String, bool)]) -> Option<String> {
     Some(format!("[plan] {done}/{} done{next}", plan.len()))
 }
 
+/// 0.9.7 two strikes: the "mechanism" of a step = its mode + what it acts on (label, else keys, else the window),
+/// so varying coordinates / arguments on the same control counts as the same mechanism.
+pub fn mech_target(ctx: &ActionCtx) -> String {
+    let l = ctx.target.label.trim();
+    if !l.is_empty() {
+        return trunc(l, 40);
+    }
+    if ctx.tool == "run_command" {
+        return trunc(pystr(ctx.args.get("command")).split_whitespace().next().unwrap_or(""), 30);
+    }
+    if ctx.target.kind == "pixel" {
+        return "pixels".into();
+    }
+    "window".into()
+}
+
+/// 0.9.7: fingerprint of a window state (title + the set of element roles/labels of its newest read).
+pub fn state_fp(st: &GateState, pid: i64) -> Option<String> {
+    use std::hash::{Hash, Hasher};
+    let o = st.newest_for_pid(pid, 0.0)?;
+    let ob = st.get(o);
+    let mut rows: Vec<String> = ob.elements.values().map(|e| format!("{}|{}|{}", e.role, e.label, e.value.clone().unwrap_or_default())).collect();
+    rows.sort();
+    let mut h = std::collections::hash_map::DefaultHasher::new();
+    rows.hash(&mut h);
+    Some(format!("{}|{:x}", trunc(&window_title_of(&ob.text), 60), h.finish()))
+}
+
 const DESKTOP_WINDOWS: &[&str] = &["Desktop", "xfce4-panel", "xfdesktop", "Xfce4-panel", ""];
 
 /// GUI_GATE_STEP_INSIST=0 turns off "a re-sent doubted step runs".
@@ -494,6 +522,7 @@ pub struct Inner {
     pub plan_checks: Vec<Option<Value>>,
     pub facts: Vec<(String, String)>,
     pub briefed: bool,
+    pub history: Vec<String>,
     pub verdict_nagged: bool,
     pub risk_info: Value,
     pub cur_ack: bool,
@@ -656,7 +685,11 @@ fn augment_tools(result: &mut Value, shared: &Arc<Mutex<Shared>>, toolset: &str,
         all.push(plan_tool());
     }
     if batch_mode != "off" {
-        all.push(batch::run_actions_tool());
+        let mut ra = batch::run_actions_tool();
+        if crate::v097::on("PICK") {
+            batch::add_pick_one(&mut ra);
+        }
+        all.push(ra);
     }
     if crate::v097::on("INSPECT") {
         all.push(crate::inspect::tool_schema());
@@ -713,7 +746,7 @@ impl Gate {
                 want_shot: HashSet::new(), seen_pids: HashSet::new(), fg_sticky: false, pixel_pids: HashSet::new(),
                 probe_disabled: false, denied_effects: HashMap::new(), step_doubted: HashSet::new(), acted: false, read_streak: 0, hinted: HashSet::new(), cells_seen: HashMap::new(), term_seen: HashMap::new(), denials_consec: 0, denials_total: 0,
                 task_locked, task_source, in_batch: false, batch_ctx: Value::Null, pix_age: HashMap::new(),
-                last_auto: HashMap::new(), seen_rows: HashMap::new(), recent: vec![], plan: vec![], plan_verdict: String::new(), plan_checks: vec![], facts: vec![], briefed: false, verdict_nagged: false, lb: Default::default(), risk_info: Value::Null, cur_ack: false,
+                last_auto: HashMap::new(), seen_rows: HashMap::new(), recent: vec![], plan: vec![], plan_verdict: String::new(), plan_checks: vec![], facts: vec![], briefed: false, history: vec![], verdict_nagged: false, lb: Default::default(), risk_info: Value::Null, cur_ack: false,
             }),
             shared, out, log: Arc::new(EventLog::new(log_path)), child: Mutex::new(child), child_cmd,
             init_params: Mutex::new(None), client_elicit, client_pending, restarts: AtomicU64::new(0), human,
@@ -943,6 +976,11 @@ impl Gate {
             if let Some(l) = plan_line(&inn.plan).filter(|_| plan_enabled()) {
                 drop(inn);
                 push_text(&mut result, l);
+            }
+        }
+        if (is_gated(&name) || name == "run_actions") && crate::v097::on("DIGEST") {
+            if let Some(d) = self.digest() {
+                push_text(&mut result, d);
             }
         }
         if self.inner.lock().unwrap_or_else(|e| e.into_inner()).cfg.text_only {
@@ -1467,6 +1505,7 @@ impl Gate {
             o.remove("gate_ack");
             o.remove("gate_confirm");
         }
+        let snapped = if crate::v097::on("SNAP") { self.snap_pixel(inn, name, &mut args) } else { None };
         let mut ctx = build_ctx(name, &args, &inn.state);
         let confirmed = code.as_ref().map(|c| inn.confirm_codes.remove(c).as_deref() == Some(ctx.signature.as_str())).unwrap_or(false);
         inn.inc("actions");
@@ -1784,6 +1823,15 @@ impl Gate {
             if inn.recent.len() > 3 {
                 inn.recent.remove(0);
             }
+            {
+                let what = if name == "run_command" { format!("run_command `{}`", trunc(&pystr(args.get("command")), 60)) }
+                    else if !typed_v.is_empty() { format!("{name} \"{}\"", trunc(&typed_v, 40)) }
+                    else if t.the_label().is_empty() { format!("{name} {}", trunc(&keys_v.as_ref().map(|k| k.to_string()).unwrap_or_default().replace('"', ""), 30)) }
+                    else { format!("{name} {} \"{}\"", t.the_role(), trunc(t.the_label(), 40)) };
+                let line = format!("{what} -> {}", if err { format!("FAILED: {}", trunc(txt.lines().next().unwrap_or(""), 70)) } else { "ok".into() });
+                inn.history.push(line);
+                if inn.history.len() > 200 { inn.history.remove(0); }
+            }
             inn.denials_consec = 0;
             let has_xy = args.get("x").is_some() && args.get("y").is_some();
             if let Some(p) = t.pid {
@@ -1859,13 +1907,27 @@ impl Gate {
             if inn.cfg.policy == "gate" && crate::loopbreak::enabled() && !inn.in_batch && !crate::decide::is_nav_key(&ctx) {
                 let failed = is_error(&res) || s(&scv, "effect") == "none";
                 let mode = crate::loopbreak::mode_of(name, &t.kind);
-                if let Some(l) = inn.lb.push(&ctx.signature, mode, failed, s(&scv, "effect") == "confirmed") {
-                    let n = crate::loopbreak::note(l, &inn.lb);
+                let rose = if crate::v097::on("TWO_STRIKES") {
+                    let mech = format!("{mode}|{}", mech_target(&ctx));
+                    let fp = t.pid.and_then(|p| state_fp(&inn.state, p));
+                    inn.lb.push_ext(&ctx.signature, mode, &mech, failed, s(&scv, "effect") == "confirmed", fp)
+                } else {
+                    inn.lb.push(&ctx.signature, mode, failed, s(&scv, "effect") == "confirmed")
+                };
+                if let Some(l) = rose {
+                    let n = if crate::v097::on("TWO_STRIKES") { crate::loopbreak::note_ext(l, &inn.lb) } else { crate::loopbreak::note(l, &inn.lb) };
                     inn.inc("loop_notes");
-                    self.log.write(json!({"ev": "loop_breaker", "aid": inn.aid, "level": l, "mode": inn.lb.dominant_mode()}));
+                    self.log.write(json!({"ev": "loop_breaker", "aid": inn.aid, "level": l, "mode": inn.lb.dominant_mode(), "reason": inn.lb.last_reason}));
                     push_text(&mut res, n);
+                    if let Some(j) = self.loop_judge(inn, l) {
+                        push_text(&mut res, j);
+                    }
                 }
             }
+            if let Some(n) = snapped {
+                push_text(&mut res, n);
+            }
+            self.micro_verify(inn, name, &args, &mut res);
             return res;
         }
 
@@ -1956,11 +2018,20 @@ impl Gate {
         if inn.cfg.policy == "gate" && crate::loopbreak::enabled() && !inn.in_batch && !crate::decide::is_nav_key(&ctx)
             && dec.is(&["look_light", "look_full", "stop_loop", "ask_help", "review"]) {
             let mode = crate::loopbreak::mode_of(name, &t.kind);
-            if let Some(l) = inn.lb.push(&ctx.signature, mode, true, false) {
-                let n = crate::loopbreak::note(l, &inn.lb);
+            let rose = if crate::v097::on("TWO_STRIKES") {
+                let mech = format!("{mode}|{}", mech_target(&ctx));
+                inn.lb.push_ext(&ctx.signature, mode, &mech, true, false, None)
+            } else {
+                inn.lb.push(&ctx.signature, mode, true, false)
+            };
+            if let Some(l) = rose {
+                let n = if crate::v097::on("TWO_STRIKES") { crate::loopbreak::note_ext(l, &inn.lb) } else { crate::loopbreak::note(l, &inn.lb) };
                 inn.inc("loop_notes");
                 self.log.write(json!({"ev": "loop_breaker", "aid": inn.aid, "level": l, "mode": inn.lb.dominant_mode(), "refused": true}));
                 push_text(&mut res, n);
+                if let Some(j) = self.loop_judge(inn, l) {
+                    push_text(&mut res, j);
+                }
             }
         }
         // re-read / re-aim: the gate reads the window itself and attaches it, saving the agent a whole turn
@@ -2693,7 +2764,44 @@ impl Gate {
             let eff: Vec<String> = inn.denied_effects.keys().take(3).cloned().collect();
             ev.push(format!("The gate refused (not done, and must not be reached another way): {}", eff.join("; ")));
         }
-        let open_ms: Vec<String> = inn.plan.iter().filter(|m| !m.1).map(|m| m.0.clone()).collect();
+        // 0.9.7: milestone predicates, working memory, saved-document read-back
+        let status = if (crate::v097::on("STATE_PLAN") || crate::v097::on("VERIFY_PLUS")) && inn.plan_checks.iter().any(|c| c.is_some()) { self.plan_check_status(&mut inn) } else { vec![] };
+        for (i, st) in &status {
+            let m = inn.plan.get(*i).map(|m| (m.0.clone(), m.1)).unwrap_or_default();
+            ev.push(format!("Milestone {} \"{}\" check: {st}", i + 1, trunc(&m.0, 70)));
+            if st.starts_with("not yet") {
+                gaps.push(format!("milestone {} check does not hold: {}", i + 1, st.trim_start_matches("not yet: ")));
+                kinds.push("plan_check");
+            }
+        }
+        if !inn.facts.is_empty() {
+            ev.push(format!("Your facts: {}", inn.facts.iter().map(|(k, v)| format!("{k}={v}")).collect::<Vec<_>>().join("; ")));
+        }
+        if crate::v097::on("VERIFY_PLUS") {
+            let mut shown_docs = 0;
+            let mut cands: Vec<String> = named.iter().filter_map(|n| {
+                let e = crate::sidefx::expanduser(n);
+                if e.starts_with('/') { Some(e) } else { roots.iter().map(|r| format!("{r}/{e}")).find(|c| std::path::Path::new(c).is_file()) }
+            }).collect();
+            if let Some(st) = start {
+                for (p, _, _) in crate::done::changed_since(&home, st, 10) {
+                    if !cands.contains(&p) { cands.push(p); }
+                }
+            }
+            for p in cands {
+                let ext = crate::inspect::ext_of(&p);
+                if shown_docs >= 2 || !std::path::Path::new(&p).is_file() || !["docx", "xlsx", "pptx", "odt", "ods", "odp", "csv", "txt", "md", "json", "html", "py", "sh"].contains(&ext.as_str()) {
+                    continue;
+                }
+                shown_docs += 1;
+                ev.push(format!("Saved content of {} (what a checker reading the file sees):\n{}", crate::sidefx::relpath(&p, &home), trunc(&crate::inspect::read_file_text(&p, 900), 1100)));
+            }
+        }
+        let open_ms: Vec<String> = inn.plan.iter().enumerate().filter(|(i, m)| !m.1 && !status.iter().any(|x| x.0 == *i && x.1.starts_with("holds"))).map(|(_, m)| m.0.clone()).collect();
+        let held: Vec<usize> = inn.plan.iter().enumerate().filter(|(i, m)| !m.1 && status.iter().any(|x| x.0 == *i && x.1.starts_with("holds"))).map(|(i, _)| i + 1).collect();
+        if !held.is_empty() {
+            ev.push(format!("Milestone(s) {} are not marked done but their checks hold (mark them with set_plan done).", held.iter().map(|i| i.to_string()).collect::<Vec<_>>().join(", ")));
+        }
         if !open_ms.is_empty() {
             gaps.push(format!("plan milestones not marked done: {}", open_ms.join("; ")));
             kinds.push("plan_open");
@@ -2708,10 +2816,36 @@ impl Gate {
                 txt.push_str(&format!("\n- {g}"));
             }
         }
+        // 0.9.7 independent end-state verifier (Pointer verifier / VLAA verifier judge), optional model role
+        let mut verdict = Value::Null;
+        if crate::v097::on("VERIFY_PLUS") && inn.stat("verifier_calls") < 2.0 {
+            if let Some(role) = self.roles.get("verifier") {
+                inn.inc("verifier_calls");
+                let plan: Vec<String> = inn.plan.iter().enumerate().map(|(i, m)| format!("{}. [{}] {}", i + 1, if m.1 { "x" } else { " " }, m.0)).collect();
+                let wt: String = wins.iter().filter(|w| !DESKTOP_WINDOWS.contains(&w.2.as_str())).map(|(p, id, t)| format!("pid {p} window {id}: \"{t}\"")).collect::<Vec<_>>().join("\n");
+                let prompt = format!("TASK (verbatim): {task}\n\nAGENT'S PLAN:\n{}\n\nGATE EVIDENCE:\n{}\n\nOPEN WINDOWS:\n{wt}", plan.join("\n"), trunc(&txt, 6000));
+                let w2 = wt.clone();
+                let (fin, log, calls, err) = crate::roles::probe_agent(role, crate::roles::VERIFIER_SYSTEM, &prompt, &move || w2.clone(), true);
+                self.log.write(json!({"ev": "role", "role": "verifier", "calls": calls, "probes": log.len(), "error": err, "decision": fin.as_ref().map(|f| pystr(f.get("decision")))}));
+                if let Some(f) = fin {
+                    let d = pystr(f.get("decision")).to_lowercase();
+                    txt.push_str(&format!("\n\nIndependent verifier ({}): {}", role.backend(), d.to_uppercase()));
+                    match d.as_str() {
+                        "done" => txt.push_str(&format!(" - {}", pystr(f.get("reasoning")))),
+                        "infeasible" => txt.push_str(&format!(" - {} If you agree, reply FAIL with this reason.", pystr(f.get("reasoning")))),
+                        _ => txt.push_str(&format!("\n  diagnosis: {}\n  suggestion: {}", pystr(f.get("diagnosis")), pystr(f.get("suggestion")))),
+                    }
+                    if inn.stat("verifier_calls") >= 2.0 {
+                        txt.push_str("\n  (verifier budget used: further check_done calls give evidence only)");
+                    }
+                    verdict = f;
+                }
+            }
+        }
         inn.inc("check_done");
         self.log.write(json!({"ev": "check_done", "gaps": gaps.len(), "kinds": kinds, "named": named.len(), "ms": round_to(t0.elapsed().as_secs_f64() * 1000.0, 1)}));
         let mut r = text_result(txt, false);
-        r["structuredContent"] = json!({"gaps": gaps, "kinds": kinds});
+        r["structuredContent"] = json!({"gaps": gaps, "kinds": kinds, "verifier": verdict});
         r
     }
 
@@ -2813,6 +2947,138 @@ impl Gate {
         inn.inc("inspect_calls");
         self.log.write(json!({"ev": "inspect", "kind": kind, "ms": round_to(t0.elapsed().as_secs_f64() * 1000.0, 1), "is_error": is_error(&res)}));
         res
+    }
+
+    /// 0.9.7 GUI_GATE_SNAP (UiPath crop-and-refine, model-free): a pixel click that lands in no element of the
+    /// window's newest read but within 10 px of a labelled one is sent to that element instead (element_index).
+    /// Only when the read's element frames live in the screenshot's pixel space (same width bound).
+    fn snap_pixel(&self, inn: &mut Inner, name: &str, args: &mut Value) -> Option<String> {
+        if !matches!(name, "click" | "double_click" | "right_click") || args.get("element_token").is_some() || args.get("element_index").is_some() {
+            return None;
+        }
+        let (x, y) = (as_f64(args.get("x"))?, as_f64(args.get("y"))?);
+        if s(args, "coordinate_frame") == "desktop" {
+            return None;
+        }
+        let pid = as_i64(args.get("pid"))?;
+        let o = inn.state.latest_for(Some(pid), as_i64(args.get("window_id")))?;
+        let ob = inn.state.get(o);
+        let sw = ob.shot_w?;
+        let maxx = ob.elements.values().filter_map(|e| e.frame.as_ref().map(|f| f.x + f.w)).fold(0.0, f64::max);
+        if maxx <= 0.0 || maxx > sw + 2.0 {
+            return None;
+        }
+        if crate::inspect::element_at(x, y, ob.elements.values()).is_some() {
+            return None;
+        }
+        let (e, d) = crate::inspect::nearest_element(x, y, 10.0, ob.elements.values())?;
+        let (idx, role, label) = (e.index, e.role.clone(), e.label.clone());
+        if let Some(a) = args.as_object_mut() {
+            a.remove("x");
+            a.remove("y");
+        }
+        args["element_index"] = json!(idx);
+        inn.inc("snapped");
+        self.log.write(json!({"ev": "snap", "x": x, "y": y, "to": idx, "dist": round_to(d, 1)}));
+        Some(format!("[gate] your click at ({x:.0},{y:.0}) hit no element; it was {d:.0} px from [{idx}] {role} \"{}\", so the gate clicked that element.", trunc(&label, 50)))
+    }
+
+    /// 0.9.7 GUI_GATE_MICRO_VERIFY (VLAA micro-verification rules): what a save or a typing step should have produced,
+    /// checked right after it. Notes only.
+    fn micro_verify(&self, inn: &mut Inner, name: &str, args: &Value, res: &mut Value) {
+        if !crate::v097::on("MICRO_VERIFY") || is_error(res) {
+            return;
+        }
+        let keys = match name {
+            "hotkey" => args.get("keys").and_then(|k| k.as_array()).map(|a| a.iter().map(|x| pystr(Some(x)).to_lowercase()).collect::<Vec<_>>().join("+")).unwrap_or_default(),
+            "press_key" => format!("{}{}", args.get("modifiers").and_then(|m| m.as_array()).map(|a| a.iter().map(|x| pystr(Some(x)).to_lowercase() + "+").collect::<String>()).unwrap_or_default(), pystr(args.get("key")).to_lowercase()),
+            _ => String::new(),
+        };
+        if keys == "ctrl+s" || keys == "control+s" || keys == "ctrl+shift+s" {
+            std::thread::sleep(Duration::from_millis(300));
+            let wins = self.all_windows(inn);
+            let dlg: Vec<&String> = wins.iter().map(|w| &w.2).filter(|t| { let l = t.to_lowercase(); l.contains("keep current format") || l.contains("save as") || l.contains("save document") || l == "save" || l.contains("export") || l.contains("overwrite") || l.contains("replace") }).collect();
+            let unsaved: Vec<&String> = wins.iter().map(|w| &w.2).filter(|t| crate::done::title_unsaved(t)).collect();
+            let note = if let Some(d) = dlg.first() {
+                format!("[gate] Save check: a dialog \"{}\" is open - the file is not written until you answer it (keep the format the task needs).", trunc(d, 60))
+            } else if let Some(u) = unsaved.first() {
+                format!("[gate] Save check: \"{}\" still shows an unsaved-changes marker; the save may not have happened (focus elsewhere?).", trunc(u, 60))
+            } else {
+                "[gate] Save check: no dialog and no unsaved marker in the window titles (the gate cannot see LibreOffice's own modified flag; check_done lists the file's age).".into()
+            };
+            inn.inc("micro_verify");
+            push_text(res, note);
+        } else if name == "type_text" && args.get("element_token").or(args.get("element_index")).is_some() {
+            let typed = pystr(args.get("text"));
+            let probe: String = typed.trim().chars().take(24).collect();
+            let rt = text_of(res);
+            if probe.chars().count() >= 3 && !probe.contains('\n') && rt.contains("[gate] Window") && !rt.contains(&probe) {
+                inn.inc("micro_verify");
+                push_text(res, format!("[gate] Typing check: \"{}\" does not appear in the window read after the step; the text may have gone to another field.", trunc(&probe, 24)));
+            }
+        }
+    }
+
+    /// 0.9.7 GUI_GATE_DIGEST (Pointer's compaction summary, OpenAPA session pruning, HIPPO memory-driven context):
+    /// every GUI_GATE_DIGEST_EVERY (8) executed steps a compact digest of the task state; the compact role writes it
+    /// when configured. The gate cannot drop what the client already holds; the digest is what a client-side
+    /// compaction can keep instead of older tool results.
+    fn digest(&self) -> Option<String> {
+        let every = env("GUI_GATE_DIGEST_EVERY").and_then(|v| v.parse::<usize>().ok()).unwrap_or(8).max(2);
+        let mut inn = self.inner.lock().unwrap_or_else(|e| e.into_inner());
+        let n = inn.history.len();
+        let done_at = inn.stat("digest_at") as usize;
+        if n < every || n < done_at + every {
+            return None;
+        }
+        inn.stats.insert("digest_at".into(), json!(n));
+        inn.inc("digests");
+        let plan: Vec<String> = inn.plan.iter().enumerate().map(|(i, m)| format!("{}. [{}] {}", i + 1, if m.1 { "x" } else { " " }, trunc(&m.0, 90))).collect();
+        let facts = inn.facts.iter().map(|(k, v)| format!("{k}={v}")).collect::<Vec<_>>().join("; ");
+        let steps = inn.history.iter().rev().take(every).rev().cloned().collect::<Vec<_>>();
+        let failed = inn.history.iter().filter(|h| h.contains("-> FAILED")).count();
+        let task = inn.cfg.task.clone();
+        if let Some(role) = self.roles.get("compact") {
+            let prompt = format!("TASK: {task}\n\nPLAN:\n{}\nFACTS: {facts}\n\nALL STEPS SO FAR (oldest first):\n{}", plan.join("\n"), inn.history.join("\n"));
+            drop(inn);
+            let (fin, _, calls, err) = crate::roles::probe_agent(role, crate::roles::COMPACT_SYSTEM, &prompt, &|| String::new(), false);
+            self.log.write(json!({"ev": "role", "role": "compact", "calls": calls, "ok": fin.is_some(), "error": err}));
+            if let Some(d) = fin.and_then(|f| f.get("digest").map(|d| pystr(Some(d)))).filter(|d| !d.trim().is_empty()) {
+                return Some(format!("[gate] Progress digest after {n} steps ({}; older tool results are superseded by it):\n{}", role.backend(), trunc(&d, 2500)));
+            }
+            let inn2 = self.inner.lock().unwrap_or_else(|e| e.into_inner());
+            return Some(self.digest_text(&inn2, n, &plan, &facts, &steps, failed));
+        }
+        Some(self.digest_text(&inn, n, &plan, &facts, &steps, failed))
+    }
+
+    fn digest_text(&self, inn: &Inner, n: usize, plan: &[String], facts: &str, steps: &[String], failed: usize) -> String {
+        let mut d = format!("[gate] Progress digest after {n} steps ({failed} failed; older tool results are superseded by it):\nTask: {}", trunc(&inn.cfg.task, 200));
+        if !plan.is_empty() { d.push_str(&format!("\nPlan:\n{}", plan.join("\n"))); }
+        if !facts.is_empty() { d.push_str(&format!("\nFacts: {facts}")); }
+        d.push_str(&format!("\nLast {} steps:\n- {}", steps.len(), steps.join("\n- ")));
+        if inn.lb.level > 0 { d.push_str(&format!("\nLoop breaker level {}/3 (mostly {} steps without progress).", inn.lb.level, inn.lb.dominant_mode())); }
+        d
+    }
+
+    /// VLAA tier 3: at loop level 3 the judge role (when configured, with TWO_STRIKES on) says KEEP or SWITCH.
+    fn loop_judge(&self, inn: &mut Inner, level: u8) -> Option<String> {
+        if level < 3 || !crate::v097::on("TWO_STRIKES") {
+            return None;
+        }
+        let role = self.roles.get("judge")?;
+        let recent: Vec<String> = inn.recent.iter().rev().take(10).rev().map(|r| r.to_string()).collect();
+        let prompt = format!("TASK: {}\n\nRECENT STEPS (oldest first):\n{}\n\nGATE: loop level {level}/3, mostly {} steps without progress.", inn.cfg.task, recent.join("\n"), inn.lb.dominant_mode());
+        let (fin, _, calls, err) = crate::roles::probe_agent(role, crate::roles::JUDGE_LOOP_SYSTEM, &prompt, &|| String::new(), false);
+        self.log.write(json!({"ev": "role", "role": "judge", "use": "loop", "calls": calls, "verdict": fin.as_ref().map(|f| pystr(f.get("verdict"))), "error": err}));
+        let f = fin?;
+        let v = pystr(f.get("verdict")).to_uppercase();
+        inn.inc("judge_loop");
+        if v == "SWITCH" {
+            Some(format!("[gate] Loop judge ({}): SWITCH - {} Stop repeating: {}.", role.backend(), pystr(f.get("advice")), pystr(f.get("blacklist"))))
+        } else {
+            Some(format!("[gate] Loop judge ({}): KEEP - the repetition looks intended; go on.", role.backend()))
+        }
     }
 
     /// kind=howto: the search role when configured, else the built-in skills.

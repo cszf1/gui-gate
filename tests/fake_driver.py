@@ -104,6 +104,8 @@ def call(name, a):
         return text(f"window_id={w} pid={PID} snapshot_id={sid}\n{md}", sc=sc, img=shot)
     if name == "click":
         tok = a.get("element_token")
+        if tok is None and a.get("element_index") is not None:
+            tok = f"{snap_id(state['snap'])}:{a['element_index']}"  # like cua-driver: an index of the newest read
         if tok:
             sid, idx = tok.split(":")
             if sid != snap_id(state["snap"]):
