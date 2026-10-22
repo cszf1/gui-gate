@@ -252,3 +252,44 @@ class CheckDoneTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class LoopBreakerTests(unittest.TestCase):
+    def tearDown(self):
+        self.c.close()
+
+    def loop(self, n):
+        out = []
+        for i in range(n):
+            s = self.c.read()
+            r = self.c.call("click", element_token=f"{s}:{0 if i % 2 == 0 else 3}")
+            out.append(r)
+        return out
+
+    def test_escalates_and_forces_a_mode_switch(self):
+        self.c = Client("--human", "deny")
+        self.c.call("fake_mutate", fail_next=40)
+        rs = self.loop(14)
+        lv = [e["level"] for e in self.c.events() if e.get("ev") == "loop_breaker"]
+        self.assertEqual(lv, [1, 2, 3])
+        alltxt = "\n".join(txt(r) for r in rs)
+        self.assertIn("Loop breaker (level 1/3)", alltxt)
+        self.assertIn("use the keyboard", alltxt)
+        self.assertIn("run_command", alltxt)  # level 3 names the last exits
+        self.assertEqual(rs[-1]["structuredContent"]["gate"]["decision"], "stop_loop")
+        # another mode works: three new working steps reset the breaker, the old step is allowed again
+        for k in ["f2", "f3", "f4"]:
+            r = self.c.call("press_key", pid=4242, window_id=777, key=k)
+            self.assertFalse(r.get("isError"), txt(r))
+        s = self.c.read()
+        r = self.c.call("click", element_token=f"{s}:0")
+        self.assertNotEqual(r.get("structuredContent", {}).get("gate", {}).get("decision"), "stop_loop", txt(r))
+
+    def test_off_in_direct_policy_and_by_switch(self):
+        for extra, env in ((("--policy", "direct"), {}), ((), {"GUI_GATE_LOOP_BREAKER": "0"})):
+            self.c = Client("--human", "deny", *extra, env=env)
+            self.c.call("fake_mutate", fail_next=40)
+            self.loop(12)
+            self.assertEqual([e for e in self.c.events() if e.get("ev") == "loop_breaker"], [])
+            self.c.close()
+        self.c = Client("--human", "deny")

@@ -446,6 +446,7 @@ pub struct Inner {
     pub seen_rows: HashMap<String, (String, HashSet<String>)>,
     /// the last few executed actions, summarised for the reviewer
     pub recent: Vec<Value>,
+    pub lb: crate::loopbreak::LoopTrack,
     pub plan: Vec<(String, bool)>,   // set_plan milestones (text, done)
     pub plan_verdict: String,
     pub risk_info: Value,
@@ -648,7 +649,7 @@ impl Gate {
                 want_shot: HashSet::new(), seen_pids: HashSet::new(), fg_sticky: false, pixel_pids: HashSet::new(),
                 probe_disabled: false, denied_effects: HashMap::new(), step_doubted: HashSet::new(), acted: false, read_streak: 0, hinted: HashSet::new(), cells_seen: HashMap::new(), term_seen: HashMap::new(), denials_consec: 0, denials_total: 0,
                 task_locked, task_source, in_batch: false, batch_ctx: Value::Null, pix_age: HashMap::new(),
-                last_auto: HashMap::new(), seen_rows: HashMap::new(), recent: vec![], plan: vec![], plan_verdict: String::new(), risk_info: Value::Null, cur_ack: false,
+                last_auto: HashMap::new(), seen_rows: HashMap::new(), recent: vec![], plan: vec![], plan_verdict: String::new(), lb: Default::default(), risk_info: Value::Null, cur_ack: false,
             }),
             shared, out, log: Arc::new(EventLog::new(log_path)), child: Mutex::new(child), child_cmd,
             init_params: Mutex::new(None), client_elicit, client_pending, restarts: AtomicU64::new(0), human,
@@ -1400,6 +1401,14 @@ impl Gate {
             && ctx.target.kind != "pixel" && fget(&f, "token_stale") < 0.5 {
             dec = Decision::new("direct", dec.p_direct, "planned step inside a guarded batch", "rule").with_scores(&dec.scores);
         }
+        // the loop breaker asked for another mode: a step in a different mode is that switch, so the failure streak
+        // of the old mode does not hold it back (the predictor's "3 failed in a row -> look again" would undo it)
+        if inn.cfg.policy == "gate" && inn.lb.level >= 1 && dec.is(&["look_light", "look_full", "review", "check", "wait"]) && soft(&dec)
+            && ctx.risk_level.is_none() && fget(&f, "token_stale") < 0.5 && ctx.target.kind != "pixel"
+            && crate::loopbreak::mode_of(name, &ctx.target.kind) != inn.lb.dominant_mode() {
+            dec = Decision::new("direct", dec.p_direct, format!("mode switch the loop breaker asked for (was {})", dec.option), "rule").with_scores(&dec.scores);
+            inn.inc("loop_switch_direct");
+        }
         // cheap options are resolved here and re-decided (each at most once)
         let (mut waited, mut checked) = (false, false);
         for _ in 0..5 {
@@ -1479,6 +1488,15 @@ impl Gate {
         // a command has no GUI target to look at or re-aim: only the risk path (and the loop breaker) can hold it
         if name == "run_command" && !dec.is(&["ask_human", "risk_review", "deny", "handoff", "direct"]) {
             dec = Decision::new("direct", dec.p_direct, format!("command (no GUI target; predictor said {})", dec.option), "rule").with_scores(&dec.scores);
+        }
+        // loop breaker level >= 2: this exact step already made no progress in the current loop
+        if inn.cfg.policy == "gate" && crate::loopbreak::enabled() && !inn.in_batch && inn.lb.blocks(&ctx.signature)
+            && !crate::decide::is_nav_key(&ctx) && !dec.is(&["ask_human", "risk_review", "deny", "handoff"]) {
+            let mode = inn.lb.dominant_mode();
+            dec = Decision::new("stop_loop", dec.p_direct, format!("loop breaker level {}: this exact step already made no progress in the current loop; {}",
+                inn.lb.level, crate::loopbreak::switch_advice(&mode)), "rule").with_scores(&dec.scores);
+            inn.inc("loop_blocks");
+            trail.push("loop_block".into());
         }
         let mut opt = dec.option.clone();
         {
@@ -1719,6 +1737,16 @@ impl Gate {
                     self.auto_observe(inn, p, t.window_id, &mut res, false);
                 }
             }
+            if inn.cfg.policy == "gate" && crate::loopbreak::enabled() && !inn.in_batch && !crate::decide::is_nav_key(&ctx) {
+                let failed = is_error(&res) || s(&scv, "effect") == "none";
+                let mode = crate::loopbreak::mode_of(name, &t.kind);
+                if let Some(l) = inn.lb.push(&ctx.signature, mode, failed, s(&scv, "effect") == "confirmed") {
+                    let n = crate::loopbreak::note(l, &inn.lb);
+                    inn.inc("loop_notes");
+                    self.log.write(json!({"ev": "loop_breaker", "aid": inn.aid, "level": l, "mode": inn.lb.dominant_mode()}));
+                    push_text(&mut res, n);
+                }
+            }
             return res;
         }
 
@@ -1804,6 +1832,18 @@ impl Gate {
         event["gate_ms"] = json!(round_to(gate_ms, 1));
         self.log.write(event);
         let mut res = refusal(&dec, text, Some(extra));
+        // a step the gate sent back (look again / doubted / loop) is no progress either: the agent re-sending a refused
+        // step over and over is the same loop as re-sending a failing one (risk refusals have their own escalation)
+        if inn.cfg.policy == "gate" && crate::loopbreak::enabled() && !inn.in_batch && !crate::decide::is_nav_key(&ctx)
+            && dec.is(&["look_light", "look_full", "stop_loop", "ask_help", "review"]) {
+            let mode = crate::loopbreak::mode_of(name, &t.kind);
+            if let Some(l) = inn.lb.push(&ctx.signature, mode, true, false) {
+                let n = crate::loopbreak::note(l, &inn.lb);
+                inn.inc("loop_notes");
+                self.log.write(json!({"ev": "loop_breaker", "aid": inn.aid, "level": l, "mode": inn.lb.dominant_mode(), "refused": true}));
+                push_text(&mut res, n);
+            }
+        }
         // re-read / re-aim: the gate reads the window itself and attaches it, saving the agent a whole turn
         if let (Some(p), true) = (t.pid, opt == "look_light" || opt == "look_full") {
             if inn.cfg.auto_observe && !inn.in_batch && inn.cfg.policy == "gate" {

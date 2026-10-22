@@ -1,0 +1,10 @@
+== pi-m3-v095-2026-10-22
+direct fail    runs  67: level1 in 12, level2 in 3, level3 in 1 runs; steps refused at level>=2: 9 in 2 runs; logged actions after the first note 50, m3 taxonomy loop runs 41 -> noted 5; modes {'click': 13, 'typing': 3}
+direct success runs   1: level1 in 0, level2 in 0, level3 in 0 runs; steps refused at level>=2: 0 in 0 runs; logged actions after the first note 0; modes {}
+gate8  fail    runs  60: level1 in 13, level2 in 7, level3 in 3 runs; steps refused at level>=2: 13 in 3 runs; logged actions after the first note 79, m3 taxonomy loop runs 22 -> noted 1; modes {'typing': 3, 'click': 15, 'pixel': 3, 'keyboard': 2}
+gate8  success runs   8: level1 in 2, level2 in 0, level3 in 0 runs; steps refused at level>=2: 0 in 0 runs; logged actions after the first note 7; modes {'click': 2}
+== pi-ds41-v094-2026-10-21
+direct fail    runs  20: level1 in 0, level2 in 0, level3 in 0 runs; steps refused at level>=2: 0 in 0 runs; logged actions after the first note 0; modes {}
+direct success runs  16: level1 in 2, level2 in 0, level3 in 0 runs; steps refused at level>=2: 0 in 0 runs; logged actions after the first note 9; modes {'click': 2}
+gate8  fail    runs  22: level1 in 10, level2 in 2, level3 in 1 runs; steps refused at level>=2: 1 in 1 runs; logged actions after the first note 89; modes {'keyboard': 1, 'pixel': 6, 'click': 6}
+gate8  success runs  12: level1 in 0, level2 in 0, level3 in 0 runs; steps refused at level>=2: 0 in 0 runs; logged actions after the first note 0; modes {}
