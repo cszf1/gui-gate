@@ -100,6 +100,23 @@ class StallHintTests(unittest.TestCase):
             c.close()
 
 
+class TextOnlyTests(unittest.TestCase):
+    def test_text_only_never_captures_and_points_at_tokens(self):
+        c = Client("--human", "deny", "--text-only", env=dict(os.environ, FAKE_NO_FRAME="1"))
+        try:
+            r = c.call("get_window_state", pid=4242, window_id=777, include_screenshot=True)
+            self.assertFalse(any(x.get("type") == "image" for x in r["content"]))
+            self.assertIn("text-only session", txt(r))
+            s = c.read(fresh=True)
+            c.call("click", element_token=f"{s}:2")
+            r = c.call("click", pid=4242, window_id=777, x=20, y=30, gate_ack=True)   # no frame -> tokens, not a screenshot
+            self.assertNotIn("fresh screenshot", txt(r))
+            obs = [e for e in c.events() if e.get("ev") == "obs"]
+            self.assertTrue(obs and not any(e.get("screenshot") for e in obs), obs)
+        finally:
+            c.close()
+
+
 class _Rev:
     """A local OpenAI-compatible endpoint that answers with a fixed decision and records what it was shown."""
     def __init__(self, decision):
