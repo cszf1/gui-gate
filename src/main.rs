@@ -27,6 +27,11 @@ mod state;
 mod tools;
 mod updates;
 mod util;
+mod v097;
+mod roles;
+mod inspect;
+mod jobs;
+mod memory;
 
 use decide::GateConfig;
 use util::*;
@@ -99,6 +104,7 @@ fn main() {
             "train" => Some(tools::train_main(rest)),
             "compare" => Some(tools::compare_main(rest)),
             "replay" => Some(tools::replay_main(rest)),
+            "memory" => Some(memory::main_cli(rest)),
             "atspi-probe" => Some(atspi_probe(rest)),
             _ => None,
         };

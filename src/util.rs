@@ -162,3 +162,25 @@ pub fn stamp() -> String {
     let y = if mo <= 2 { y + 1 } else { y };
     format!("{y:04}{mo:02}{d:02}-{h:02}{m:02}{sec:02}")
 }
+
+/// `word` occurs in `text` (both lowercase) bounded by non-alphanumeric characters (multi-word keys allowed).
+pub fn has_word(text: &str, word: &str) -> bool {
+    if word.is_empty() {
+        return false;
+    }
+    let mut start = 0;
+    while let Some(i) = text[start..].find(word) {
+        let a = start + i;
+        let b = a + word.len();
+        let before = text[..a].chars().next_back().map(|c| !c.is_alphanumeric()).unwrap_or(true);
+        let after = text[b..].chars().next().map(|c| !c.is_alphanumeric()).unwrap_or(true);
+        if before && after {
+            return true;
+        }
+        start = a + word.len().max(1);
+        while start < text.len() && !text.is_char_boundary(start) {
+            start += 1;
+        }
+    }
+    false
+}

@@ -5,6 +5,11 @@
 #   results/; OSWorld's official setting is 100 steps (use --max-turns 100 for numbers comparable with the leaderboard).
 #   PI_TOOLS_096=0: no run_command / check_done / set_plan (gate env switches them off) and the pre-0.9.6 prompt.
 #   PI_APP_HINTS=0: no per-app keyboard hints (bench/app_hints.md) in the prompt.
+#   PI_TOOLS_097=1: the 0.9.7 features absorbed from the top OSWorld frameworks (gate env GUI_GATE_097=1: inspect,
+#     run_command jobs, phantom tools, two strikes, feasibility first, state plans, verify+, skills, snap, pick, digest,
+#     micro-verify; docs/sota-absorb-2026-10-22.md). Default 0 = 0.9.6 behaviour. The gate's own skills replace the
+#     bench hints, so use PI_APP_HINTS=0 with it. Model roles: put GUI_GATE_ROLE_<NAME>=reviewer (or _URL/_MODEL/_KEY_FILE)
+#     in ~/.config/gui-gate/reviewer.env; PI_GATE_ENV='"K":"V",...' adds raw gate env entries.
 #   conds: direct full gate gate_noobs gate_cm gate4 gate8 (all use --human deny)
 #   gate8 (>= 0.8): gate + the task text + the gate's own reviewer model; the acting model never approves itself
 #   Every cond runs gui-gate, and gui-gate >= 0.9.3 refuses to start without a reviewer model, so ALL conds use the
@@ -29,6 +34,8 @@ TMO=${PI_TIMEOUT:-480}
 MAXT=${MAXT_ARG:-${PI_MAX_TURNS:-30}}
 case "$MAXT" in ''|*[!0-9]*) echo "run_bench: --max-turns needs a number" >&2; exit 2;; esac
 TOOLS096=${PI_TOOLS_096:-1}
+TOOLS097=${PI_TOOLS_097:-0}
+GATE_ENV_EXTRA=${PI_GATE_ENV:-}
 APPHINTS=${PI_APP_HINTS:-1}
 # context hygiene (opt-in, off by default so runs stay comparable): a Pi `context` extension keeps only the newest
 # window observation in full and summarises older ones (bench/pi_ext/obs_prune.ts = bench/context_hygiene.py prune())
@@ -83,18 +90,26 @@ run_one() {  # task cond seed attempt
 Speed: when you already know the next several steps (e.g. click a field, type, press Enter, save), run them in ONE codemode script calling tools.mcp__gui__* in sequence. After each call check r.isError; if a call is blocked or errors, stop the script and return its text. End the script by returning only the short text you need (and image() of a screenshot only when you must look). Use single direct tool calls when you need to look before deciding."
   fi
   GA="$GA$TO"
-  [ "$TOOLS096" = 1 ] || GENV=',"env":{"GUI_GATE_RUN_COMMAND":"0","GUI_GATE_CHECK_DONE":"0","GUI_GATE_PLAN":"0"}'
+  local ENVS=""
+  [ "$TOOLS096" = 1 ] || ENVS='"GUI_GATE_RUN_COMMAND":"0","GUI_GATE_CHECK_DONE":"0","GUI_GATE_PLAN":"0"'
+  [ "$TOOLS097" = 1 ] && ENVS="${ENVS:+$ENVS,}\"GUI_GATE_097\":\"1\""
+  [ -n "$GATE_ENV_EXTRA" ] && ENVS="${ENVS:+$ENVS,}$GATE_ENV_EXTRA"
+  [ -n "$ENVS" ] && GENV=",\"env\":{$ENVS}"
   cat > $MCP <<J
 {"mcpServers":{"gui":{"command":"$HOME/.local/bin/gui-gate","args":[$GA,"--human","deny","--log","$OUT/gate/$tag.jsonl"]$GENV,
  "exposure":"hidden","toolExposure":{"list_apps":"direct","list_windows":"direct","get_window_state":"direct",
  "click":"direct","press_key":"direct","type_text":"direct","scroll":"direct","request_human":"direct",
- "run_actions":"direct","run_command":"direct","check_done":"direct","set_plan":"direct"}}}}
+ "run_actions":"direct","run_command":"direct","check_done":"direct","set_plan":"direct","inspect":"direct"}}}}
 J
   local instr=$($PY -c "import json,sys;print(json.load(open(sys.argv[1]))['instruction'])" $HERE/tasks/$task)
   local TOOLNOTE="" APPNOTE=""
   if [ "$TOOLS096" = 1 ]; then
     TOOLNOTE="
 Start with set_plan: 2-6 short milestones and whether the task can be done on this computer at all (feasible:false when the app has no such feature or the thing asked for does not exist - then reply FAIL with the reason). For files, folders and terminal work use run_command (bash; it returns the output and is checked like a typed terminal command); a document that is open in an app is best changed in the app. When you already know several steps, send them in one run_actions call. Before you reply DONE, call check_done and fix any real gap it lists."
+  fi
+  if [ "$TOOLS097" = 1 ]; then
+    TOOLNOTE="$TOOLNOTE
+To look at files, PDFs, documents, images, web pages or the environment without changing anything, use inspect (kind=file/page/env/howto). Start from the gate's task briefing."
   fi
   if [ "$APPHINTS" = 1 ]; then
     local ah=$(python3 "$HERE/app_hints.py" "$name" 2>/dev/null)
@@ -125,7 +140,7 @@ When the task is complete, reply DONE and one line on what you did. If the task 
   if echo "$st" | grep -q '"stop": "agent"' && grep -q 'thinking must be passed back\|"stopReason":"error"' $OUT/pi/$tag.jsonl 2>/dev/null; then
     infra='"relay_error"'
   fi
-  echo "{\"tag\":\"$tag\",\"task\":\"$name\",\"cond\":\"$c\",\"seed\":$s,\"attempt\":$att,\"infra\":$infra,\"screen\":\"$scr\",\"think\":\"$THINK\",\"model\":\"$model\",\"gg\":\"$ggv\",\"text_only\":$TEXT_ONLY,\"obs_prune\":$OBS_PRUNE,\"max_turns\":$MAXT,\"tools096\":$TOOLS096,\"app_hints\":$APPHINTS,\"pi\":$st}" >> $OUT/runs.jsonl
+  echo "{\"tag\":\"$tag\",\"task\":\"$name\",\"cond\":\"$c\",\"seed\":$s,\"attempt\":$att,\"infra\":$infra,\"screen\":\"$scr\",\"think\":\"$THINK\",\"model\":\"$model\",\"gg\":\"$ggv\",\"text_only\":$TEXT_ONLY,\"obs_prune\":$OBS_PRUNE,\"max_turns\":$MAXT,\"tools096\":$TOOLS096,\"tools097\":$TOOLS097,\"app_hints\":$APPHINTS,\"pi\":$st}" >> $OUT/runs.jsonl
   [ "$infra" = '"relay_error"' ] && return 9
   return 0
 }

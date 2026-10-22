@@ -438,6 +438,9 @@ pub struct Shared {
     pub driver_version: Option<String>,
     pub delivery_tools: HashSet<String>,
     pub compat_warned: bool,
+    /// 0.9.7: the tool names advertised to the agent (phantom-tool aliasing) and click's argument names
+    pub tool_names: Vec<String>,
+    pub click_props: Vec<String>,
 }
 
 /// Everything a gated call reads and writes, under one lock.
@@ -496,6 +499,9 @@ pub struct Gate {
     toolset: String,
     batch_mode: String,
     pub shot: crate::shot::ShotCfg,
+    /// 0.9.7: optional model roles (feasibility, planner, verifier, judge, search, compact, grounder) and jobs
+    pub roles: crate::roles::Roles,
+    pub jobs: crate::jobs::Jobs,
 }
 
 fn new_stats() -> Obj {
@@ -547,7 +553,7 @@ fn from_child(mut msg: Value, shared: &Arc<Mutex<Shared>>, out: &Arc<Out>, tools
             Some("initialize") if msg.get("result").is_some() => {
                 let mut sh = shared.lock().unwrap();
                 let r = &mut msg["result"];
-                let mut ins = pystr(r.get("instructions")) + INSTRUCTIONS_NOTE;
+                let mut ins = pystr(r.get("instructions")) + INSTRUCTIONS_NOTE + &crate::v097::instructions_note();
                 if !sh.update_note.is_empty() {
                     ins.push('\n');
                     ins.push_str(&sh.update_note);
@@ -585,6 +591,9 @@ fn augment_tools(result: &mut Value, shared: &Arc<Mutex<Shared>>, toolset: &str,
         if sch["properties"].get("delivery_mode").is_some() {
             sh.delivery_tools.insert(name.clone());
         }
+        if name == "click" {
+            sh.click_props = sch["properties"].as_object().map(|o| o.keys().cloned().collect()).unwrap_or_default();
+        }
         let required: Vec<String> = sch["required"].as_array().unwrap().iter().map(|v| pystr(Some(v))).collect();
         if toolset == "core" {
             let props = sch["properties"].as_object_mut().unwrap();
@@ -617,7 +626,11 @@ fn augment_tools(result: &mut Value, shared: &Arc<Mutex<Shared>>, toolset: &str,
     let mut all = tools;
     all.extend(gate_tools());
     if crate::command::enabled() {
-        all.push(crate::command::tool_schema());
+        let mut rc = crate::command::tool_schema();
+        if crate::v097::on("JOBS") {
+            crate::command::add_job_modes(&mut rc);
+        }
+        all.push(rc);
     }
     if check_done_enabled() {
         all.push(crate::done::tool_schema());
@@ -628,8 +641,13 @@ fn augment_tools(result: &mut Value, shared: &Arc<Mutex<Shared>>, toolset: &str,
     if batch_mode != "off" {
         all.push(batch::run_actions_tool());
     }
+    if crate::v097::on("INSPECT") {
+        all.push(crate::inspect::tool_schema());
+    }
+    // every tool that exists (also driver tools the core toolset hides): only names outside it are phantoms
+    sh.tool_names = all.iter().map(|t| s(t, "name").to_string()).collect();
     if toolset == "core" {
-        all.retain(|t| CORE_TOOLS.contains(&s(t, "name")));
+        all.retain(|t| CORE_TOOLS.contains(&s(t, "name")) || s(t, "name") == "inspect");
     }
     result["tools"] = Value::Array(all);
 }
@@ -641,7 +659,7 @@ impl Gate {
             pending_methods: HashMap::new(), update_note: String::new(), update_told: false, driver_version: None,
             delivery_tools: ["click", "double_click", "right_click", "drag", "type_text", "press_key", "hotkey", "set_value", "scroll"]
                 .iter().map(|s| s.to_string()).collect(),
-            compat_warned: false,
+            compat_warned: false, tool_names: vec![], click_props: vec![],
         }));
         let client_pending: Arc<Mutex<HashMap<String, Sender<Value>>>> = Arc::new(Mutex::new(HashMap::new()));
         let client_elicit = Arc::new(AtomicBool::new(false));
@@ -683,6 +701,7 @@ impl Gate {
             shared, out, log: Arc::new(EventLog::new(log_path)), child: Mutex::new(child), child_cmd,
             init_params: Mutex::new(None), client_elicit, client_pending, restarts: AtomicU64::new(0), human,
             reviewer: rv, started: now(), toolset, batch_mode, shot: crate::shot::ShotCfg::from_env(),
+            roles: crate::roles::Roles::from_env(), jobs: Default::default(),
         })
     }
 
@@ -819,12 +838,23 @@ impl Gate {
 
     fn handle_call(self: &Arc<Self>, msg: Value) {
         let params = msg.get("params").cloned().unwrap_or(json!({}));
-        let name = s(&params, "name").to_string();
-        let args = params.get("arguments").cloned().filter(|a| a.is_object()).unwrap_or(json!({}));
+        let name0 = s(&params, "name").to_string();
+        let args0 = params.get("arguments").cloned().filter(|a| a.is_object()).unwrap_or(json!({}));
+        // 0.9.7 phantom tools: a name the agent invented (triple_click, run_bash, type ...) is mapped to a real tool
+        let (name, args, alias_note) = match self.phantom(&name0, &args0) {
+            Ok(x) => x,
+            Err(res) => {
+                self.out.send(&json!({"jsonrpc": "2.0", "id": msg["id"], "result": res}));
+                return;
+            }
+        };
         let me = self.clone();
         let nm = name.clone();
         let res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(move || {
             match nm.as_str() {
+                "inspect" if crate::v097::on("INSPECT") => me.inspect(&args),
+                "run_command" if crate::v097::on("JOBS") && matches!(s(&args, "mode"), "poll" | "stop") => me.job_poll(&args),
+                "__triple_click" => me.triple_click(&args),
                 "gate_report" => me.report(),
                 "gate_config" => me.config(&args),
                 "request_human" => me.request_human(&args),
@@ -851,6 +881,9 @@ impl Gate {
             }
         };
         let mut result = result;
+        if let Some(n) = alias_note {
+            push_text(&mut result, format!("[gate] {n}."));
+        }
         {
             let mut inn = self.inner.lock().unwrap_or_else(|e| e.into_inner());
             if inn.cfg.policy == "gate" {
@@ -1151,6 +1184,18 @@ impl Gate {
         }
         if !std::path::Path::new(&cwd).is_dir() {
             return text_result(format!("[run_command] cwd {cwd} is not a directory"), true);
+        }
+        if crate::v097::on("JOBS") && s(args, "mode") == "start" {
+            return match self.jobs.start(&cmd, &cwd) {
+                Ok(id) => {
+                    inn.inc("jobs_started");
+                    self.log.write(json!({"ev": "job", "aid": inn.aid, "job": id, "cwd": cwd}));
+                    let mut r = text_result(format!("[run_command] started job {id} in the background (cwd {cwd}). Check it with run_command mode=poll job={id}; stop it with mode=stop."), false);
+                    r["structuredContent"] = json!({"job": id, "running": true});
+                    r
+                }
+                Err(e) => text_result(format!("[run_command] could not start the job: {e}"), true),
+            };
         }
         let tmo = args.get("timeout_s").and_then(|v| v.as_f64()).unwrap_or(30.0);
         let r = crate::command::run(&cmd, &cwd, tmo);
@@ -2433,6 +2478,188 @@ impl Gate {
         r
     }
 
+    // ------------------------------------------------------------------ 0.9.7 (docs/sota-absorb-2026-10-22.md)
+
+    /// Phantom tools (GUI_GATE_PHANTOM): Ok((tool, args, note)) to run, or Err(result) to answer at once.
+    fn phantom(&self, name: &str, args: &Value) -> Result<(String, Value, Option<String>), Value> {
+        let known = self.shared.lock().unwrap().tool_names.clone();
+        if !crate::v097::on("PHANTOM") || known.is_empty() || known.iter().any(|k| k == name) || name.starts_with("__") {
+            return Ok((name.to_string(), args.clone(), None));
+        }
+        let mapped = crate::v097::phantom_alias(name, args, &known);
+        {
+            let mut inn = self.inner.lock().unwrap_or_else(|e| e.into_inner());
+            inn.inc("phantom_calls");
+            if mapped.is_some() { inn.inc("phantom_mapped"); }
+        }
+        self.log.write(json!({"ev": "phantom", "name": name, "to": mapped.as_ref().map(|m| m.0.clone())}));
+        match mapped {
+            Some((t, _, _)) if t == "__wait" => {
+                let secs = as_f64(args.get("seconds")).or(as_f64(args.get("duration"))).or(as_f64(args.get("time"))).or(as_f64(args.get("ms")).map(|m| m / 1000.0)).unwrap_or(1.0).clamp(0.0, 10.0);
+                std::thread::sleep(Duration::from_secs_f64(secs));
+                Err(text_result(format!("[gate] there is no tool \"{name}\"; waited {secs:.1} s. Read the window again if you expect a change."), false))
+            }
+            Some((t, _, _)) if t == "__final" => Err(text_result(format!("[gate] there is no tool \"{name}\": finish by ending your turn with the final reply (DONE, or FAIL with the reason when the task cannot be done here).{}", if check_done_enabled() { " Call check_done before DONE." } else { "" }), false)),
+            Some((t, a, n)) => Ok((t, a, if n.is_empty() { None } else { Some(n) })),
+            None => {
+                let near = crate::v097::nearest_tools(name, &known, 4);
+                Err(text_result(format!("[gate] there is no tool \"{name}\" and nothing it maps to; do not try variants of the name. Closest real tools: {}.", near.join(", ")), true))
+            }
+        }
+    }
+
+    /// triple_click (a phantom): click with a click count when the driver has one, else click + Home + shift+End.
+    fn triple_click(&self, args: &Value) -> Value {
+        let props = self.shared.lock().unwrap().click_props.clone();
+        let mut inn = self.inner.lock().unwrap_or_else(|e| e.into_inner());
+        let mut a = args.clone();
+        if let Some(p) = ["click_count", "count", "clicks"].iter().find(|p| props.iter().any(|x| x == *p)) {
+            a[*p] = json!(3);
+            let mut r = self.gated(&mut inn, "click", a);
+            push_text(&mut r, "[gate] there is no tool \"triple_click\"; ran click with a click count of 3.".into());
+            return r;
+        }
+        let r = self.gated(&mut inn, "click", a.clone());
+        if is_error(&r) || text_of(&r).starts_with("[gate]") {
+            return r;
+        }
+        let pw = json!({"pid": a.get("pid"), "window_id": a.get("window_id")});
+        let mut k1 = pw.clone();
+        k1["key"] = json!("Home");
+        let _ = self.gated(&mut inn, "press_key", k1);
+        let mut k2 = pw;
+        k2["keys"] = json!(["shift", "End"]);
+        let mut r2 = self.gated(&mut inn, "hotkey", k2);
+        push_text(&mut r2, "[gate] there is no tool \"triple_click\"; emulated it: click, then Home and shift+End (selects the line). For a whole paragraph use ctrl+shift+down after Home.".into());
+        r2
+    }
+
+    fn job_poll(&self, args: &Value) -> Value {
+        let id = as_i64(args.get("job")).unwrap_or(-1);
+        if id < 0 {
+            return text_result("[run_command] mode=poll / stop needs the job number that mode=start returned", true);
+        }
+        match self.jobs.poll(id as u32, s(args, "mode") == "stop", 4000) {
+            Ok((t, v)) => {
+                let mut r = text_result(t, false);
+                r["structuredContent"] = v;
+                r
+            }
+            Err(e) => text_result(format!("[run_command] {e}"), true),
+        }
+    }
+
+    /// inspect (GUI_GATE_INSPECT): read-only views; see inspect.rs.
+    fn inspect(&self, args: &Value) -> Value {
+        let kind = s(args, "kind").to_string();
+        let cap = as_i64(args.get("max_chars")).unwrap_or(12000).clamp(500, 60000) as usize;
+        let t0 = Instant::now();
+        let (task, text_only) = {
+            let inn = self.inner.lock().unwrap_or_else(|e| e.into_inner());
+            (inn.cfg.task.clone(), inn.cfg.text_only)
+        };
+        let query = pystr(args.get("query"));
+        let res = match kind.as_str() {
+            "file" => crate::inspect::file_result(s(args, "path"), cap, text_only),
+            "env" => text_result(crate::inspect::env_facts(&task, &query), false),
+            "page" => match crate::inspect::page_info(&query, cap) {
+                Ok(t) => text_result(t, false),
+                Err(e) => text_result(format!("[inspect page] {e}"), true),
+            },
+            "howto" => self.howto(&query),
+            "memory" => text_result(crate::memory::lookup_text(if query.trim().is_empty() { &task } else { &query }, 3), false),
+            "region" => self.inspect_region(args, text_only),
+            "locate" => self.inspect_locate(args, text_only),
+            _ => text_result(format!("[inspect] kind must be one of {}", crate::inspect::KINDS.join(", ")), true),
+        };
+        let mut inn = self.inner.lock().unwrap_or_else(|e| e.into_inner());
+        inn.inc("inspect_calls");
+        self.log.write(json!({"ev": "inspect", "kind": kind, "ms": round_to(t0.elapsed().as_secs_f64() * 1000.0, 1), "is_error": is_error(&res)}));
+        res
+    }
+
+    /// kind=howto: the search role when configured, else the built-in skills.
+    fn howto(&self, query: &str) -> Value {
+        if query.trim().is_empty() {
+            return text_result("[inspect howto] say what you want to do, e.g. query: \"change the slide number colour in LibreOffice Impress\"", true);
+        }
+        if let Some(role) = self.roles.get("search") {
+            let (fin, _, calls, err) = crate::roles::probe_agent(role, crate::roles::SEARCH_SYSTEM, &format!("Question: {query}"), &|| String::new(), false);
+            self.log.write(json!({"ev": "role", "role": "search", "calls": calls, "ok": fin.is_some(), "error": err}));
+            if let Some(f) = fin {
+                let exists = f.get("exists").and_then(|e| e.as_bool());
+                return text_result(format!("[inspect howto] ({}){}\n{}", role.backend(), if exists == Some(false) { " the search role says this feature does not exist in the app" } else { "" }, pystr(f.get("answer"))), false);
+            }
+        }
+        text_result(crate::inspect::howto_from_skills(query), false)
+    }
+
+    fn window_shot(&self, inn: &mut Inner, pid: i64, wid: Option<i64>) -> Option<(String, Value)> {
+        let mut a = json!({"pid": pid, "include_screenshot": true});
+        if let Some(w) = wid { a["window_id"] = json!(w); }
+        let r = self.tool(inn, "get_window_state", &a, 60.0);
+        if is_error(&r) { return None; }
+        if let Some(o) = inn.state.record_observation(&a, &r, None) { let _ = o; }
+        let img = r.get("content")?.as_array()?.iter().find(|c| s(c, "type") == "image").map(|c| pystr(c.get("data")))?;
+        Some((img, sc(&r)))
+    }
+
+    fn inspect_region(&self, args: &Value, text_only: bool) -> Value {
+        if text_only {
+            return text_result("[inspect region] this session is text-only (the model cannot see images); use the tree rows or kind=locate.", true);
+        }
+        let Some(pid) = as_i64(args.get("pid")) else { return text_result("[inspect region] needs pid (and window_id) of the window", true) };
+        let mut inn = self.inner.lock().unwrap_or_else(|e| e.into_inner());
+        let Some((img, _)) = self.window_shot(&mut inn, pid, as_i64(args.get("window_id"))) else { return text_result("[inspect region] could not take a screenshot of that window", true) };
+        let g = |k: &str, d: f64| as_f64(args.get(k)).unwrap_or(d);
+        match crate::inspect::crop_zoom(&img, g("x", 0.0), g("y", 0.0), g("w", 200.0), g("h", 150.0), g("scale", 2.0)) {
+            Ok((b, (x, y, w, h))) => {
+                let z = g("scale", 2.0).clamp(1.0, 4.0);
+                json!({"content": [{"type": "text", "text": format!("[inspect region] x={x} y={y} w={w} h={h} of the window screenshot, zoomed {z}x. A point (px, py) in this image is window pixel ({x} + px/{z}, {y} + py/{z}).")},
+                                   {"type": "image", "data": b, "mimeType": "image/png"}]})
+            }
+            Err(e) => text_result(format!("[inspect region] {e}"), true),
+        }
+    }
+
+    fn inspect_locate(&self, args: &Value, text_only: bool) -> Value {
+        let describe = pystr(args.get("describe"));
+        let Some(pid) = as_i64(args.get("pid")) else { return text_result("[inspect locate] needs pid (and window_id) and describe", true) };
+        if describe.trim().is_empty() {
+            return text_result("[inspect locate] describe the element, e.g. \"the Bold button in the toolbar\"", true);
+        }
+        let wid = as_i64(args.get("window_id"));
+        let mut inn = self.inner.lock().unwrap_or_else(|e| e.into_inner());
+        let mut lines = vec![];
+        // grounder role (vision): x,y on a fresh screenshot, then snapped to the element under it
+        if let Some(role) = self.roles.get("grounder") {
+            if let Some((img, scv)) = self.window_shot(&mut inn, pid, wid) {
+                let (fin, _, _, err) = crate::roles::probe_agent_image(role, crate::roles::GROUNDER_SYSTEM, &format!("Element to find: {describe}"), &img);
+                self.log.write(json!({"ev": "role", "role": "grounder", "ok": fin.is_some(), "error": err}));
+                if let Some(f) = fin.filter(|f| f.get("found").and_then(|b| b.as_bool()).unwrap_or(false)) {
+                    let (x, y) = (as_f64(f.get("x")).unwrap_or(-1.0), as_f64(f.get("y")).unwrap_or(-1.0));
+                    let snap = inn.state.latest_for(Some(pid), wid).and_then(|o| crate::inspect::element_at(x, y, inn.state.get(o).elements.values()).map(|e| (e.index, e.role.clone(), e.label.clone())));
+                    lines.push(format!("grounder ({}): x={x:.0} y={y:.0} in the screenshot{} - {}", role.backend(),
+                        snap.map(|(i, r, l)| format!(", on element [{i}] {r} \"{l}\" (use element_index {i})")).unwrap_or_default(), pystr(f.get("why"))));
+                    let _ = scv;
+                }
+            }
+        }
+        let _ = text_only;
+        let obs = inn.state.latest_for(Some(pid), wid);
+        let Some(o) = obs else {
+            return text_result("[inspect locate] read the window first (get_window_state), then locate", true);
+        };
+        let ranked = crate::inspect::rank_elements(&describe, inn.state.get(o).elements.values());
+        for (sc_, i, r, l) in &ranked {
+            lines.push(format!("[{i}] {r} \"{l}\" (match {:.0}%)", (sc_.min(1.5) / 1.5) * 100.0));
+        }
+        if lines.is_empty() {
+            return text_result(format!("[inspect locate] nothing in the last read of this window matches \"{describe}\" (snapshot {}); it may be off-screen or in a closed menu.", inn.state.get(o).snapshot_id), false);
+        }
+        text_result(format!("[inspect locate] candidates for \"{describe}\" in snapshot {} (click with element_index from this snapshot):\n{}", inn.state.get(o).snapshot_id, lines.join("\n")), false)
+    }
+
     fn request_human(&self, args: &Value) -> Value {
         let q0 = pystr(args.get("question")).trim().to_string();
         let q = if q0.is_empty() { "The agent needs your help.".to_string() } else { q0 };
@@ -2481,6 +2708,8 @@ impl Gate {
         st.insert("log".into(), json!(self.log.path));
         st.insert("reviewer".into(), json!(self.reviewer.backend()));
         st.insert("screenshot_format".into(), json!(self.shot.name()));
+        st.insert("features_097".into(), json!(crate::v097::active()));
+        st.insert("roles".into(), json!(self.roles.configured()));
         let lines = [
             format!("policy={} lambda={} model={}", inn.cfg.policy, inn.cfg.lam, inn.cfg.model_name),
             format!("actions={} executed={} errors={}", g("actions"), g("executed"), g("exec_errors")),
@@ -2493,6 +2722,7 @@ impl Gate {
             format!("reviewer={} reviews={} (allowed {}) | screenshots skipped={}", self.reviewer.backend().unwrap_or_else(|| "none".into()), g("reviews"), g("review_allowed"), g("screenshots_skipped")),
 
             format!("screenshot format={} bytes {} -> {} ({} ms re-encoding)", self.shot.name(), g("img_bytes_in"), g("img_bytes_out"), round_to(g("img_ms"), 1)),
+            format!("0.9.7 features={:?} roles={:?}", crate::v097::active(), self.roles.configured()),
         ];
         json!({"content": [{"type": "text", "text": lines.join("\n")}], "structuredContent": st})
     }

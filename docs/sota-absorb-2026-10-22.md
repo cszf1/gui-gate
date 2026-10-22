@@ -1,0 +1,114 @@
+# Absorbing the top OSWorld-Verified frameworks into gui-gate (0.9.7, branch opt-0.9.7)
+
+Started 2026-10-22 18:55 CST. Offline only: no live benchmark, no paid model call. Baseline = opt-0.9.6 (R1-R17,
+docs/opt-2026-10-22-m3.md). Everything new is behind env flags that are **off by default**, so a run without them
+behaves exactly like 0.9.6 (the live DeepSeek 34x2 run on gui-pi2 stays comparable).
+
+Rules for this pass (user, 18:54 / 18:56 / 18:58 CST):
+- absorb every strength of the top frameworks;
+- extra model roles are allowed (rule change 18:56) where that is the better design - each role is optional,
+  configured by its own env (URL/MODEL/KEY/PROTOCOL, same client code as the reviewer), off by default, and keeps a
+  model-free fallback where a cheap one helps; the reviewer stays mandatory for risky steps and the acting model
+  never approves its own risky step;
+- gui-gate stays ONE MCP server (Rust): no sidecars / daemons / client-only extensions for core features; agent-side
+  guidance lives in tool descriptions and server instructions; a small coherent tool list (merge overlaps into one
+  tool with a mode argument, hide flag-off tools); a test pins the tool list.
+
+## Sources read (fetched 2026-10-22)
+- Pointer blog https://www.pointer.ai/blog/sota and harness https://github.com/Pointer-so/OSWorld/tree/main/mm_agents/pointer
+  (read: main.py phase machine, prompts.py gate/planner/executor/verifier prompts, tools.py, llm_context_manager.py,
+  knowledge.py, config.py).
+- Intelligence-Indeed (90.19 %, Opus 4.7) https://github.com/intelligence-indeed/intelligence-indeed
+  (read: README, roles/probing.py gate prompt with "Skill basis / Probe evidence / Feasibility" sections,
+  skill_system/dynamic_probe.py "gate-probe" dynamic skill, static skills with progressive disclosure).
+- OpenAPA https://github.com/laiye-ai/open-apa (README: reflection + decision loop, code agent / grounding agent,
+  goal-level advance plan updated by reflection, session pruning with sliding window + token budget, knowledge
+  acquisition shared across agents, "data to code, operation to UI" with UI-side verification of code results,
+  attachments PDF/DOCX/XLSX extracted to text, images passed natively).
+- VLAA-GUI https://ucsc-vlaa.github.io/VLAA-GUI/ (completeness verifier: 1-3 UI-observable success criteria +
+  independent verifier judge on done() + micro-verification rules per action type; 3-tier loop breaker: modality
+  switch after 2 no-change repeats, strategy change after the same screen state 3x, model judge KEEP/SWITCH with a
+  blacklist; text search agent for "how to"; coding agent for >= 20 edits; grounding agent; future work: crop/zoom
+  grounding tools).
+- HIPPO / muscle-mem https://github.com/wadang/muscle-mem-agent (task-level working memory of facts / state /
+  todos / risks with selective retrieval; finish verification by evidence; plan quality check (< 4 items -> replan);
+  feasibility pre-check; curated, non-overlapping, well-named tool set; keep few recent observations).
+- Agent S3 (arXiv 2510.02250, simular-ai/Agent-S): flat worker + code agent as an action; Behavior Best-of-N
+  (bBoN) = several full rollouts, a behaviour-narrative generator describes each step from before/after
+  screenshots, a judge compares narratives and picks one rollout.
+- OS-Symphony (xlang-ai/OSWorld mm_agents/os_symphony; read utils/loop_detection.py, agents/memoryer_agent.py):
+  orchestrator + reflection-memory agent (milestone-driven step summaries, trajectory reflection), loop detection
+  by similar actions + phash/SSIM-similar screens, multimodal searcher (tutorials), coder, grounder.
+- UiPath Screen Agent (xlang-ai/OSWorld mm_agents/uipath; read README, memory.py): planner + grounder with
+  crop-and-refine when a predicted point falls outside every detected UI element; short-term task memory
+  (store_info / delete_info of task data and work queues, no UI mechanics); "extract data" pseudo-action.
+- GTA1 (arXiv 2507.05791): test-time scaling - the planner samples several candidate actions, a judge model picks
+  one; RL-trained grounder (click inside the target box).
+- CoACT-1 (arXiv 2508.03923): orchestrator that delegates each subtask to a Programmer (Python/Bash) or a GUI
+  Operator.
+
+## Inventory (status column filled per round below)
+"Have" = present in 0.9.6. Flags: model-free features are switched on together by `GUI_GATE_097=1` (each also
+alone); model roles need `GUI_GATE_ROLE_<NAME>_URL/_MODEL/_KEY|_KEY_FILE[/_PROTOCOL]` or `GUI_GATE_ROLE_<NAME>=reviewer`
+(reuse the reviewer endpoint) **and** their feature flag.
+
+| # | Technique | Source | Have (0.9.6) | Plan in 0.9.7 (model version / model-free version) |
+|---|---|---|---|---|
+| 1 | Feasibility gate before any work, read-only probing (shell/python/files/windows/hardware), strict "workaround = infeasible" rule, report_feasible/infeasible | Pointer, II, HIPPO | partial: set_plan feasible:false (model's own verdict, no evidence, not required) | role FEASIBILITY: probe-agent loop inside the gate (read-only probe allowlist) with Pointer/II criteria, verdict + evidence, run once when the task is known; model-free: `inspect kind=env` fact sheet (named paths exist?, apps installed?, hardware sysfs) put into the task briefing + **required** verdict: first state-changing action before set_plan{feasible} is refused once (`GUI_GATE_FEASIBILITY_FIRST`) |
+| 2 | Milestones are end STATES, verifiable, revisable mid-task, sub-milestones | Pointer, OpenAPA, HIPPO | partial: set_plan text milestones, done marks | set_plan milestones may carry a `check` predicate (file_exists / file_changed / file_contains / title_contains / window_open / cell / terminal_contains / app_running); check_done evaluates them; plan quality check (click-recipe milestones or < 2 items -> told to restate as states); revise by re-sending (done marks kept for unchanged text); role PLANNER (probe-agent, Pointer planner prompt) seeds the plan in the briefing (`GUI_GATE_STATE_PLAN`) |
+| 3 | One executor with every tool: GUI + shell/python + Chrome DevTools page reader + background long jobs + direct file read (PDF/image natively) | Pointer, CoACT (as sub-agents), Agent S3 (code agent) | partial: GUI + run_command (gated) | run_command `mode: run|start|poll|stop` (detached job, poll, kill; the risk check runs at start) (`GUI_GATE_JOBS`); new read-only tool `inspect` with `kind: file` (text, PDF via pdftotext, office XML text, image returned as image content), `page` (Chrome DevTools: tabs + page text over the local debugging port, read-only), `env`, `region`, `locate`, `howto`, `memory` (`GUI_GATE_INSPECT`) |
+| 4 | Two strikes on the same mechanism -> switch approach | Pointer, VLAA tier 1, II cautions | partial: loop breaker 4/6, 6/8, 9/12 | `GUI_GATE_TWO_STRIKES`: two no-progress steps in a row of the same mechanism (mode + target) raise level 1 at once; server instructions carry the rule |
+| 5 | Context compaction of old steps (Haiku summary of cold history; sliding window; keep last N images) | Pointer, OpenAPA, HIPPO, UiPath | partial: tree diffs (gate), PI_OBS_PRUNE client extension (bench only) | gate cannot edit the client's history (MCP results are immutable); in-server: periodic compact progress digest (plan, facts, last steps with outcome, windows) every K actions (`GUI_GATE_DIGEST`), deterministic; role COMPACT writes the digest instead (Pointer's summary format). Client-side pruning stays a client concern (bench harness keeps obs_prune.ts) |
+| 6 | GUI-first, code for data extraction; close app before a code edit + reopen; operate on the exact named target; real features not lookalikes | Pointer, II, OpenAPA ("data to code, operation to UI") | partial: run_command open-doc warning, R17 prompt | server instructions + tool descriptions carry the policy (no bench prompt needed); open-doc warning names close/reopen |
+| 7 | Phantom tools (triple_click, ..._safe permutations) | Pointer | no | `GUI_GATE_PHANTOM`: unknown tool names are mapped (triple_click -> click count 3 / select-all, type -> type_text, key -> press_key, bash/shell/run_bash/run_python -> run_command, read_file -> inspect file, screenshot -> get_window_state, wait/sleep -> a gate wait, done/fail -> reply text); suffix permutations are stripped; otherwise a clear error with the nearest real tool names |
+| 8 | Independent end-state verifier (probes disk/config + live GUI; done/failed+diagnosis+suggestion/infeasible; replan budget) ; completion gate with UI-observable criteria; micro-verification per action type | Pointer, VLAA, HIPPO | partial: check_done evidence (paths, unsaved markers, cells, terminal, last failure) | check_done + milestone predicates + office document read-back (docx/xlsx/pptx/odt/ods/odp text from the saved file) + saved-state comparison (`GUI_GATE_VERIFY_PLUS`); role VERIFIER (probe-agent, Pointer verifier prompt, read-only) gives verdict + diagnosis + suggestion inside check_done (budget: 2 verdicts); micro-verification notes after save / typing / toggle actions (`GUI_GATE_MICRO_VERIFY`) |
+| 9 | Static skills with progressive disclosure + dynamic scene skill from probing shared with planner/executor; knowledge bank; cross-step working memory; cross-run experience | II, Pointer knowledge bank, HIPPO, UiPath memory, OS-Symphony memory | partial: bench-side static app hints (prompt) | skills move into the server (built-in per-app skill text, picked by the task's apps, `GUI_GATE_SKILLS`); briefing = dynamic skill (probe facts + feasibility notes + selected skill); working memory: set_plan `facts` (key/value, shown in digest and check_done); experience memory `GUI_GATE_MEMORY=FILE` built offline by `gui-gate memory add` from successful runs, top matches offered in the briefing and by `inspect kind=memory` |
+| 10 | Grounding: specialised grounder, crop-and-refine when the point is outside every element, zoom | GTA1, UiPath, OpenAPA, VLAA future work | partial: element tokens, look_full re-aim | `GUI_GATE_SNAP`: a pixel click that lands outside every element of the last tree but near one is snapped to that element's token (model-free crop-and-refine); `inspect kind=region` crops+zooms the last screenshot (vision clients); `inspect kind=locate {describe}`: model-free label match in the tree -> token; role GROUNDER (vision model) -> x,y then snapped |
+| 11 | Best-of-N (bBoN rollouts + narrative judge) / step-level candidate sampling + judge | Agent S3, GTA1 | no | trajectory-level BoN excluded (a real desktop cannot be reset/forked and side effects would run N times); step level: `run_actions {pick_one:true, steps:[candidates]}` - the gate ranks candidates by predictor P(direct succeeds), risk and expected cost and runs the best one; role JUDGE picks among the safe candidates when configured (`GUI_GATE_PICK`) |
+| 12 | Reflection each step; coding sub-agent | Agent S, OpenAPA, CoACT, VLAA coder | partial: post-action effect + auto-observe, run_command | reflection = the gate's effect line + micro-verification (#8); coder = run_command in the same executor (Pointer collapsed sub-agents on purpose); no coder role |
+| 13 | Recurring screen state -> strategy change (tier 2); model judge KEEP/SWITCH with blacklist (tier 3) | VLAA, OS-Symphony (phash/SSIM) | partial: action-level loop breaker | `GUI_GATE_TWO_STRIKES` also tracks a window-state fingerprint (title + tree row hash) after each action: the same state 3x after actions -> level 2 note "change strategy"; role JUDGE at level 3 answers KEEP/SWITCH, SWITCH blacklists the repeated step |
+| 14 | Search agent ("how to" tutorial as text) | VLAA, OS-Symphony searcher, Pointer web_search for feature checks | no | `inspect kind=howto {query}`: role SEARCH (ideally a search-grounded model) returns a short text tutorial; model-free fallback searches the built-in skills |
+| 15 | Read files instead of writing code to look at them; attachments extracted | Pointer, OpenAPA | no | `inspect kind=file` (#3) |
+| 16 | Long-running work detached + poll (2-min wall) | Pointer | no | run_command modes (#3) |
+| 17 | Curated tool set, no overlap, no name collisions | HIPPO | partial | one new tool only (`inspect`); extensions are modes/fields of existing tools; flag-off tools hidden; test pins the list |
+| 18 | Determinism / process control points | HIPPO | yes (gate) | unchanged |
+| 19 | Evaluator saves open documents (OSWorld postconfig Ctrl+S) / grader checks real state | Pointer knowledge bank, II env notes | partial (R11 note) | in the built-in skills' environment notes |
+| 20 | Task attachments / PDF facts | OpenAPA | no | `inspect kind=file` |
+
+What will not be absorbed (and why) is listed at the end after the rounds.
+
+## Round notes
+(appended per round)
+
+### Round 18 - one server, one new tool: inspect, jobs, phantom tools, role infrastructure (commit below)
+- `src/v097.rs`: flag logic (`GUI_GATE_097` + per-feature `GUI_GATE_<NAME>`, explicit 0 opts out inside the
+  combined flag), phantom-tool aliasing, 0.9.7 server-instruction paragraph (Pointer executor rules: feasibility
+  first, state milestones, GUI-first / code for extraction, close-before-code-edit, exact target, two strikes,
+  check_done before DONE) - only added to `instructions` when a 0.9.7 flag is on.
+- `src/roles.rs`: optional model roles (feasibility, planner, verifier, judge, search, compact, grounder) built on the
+  reviewer's HTTP client (`Reviewer::for_role`, env `GUI_GATE_ROLE_<NAME>_URL/_MODEL/_KEY|_KEY_FILE/_PROTOCOL/_TIMEOUT/
+  _MAX_TOKENS/_MAX_STEPS`, or `GUI_GATE_ROLE_<NAME>=reviewer`; also read from reviewer.env); a JSON-in-text
+  probe-agent loop that works on every protocol (chat/responses/anthropic/gemini; not systemone, which only answers
+  typed yes/no questions); read-only probe allowlist (`readonly_problem`: allowlisted commands only, no redirection /
+  heredoc / substitution / background, find without -delete/-exec, python3 -c without write/exec/network calls,
+  sqlite3 only -readonly, app binaries only --version, plus the gate's own risk check); role prompts after Pointer
+  (gate / planner / verifier), Intelligence-Indeed (evidence sections), VLAA (judge KEEP/SWITCH, search), GTA1 (pick).
+- `src/inspect.rs` + tool `inspect` (GUI_GATE_INSPECT): kind file (text, PDF via pdftotext/pypdf, office text via
+  the saved file's XML / openpyxl, images natively + OCR for text-only clients if tesseract exists), env (fact sheet),
+  page (Chrome DevTools /json/list + a fixed read-only Runtime.evaluate over a minimal built-in websocket client),
+  region (crop + zoom of a fresh window screenshot), locate (model-free label ranking; grounder role if configured,
+  snapped to the element under its point), howto (search role, else built-in skills), memory (experience memory).
+- `src/jobs.rs` (GUI_GATE_JOBS): run_command `mode=start` (detached, own process group, output to a temp file; the
+  start goes through the normal gated risk path), `mode=poll` / `mode=stop`.
+- `src/memory.rs`: experience memory file + `gui-gate memory add|show` (CLI inside the same binary).
+- `src/skills.md`: built-in per-app skills (moved from the bench prompt into the server; no task answers - a test
+  checks e.g. that "CMYK" does not appear).
+- Tool list: default (core, fake driver) unchanged = 15 names; with `GUI_GATE_097=1` exactly one more (`inspect`)
+  and run_command's `mode`/`job` fields; pinned by tests/test_v097.py ToolListTests. A tool that exists but is hidden by
+  the core toolset is not a phantom (only names outside every advertised list are).
+- bench: `PI_TOOLS_097=1` -> gate env `GUI_GATE_097=1`, `inspect` exposed to Pi, one prompt sentence;
+  `PI_GATE_ENV` for raw extra gate env; runs.jsonl records tools097.
+Tests: cargo 87 + 5 ignored (new: v097 phantom, roles allowlist + JSON extraction, inspect skills/rank/snap/files/
+websocket frame/crop, jobs, memory); python 130 (new tests/test_v097.py: 12 - tool lists, phantom mapping /
+triple-click emulation / unknown names / off by default, inspect file/env/locate/howto/memory/page/image, search role
+over a local fake endpoint, jobs start/poll/stop and the risk check at start).
