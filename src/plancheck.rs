@@ -60,7 +60,9 @@ fn cell_rx() -> &'static Regex {
 
 /// Text a file holds for file_contains (office documents via their saved text).
 fn file_text(p: &str) -> String {
-    crate::inspect::read_file_text(p, 200_000)
+    let t = crate::inspect::read_file_text(p, 200_000);
+    // drop the "<path> (<size>, modified ...):" header line: only the content counts
+    t.split_once(":\n").map(|x| x.1.to_string()).unwrap_or(t)
 }
 
 /// (holds?, explanation). None = cannot tell (malformed predicate or nothing to look at).
