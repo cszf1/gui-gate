@@ -864,12 +864,15 @@ remove gui-gate and everything it created: the binary, the bundled Cua Driver, P
                     script.push_str(&format!(" & rmdir \"{}\" 2>nul", d.display()));
                 }
                 let mut c = Command::new("cmd");
-                c.args(["/C", &script]);
                 #[cfg(windows)]
                 {
                     use std::os::windows::process::CommandExt;
+                    // cmd does not understand the \" escaping Rust applies to a quoted argument: pass the line raw
+                    c.arg("/C").raw_arg(&script);
                     c.creation_flags(0x0800_0000 | 0x0000_0008); // CREATE_NO_WINDOW | DETACHED_PROCESS
                 }
+                #[cfg(not(windows))]
+                c.args(["/C", &script]);
                 let _ = c.spawn();
                 true
             }

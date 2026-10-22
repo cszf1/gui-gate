@@ -29,7 +29,14 @@ pub fn which(bin: &str) -> Option<String> {
 }
 
 fn exe_dir() -> Option<PathBuf> {
-    std::env::current_exe().ok().and_then(|p| p.canonicalize().ok().or(Some(p))).and_then(|p| p.parent().map(|d| d.to_path_buf()))
+    std::env::current_exe().ok().and_then(|p| p.canonicalize().ok().or(Some(p))).and_then(|p| p.parent().map(|d| {
+        // Windows canonical paths carry the \\?\ prefix; keep paths the way users and cmd.exe write them
+        let t = d.to_string_lossy().to_string();
+        match t.strip_prefix(r"\\?\") {
+            Some(rest) if !rest.starts_with("UNC") => PathBuf::from(rest),
+            _ => d.to_path_buf(),
+        }
+    }))
 }
 
 /// The Python environment this binary was installed into (venv/bin or venv\Scripts holds both).
