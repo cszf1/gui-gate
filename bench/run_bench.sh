@@ -36,6 +36,10 @@ case "$MAXT" in ''|*[!0-9]*) echo "run_bench: --max-turns needs a number" >&2; e
 TOOLS096=${PI_TOOLS_096:-1}
 TOOLS097=${PI_TOOLS_097:-0}
 GATE_ENV_EXTRA=${PI_GATE_ENV:-}
+# Pi's MCP client gives each tool call 60 s by default; 0.9.7 model roles inside a call (verifier in check_done,
+# feasibility/planner briefing) can take longer. PI_MCP_TIMEOUT=<seconds> sets the server's "timeout" in mcp.json.
+MCPTMO=${PI_MCP_TIMEOUT:-}
+case "$MCPTMO" in ''|*[!0-9]*) MCPT="";; *) MCPT=",\"timeout\":$MCPTMO";; esac
 APPHINTS=${PI_APP_HINTS:-1}
 # context hygiene (opt-in, off by default so runs stay comparable): a Pi `context` extension keeps only the newest
 # window observation in full and summarises older ones (bench/pi_ext/obs_prune.ts = bench/context_hygiene.py prune())
@@ -96,7 +100,7 @@ Speed: when you already know the next several steps (e.g. click a field, type, p
   [ -n "$GATE_ENV_EXTRA" ] && ENVS="${ENVS:+$ENVS,}$GATE_ENV_EXTRA"
   [ -n "$ENVS" ] && GENV=",\"env\":{$ENVS}"
   cat > $MCP <<J
-{"mcpServers":{"gui":{"command":"$HOME/.local/bin/gui-gate","args":[$GA,"--human","deny","--log","$OUT/gate/$tag.jsonl"]$GENV,
+{"mcpServers":{"gui":{"command":"$HOME/.local/bin/gui-gate","args":[$GA,"--human","deny","--log","$OUT/gate/$tag.jsonl"]$GENV$MCPT,
  "exposure":"hidden","toolExposure":{"list_apps":"direct","list_windows":"direct","get_window_state":"direct",
  "click":"direct","press_key":"direct","type_text":"direct","scroll":"direct","request_human":"direct",
  "run_actions":"direct","run_command":"direct","check_done":"direct","set_plan":"direct","inspect":"direct"}}}}
@@ -127,6 +131,11 @@ When the task is complete, reply DONE and one line on what you did. If the task 
   local scr=$(xdpyinfo | awk '/dimensions/{print $2}')
   $PY $HERE/osworld_native.py setup $HERE/tasks/$task --out $OUT/eval/$tag.setup.json > /dev/null 2>&1
   local setup_ok=$($PY -c "import json;print(json.load(open('$OUT/eval/$tag.setup.json')).get('ok'))" 2>/dev/null)
+  if [ "$setup_ok" != "True" ] && [ "${PI_SETUP_RETRY:-0}" = 1 ]; then  # transient download / app start failures
+    cp $OUT/eval/$tag.setup.json $OUT/eval/$tag.setup1.json 2>/dev/null; sleep 20
+    $PY $HERE/osworld_native.py setup $HERE/tasks/$task --out $OUT/eval/$tag.setup.json > /dev/null 2>&1
+    setup_ok=$($PY -c "import json;print(json.load(open('$OUT/eval/$tag.setup.json')).get('ok'))" 2>/dev/null)
+  fi
   if [ "$setup_ok" != "True" ]; then
     echo "{\"tag\":\"$tag\",\"task\":\"$name\",\"cond\":\"$c\",\"seed\":$s,\"attempt\":$att,\"infra\":\"setup_failed\"}" >> $OUT/runs.jsonl
     return 0
@@ -140,7 +149,7 @@ When the task is complete, reply DONE and one line on what you did. If the task 
   if echo "$st" | grep -q '"stop": "agent"' && grep -q 'thinking must be passed back\|"stopReason":"error"' $OUT/pi/$tag.jsonl 2>/dev/null; then
     infra='"relay_error"'
   fi
-  echo "{\"tag\":\"$tag\",\"task\":\"$name\",\"cond\":\"$c\",\"seed\":$s,\"attempt\":$att,\"infra\":$infra,\"screen\":\"$scr\",\"think\":\"$THINK\",\"model\":\"$model\",\"gg\":\"$ggv\",\"text_only\":$TEXT_ONLY,\"obs_prune\":$OBS_PRUNE,\"max_turns\":$MAXT,\"tools096\":$TOOLS096,\"tools097\":$TOOLS097,\"app_hints\":$APPHINTS,\"pi\":$st}" >> $OUT/runs.jsonl
+  echo "{\"tag\":\"$tag\",\"task\":\"$name\",\"cond\":\"$c\",\"seed\":$s,\"attempt\":$att,\"infra\":$infra,\"screen\":\"$scr\",\"think\":\"$THINK\",\"model\":\"$model\",\"gg\":\"$ggv\",\"text_only\":$TEXT_ONLY,\"obs_prune\":$OBS_PRUNE,\"max_turns\":$MAXT,\"tools096\":$TOOLS096,\"tools097\":$TOOLS097,\"mcp_timeout\":\"$MCPTMO\",\"app_hints\":$APPHINTS,\"pi\":$st}" >> $OUT/runs.jsonl
   [ "$infra" = '"relay_error"' ] && return 9
   return 0
 }
