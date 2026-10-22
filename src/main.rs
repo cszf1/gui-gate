@@ -16,6 +16,7 @@ mod install;
 mod log;
 mod cleanup;
 mod command;
+mod done;
 mod reviewer;
 mod rpc;
 mod server;

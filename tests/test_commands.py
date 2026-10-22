@@ -171,5 +171,84 @@ class RunCommandTests(unittest.TestCase):
         self.assertNotIn("run_command", names)
 
 
+
+class CheckDoneTests(unittest.TestCase):
+    def setUp(self):
+        self.home = tempfile.mkdtemp(prefix="gg-home-")
+        os.makedirs(os.path.join(self.home, "Desktop"))
+        self.c = None
+
+    def tearDown(self):
+        if self.c:
+            self.c.close()
+        shutil.rmtree(self.home, ignore_errors=True)
+
+    def client(self, task, **env):
+        e = {"HOME": self.home}
+        e.update(env)
+        self.c = Client("--human", "deny", "--task", task, env=e)
+        return self.c
+
+    def test_missing_named_file_and_no_action(self):
+        c = self.client("Could you help me save my slides as pre.pptx on the Desktop?")
+        self.assertIn("check_done", [t["name"] for t in c.rpc("tools/list", {})["tools"]])
+        r = c.call("check_done")
+        self.assertFalse(r.get("isError"))
+        k = r["structuredContent"]["kinds"]
+        self.assertIn("missing_path", k); self.assertIn("no_action", k)
+        self.assertIn("pre.pptx", txt(r))
+
+    def test_unchanged_vs_changed_file(self):
+        p = os.path.join(self.home, "Desktop", "pre.pptx")
+        open(p, "w").write("old")
+        os.utime(p, (OLD, OLD))
+        c = self.client("Could you help me save my slides as pre.pptx on the Desktop?")
+        s = c.read(); c.call("click", element_token=f"{s}:0")
+        r = c.call("check_done")
+        self.assertIn("path_unchanged", r["structuredContent"]["kinds"], txt(r))
+        self.assertIn("unchanged since before this session", txt(r))
+        open(p, "w").write("new")
+        r = c.call("check_done")
+        self.assertEqual(r["structuredContent"]["kinds"], [], txt(r))
+        self.assertIn("changed during this session", txt(r))
+        self.assertIn("Desktop/pre.pptx", txt(r))  # listed among the files changed this session
+
+    def test_clone_into_existing_folder_is_flagged(self):
+        os.makedirs(os.path.join(self.home, "instructor-embedding"))
+        open(os.path.join(self.home, "instructor-embedding", "KEEP.txt"), "w").write("k")
+        for x in ["instructor-embedding/KEEP.txt", "instructor-embedding"]:
+            os.utime(os.path.join(self.home, x), (OLD, OLD))
+        c = self.client("Please help me clone the repo \"https://github.com/xlang-ai/instructor-embedding\" to /home/user.")
+        s = c.read(); c.call("click", element_token=f"{s}:0")
+        r = c.call("check_done")
+        self.assertIn("path_unchanged", r["structuredContent"]["kinds"], txt(r))
+
+    def test_unsaved_title_and_last_failure(self):
+        c = self.client("Make the line spacing double", FAKE_TITLE="*notes.txt - Mousepad")
+        s = c.read()
+        c.call("fake_mutate", fail_next=5)
+        c.call("click", element_token=f"{s}:0")
+        r = c.call("check_done")
+        k = r["structuredContent"]["kinds"]
+        self.assertIn("unsaved_title", k); self.assertIn("last_failed", k)
+        ev = [e for e in c.events() if e.get("ev") == "check_done"]
+        self.assertEqual(len(ev), 1)
+
+    def test_off_switch(self):
+        c = self.client("x", GUI_GATE_CHECK_DONE="0")
+        self.assertNotIn("check_done", [t["name"] for t in c.rpc("tools/list", {})["tools"]])
+
+    def test_rename_source_missing_is_not_a_gap(self):
+        d = os.path.join(self.home, "Desktop", "todo_list_Jan_1")
+        os.makedirs(d); os.utime(d, (OLD, OLD))
+        c = self.client("I have a directory named \"todo_list_Jan_1\". Can you help me change its name into \"todo_list_Jan_2\"?")
+        s = c.read(); c.call("click", element_token=f"{s}:0")
+        r = c.call("check_done")
+        self.assertIn("missing_path", r["structuredContent"]["kinds"])  # nothing renamed yet: Jan_2 is missing
+        os.rename(d, os.path.join(self.home, "Desktop", "todo_list_Jan_2"))
+        r = c.call("check_done")
+        self.assertEqual(r["structuredContent"]["kinds"], [], txt(r))  # rename = ctime change; the source is gone by design
+
+
 if __name__ == "__main__":
     unittest.main()
