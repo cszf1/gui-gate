@@ -37,8 +37,7 @@ pub fn tool_schema() -> Value {
 // ------------------------------------------------------------------ files
 
 fn which(bin: &str) -> Option<String> {
-    let path = std::env::var("PATH").unwrap_or_default();
-    path.split(':').map(|d| format!("{d}/{bin}")).find(|p| std::path::Path::new(p).is_file())
+    crate::install::which(bin)
 }
 
 pub fn ext_of(path: &str) -> String {
@@ -81,15 +80,22 @@ print('\n'.join(out))
 "#;
 
 /// The gate's own secrets (reviewer / role key files, reviewer.env) are never read out through inspect or a probe.
+/// (Paths are compared component-wise after canonicalising, so `\\?\C:\...` on Windows and symlinks on unix match.)
 pub fn secret_path(path: &str) -> bool {
-    let real = std::fs::canonicalize(path).map(|p| p.to_string_lossy().to_string()).unwrap_or_else(|_| path.to_string());
-    let cfg = format!("{}/.config/gui-gate/", home());
-    if real.starts_with(&cfg) && (real.ends_with(".key") || real.ends_with(".env")) {
+    let canon = |p: &str| std::fs::canonicalize(p).unwrap_or_else(|_| std::path::PathBuf::from(p));
+    let real = canon(path);
+    let cfg = canon(&crate::cleanup::config_dir().to_string_lossy());
+    let ext = real.extension().map(|e| e.to_string_lossy().to_lowercase()).unwrap_or_default();
+    if real.starts_with(&cfg) && (ext == "key" || ext == "env") {
         return true;
     }
+    if let Some(rev) = env("GUI_GATE_REVIEWER_ENV") {
+        if canon(&crate::sidefx::expanduser(rev.trim())) == real {
+            return true;
+        }
+    }
     std::env::vars().filter(|(k, _)| k.starts_with("GUI_GATE_") && k.ends_with("_KEY_FILE")).any(|(_, v)| {
-        let e = crate::sidefx::expanduser(v.trim());
-        std::fs::canonicalize(&e).map(|p| p.to_string_lossy().to_string()).unwrap_or(e) == real
+        canon(&crate::sidefx::expanduser(v.trim())) == real
     })
 }
 
@@ -112,18 +118,23 @@ pub fn read_file_text(path: &str, cap: usize) -> String {
     let ext = ext_of(path);
     let body = if ext == "pdf" {
         match which("pdftotext") {
-            Some(_) => {
-                let r = crate::command::run(&format!("pdftotext -layout {} -", shell_quote(path)), "/", 20.0);
-                if r.code == Some(0) { r.stdout } else { format!("(pdftotext failed: {})", trunc(&r.stderr, 200)) }
+            Some(pt) => {
+                let (code, out, err) = crate::proc::run_argv(&[&pt, "-layout", path, "-"], 20.0);
+                if code == Some(0) { out } else { format!("(pdftotext failed: {})", trunc(&err, 200)) }
             }
             None => {
-                let r = crate::command::run(&format!("python3 -c 'import sys,pypdf;print(\"\\n\".join(p.extract_text() or \"\" for p in pypdf.PdfReader(sys.argv[1]).pages))' {}", shell_quote(path)), "/", 20.0);
-                if r.code == Some(0) { r.stdout } else { "(no PDF text extractor here: pdftotext / pypdf missing)".into() }
+                let r = crate::proc::python().map(|py| crate::proc::run_argv(&[&py, "-c", "import sys,pypdf;print('\\n'.join(p.extract_text() or '' for p in pypdf.PdfReader(sys.argv[1]).pages))", path], 20.0));
+                match r { Some((Some(0), out, _)) => out, _ => "(no PDF text extractor here: pdftotext / pypdf missing)".into() }
             }
         }
     } else if OFFICE.contains(&ext.as_str()) {
-        let r = crate::command::run(&format!("python3 - {} <<'GG_EOF'\n{OFFICE_PY}\nGG_EOF", shell_quote(path)), "/", 30.0);
-        if r.code == Some(0) { r.stdout } else { format!("(could not read the document: {})", trunc(&r.stderr, 300)) }
+        match crate::proc::python() {
+            Some(py) => {
+                let (code, out, err) = crate::proc::run_argv(&[&py, "-c", OFFICE_PY, path], 30.0);
+                if code == Some(0) { out } else { format!("(could not read the document: {})", trunc(&err, 300)) }
+            }
+            None => "(could not read the document: no python3 here)".into(),
+        }
     } else if IMAGES.contains(&ext.as_str()) {
         match image::image_dimensions(p) {
             Ok((w, h)) => format!("(image {w}x{h}, {} bytes)", md.len()),
@@ -171,10 +182,10 @@ pub fn file_result(path: &str, cap: usize, text_only: bool) -> Value {
                 res["content"].as_array_mut().unwrap().push(json!({"type": "image", "data": B64.encode(&bytes), "mimeType": mime}));
             }
         }
-    } else if IMAGES.contains(&ext.as_str()) && which("tesseract").is_some() {
-        let r = crate::command::run(&format!("tesseract {} - 2>/dev/null", shell_quote(&path)), "/", 30.0);
-        if r.code == Some(0) && !r.stdout.trim().is_empty() {
-            push_text(&mut res, format!("[inspect] text in the image (OCR):\n{}", trunc(&r.stdout, cap)));
+    } else if let Some(tess) = IMAGES.contains(&ext.as_str()).then(|| which("tesseract")).flatten() {
+        let (code, out, _) = crate::proc::run_argv(&[&tess, &path, "-"], 30.0);
+        if code == Some(0) && !out.trim().is_empty() {
+            push_text(&mut res, format!("[inspect] text in the image (OCR):\n{}", trunc(&out, cap)));
         }
     }
     res
@@ -236,9 +247,9 @@ pub fn env_facts(task: &str, query: &str) -> String {
         yn(battery), yn(dir_nonempty("/sys/class/backlight")), if cams.is_empty() { "no".into() } else { cams.join(",") }, yn(dir_nonempty("/sys/class/bluetooth")),
         yn(sound), if nets.is_empty() { "none".into() } else { nets.join(",") }, yn(std::path::Path::new("/etc/cups/printers.conf").exists())));
     lines.push(format!("- display: DISPLAY={} home={home}", std::env::var("DISPLAY").unwrap_or_else(|_| "(unset)".into())));
-    if which("python3").is_some() {
-        let r = crate::command::run("python3 -c 'import importlib.util as u;print(\" \".join(m for m in [\"openpyxl\",\"docx\",\"pptx\",\"odf\",\"pandas\",\"PIL\",\"pypdf\",\"pychrome\"] if u.find_spec(m)))'", "/", 8.0);
-        lines.push(format!("- python3 modules available: {}", if r.stdout.trim().is_empty() { "(none of openpyxl docx pptx odf pandas PIL pypdf)".into() } else { r.stdout.trim().to_string() }));
+    if let Some(py) = crate::proc::python() {
+        let (_, out, _) = crate::proc::run_argv(&[&py, "-c", "import importlib.util as u;print(' '.join(m for m in ['openpyxl','docx','pptx','odf','pandas','PIL','pypdf','pychrome'] if u.find_spec(m)))"], 8.0);
+        lines.push(format!("- python3 modules available: {}", if out.trim().is_empty() { "(none of openpyxl docx pptx odf pandas PIL pypdf)".into() } else { out.trim().to_string() }));
     }
     let port = cdp_port();
     lines.push(format!("- Chrome debugging port {port}: {}", if std::net::TcpStream::connect_timeout(&format!("127.0.0.1:{port}").parse().unwrap(), Duration::from_millis(300)).is_ok() { "open (inspect kind=page works)" } else { "closed" }));
@@ -298,7 +309,14 @@ pub fn page_info(query: &str, max_chars: usize) -> Result<String, String> {
 pub fn ws_eval(url: &str, expr: &str) -> Result<Value, String> {
     let rest = url.strip_prefix("ws://").ok_or("not a ws:// URL")?;
     let (hostport, path) = rest.split_once('/').map(|(h, p)| (h.to_string(), format!("/{p}"))).unwrap_or((rest.to_string(), "/".into()));
-    let mut st = std::net::TcpStream::connect(&hostport).map_err(|e| e.to_string())?;
+    // only the local browser's own debugging endpoint, never anything a page list could point elsewhere
+    let host = hostport.rsplit_once(':').map(|x| x.0).unwrap_or(&hostport).trim_matches(['[', ']']);
+    if !matches!(host, "127.0.0.1" | "localhost" | "::1") {
+        return Err(format!("refusing a non-local DevTools address {hostport}"));
+    }
+    let addr = std::net::ToSocketAddrs::to_socket_addrs(&hostport).map_err(|e| e.to_string())?.next().ok_or("no address")?;
+    let mut st = std::net::TcpStream::connect_timeout(&addr, Duration::from_secs(3)).map_err(|e| e.to_string())?;
+    st.set_write_timeout(Some(Duration::from_secs(5))).ok();
     st.set_read_timeout(Some(Duration::from_secs(5))).ok();
     let key = B64.encode(rand_hex(16).as_bytes().get(..16).unwrap_or(b"0123456789abcdef"));
     write!(st, "GET {path} HTTP/1.1\r\nHost: {hostport}\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: {key}\r\nSec-WebSocket-Version: 13\r\n\r\n").map_err(|e| e.to_string())?;
@@ -565,6 +583,7 @@ mod tests {
         std::env::remove_var("GUI_GATE_ROLE_TESTX_KEY_FILE");
         let f = env_facts("Open \"a.txt\" and the missing \"zz_nope.docx\" in LibreOffice Writer", "");
         assert!(f.contains("zz_nope.docx\": NOT found") && f.contains("hardware:"), "{f}");
+        let _ = std::fs::remove_dir_all(&d);
     }
 
     #[test]

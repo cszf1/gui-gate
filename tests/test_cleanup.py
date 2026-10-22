@@ -67,6 +67,25 @@ class CleanupTests(unittest.TestCase):
             open(p, "w").write("{}\n")
         t = time.time() - 40 * 86400
         os.utime(self.oldlog, (t, t))
+        # 0.9.7 layout: settings, the bundled driver in ~/.local/lib/gui-gate, the installer's manifest, temp files
+        cfgd = os.path.join(h, ".config", "gui-gate")
+        os.makedirs(cfgd)
+        open(os.path.join(cfgd, "reviewer.env"), "w").write("GUI_GATE_REVIEWER_URL=http://x\n")
+        open(os.path.join(cfgd, "memory.jsonl"), "w").write("{}\n")
+        self.lib = os.path.join(h, ".local", "lib", "gui-gate")
+        os.makedirs(os.path.join(self.lib, "cua-driver"))
+        self.drv = os.path.join(self.lib, "cua-driver", "cua-driver")
+        fake = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fake_driver.py")
+        open(self.drv, "w").write(f"#!/bin/sh\nenv > '{h}/driver-env.txt'\nexec {sys.executable} '{fake}' \"$@\"\n")
+        os.chmod(self.drv, 0o755)
+        open(os.path.join(self.lib, "cua-driver", "VERSION"), "w").write("0.37.0\n")
+        os.makedirs(os.path.join(h, "made-by-installer"))
+        os.makedirs(os.path.join(h, "not-empty"))
+        open(os.path.join(h, "not-empty", "x"), "w").close()
+        open(os.path.join(self.lib, "install-manifest"), "w").write(
+            f"created_dir={h}/made-by-installer\ncreated_dir={h}/not-empty\n")
+        open(os.path.join(h, "gui-gate-job-999999-1.log"), "w").close()
+        os.makedirs(os.path.join(h, "gui-gate-lo-999999"))
         self.env = {"HOME": h, "PATH": f"{self.bin}:{self.olddir}:/usr/bin:/bin", "XDG_CACHE_HOME": os.path.join(h, ".cache"),
                     "TMPDIR": h}
 
@@ -123,6 +142,36 @@ class CleanupTests(unittest.TestCase):
         self.assertFalse(os.path.exists(os.path.join(self.h, ".gui-gate")))
         self.assertNotIn("# gui-gate", open(os.path.join(self.h, ".bashrc")).read())
         self.assertTrue(os.path.exists(self.other))
+        # 0.9.7: settings, bundled driver, temp files, dirs the installer created
+        self.assertFalse(os.path.exists(os.path.join(self.h, ".config", "gui-gate")))
+        self.assertFalse(os.path.exists(self.lib))
+        self.assertEqual([n for n in os.listdir(self.h) if n.startswith("gui-gate-")], [])
+        self.assertFalse(os.path.exists(os.path.join(self.h, "made-by-installer")))
+        self.assertTrue(os.path.exists(os.path.join(self.h, "not-empty")))
+
+    def test_uninstall_keep_config(self):
+        code, rep = self.run_gate("uninstall", "--keep-config")
+        self.assertEqual(code, 0, rep)
+        self.assertTrue(os.path.exists(os.path.join(self.h, ".config", "gui-gate", "reviewer.env")))
+
+    def test_bundled_driver_is_preferred_and_quiet(self):
+        """The driver in gui-gate's own lib dir wins over one on PATH and is started with Cua's telemetry and
+        update check off; GUI_GATE_DRIVER=external skips it."""
+        ext = os.path.join(self.olddir, "cua-driver")
+        open(ext, "w").write("#!/bin/sh\necho 9.9.9\n")
+        os.chmod(ext, 0o755)
+        env = dict(self.env, GUI_GATE_REVIEWER_URL="http://127.0.0.1:9/v1", GUI_GATE_REVIEWER_MODEL="m", GUI_GATE_REVIEWER_KEY="k")
+        p = subprocess.run([self.me, "doctor"], env=env, capture_output=True, text=True, timeout=60)
+        d = json.loads(p.stdout)
+        self.assertEqual(d["driver_source"], "bundled", d)
+        self.assertEqual(d["driver"], self.drv)
+        self.assertEqual(d["driver_version"], "0.37.0")
+        self.assertGreater(d["driver_tools"] or 0, 0, d)
+        seen = open(os.path.join(self.h, "driver-env.txt")).read()
+        for kv in ("CUA_DRIVER_RS_TELEMETRY_ENABLED=0", "CUA_TELEMETRY_ENABLED=0", "CUA_DRIVER_RS_UPDATE_CHECK=0", "DO_NOT_TRACK=1"):
+            self.assertIn(kv, seen)
+        p = subprocess.run([self.me, "doctor"], env=dict(env, GUI_GATE_DRIVER="external"), capture_output=True, text=True, timeout=60)
+        self.assertEqual(json.loads(p.stdout)["driver"], ext)
 
 
 if __name__ == "__main__":

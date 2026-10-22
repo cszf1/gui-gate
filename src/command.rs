@@ -9,7 +9,7 @@ use crate::util::*;
 use regex::Regex;
 use serde_json::{json, Value};
 use std::io::Read;
-use std::process::{Command, Stdio};
+use std::process::Stdio;
 use std::sync::OnceLock;
 use std::time::{Duration, Instant, SystemTime};
 
@@ -195,12 +195,20 @@ fn looks_like_shell(body: &str) -> bool {
 }
 
 pub fn enabled() -> bool {
-    std::env::var("GUI_GATE_RUN_COMMAND").map(|v| v != "0").unwrap_or(true)
+    // bash only: the risk rules judge bash command lines, so Windows does not get the tool
+    cfg!(unix) && std::env::var("GUI_GATE_RUN_COMMAND").map(|v| v != "0").unwrap_or(true)
+}
+
+/// The throwaway LibreOffice profile run_command's description suggests for headless conversions (one per gate
+/// process, under the temp dir, removed when the gate ends; `gui-gate cleanup` sweeps leftovers).
+pub fn lo_profile_dir() -> std::path::PathBuf {
+    std::env::temp_dir().join(format!("gui-gate-lo-{}", std::process::id()))
 }
 
 pub fn tool_schema() -> Value {
+    let lo = lo_profile_dir().to_string_lossy().to_string();
     json!({"name": "run_command",
-        "description": "Run a bash command (or a short script) on this computer and get its exit code and output. Use it for terminal, file and document work done in code instead of by clicking: inspect files (ls, cat, head), edit spreadsheets / documents with python3 (openpyxl, odfpy, python-docx, python-pptx when installed), convert with `soffice --headless -env:UserInstallation=file:///tmp/lo_cmd --convert-to FMT --outdir DIR FILE` (the -env part lets it run while LibreOffice is open). Every command is checked by the gate like a typed terminal command (overwrites, moves, deletes, permission changes and other risky effects need the user's words, the gate's reviewer or a person). If you change a file that is open in an app, reload it there (LibreOffice: File > Reload) or the app's own save will write its old copy over your change. No interactive programs (no editors, pagers or password prompts): stdin is empty.",
+        "description": format!("Run a bash command (or a short script) on this computer and get its exit code and output. Use it for terminal, file and document work done in code instead of by clicking: inspect files (ls, cat, head), edit spreadsheets / documents with python3 (openpyxl, odfpy, python-docx, python-pptx when installed), convert with `soffice --headless -env:UserInstallation=file://{lo} --convert-to FMT --outdir DIR FILE` (the -env part lets it run while LibreOffice is open). Every command is checked by the gate like a typed terminal command (overwrites, moves, deletes, permission changes and other risky effects need the user's words, the gate's reviewer or a person). If you change a file that is open in an app, reload it there (LibreOffice: File > Reload) or the app's own save will write its old copy over your change. No interactive programs (no editors, pagers or password prompts): stdin is empty."),
         "inputSchema": {"type": "object", "properties": {
             "command": {"type": "string", "description": "bash command line or script (heredocs allowed)"},
             "cwd": {"type": "string", "description": "working directory (default: the user's home)"},
@@ -267,18 +275,17 @@ pub fn run(cmd: &str, cwd: &str, timeout_s: f64) -> Ran {
     let t0 = Instant::now();
     // file timestamps use the kernel's coarse clock (a tick behind the precise one): leave a margin
     let since = SystemTime::now() - Duration::from_millis(200);
-    let mut c = Command::new("bash");
-    c.arg("-c").arg(cmd).current_dir(cwd).stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::piped())
+    let no_shell = |why: String| Ran { code: None, timed_out: false, ms: 0.0, stdout: String::new(), stderr: why, out_bytes: 0, changed: vec![] };
+    let Some(mut c) = crate::proc::shell(cmd) else { return no_shell("run_command is not available on this OS (bash commands only)".into()) };
+    c.current_dir(cwd).stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::piped())
         .env("PAGER", "cat").env("GIT_PAGER", "cat").env("TERM", "dumb").env("DEBIAN_FRONTEND", "noninteractive")
         .env("PYTHONUNBUFFERED", "1");
-    {
-        use std::os::unix::process::CommandExt;
-        c.process_group(0);
-    }
     let mut child = match c.spawn() {
         Ok(ch) => ch,
-        Err(e) => return Ran { code: None, timed_out: false, ms: 0.0, stdout: String::new(), stderr: format!("could not start bash: {e}"), out_bytes: 0, changed: vec![] },
+        Err(e) => return no_shell(format!("could not start bash: {e}")),
     };
+    // registered while it runs: a gate that ends now (client gone, signal) takes the command's group down with it
+    crate::proc::register(child.id());
     let pid = child.id();
     type Buf = std::sync::Arc<std::sync::Mutex<(Vec<u8>, usize, bool)>>;
     let rd = |mut r: Box<dyn Read + Send>| -> Buf {
@@ -313,9 +320,7 @@ pub fn run(cmd: &str, cwd: &str, timeout_s: f64) -> Ran {
             Ok(Some(st)) => break st.code(),
             Ok(None) if Instant::now() >= deadline => {
                 timed_out = true;
-                let _ = Command::new("kill").args(["-KILL", "--", &format!("-{pid}")]).status();
-                let _ = child.kill();
-                let _ = child.wait();
+                crate::proc::kill_tree(&mut child);
                 break None;
             }
             Ok(None) => std::thread::sleep(Duration::from_millis(20)),
@@ -333,6 +338,8 @@ pub fn run(cmd: &str, cwd: &str, timeout_s: f64) -> Ran {
     };
     let (so, n1) = take(&ho);
     let (se, n2) = take(&he);
+    // finished: a program it left running on purpose (`app &`) is the agent's to keep, not killed at shutdown
+    crate::proc::unregister(pid);
     let mut changed = vec![];
     let mut budget = 4000;
     changed_files(cwd, since, &mut changed, 0, &mut budget);

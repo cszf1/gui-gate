@@ -61,7 +61,7 @@ fn safe_redirect_rx() -> &'static Regex {
 }
 fn py_write_rx() -> &'static Regex {
     static R: OnceLock<Regex> = OnceLock::new();
-    R.get_or_init(|| Regex::new(r#"(?x)open\s*\([^)]*,\s*['"][^'"]*[wax+]|\.write\(|\.save\(|\.unlink\(|\.rename\(|\.replace\(\s*['"/]|\.mkdir\(|\.touch\(|\.rmdir\(|remove\(|rmtree|shutil\.|os\.system|subprocess|popen|exec\(|eval\(|__import__|to_csv|to_excel|\.chmod\(|socket|requests\.|urllib|http\.client|write_text|write_bytes"#).unwrap())
+    R.get_or_init(|| Regex::new(r#"(?x)open\s*\([^)]*,\s*['"][^'"]*[wax+]|\.open\s*\(\s*['"][^'"]*[wax+]|mode\s*=\s*['"][^'"]*[wax+]|makedirs|symlink|\.link\(|truncate|os\.open|ctypes|importlib|getattr\s*\(|setattr|\.copy\w*\(|\.chown|utime|\.kill\(|signal\.|\.write\(|\.save\(|\.unlink\(|\.rename\(|\.replace\(\s*['"/]|\.mkdir\(|\.touch\(|\.rmdir\(|remove\(|rmtree|shutil\.|os\.system|subprocess|popen|exec\(|eval\(|__import__|to_csv|to_excel|\.chmod\(|socket|requests\.|urllib|http\.client|write_text|write_bytes"#).unwrap())
 }
 
 const RO_CMDS: &[&str] = &["ls", "cat", "head", "tail", "stat", "file", "which", "whereis", "type", "find", "grep", "egrep", "fgrep",
@@ -70,6 +70,30 @@ const RO_CMDS: &[&str] = &["ls", "cat", "head", "tail", "stat", "file", "which",
     "exiftool", "zipinfo", "jq", "md5sum", "sha256sum", "xxd", "od", "strings", "tree", "getent", "ps", "pgrep", "xprop", "xwininfo",
     "hostname", "date", "locale", "test", "[", "true", "false", "column", "nl", "comm", "diff", "cmp", "less", "more", "xdpyinfo",
     "pdfinfo", "lsof", "free", "nproc", "uptime", "env"];
+
+/// Positional (non-option) arguments of a command line, after the command word.
+fn positionals(argv: &[String]) -> Vec<&String> {
+    argv[1..].iter().filter(|a| !a.starts_with('-') || a.as_str() == "-").collect()
+}
+
+/// Commands on the read-only list that can still write a file or change the machine with some arguments.
+fn ro_cmd_writes(w: &str, argv: &[String]) -> Option<&'static str> {
+    let has = |f: &[&str]| argv[1..].iter().any(|a| f.iter().any(|x| a == x || (x.starts_with("--") && a.starts_with(&format!("{x}=")))));
+    let starts = |p: &str| argv[1..].iter().any(|a| a.starts_with(p) && a.len() > p.len());
+    match w {
+        "sort" if has(&["-o", "--output"]) || starts("-o") => Some("sort -o writes a file"),
+        "uniq" if positionals(argv).len() >= 2 => Some("uniq IN OUT writes a file"),
+        "xxd" if has(&["-r", "-revert"]) || positionals(argv).len() >= 2 => Some("xxd -r / xxd IN OUT writes"),
+        "tree" if has(&["-o"]) => Some("tree -o writes a file"),
+        "file" if has(&["-C", "--compile"]) => Some("file -C writes a magic file"),
+        "exiftool" if argv[1..].iter().any(|a| (a.starts_with('-') && a.contains('=')) || ["-o", "-out", "-w", "-overwrite_original", "-overwrite_original_in_place", "-delete_original", "-tagsFromFile"].contains(&a.as_str())) => Some("exiftool would write tags or files"),
+        "date" if has(&["-s", "--set"]) || positionals(argv).iter().any(|a| !a.starts_with('+')) => Some("date would set the clock"),
+        "hostname" if !positionals(argv).is_empty() || has(&["-F", "--file", "-b", "--boot"]) => Some("hostname NAME would rename the machine"),
+        "less" | "more" => Some("pagers can run commands; use cat / head"),
+        "lsblk" | "lsof" | "ps" | "find" => None,
+        _ => None,
+    }
+}
 
 /// None when `cmd` is a read-only inspection command line the probing roles may run; else why not.
 pub fn readonly_problem(cmd: &str) -> Option<String> {
@@ -105,6 +129,9 @@ pub fn readonly_problem(cmd: &str) -> Option<String> {
                 }
                 if w == "env" && argv.len() > 1 {
                     return Some("env only without arguments (it would run a command)".into());
+                }
+                if let Some(why) = ro_cmd_writes(w, argv) {
+                    return Some(format!("{why}: not read-only"));
                 }
                 true
             }

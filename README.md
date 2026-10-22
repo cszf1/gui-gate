@@ -150,36 +150,75 @@ run_actions run_command check_done set_plan`；0.9.7 开 `INSPECT` 时多一个 
 
 ## 安装
 
-一条命令：下载对应平台的 gui-gate（GitHub Release，SHA256 校验）→ 运行 Cua 官方安装器装最新 Cua Driver →
-把目录加进 PATH → 自检（`gui-gate doctor`）。不需要 Python、Rust 或管理员权限。
+**只下载一样东西**：每个平台一个 gui-gate 发布包，里面是 gui-gate 本体 + 它测试过的 Cua Driver 0.37.0
+（Cua 官方原版构建，MIT；发版时已核对 Cua 的 SHA256SUMS 和 Sigstore 签名，见 NOTICE / `scripts/cua-driver.lock`）。
+安装器校验 SHA256 → 放好两者 → 加 PATH → 自检（`gui-gate doctor`）。**不再运行 Cua 的安装器**（因此没有 Windows
+开机计划任务、没有 junction、没有 Cua 的 PATH 行和安装遥测）。不需要 Python、Rust 或管理员权限。
 
 ```bash
 curl -fsSL https://github.com/cszf1/gui-gate/releases/latest/download/install.sh | bash          # macOS / Linux
 irm https://github.com/cszf1/gui-gate/releases/latest/download/install.ps1 | iex                  # Windows PowerShell
 ```
 
+非交互（例如脚本里）直接给审核模型：
+`curl -fsSL .../install.sh | GUI_GATE_REVIEWER_KEY=sk-... bash -s -- --reviewer-url https://api.deepseek.com/v1 --reviewer-model deepseek-chat`
+（Windows：先设 `$env:GUI_GATE_REVIEWER_URL/_MODEL/_KEY` 再 `irm ... | iex`）。
+
 | 选项（sh 参数 / 环境变量） | 作用 |
 |---|---|
 | `--client claude` / `GUI_GATE_CLIENT=claude,codex` | 顺便写入 Agent 配置 |
-| `--version 0.6.1` / `GUI_GATE_VERSION` | 装指定版本 |
-| `--bin-dir` / `GUI_GATE_INSTALL_DIR` | 安装目录（默认 `~/.local/bin`，Windows `%LOCALAPPDATA%\Programs\gui-gate\bin`） |
-| `--skip-driver` / `GUI_GATE_SKIP_DRIVER=1` | 不动 Cua Driver |
-| `GUI_GATE_BASE_URL` | 从镜像下载 gui-gate（GitHub 慢时） |
-| `CUA_DRIVER_RS_VERSION=0.37.0` | 交给 Cua 官方安装器：固定驱动版本 |
+| `--version 0.9.7` / `GUI_GATE_VERSION` | 装指定版本 |
+| `--bin-dir` / `GUI_GATE_INSTALL_DIR` | gui-gate 目录（默认 `~/.local/bin`，Windows `%LOCALAPPDATA%\Programs\gui-gate\bin`） |
+| `--lib-dir` / `GUI_GATE_LIB_DIR` | 内置驱动目录（默认 `<bin>/../lib/gui-gate`；Windows 固定 `<bin>\..\cua-driver`） |
+| `--skip-driver` / `GUI_GATE_SKIP_DRIVER=1` | 不装内置驱动，改用你另外装的 Cua Driver |
+| `--no-modify-path` | 不改 shell 配置文件 |
+| `GUI_GATE_BASE_URL` | 从镜像下载（GitHub 慢时） |
 
-平台：macOS（universal）、Linux x86_64 / aarch64（静态链接，任何发行版）、Windows x64（ARM 版 Windows 走仿真）。
-已有 pip/pipx 安装的 Cua Driver 也能识别。
+运行时：`GUI_GATE_DRIVER=/path/to/cua-driver` 指定驱动，`GUI_GATE_DRIVER=external` 跳过内置驱动、用 Cua 官方
+安装器装的那份。内置驱动启动时 gui-gate 关掉它的遥测和自更新检查（`GUI_GATE_DRIVER_TELEMETRY=1` 恢复 Cua 默认）。
 
-**更新**：重新跑一次安装命令，或 `gui-gate update --self`，就同时更新 gui-gate 和 Cua Driver。
-每次安装/更新后自动运行 `gui-gate cleanup`，不留旧版残留：旧位置的旧版本副本、0.2–0.5 的 Python 包
-（以及只因它装上的 pip 版 Cua Driver，前提是官方驱动已装好）、重复或失效的 PATH 行（shell 配置文件；Windows
-是注册表 `HKCU\Environment` 里的用户 Path）、指向已删副本的 MCP 配置和已删除的参数（如 `--decider`）、
-gui-gate 自己留的配置备份、旧缓存、30 天前的日志（`GUI_GATE_LOG_KEEP_DAYS`）、Windows 上被占用改名的
-`gui-gate.exe.old`。只动 gui-gate 自己的东西；需要管理员权限的只报告。`gui-gate cleanup --dry-run` 先看会动什么；
-`gui-gate uninstall [--keep-logs]` 完整卸载（Cua Driver 是独立产品，保留）。
-gui-gate 每天最多查一次 Cua 官方安装器当前发布的驱动版本（后台、3 秒超时，`GUI_GATE_NO_UPDATE_CHECK=1` 关闭），
-有新版就通过 MCP 提醒，从不自动安装。`gui-gate update` 只更新驱动：用官方安装器装新版 → 自检（能启动、
-门控需要的工具都在）→ 不通过就退回原版本；`gui-gate update --to 0.37.0` 回到测试过的版本。
+平台：macOS（universal）、Linux x86_64 / aarch64（gate 静态链接；驱动为 Cua 官方 glibc 构建）、Windows x64。
+macOS 上驱动是 Cua 签名的 `CuaDriver.app`，原样放到 `/Applications`（不可写时 `~/Applications`），所以辅助功能 /
+屏幕录制权限和用 Cua 安装器装的一样；如果你已经有 `/Applications/CuaDriver.app`（不是 gui-gate 装的），保持不动、直接用它。
+
+**更新**：重新跑安装命令，或 `gui-gate update --self`。内置驱动只随 gui-gate 发版一起变；`gui-gate update` 只报告
+有没有新的 gui-gate 版本，不会单独去拉新驱动，后台也不联网查驱动版本（只有用外部驱动时才保留旧的每日检查，
+`GUI_GATE_NO_UPDATE_CHECK=1` 关闭）。每次安装/更新后自动运行 `gui-gate cleanup`，清理旧版本残留（旧副本、
+0.2–0.5 的 Python 包、重复/失效的 PATH 行或 Windows 用户 Path 项、指向已删副本的 MCP 配置和已删参数、gui-gate
+自己的配置备份、旧缓存、旧日志、死掉的 gate 留下的临时文件）；`gui-gate cleanup --dry-run` 先看会动什么。
+
+### gui-gate 在你电脑上放了什么（完整清单见 docs/footprint-0.9.7.md）
+
+| 东西 | 位置 |
+|---|---|
+| 本体 | `~/.local/bin/gui-gate`；Windows `%LOCALAPPDATA%\Programs\gui-gate\bin\gui-gate.exe` |
+| 内置 Cua Driver + 其 LICENSE、安装清单 `install-manifest` | Linux/macOS `~/.local/lib/gui-gate/`；Windows `%LOCALAPPDATA%\Programs\gui-gate\` |
+| macOS 驱动 App（仅当原来没有时） | `/Applications/CuaDriver.app` |
+| PATH | shell 配置里 `# gui-gate` 两行（仅当目录不在 PATH 时）；Windows 用户 Path 一项 |
+| 审核模型设置与密钥（600 权限）、角色密钥、经验记忆 | `~/.config/gui-gate/` |
+| 会话日志（含任务原文和命令；启动时清理 30 天前 / 超过 200 MB 的） | `~/.gui-gate/logs/`（`--log none` 不写） |
+| 外部驱动时的版本检查缓存 | `~/.cache/gui-gate/` |
+| MCP 配置项（只在你 `setup --client` 时） | `~/.claude.json`、`~/.pi/agent/mcp.json`、`~/.cursor/mcp.json`、`~/.codex/config.toml`，不留 .bak |
+| 临时文件 | `$TMPDIR/gui-gate-*`（后台任务日志在 Unix 上一启动就删名；gate 退出时清掉自己的） |
+| 进程 | 由 MCP 客户端启动的 `gui-gate` 和它的 `cua-driver mcp`；客户端关掉 stdin 或发 SIGTERM/SIGINT/SIGHUP 时，gate 结束所有后台任务和仍在跑的命令（整组进程）再退出 |
+
+没有服务、计划任务、LaunchAgent、systemd 单元，也不改浏览器配置（`inspect kind=page` 只在 Chrome 调试端口
+本来就开着时只读连接本机）。
+
+### 卸载
+
+```bash
+gui-gate uninstall                 # 删除上表全部：本体、内置驱动（macOS 只删 gui-gate 自己装的 CuaDriver.app 及其权限记录）、
+                                   # PATH 行 / 用户 Path 项、MCP 配置项、~/.config/gui-gate、~/.gui-gate、~/.cache/gui-gate、
+                                   # 临时文件、安装器新建且已空的目录
+gui-gate uninstall --dry-run       # 先看会删什么
+gui-gate uninstall --keep-config   # 保留审核模型设置和密钥；--keep-logs 保留日志
+gui-gate uninstall --with-driver   # 另外用 Cua 自己的卸载器（--purge）删掉你用 Cua 官方安装器装的驱动，并删它留下的 PATH 行
+```
+
+Windows 同样是 `gui-gate uninstall`（exe 会先改名，几秒后由一个隐藏的后台命令删掉并移除空目录）。
+用 Cua 官方安装器装的驱动默认不动；手动删：macOS/Linux `bash -c "$(curl -fsSL https://cua.ai/driver/uninstall.sh)" -- --purge`，
+Windows `$env:CUA_DRIVER_RS_UNINSTALL_PURGE='1'; irm https://cua.ai/driver/uninstall.ps1 | iex`。
 
 Linux 桌面需要开启无障碍（AT-SPI，多数发行版默认有）；macOS 首次使用要给辅助功能 / 屏幕录制权限。
 
@@ -227,8 +266,9 @@ maturin build --release                     # 打包成 Python wheel（发布由
 
 源码：`server.rs` 门控主流程 · `decide.rs` 规则与预测器 · `features.rs` 特征与风险 · `sidefx.rs` 文件系统副作用检查 ·
 `authz.rs` 用户原话授权 · `batch.rs` 批量执行 · `human.rs` 找人确认 · `reviewer.rs` 独立审核员 ·
-`install.rs` / `updates.rs` 安装、自检、驱动更新 · `tools.rs` 训练与对比 · `shot.rs` 截图转 JPEG。
+`install.rs` / `updates.rs` 安装、自检、驱动查找与更新 · `cleanup.rs` 清理与卸载 · `proc.rs` 子进程与退出清理 · `tools.rs` 训练与对比 · `shot.rs` 截图转 JPEG。
 
 ## 许可
 
-MIT。Cua Driver 为 trycua/cua 的 MIT 项目，本项目只通过其公开的 MCP 接口调用它。
+MIT。Cua Driver（Copyright (c) 2025 Cua AI, Inc.）为 trycua/cua 的 MIT 项目；发布包里附带其官方原版构建，许可证随附在
+`cua-driver/LICENSE` 和 `third_party/cua-driver/`，见 NOTICE。gui-gate 只通过其 MCP 接口以子进程方式调用它。

@@ -1,5 +1,9 @@
-# gui-gate installer (Windows): the gate binary from this repo's GitHub release,
-# plus the latest Cua Driver through Cua's own official installer.
+# gui-gate installer (Windows): ONE zip from this repo's GitHub release holds the gate and the Cua Driver build it was
+# tested with (official, unmodified, MIT; verified against Cua's SHA256SUMS + Sigstore when the release was made).
+# Cua's own installer is never run (no scheduled task, no junctions, no extra Path entry):
+#   %LOCALAPPDATA%\Programs\gui-gate\bin\gui-gate.exe      (this dir is added to your user Path)
+#   %LOCALAPPDATA%\Programs\gui-gate\cua-driver\           (cua-driver.exe and its LICENSE)
+#   uninstall: gui-gate uninstall
 #
 #   irm https://github.com/cszf1/gui-gate/releases/latest/download/install.ps1 | iex
 #
@@ -7,7 +11,7 @@
 #   $env:GUI_GATE_CLIENT = "claude"        claude|codex|cursor|pi, comma separated
 #   $env:GUI_GATE_VERSION = "0.6.1"        pin a gui-gate release
 #   $env:GUI_GATE_INSTALL_DIR = "C:\..."   default %LOCALAPPDATA%\Programs\gui-gate\bin
-#   $env:GUI_GATE_SKIP_DRIVER = "1"        do not install / update Cua Driver
+#   $env:GUI_GATE_SKIP_DRIVER = "1"        do not install the bundled Cua Driver (use one installed separately)
 #   $env:GUI_GATE_BASE_URL = "https://..." download gui-gate from a mirror instead of GitHub
 # The gate needs a reviewer model (it refuses to start without one). Unless one is already configured the
 # installer asks for it in an interactive console, or takes it from these (saved to ~\.config\gui-gate\reviewer.env):
@@ -17,7 +21,6 @@
 #     (or $env:GUI_GATE_REVIEWER_KEY = "...", saved to ~\.config\gui-gate\reviewer.key readable only by you)
 #   $env:GUI_GATE_REVIEWER_PROTOCOL = "auto"                       auto|chat|responses|anthropic|gemini|systemone
 #   $env:GUI_GATE_NO_PROMPT = "1"                                  never ask in the console
-# Cua Driver's own env vars (e.g. $env:CUA_DRIVER_RS_VERSION) pass through to its installer.
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
@@ -42,6 +45,21 @@ try {
     if ($got.ToLower() -ne $want.ToLower()) { throw "checksum mismatch for $Asset" }
     Expand-Archive -Path (Join-Path $Tmp $Asset) -DestinationPath $Tmp -Force
 
+    $Root = Split-Path $BinDir
+    $Manifest = Join-Path $Root 'install-manifest'
+    $UserHome0 = if ($env:HOME) { $env:HOME } else { $env:USERPROFILE }
+    # dirs this installer creates (under the user's home / LOCALAPPDATA, only if missing now): `gui-gate uninstall`
+    # removes exactly those once empty; an upgrade keeps what the first install recorded
+    $created = @()
+    if (Test-Path $Manifest) { $created = @(Get-Content $Manifest | Where-Object { $_ -like 'created_dir=*' } | ForEach-Object { $_.Substring(12) }) }
+    foreach ($d in @($BinDir, (Join-Path $UserHome0 '.config\gui-gate'))) {
+        $x = $d
+        while ($x -and -not (Test-Path $x) -and ($x.StartsWith($UserHome0) -or ($env:LOCALAPPDATA -and $x.StartsWith($env:LOCALAPPDATA)))) {
+            if ($x -eq $UserHome0 -or $x -eq $env:LOCALAPPDATA) { break }
+            $created += $x
+            $x = Split-Path $x
+        }
+    }
     New-Item -ItemType Directory -Force -Path $BinDir | Out-Null
     $Exe = Join-Path $BinDir 'gui-gate.exe'
     if (Test-Path $Exe) {
@@ -52,6 +70,28 @@ try {
     }
     Copy-Item (Join-Path $Tmp 'gui-gate.exe') $Exe
     Say "installed gui-gate $(& $Exe --version) -> $Exe"
+
+    # the bundled Cua Driver, next to the gate in gui-gate's own dir
+    $DrvSrc = Join-Path $Tmp 'cua-driver'
+    if ($env:GUI_GATE_SKIP_DRIVER -ne '1' -and (Test-Path $DrvSrc)) {
+        $Drv = Join-Path $Root 'cua-driver'
+        $New = Join-Path $Root '.cua-driver.new'
+        Remove-Item -Recurse -Force $New -ErrorAction SilentlyContinue
+        Copy-Item -Recurse $DrvSrc $New
+        if (Test-Path $Drv) {
+            # a running driver keeps it locked: rename it; `gui-gate uninstall` / the next install removes it
+            try { Remove-Item -Recurse -Force $Drv -ErrorAction Stop }
+            catch { Rename-Item -Path $Drv -NewName ("cua-driver.old-" + [guid]::NewGuid().ToString('N').Substring(0, 8)) }
+        }
+        Get-ChildItem $Root -Directory -Filter 'cua-driver.old-*' -ErrorAction SilentlyContinue | ForEach-Object { Remove-Item -Recurse -Force $_.FullName -ErrorAction SilentlyContinue }
+        Rename-Item -Path $New -NewName 'cua-driver'
+        Say "installed Cua Driver $((Get-Content (Join-Path $Drv 'VERSION') -ErrorAction SilentlyContinue) -join '') (bundled) -> $Drv"
+        foreach ($c in @((Join-Path $env:LOCALAPPDATA 'Programs\Cua\cua-driver\bin\cua-driver.exe'), (Join-Path $env:USERPROFILE '.cua-driver\packages\current\cua-driver.exe'))) {
+            if (Test-Path $c) { Say "note: a Cua Driver installed by Cua's own installer is at $c; it is left untouched (gui-gate uses its bundled one; GUI_GATE_DRIVER=external selects yours)"; break }
+        }
+    }
+    $lines = @("# written by gui-gate's installer; read by gui-gate uninstall") + @($created | Select-Object -Unique | ForEach-Object { "created_dir=$_" })
+    [IO.File]::WriteAllLines($Manifest, [string[]]$lines, (New-Object Text.UTF8Encoding($false)))
 } finally {
     Remove-Item -Recurse -Force $Tmp -ErrorAction SilentlyContinue
 }
@@ -62,16 +102,6 @@ if (-not (($userPath -split ';') -contains $BinDir)) {
     Say "added $BinDir to your PATH (open a new terminal)"
 }
 if (-not (($env:Path -split ';') -contains $BinDir)) { $env:Path = "$BinDir;$env:Path" }
-
-if ($env:GUI_GATE_SKIP_DRIVER -ne '1') {
-    Say "installing the latest Cua Driver with Cua's official installer"
-    $Shell = (Get-Process -Id $PID).Path
-    & $Shell -NoProfile -ExecutionPolicy Bypass -Command "irm https://cua.ai/driver/install.ps1 | iex"
-    if ($LASTEXITCODE -ne 0) { throw "Cua Driver's installer failed (see above). gui-gate itself is installed; re-run this command to retry." }
-    # pick up the driver's PATH entry in this session too
-    $machine = [Environment]::GetEnvironmentVariable('Path', 'Machine')
-    $env:Path = "$BinDir;" + [Environment]::GetEnvironmentVariable('Path', 'User') + ";$machine"
-}
 
 # leave no residue: old copies (incl. gui-gate.exe.old), old Python package, duplicate/stale user Path entries
 # (registry HKCU\Environment), stale MCP entries and flags, our own config backups, old caches
@@ -156,3 +186,4 @@ if ($env:GUI_GATE_CLIENT) {
     Write-Host ''
     Write-Host 'Next: add it to your agent, e.g.   gui-gate setup --client claude   (or codex / cursor / pi)'
 }
+Write-Host 'Remove everything this installed: gui-gate uninstall'
