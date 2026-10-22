@@ -221,15 +221,37 @@ pub const HINT_GRID: &str = "[gate] Spreadsheet cells are not in the accessibili
 pub const HINT_TERMINAL: &str = "[gate] This terminal does not expose its text: no read shows the command output, so re-reading will not help. Enter runs the typed line. Check a command's effect in another window whose tree shows it (for example a file manager listing a folder), or, when the command you ran is clearly right, finish.";
 
 /// One-time, cause-specific notes for a read whose content is not in the tree (per window and cause).
+/// (Not when the gate already attached the cells / the terminal text from AT-SPI.)
 pub fn read_hints(txt: &str, terminal: bool, key: &str, hinted: &mut HashSet<String>) -> Vec<&'static str> {
     let mut out = vec![];
-    if txt.contains("cell grid") && hinted.insert(format!("grid:{key}")) {
+    let cells_shown = txt.contains("[gate] Visible cells") || txt.contains("[gate] Cells changed");
+    if txt.contains("cell grid") && !cells_shown && hinted.insert(format!("grid:{key}")) {
         out.push(HINT_GRID);
     }
-    if terminal && hinted.insert(format!("term:{key}")) {
+    if terminal && !txt.contains("[gate] Terminal text") && hinted.insert(format!("term:{key}")) {
         out.push(HINT_TERMINAL);
     }
     out
+}
+
+re!(win_title_rx, r#"(?m)^\s*- (?:frame|window|dialog)[^"\n]*"([^"\n]+)""#);
+
+/// the window title from a tree's first frame row
+pub fn window_title_of(md: &str) -> String {
+    win_title_rx().captures(md).map(|c| c[1].to_string()).unwrap_or_default()
+}
+
+/// The tree says a spreadsheet grid was not expanded.
+pub fn grid_not_listed(txt: &str) -> bool {
+    txt.contains("cell grid") || (txt.contains("PARTIAL TREE") && txt.contains("LibreOffice Calc"))
+}
+
+/// LibreOffice (the driver's PARTIAL TREE note names "a spreadsheet's cell grid" for any big container, so the app
+/// decides whether a sheet grid is worth looking for)
+pub fn is_spreadsheet_app(pid: i64) -> bool {
+    let comm = std::fs::read_to_string(format!("/proc/{pid}/comm")).unwrap_or_default().to_lowercase();
+    let cmd = std::fs::read_to_string(format!("/proc/{pid}/cmdline")).unwrap_or_default().to_lowercase();
+    comm.starts_with("soffice") || cmd.contains("libreoffice") || comm.contains("gnumeric")
 }
 
 /// Every 3rd read in a row without an action in between.
@@ -340,6 +362,8 @@ pub struct Inner {
     pub acted: bool,
     pub read_streak: u32,             // reads since the last GUI action (stall hint)
     pub hinted: HashSet<String>,      // one-time read hints already given (cause:window)
+    pub cells_seen: HashMap<String, (String, Vec<(String, String)>)>, // window -> (range, cells) last shown
+    pub term_seen: HashMap<String, String>, // window -> terminal text last shown
  // signatures the step reviewer doubted (look_light) and the agent has not re-sent yet
     pub denials_consec: u32,
     pub denials_total: u32,
@@ -545,7 +569,7 @@ impl Gate {
             inner: Mutex::new(Inner {
                 state: GateState::with_text_only(cfg.text_only), cfg, stats: new_stats(), aid: 0, confirm_codes: HashMap::new(),
                 want_shot: HashSet::new(), seen_pids: HashSet::new(), fg_sticky: false, pixel_pids: HashSet::new(),
-                probe_disabled: false, denied_effects: HashMap::new(), step_doubted: HashSet::new(), acted: false, read_streak: 0, hinted: HashSet::new(), denials_consec: 0, denials_total: 0,
+                probe_disabled: false, denied_effects: HashMap::new(), step_doubted: HashSet::new(), acted: false, read_streak: 0, hinted: HashSet::new(), cells_seen: HashMap::new(), term_seen: HashMap::new(), denials_consec: 0, denials_total: 0,
                 task_locked, task_source, in_batch: false, batch_ctx: Value::Null, pix_age: HashMap::new(),
                 last_auto: HashMap::new(), seen_rows: HashMap::new(), recent: vec![], risk_info: Value::Null, cur_ack: false,
             }),
@@ -808,6 +832,19 @@ impl Gate {
                 inn.pixel_pids.insert(p);
             }
         }
+        if name == "get_window_state" && !is_error(&res) && args.get("query").is_none() {
+            let scv = sc(&res);
+            if let Some(p) = as_i64(scv.get("pid")).or(pid) {
+                let key = format!("{p}:{}", as_i64(scv.get("window_id")).or(as_i64(args.get("window_id"))).unwrap_or(0));
+                let mut txt = text_of(&res);
+                if let Some(md) = scv.get("tree_markdown").and_then(|v| v.as_str()) {
+                    txt = format!("{md}\n{txt}");
+                }
+                if let Some(extra) = self.tree_extra(&mut inn, p, &key, &txt, false) {
+                    push_text(&mut res, extra);
+                }
+            }
+        }
         if trimmed {
             let scv = sc(&res);
             let md = scv.get("tree_markdown").and_then(|v| v.as_str()).map(String::from).unwrap_or_else(|| text_of(&res));
@@ -877,6 +914,51 @@ impl Gate {
                                   "snapshot": scv.get("snapshot_id"), "pid": pidv, "trimmed": trimmed}));
         }
         res
+    }
+
+    /// What the driver's tree leaves out, from AT-SPI: visible spreadsheet cells, a terminal's visible text.
+    /// `diff`: the gate's own post-action look - only what changed since the window's last cells/text shown.
+    pub fn tree_extra(&self, inn: &mut Inner, pid: i64, key: &str, txt: &str, diff: bool) -> Option<String> {
+        let budget = Duration::from_millis(1500);
+        let t0 = Instant::now();
+        if grid_not_listed(txt) && crate::atspi::cells_enabled() && is_spreadsheet_app(pid) {
+            let r = crate::atspi::visible_grid(pid, &window_title_of(txt), budget);
+            let ms = round_to(t0.elapsed().as_secs_f64() * 1000.0, 1);
+            return match r {
+                Ok(g) => {
+                    let prev = inn.cells_seen.get(key).cloned();
+                    let out = prev.as_ref().filter(|_| diff).and_then(|(rg, items)| crate::atspi::render_grid_diff(rg, items, &g, 3000))
+                        .unwrap_or_else(|| crate::atspi::render_grid(&g, 6000));
+                    inn.cells_seen.insert(key.to_string(), (g.range(), g.items()));
+                    inn.inc("cells_reads");
+                    self.log.write(json!({"ev": "tree_extra", "kind": "cells", "pid": pid, "ms": ms, "range": g.range(), "cells": g.cells.len(), "chars": out.len(), "diff": out.contains("changed since") || out.contains("unchanged since")}));
+                    Some(out)
+                }
+                Err(e) => {
+                    self.log.write(json!({"ev": "tree_extra", "kind": "cells", "pid": pid, "ms": ms, "error": e}));
+                    None
+                }
+            };
+        }
+        if crate::atspi::term_text_enabled() && crate::sidefx::is_terminal(pid) {
+            let r = crate::atspi::terminal_text(pid, &window_title_of(txt), budget);
+            let ms = round_to(t0.elapsed().as_secs_f64() * 1000.0, 1);
+            return match r {
+                Ok(t) => {
+                    let same = inn.term_seen.get(key) == Some(&t);
+                    inn.term_seen.insert(key.to_string(), t.clone());
+                    inn.inc("term_reads");
+                    let out = if diff && same { "[gate] Terminal text unchanged since the last read.".to_string() } else { t };
+                    self.log.write(json!({"ev": "tree_extra", "kind": "terminal", "pid": pid, "ms": ms, "chars": out.len(), "same": same}));
+                    Some(out)
+                }
+                Err(e) => {
+                    self.log.write(json!({"ev": "tree_extra", "kind": "terminal", "pid": pid, "ms": ms, "error": e}));
+                    None
+                }
+            };
+        }
+        None
     }
 
     pub fn window_sig(&self, inn: &mut Inner, pid: i64) -> Option<String> {
@@ -1614,6 +1696,14 @@ impl Gate {
                 }
             }
         }
+        let extra = {
+            let k = format!("{pid}:{}", as_i64(scv.get("window_id")).or(as_i64(a.get("window_id"))).unwrap_or(0));
+            let txt = format!("{md}\n{}", text_of(&r));
+            self.tree_extra(inn, pid, &k, &txt, true)
+        };
+        if let Some(e) = &extra {
+            push_text(&mut r, e.clone());
+        }
         if let Some(o) = inn.state.record_observation(&a, &r, None) {
             inn.state.get_mut(o).window_count = Some(sig.clone());
         }
@@ -1658,13 +1748,14 @@ impl Gate {
         inn.add("auto_obs_chars", lines.iter().map(|l| l.len() + 1).sum::<usize>() as f64);
         inn.add("auto_obs_chars_full", all_lines.iter().take(MAX_TREE_LINES).map(|l| l.len() + 1).sum::<usize>() as f64);
         let mut busy = if loading_rx().is_match(&md) { " The UI still looks busy.".to_string() } else { String::new() };
-        if partial && !shot && inn.cfg.text_only {
+        if partial && !shot && inn.cfg.text_only && extra.is_none() {
             busy.push_str(" The tree is partial here (grid/canvas): what is not listed cannot be read from the tree.");
         } else if partial && !shot {
             busy.push_str(" The tree is partial here (grid/canvas); read with include_screenshot:true before aiming by x/y.");
         }
         let snap = pystr(scv.get("snapshot_id"));
-        push_text(res, format!("[gate] Window right after the action (snapshot {snap}; tokens are {snap}:N, older tokens are stale).{busy}{delta_note}\n{note}{}{more}", lines.join("\n")));
+        let extra_s = extra.map(|e| format!("\n{e}")).unwrap_or_default();
+        push_text(res, format!("[gate] Window right after the action (snapshot {snap}; tokens are {snap}:N, older tokens are stale).{busy}{delta_note}\n{note}{}{more}{extra_s}", lines.join("\n")));
         if shot {
             if let Some(imgs) = r.get("content").and_then(|c| c.as_array()) {
                 let imgs: Vec<Value> = imgs.iter().filter(|c| s(c, "type") == "image").cloned().collect();
@@ -2012,6 +2103,20 @@ mod tests {
         assert!(streak_hint(2).is_none() && streak_hint(4).is_none());
         assert!(streak_hint(3).unwrap().contains("3 reads in a row"));
         assert!(streak_hint(6).is_some());
+    }
+
+    #[test]
+    fn tree_extra_helpers() {
+        let md = "window_id=1 pid=2\n\n- frame = \"f.xlsx \u{2014} LibreOffice Calc\"\n  - [0] menu \"File\"";
+        assert_eq!(window_title_of(md), "f.xlsx \u{2014} LibreOffice Calc");
+        assert_eq!(window_title_of("- [0] menu \"File\""), "");
+        let mut h = HashSet::new();
+        let grid = "PARTIAL TREE: ... (e.g. a spreadsheet's cell grid) was not expanded";
+        // cells already attached from AT-SPI: no "cells are not in the tree" note
+        assert!(read_hints(&format!("{grid}\n[gate] Visible cells of \"Sheet1\", range A1:P32"), false, "1:2", &mut h).is_empty());
+        assert!(read_hints("[gate] Terminal text (last lines ...):\n$ ls", true, "7:8", &mut h).is_empty());
+        assert!(grid_not_listed(grid));
+        assert!(!is_spreadsheet_app(std::process::id() as i64));
     }
 
     #[test]

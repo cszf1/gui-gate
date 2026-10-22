@@ -6,6 +6,7 @@
 //!   gui-gate update          look for / install a newer Cua Driver and gui-gate (only when you run it)
 //!   gui-gate train | compare offline tools over the gate's logs
 #![allow(dead_code, unused_assignments)]
+mod atspi;
 mod authz;
 mod batch;
 mod decide;
@@ -59,6 +60,21 @@ options:
   --driver-arg ARG                    extra args for `cua-driver mcp` (repeatable)
   --version";
 
+/// diagnostics: what the gate adds to a window's tree from AT-SPI (`gui-gate atspi-probe PID [TITLE]`)
+fn atspi_probe(rest: &[String]) -> i32 {
+    let Some(pid) = rest.first().and_then(|p| p.parse::<i64>().ok()) else {
+        eprintln!("usage: gui-gate atspi-probe PID [WINDOW_TITLE]");
+        return 2;
+    };
+    let title = rest.get(1).cloned().unwrap_or_default();
+    for (what, f) in [("cells", atspi::visible_cells as fn(i64, &str, std::time::Duration) -> Result<String, String>), ("terminal", atspi::terminal_text)] {
+        let t0 = std::time::Instant::now();
+        let r = f(pid, &title, std::time::Duration::from_millis(3000));
+        println!("== {what} ({} ms)\n{}", t0.elapsed().as_millis(), r.unwrap_or_else(|e| format!("(none: {e})")));
+    }
+    0
+}
+
 fn main() {
     let argv: Vec<String> = std::env::args().skip(1).collect();
     if let Some(cmd) = argv.first() {
@@ -73,6 +89,7 @@ fn main() {
             "train" => Some(tools::train_main(rest)),
             "compare" => Some(tools::compare_main(rest)),
             "replay" => Some(tools::replay_main(rest)),
+            "atspi-probe" => Some(atspi_probe(rest)),
             _ => None,
         };
         if let Some(c) = code {

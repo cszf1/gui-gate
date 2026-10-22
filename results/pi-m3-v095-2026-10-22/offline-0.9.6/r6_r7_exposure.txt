@@ -1,0 +1,4 @@
+tree_missing:spreadsheet_grid direct: runs 22, content would show at turn (median) 2 in 21/22 runs; turns after that: median 28, total 583; reads that returned the gap: 178
+tree_missing:spreadsheet_grid gate8: runs 21, content would show at turn (median) 2 in 21/21 runs; turns after that: median 28, total 546; reads that returned the gap: 123
+tree_missing:terminal_output direct: runs 10, content would show at turn (median) 4.5 in 6/10 runs; turns after that: median 25.5, total 149; reads that returned the gap: 0
+tree_missing:terminal_output gate8: runs 9, content would show at turn (median) 4.0 in 6/9 runs; turns after that: median 26.0, total 109; reads that returned the gap: 1

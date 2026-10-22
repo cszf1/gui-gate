@@ -1,0 +1,7 @@
+og04 {'-': 9, 'high/overwrite': 12}
+og05 {'high/overwrite': 5, 'high/delete': 1}
+og06 {'high/move': 2, '-': 1}
+og07 {'-': 8}
+og10 {'-': 13, 'high/move': 2}
+caught: og04 overwrite 12 og05 overwrite 5 og10 move 2
+og06/og07 high: [('og06', 'ls -a /home/user/Desktop; mv -v /data/home/Desktop/todo_list'), ('og06', 'mv /data/home/Desktop/todo_list_Jan_1 /data/home/Desktop/tod')]
