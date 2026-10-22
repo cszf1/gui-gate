@@ -1827,6 +1827,44 @@ mod tests {
         assert_eq!(tree_delta(&seen, &same, 0.5), Some(vec![]));
     }
 
+    /// Offline harness: GG_DIFFSIM=<jsonl of recorded tree reads> GG_DIFFSIM_OUT=<out> cargo test -- --ignored diffsim
+    /// Feeds recorded auto-observe blocks and agent reads through tree_delta with the same seen-row bookkeeping
+    /// as auto_observe/passthrough and writes the chars each auto-observe would have sent.
+    #[test]
+    #[ignore]
+    fn diffsim() {
+        let (Ok(inp), Ok(outp)) = (std::env::var("GG_DIFFSIM"), std::env::var("GG_DIFFSIM_OUT")) else { return };
+        let thr: f64 = std::env::var("GG_DIFFSIM_THR").ok().and_then(|v| v.parse().ok()).unwrap_or(0.5);
+        let mut seen: HashMap<String, HashSet<String>> = HashMap::new();
+        let mut out = String::new();
+        for line in std::fs::read_to_string(inp).unwrap().lines() {
+            let r: Value = serde_json::from_str(line).unwrap();
+            let key = r["key"].as_str().unwrap().to_string();
+            let rows: Vec<String> = r["rows"].as_array().unwrap().iter().map(|x| x.as_str().unwrap().to_string()).collect();
+            let all: Vec<&str> = rows.iter().map(|x| x.as_str()).collect();
+            if r["kind"] == "read" {
+                seen.insert(key, rows.iter().cloned().collect());
+                continue;
+            }
+            let nw = r["new_window"].as_bool().unwrap_or(false);
+            let prev = if nw { HashSet::new() } else { seen.get(&key).cloned().unwrap_or_default() };
+            let mut lines: Vec<&str> = all.clone();
+            let mut extra = 0;
+            if !nw {
+                if let Some(idx) = tree_delta(&prev, &all, thr) {
+                    lines = idx.iter().map(|&i| all[i]).collect();
+                    extra = 230; // the "only rows that changed" note
+                }
+            }
+            lines.truncate(MAX_TREE_LINES);
+            let shown: HashSet<&str> = lines.iter().copied().collect();
+            seen.insert(key, all.iter().filter(|l| shown.contains(*l) || prev.contains(**l)).map(|l| l.to_string()).collect());
+            let chars = r["head"].as_u64().unwrap_or(0) as usize + extra + lines.iter().map(|l| l.chars().count() + 1).sum::<usize>();
+            out.push_str(&format!("{}\t{}\n", r["id"].as_str().unwrap(), chars));
+        }
+        std::fs::write(outp, out).unwrap();
+    }
+
     #[test]
     fn list_apps_noise_is_hidden() {
         let txt = "Found 7 app(s)\n- systemd (pid 1)\n- kworker/0:1-events (pid 24585)\n- dbus-daemon (pid 6879)\n- LibreOffice Calc (pid 51200)\n- bash (pid 7671)\n- instabox-term (pid 7657)\n- weird-thread (pid 99)";
