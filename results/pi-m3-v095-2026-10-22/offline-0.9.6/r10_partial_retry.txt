@@ -1,0 +1,2 @@
+direct: 148 re-reads with timeout_ms/max_elements/query/max_depth after a grid read, in 23 runs
+gate8: 125 re-reads with timeout_ms/max_elements/query/max_depth after a grid read, in 23 runs

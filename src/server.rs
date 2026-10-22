@@ -249,6 +249,27 @@ pub fn text_only_rewrite(res: &mut Value) {
     }
 }
 
+re!(partial_advice_rx, r"If the element you need is absent, retry with a larger timeout_ms[^\n]*?max_depth\.");
+pub const GRID_LISTED: &str = "The sheet's cell grid is the container that was not expanded; its visible cells are listed by the gate at the end of this result (a larger timeout_ms, max_elements or a query does not list more of the grid; move the cursor or scroll to see other cells).";
+
+/// The driver's PARTIAL TREE advice sends the model re-reading with timeout_ms / query for cells (m3: 125 such
+/// re-reads in 23 gate8 runs). Once the gate attached the visible cells, say so instead.
+pub fn rewrite_partial_advice(res: &mut Value) -> bool {
+    let mut done = false;
+    if let Some(arr) = res.get_mut("content").and_then(|c| c.as_array_mut()) {
+        for c in arr.iter_mut() {
+            if let Some(t) = c.get("text").and_then(|t| t.as_str()) {
+                if partial_advice_rx().is_match(t) {
+                    let n = partial_advice_rx().replace(t, GRID_LISTED).to_string();
+                    c["text"] = json!(n);
+                    done = true;
+                }
+            }
+        }
+    }
+    done
+}
+
 /// GUI_GATE_FOCUS_BG=0 turns off the focus-free retry of a token click.
 pub fn focus_bg_enabled() -> bool {
     std::env::var("GUI_GATE_FOCUS_BG").map(|v| v != "0").unwrap_or(true)
@@ -895,6 +916,9 @@ impl Gate {
                     txt = format!("{md}\n{txt}");
                 }
                 if let Some(extra) = self.tree_extra(&mut inn, p, &key, &txt, false) {
+                    if extra.starts_with("[gate] Visible cells") && rewrite_partial_advice(&mut res) {
+                        inn.inc("partial_advice_rewritten");
+                    }
                     push_text(&mut res, extra);
                 }
             }
@@ -2224,6 +2248,15 @@ mod tests {
         assert!(streak_hint(2).is_none() && streak_hint(4).is_none());
         assert!(streak_hint(3).unwrap().contains("3 reads in a row"));
         assert!(streak_hint(6).is_some());
+    }
+
+    #[test]
+    fn partial_advice() {
+        let mut r = json!({"content": [{"type": "text", "text": "PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 336 node(s) (0 discovered but not visited). Every element listed is real; elements after the cut are missing. If the element you need is absent, retry with a larger timeout_ms (e.g. 5000) or narrow with query / max_depth.\n\n- frame = \"x\""}]});
+        assert!(rewrite_partial_advice(&mut r));
+        let t = r["content"][0]["text"].as_str().unwrap();
+        assert!(t.contains("listed by the gate") && !t.contains("timeout_ms (e.g. 5000)") && t.ends_with("- frame = \"x\""), "{t}");
+        assert!(!rewrite_partial_advice(&mut json!({"content": [{"type": "text", "text": "no partial"}]})));
     }
 
     #[test]

@@ -1,0 +1,2 @@
+direct: runs 68; tool-result text per run median 68.8 KB (mean 67.2); added by rounds 6-9 median 0.0 KB, mean 6.1 KB (+9% of tool-result text); max 28.5 KB
+gate8: runs 68; tool-result text per run median 76.7 KB (mean 84.5); added by rounds 6-9 median 0.0 KB, mean 4.3 KB (+5% of tool-result text); max 22.8 KB
