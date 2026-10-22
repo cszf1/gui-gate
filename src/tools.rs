@@ -340,7 +340,7 @@ pub fn compare_main(argv: &[String]) -> i32 {
     0
 }
 
-/// gui-gate replay LOGS... [--weights FILE|prior_v1] [--human deny|auto] [--reviewer] [--lambda X]
+/// gui-gate replay LOGS... [--weights FILE|prior_v1] [--human deny|auto] [--reviewer] [--lambda X] [--fail-exp E]
 /// Re-decide every executed action in old logs with the current formula and predictor (features rebuilt the way
 /// the live gate computes them) and score the decisions against what actually happened to those actions.
 pub fn replay_main(argv: &[String]) -> i32 {
@@ -358,8 +358,9 @@ pub fn replay_main(argv: &[String]) -> i32 {
             }
             "--human" => { cfg.human_channel = argv.get(i + 1).cloned().unwrap_or_default(); i += 1; }
             "--lambda" => { cfg.lam = argv.get(i + 1).and_then(|v| v.parse().ok()).unwrap_or(1.0); i += 1; }
+            "--fail-exp" => { cfg.fail_exp = argv.get(i + 1).and_then(|v| v.parse().ok()).unwrap_or(1.0); i += 1; }
             "--reviewer" => cfg.reviewer = true,
-            "-h" | "--help" => { println!("usage: gui-gate replay LOGS... [--weights FILE|prior_v1] [--human deny|auto] [--reviewer] [--lambda X]"); return 0; }
+            "-h" | "--help" => { println!("usage: gui-gate replay LOGS... [--weights FILE|prior_v1] [--human deny|auto] [--reviewer] [--lambda X] [--fail-exp E]"); return 0; }
             p => paths.push(p.to_string()),
         }
         i += 1;
