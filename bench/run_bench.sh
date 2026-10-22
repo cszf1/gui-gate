@@ -27,6 +27,13 @@ export DISPLAY=${DISPLAY:-:1} XDG_RUNTIME_DIR=/run/user/$(id -u) DBUS_SESSION_BU
   0.[0-8].*|0.9.[0-2]) ;;  # older gates ran without a reviewer
   *) echo "run_bench: no reviewer model configured (~/.config/gui-gate/reviewer.env); gui-gate will not start" >&2; exit 2 ;; esac; }
 PY=$OSW/venv/bin/python
+# text-only acting model (e.g. mercury-3: models.json input ["text"]) -> every cond runs the gate with --text-only, so
+# direct and gate8 stay comparable (no screenshot capture, tree-only advice). PI_TEXT_ONLY=1/0 overrides the detection.
+TEXT_ONLY=${PI_TEXT_ONLY:-$(python3 "$HERE/pi_model_info.py" text_only 2>/dev/null || echo 0)}
+TO=""; [ "$TEXT_ONLY" = 1 ] && TO=',"--text-only"'
+# /home/user may be a symlink (gui-pi2: -> /data/home, which file dialogs and the terminal show); say so once
+REALHOME=$(readlink -f /home/user 2>/dev/null); HOMENOTE=""
+[ -n "$REALHOME" ] && [ "$REALHOME" != /home/user ] && HOMENOTE=" (the same directory, also shown as $REALHOME)"
 MCP=~/.pi/agent/mcp.json
 [ -f $OUT/mcp.json.orig ] || cp $MCP $OUT/mcp.json.orig
 trap 'cp $OUT/mcp.json.orig $MCP' EXIT
@@ -56,6 +63,7 @@ run_one() {  # task cond seed attempt
     HINT="
 Speed: when you already know the next several steps (e.g. click a field, type, press Enter, save), run them in ONE codemode script calling tools.mcp__gui__* in sequence. After each call check r.isError; if a call is blocked or errors, stop the script and return its text. End the script by returning only the short text you need (and image() of a screenshot only when you must look). Use single direct tool calls when you need to look before deciding."
   fi
+  GA="$GA$TO"
   cat > $MCP <<J
 {"mcpServers":{"gui":{"command":"$HOME/.local/bin/gui-gate","args":[$GA,"--human","deny","--log","$OUT/gate/$tag.jsonl"]$GENV,
  "exposure":"hidden","toolExposure":{"list_apps":"direct","list_windows":"direct","get_window_state":"direct",
@@ -63,7 +71,7 @@ Speed: when you already know the next several steps (e.g. click a field, type, p
  "run_actions":"direct"}}}}
 J
   local instr=$($PY -c "import json,sys;print(json.load(open(sys.argv[1]))['instruction'])" $HERE/tasks/$task)
-  local PROMPT="You are operating a Linux desktop (Debian 13, XFCE, screen 1440x900) through the gui tools only. The user's home directory is /home/user. Apps the task needs may already be open.
+  local PROMPT="You are operating a Linux desktop (Debian 13, XFCE, screen 1440x900) through the gui tools only. The user's home directory is /home/user$HOMENOTE. Apps the task needs may already be open.
 Task: $instr
 When the task is complete, reply DONE and one line on what you did. If the task is impossible, reply FAIL.$HINT"
   # a VNC viewer with "remote resize" can shrink the desktop mid-run; pin it to the size the prompt states
@@ -87,7 +95,7 @@ When the task is complete, reply DONE and one line on what you did. If the task 
   if echo "$st" | grep -q '"stop": "agent"' && grep -q 'thinking must be passed back\|"stopReason":"error"' $OUT/pi/$tag.jsonl 2>/dev/null; then
     infra='"relay_error"'
   fi
-  echo "{\"tag\":\"$tag\",\"task\":\"$name\",\"cond\":\"$c\",\"seed\":$s,\"attempt\":$att,\"infra\":$infra,\"screen\":\"$scr\",\"think\":\"$THINK\",\"model\":\"$model\",\"gg\":\"$ggv\",\"pi\":$st}" >> $OUT/runs.jsonl
+  echo "{\"tag\":\"$tag\",\"task\":\"$name\",\"cond\":\"$c\",\"seed\":$s,\"attempt\":$att,\"infra\":$infra,\"screen\":\"$scr\",\"think\":\"$THINK\",\"model\":\"$model\",\"gg\":\"$ggv\",\"text_only\":$TEXT_ONLY,\"pi\":$st}" >> $OUT/runs.jsonl
   [ "$infra" = '"relay_error"' ] && return 9
   return 0
 }

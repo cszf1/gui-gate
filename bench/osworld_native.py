@@ -37,7 +37,13 @@ OSW = os.environ.get("OSW", "/data/workspace/osworld")
 HOME = os.path.expanduser("~")
 STATE = os.path.join(OSW, "state")
 APPS = ["soffice.bin", "soffice", "oosplash", "gimp", "gimp-2.10", "gimp-3.0", "chrome", "chromium", "vlc",
-        "xfce4-terminal", "socat", "code", "thunderbird", "eog", "evince", "mousepad", "ristretto", "Thunar", "xfce4-mime-helper", "exo-open"]
+        "xfce4-terminal", "socat", "code", "thunderbird", "eog", "evince", "mousepad", "ristretto", "Thunar", "xfce4-mime-helper", "exo-open",
+        # windows an agent opened to see things the tree did not show (m3 run: zenity/xmessage/settings dialogs survived
+        # into later tasks, e.g. an "Appearance" window in og07)
+        "zenity", "xmessage", "yad", "gedit", "xterm", "xfce4-appearance-settings", "xfce4-settings-manager",
+        "xfce4-display-settings", "xfce4-mouse-settings", "xfce4-keyboard-settings", "xfce4-taskmanager", "xfce4-screenshooter", "xfce4-about", "xfce4-appfinder"]
+# the task JSONs (and the OSWorld VM) use /home/user; on the box HOME may be another path with /home/user a symlink to it
+TASK_HOME = "/home/user"
 # tool installs that may come after box_setup took the home baseline (reset must never delete them)
 KEEP_HOME = {".gui-gate", ".cache", ".pi", ".local", ".config", ".bashrc", ".profile", ".npm", ".cua-driver", ".ssh",
              "xray", ".claude", ".codex", ".gnupg"}
@@ -57,13 +63,18 @@ def osworld_import():
     return SetupController, PythonController, DesktopEnv
 
 
+def _pkill(name: str, sig: str = "") -> None:
+    # pkill -x matches the 15-char comm: longer names (xfce4-appearance-settings) never matched -> match the cmdline
+    sh(f"pkill {sig} -x {name}" if len(name) <= 15 else f"pkill {sig} -f '(^|/){name}( |$)'")
+
+
 def reset() -> None:
     for a in APPS:
-        sh(f"pkill -x {a}")
+        _pkill(a)
     sh("pkill -f osguard_decoy; pkill -f 'soffice' ; pkill -f '/usr/lib/libreoffice'")
     time.sleep(1.5)
     for a in APPS:
-        sh(f"pkill -9 -x {a}")
+        _pkill(a, "-9")
     sh("pkill -9 -f '/usr/lib/libreoffice'; pkill -9 -f osguard_decoy")
     base = os.path.join(OSW, "baseline")
     for d in [".config/libreoffice", ".config/GIMP", ".config/vlc", ".config/xfce4/terminal", "Desktop", "Documents",
@@ -72,7 +83,9 @@ def reset() -> None:
         sh(f"chmod -R u+rwX '{dst}' 2>/dev/null; sudo rm -rf '{dst}'")
         if os.path.exists(src):
             os.makedirs(os.path.dirname(dst), exist_ok=True)
-            sh(f"cp -a '{src}' '{dst}'")
+            # -T: copy INTO dst even if something (xfdesktop watches ~/Desktop) recreated it after the rm; plain
+            # `cp -a src dst` then nested the copy as dst/Desktop (seen on gui-pi2: /data/home/Desktop/Desktop)
+            sh(f"cp -aT '{src}' '{dst}'")
     for d in [".config/google-chrome", ".config/Code", ".vscode"]:
         sh(f"rm -rf '{os.path.join(HOME, d)}'")
     try:
@@ -83,7 +96,7 @@ def reset() -> None:
         if e not in keep:
             p = os.path.join(HOME, e)
             sh(f"chmod -R u+rwX '{p}' 2>/dev/null; sudo rm -rf '{p}'")
-    sh("rm -f /tmp/osguard_* ; rm -rf /tmp/dir_structure_*")
+    sh("rm -f /tmp/osguard_* /tmp/info.txt /tmp/out.txt ; rm -rf /tmp/dir_structure_*")
     time.sleep(0.5)
 
 
@@ -144,15 +157,31 @@ def _final_is_fail(text: str) -> bool:
     return bool(re.search(r"\bFAIL\b", text or ""))
 
 
+TERM_HOTKEY = "pyautogui.hotkey('ctrl', 'alt', 't')"
+TERM_LAUNCH = ("__import__('subprocess').Popen(['xfce4-terminal', '--working-directory=%s'], "
+               "stdout=__import__('subprocess').DEVNULL, stderr=__import__('subprocess').DEVNULL); time.sleep(1.5)")
+
+
 def compat(task: dict) -> dict:
-    """Environment compatibility only: LibreOffice >= 24 titles windows "file — LibreOffice Calc" (em dash),
-    the OSWorld image's LibreOffice used " - ". Rewrite activate_window targets so postconfig (e.g. Ctrl+S
-    into the right window) behaves as in the VM. Nothing else in the task is changed."""
+    """Environment compatibility only:
+    - LibreOffice >= 24 titles windows "file — LibreOffice Calc" (em dash), the OSWorld image's LibreOffice used
+      " - ". Rewrite activate_window targets so postconfig (e.g. Ctrl+S into the right window) behaves as in the VM.
+    - The VM's Ctrl+Alt+T terminal opens in the home directory, so the tasks' next step `cd testDir` works; on the
+      XFCE box the shortcut's terminal inherits the session's cwd (/data/workspace in the m3 run) and the cd failed.
+      Launch the terminal with --working-directory=/home/user instead of the hotkey.
+    Nothing else in the task is changed."""
     t = copy.deepcopy(task)
+    og = t.get("osguard") or {}
     for step in (t.get("evaluator") or {}).get("postconfig", []) + t.get("config", []):
         if step.get("type") == "activate_window":
             n = step["parameters"].get("window_name", "")
             step["parameters"]["window_name"] = n.replace(" - LibreOffice", " \u2014 LibreOffice")
+    for step in t.get("config", []) + og.get("pre_config", []) + og.get("post_config", []):
+        if step.get("type") != "execute":
+            continue
+        cmd = step["parameters"].get("command")
+        if isinstance(cmd, list) and any(TERM_HOTKEY in str(c) for c in cmd):
+            step["parameters"]["command"] = [str(c).replace(TERM_HOTKEY, TERM_LAUNCH % TASK_HOME) for c in cmd]
     return t
 
 
