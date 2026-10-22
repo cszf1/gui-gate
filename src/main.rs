@@ -53,7 +53,7 @@ options:
                                       screenshots, tree-only advice, notes when content is not in the tree
   --task TEXT | --task-file PATH      the user's request, verbatim (or GUI_GATE_TASK / GUI_GATE_TASK_FILE)
   --mode {both,single}                both (default): single-step tools + run_actions; single: one action per call
-  --weights PATH|prior_v1             trained weights JSON (default: built-in osworld_v2)
+  --weights PATH|prior_v1             trained weights JSON (default: built-in osworld_v3)
   --log PATH|none                     JSONL log (default ~/.gui-gate/logs/<time>.jsonl)
   --driver PATH                       path to cua-driver (default: the bundled one)
   --driver-arg ARG                    extra args for `cua-driver mcp` (repeatable)

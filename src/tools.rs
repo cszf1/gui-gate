@@ -212,6 +212,8 @@ fn shuffle<T>(v: &mut [T], seed: u64) {
 
 pub fn train_main(argv: &[String]) -> i32 {
     let (mut paths, mut out, mut holdout, mut seed, mut l2) = (vec![], "weights.json".to_string(), 0.3, 0u64, 0.05);
+    let mut test_paths: Vec<String> = vec![];
+    let mut in_test = false;
     let mut i = 0;
     while i < argv.len() {
         match argv[i].as_str() {
@@ -219,7 +221,9 @@ pub fn train_main(argv: &[String]) -> i32 {
             "--holdout" => { holdout = argv.get(i + 1).and_then(|v| v.parse().ok()).unwrap_or(holdout); i += 1; }
             "--seed" => { seed = argv.get(i + 1).and_then(|v| v.parse().ok()).unwrap_or(seed); i += 1; }
             "--l2" => { l2 = argv.get(i + 1).and_then(|v| v.parse().ok()).unwrap_or(l2); i += 1; }
-            "-h" | "--help" => { println!("usage: gui-gate train LOGS... [-o weights.json] [--holdout 0.3] [--seed 0] [--l2 0.05]"); return 0; }
+            "--test" => in_test = true,
+            "-h" | "--help" => { println!("usage: gui-gate train LOGS... [-o weights.json] [--holdout 0.3] [--seed 0] [--l2 0.05] [--test LOGS...]\n  --test: evaluate on these logs instead of a random session holdout (e.g. another model's run)"); return 0; }
+            p if in_test => test_paths.push(p.to_string()),
             p => paths.push(p.to_string()),
         }
         i += 1;
@@ -232,10 +236,12 @@ pub fn train_main(argv: &[String]) -> i32 {
         return 1;
     }
     shuffle(&mut sessions, seed);
-    let k = ((sessions.len() as f64 * holdout).round() as usize).max(1);
+    let ext = if test_paths.is_empty() { vec![] } else { load(&test_paths) };
+    let k = if ext.is_empty() { ((sessions.len() as f64 * holdout).round() as usize).max(1) } else { 0 };
     let test_s: HashSet<&String> = sessions[..k].iter().collect();
     let train: Vec<&Row> = data.iter().filter(|d| !test_s.contains(&d.0)).collect();
-    let test: Vec<&Row> = data.iter().filter(|d| test_s.contains(&d.0)).collect();
+    let test: Vec<&Row> = if ext.is_empty() { data.iter().filter(|d| test_s.contains(&d.0)).collect() } else { ext.iter().collect() };
+    let n_test_s = if ext.is_empty() { test_s.len() } else { ext.iter().map(|d| &d.0).collect::<HashSet<_>>().len() };
     let mut tr_s: Vec<&String> = train.iter().map(|d| &d.0).collect::<HashSet<_>>().into_iter().collect();
     tr_s.sort();
     let cal_s: HashSet<&String> = if tr_s.len() > 2 { tr_s[..(tr_s.len() / 4).max(1)].iter().cloned().collect() } else { HashSet::new() };
@@ -248,7 +254,7 @@ pub fn train_main(argv: &[String]) -> i32 {
     let (a, b) = platt(&cal_rows.iter().map(|d| logit(&w, &d.1)).collect::<Vec<_>>(), &cal_rows.iter().map(|d| d.2).collect::<Vec<_>>());
     let ys: Vec<f64> = test.iter().map(|d| d.2).collect();
     let res = json!({
-        "rows": data.len(), "sessions": sessions.len(), "test_sessions": test_s.len(),
+        "rows": data.len(), "sessions": sessions.len(), "test_sessions": n_test_s, "test_rows": test.len(), "external_test": !ext.is_empty(),
         "prior_on_test": metrics(&test.iter().map(|d| sigmoid(logit(&prior, &d.1))).collect::<Vec<_>>(), &ys),
         "fitted_on_test": metrics(&test.iter().map(|d| sigmoid(logit(&w, &d.1))).collect::<Vec<_>>(), &ys),
         "fitted_calibrated_on_test": metrics(&test.iter().map(|d| sigmoid(a * logit(&w, &d.1) + b)).collect::<Vec<_>>(), &ys),

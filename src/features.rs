@@ -465,7 +465,8 @@ pub fn features(ctx: &ActionCtx, st: &GateState, window_changed: Option<bool>, w
         let age = (nowv - o.t).max(0.0);
         f["log_obs_age"] = age.min(300.0).ln_1p();
         f["acts_since_obs"] = st.actions_since(o.t, wk.as_deref()).min(5) as f64;
-        f["obs_had_shot"] = b(o.with_screenshot);
+        // text-only client: the tree is the fullest observation it can use (keeps p_direct comparable to runs with shots)
+        f["obs_had_shot"] = b(o.with_screenshot || st.text_only);
         f["loading_cue"] = b(o.loading_cue);
     }
     if let Some(la) = st.last_action() {

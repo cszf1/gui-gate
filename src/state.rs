@@ -140,6 +140,7 @@ pub struct GateState {
     pub actions: Vec<ActionRecord>,
     pub window_of_pid: HashMap<i64, i64>,
     pub last_typed: HashMap<i64, String>, // pid -> text typed since the last Enter
+    pub text_only: bool,                  // the client cannot see images: a tree read is its full observation
     shots: u64,
 }
 
@@ -152,6 +153,10 @@ pub fn wkey(pid: Option<i64>, wid: Option<i64>) -> Option<String> {
 }
 
 impl GateState {
+    pub fn with_text_only(text_only: bool) -> Self {
+        GateState { text_only, ..Default::default() }
+    }
+
     pub fn get(&self, id: ObsId) -> &Observation {
         &self.obs[id]
     }

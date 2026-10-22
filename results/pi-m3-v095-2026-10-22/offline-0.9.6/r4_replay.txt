@@ -1,0 +1,12 @@
+pi-m3-v095-202  v2     1865 interv=0.145 caught=0.401 prec=0.415 look_full 37.0 review 0
+pi-m3-v095-202  v3     1865 interv=0.145 caught=0.416 prec=0.430 look_full 29.0 review 0
+pi-m3-v095-202  v2 rev 1865 interv=0.163 caught=0.430 prec=0.395 look_full 37.0 review 0
+pi-m3-v095-202  v3 rev 1865 interv=0.160 caught=0.437 prec=0.408 look_full 29.0 review 0
+pi-ds41-v094-2  v2     1369 interv=0.077 caught=0.294 prec=0.400 look_full 12.0 review 10.0
+pi-ds41-v094-2  v3     1369 interv=0.074 caught=0.308 prec=0.436 look_full 9.0 review 10.0
+pi-ds41-v094-2  v2 rev 1369 interv=0.081 caught=0.294 prec=0.378 look_full 12.0 review 10.0
+pi-ds41-v094-2  v3 rev 1369 interv=0.080 caught=0.315 prec=0.413 look_full 9.0 review 10.0
+ALL             v2     6866 interv=0.117 caught=0.382 prec=0.435 look_full 145.0 review 31.0
+ALL             v3     6866 interv=0.112 caught=0.373 prec=0.442 look_full 111.0 review 31.0
+ALL             v2 rev 6866 interv=0.126 caught=0.391 prec=0.414 look_full 145.0 review 31.0
+ALL             v3 rev 6866 interv=0.123 caught=0.383 prec=0.414 look_full 111.0 review 31.0

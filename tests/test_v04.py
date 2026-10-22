@@ -581,21 +581,32 @@ class OcclusionHealTests(unittest.TestCase):
         self.assertFalse(r.get("isError"), txt(r))
         self.assertEqual(self.state()["clicked"], ["xy:161,71:desktop"])
 
-    def test_focus_lost_brought_to_front_and_retried_once(self):
+    def test_focus_lost_token_click_retried_focus_free(self):
+        # focus_within_target=true (a popup of the active window): bring_to_front never helped (m3: 0/41)
         self.c = Client("--human", "deny")
         s = self.c.read()
         self.c.call("fake_mutate", fg_fail_next=1)
         r = self.c.call("click", element_token=f"{s}:0")
         self.assertFalse(r.get("isError"), txt(r))
-        self.assertIn("brought it to the front", txt(r))
+        self.assertIn("focus-free", txt(r))
         st = self.state()
-        self.assertEqual(st["front"], [4242])
+        self.assertEqual(st["front"], [])
+        self.assertEqual(st["modes"][-1], "background")
         self.assertEqual(st["clicked"], ["Increment"])
-        self.c.call("fake_mutate", fg_fail_next=2)
+
+    def test_focus_lost_key_brought_to_front_and_retried_once(self):
+        self.c = Client("--human", "deny")
+        self.c.read()
+        self.c.call("fake_mutate", fg_fail_next=1)
+        r = self.c.call("press_key", pid=4242, window_id=777, key="Tab")
+        self.assertFalse(r.get("isError"), txt(r))
+        self.assertIn("brought it to the front", txt(r))
+        self.assertEqual(self.state()["front"], [4242])
+        self.c.call("fake_mutate", fg_fail_next=3)         # focus-free retry and front retry both fail -> error
         s = self.c.read(fresh=True)
         r = self.c.call("click", element_token=f"{s}:0")
-        self.assertTrue(r.get("isError"))  # only one retry
-        self.assertEqual(self.state()["clicked"], ["Increment"])
+        self.assertTrue(r.get("isError"))
+        self.assertEqual(self.state()["clicked"], [])
 
     def test_heal_inside_batch_lets_the_batch_go_on(self):
         self.c = Client("--human", "deny")

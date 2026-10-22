@@ -11,11 +11,13 @@ use crate::util::*;
 use indexmap::IndexMap;
 use serde_json::Value;
 
-/// Built-in weights: fitted on 2,934 executed actions from 169 OSWorld/OSGuard sessions (2026-10-21 runs,
-/// `gui-gate train`, L2 towards the hand-set prior so rare signals such as stale tokens keep their prior),
-/// Platt-calibrated. Session-split held-out AUC about 0.76 (hand-set prior about 0.53). weights/osworld-v2.json.
+/// Built-in weights (osworld_v3, 0.9.6): fitted on 6,866 executed actions from 427 sessions of every logged run up to
+/// 2026-10-22 (deepseek + screenshots and mercury-3 text-only, clean labels: navigation-key repeats are not failures),
+/// `gui-gate train`, L2 towards the v2 weights, Platt-calibrated. Cross-run held-out AUC: trained without the mercury-3
+/// run -> 0.785 on it (v2: 0.705); trained without the deepseek 0.9.4 run -> 0.747 on it (v2: 0.607).
+/// weights/osworld-v3.json; the previous built-in is weights/osworld-v2.json.
 pub fn prior_weights() -> IndexMap<String, f64> {
-    [("bias", 0.753), ("is_pixel", -0.542), ("is_token", 0.049), ("is_name", 0.3), ("is_keyboard", 0.193), ("no_obs", -2.455), ("token_stale", -3.202), ("log_obs_age", 0.404), ("acts_since_obs", -0.312), ("obs_had_shot", 0.453), ("last_err", -1.01), ("last_unverif", 0.046), ("last_popup", -1.323), ("repeat", -0.821), ("edge_close", -0.796), ("small_target", -0.6), ("label_empty", -0.372), ("label_dup", -0.811), ("loading_cue", -1.216), ("window_changed", -1.172), ("window_added", -1.478), ("elem_unknown", -0.671), ("check_pass", 1.36), ("check_fail", -3.501), ("prev_none", -0.168), ("sess_fail", -0.198), ("consec_fail", -0.104), ("sig_failed", -0.189), ("role_menu", -0.282), ("role_cell", -0.096), ("role_toggle", -0.029)]
+    [("bias", 1.277), ("is_pixel", -0.535), ("is_token", -0.245), ("is_name", 0.300), ("is_keyboard", 0.488), ("no_obs", -2.413), ("token_stale", -3.215), ("log_obs_age", 0.331), ("acts_since_obs", 0.055), ("obs_had_shot", 0.521), ("last_err", -1.014), ("last_unverif", 0.274), ("last_popup", -1.354), ("repeat", -0.615), ("edge_close", -0.715), ("small_target", -0.600), ("label_empty", -0.369), ("label_dup", -0.682), ("loading_cue", -1.171), ("window_changed", -1.152), ("window_added", -1.472), ("elem_unknown", -0.661), ("check_pass", 1.273), ("check_fail", -3.502), ("prev_none", -0.236), ("sess_fail", -0.067), ("consec_fail", -0.090), ("sig_failed", -0.191), ("role_menu", -0.480), ("role_cell", -0.194), ("role_toggle", -0.032)]
         .iter().map(|(k, v)| (k.to_string(), *v)).collect()
 }
 
@@ -29,7 +31,7 @@ pub fn prior_v1_weights() -> IndexMap<String, f64> {
         .iter().map(|(k, v)| (k.to_string(), *v)).collect()
 }
 
-pub const PRIOR_CALIB: (f64, f64) = (1.081, 0.04767);
+pub const PRIOR_CALIB: (f64, f64) = (0.9967, -0.04637);
 
 /// What an option fixes beyond the features it resets (see `after`): the residual chance it turns a
 /// would-be failure into a success. ask_help: a person does or explains the step.
@@ -176,7 +178,7 @@ impl Default for GateConfig {
             risk_mode: "auto".into(), decider: "formula".into(), reviewer: false, collect: false, human_channel: "auto".into(),
             human_timeout: 120.0, toolset: "core".into(), auto_observe: true, delivery: "auto".into(), task: String::new(),
             batch: "auto".into(), deny_consecutive: 3, deny_total: 8, costs: default_costs(), weights: prior_weights(),
-            gains: prior_gains(), calib: Some(PRIOR_CALIB), model_name: "osworld_v2".into(), fail_exp: 1.0, tree_diff: true, text_only: false,
+            gains: prior_gains(), calib: Some(PRIOR_CALIB), model_name: "osworld_v3".into(), fail_exp: 1.0, tree_diff: true, text_only: false,
         }
     }
 }
@@ -331,7 +333,8 @@ pub fn choose(ctx: &ActionCtx, f: &Feats, cfg: &GateConfig, check_available: boo
     let p = p_direct(f, cfg);
     let pixel = ctx.target.kind == "pixel";
     let keyboard = matches!(ctx.target.kind.as_str(), "keyboard" | "none");
-    let mut avail = vec!["direct", "look_light", "look_full"];
+    // a pixel target is re-aimed on a screenshot: a tree-only look cannot fix it (except for a text-only client)
+    let mut avail = if pixel && !cfg.text_only { vec!["direct", "look_full"] } else { vec!["direct", "look_light", "look_full"] };
     if cfg.reviewer && !pixel {
         // (a pixel target needs fresh pixels; the reviewer reads the element tree, not the screen)
         avail.push("review"); // the gate's own independent model checks the target; the acting model is not asked
@@ -430,7 +433,11 @@ mod tests {
         f["last_err"] = 1.0;
         let mut cfg = GateConfig::default();
         cfg.human_channel = "auto".into();
-        assert_eq!(choose(&ctx("click", "token", "Bold"), &f, &cfg, false, false).option, "ask_help");
+        // osworld_v3 (0.9.6): repeated failures predict the next failure less than v2 assumed, so a person and a
+        // full re-look are within ~2 s of each other here; either is fine, acting blind is not
+        let d = choose(&ctx("click", "token", "Bold"), &f, &cfg, false, false);
+        assert!(["ask_help", "look_full"].contains(&d.option.as_str()), "p={} {:?}", d.p_direct, d.scores);
+        assert!(d.scores["ask_help"] < d.scores["direct"]);
         cfg.human_channel = "deny".into();
         assert_ne!(choose(&ctx("click", "token", "Bold"), &f, &cfg, false, false).option, "ask_help");
     }

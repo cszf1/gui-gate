@@ -183,7 +183,7 @@ class GateTests(unittest.TestCase):
         r = self.c.call("click", element_token=f"{s}:0")
         ev = [e for e in self.c.events() if e["ev"] == "action"][-1]
         self.assertTrue(ev["executed"])
-        self.assertEqual(ev["model"], "osworld_v2")
+        self.assertEqual(ev["model"], "osworld_v3")
         self.assertFalse(r.get("isError"), txt(r))
 
     def test_grey_zone_refresh_catches_relabel(self):
