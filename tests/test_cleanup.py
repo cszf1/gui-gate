@@ -149,6 +149,24 @@ class CleanupTests(unittest.TestCase):
         self.assertFalse(os.path.exists(os.path.join(self.h, "made-by-installer")))
         self.assertTrue(os.path.exists(os.path.join(self.h, "not-empty")))
 
+    def test_uninstall_deletes_profile_files_it_created(self):
+        """A profile file the installer created only for its PATH line goes; one the user has since added to stays
+        (without our lines); a profile file it did not create is never deleted, even when it ends up empty."""
+        h = self.h
+        line = f'# gui-gate\nexport PATH="{self.bin}:$PATH"\n'
+        zshrc, profile, bp = (os.path.join(h, f) for f in (".zshrc", ".profile", ".bash_profile"))
+        open(zshrc, "w").write(line)
+        open(profile, "w").write(line + "export EDITOR=vi\n")
+        open(bp, "w").write(line)
+        man = os.path.join(self.lib, "install-manifest")
+        open(man, "a").write(f"created_file={zshrc}\ncreated_file={profile}\n")
+        code, rep = self.run_gate("uninstall")
+        self.assertEqual(code, 0, rep)
+        self.assertFalse(os.path.exists(zshrc), rep)
+        self.assertEqual(open(profile).read().strip(), "export EDITOR=vi")
+        self.assertTrue(os.path.exists(bp))
+        self.assertNotIn("gui-gate", open(bp).read())
+
     def test_uninstall_keep_config(self):
         code, rep = self.run_gate("uninstall", "--keep-config")
         self.assertEqual(code, 0, rep)

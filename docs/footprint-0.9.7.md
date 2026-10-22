@@ -1,4 +1,4 @@
-# gui-gate 0.9.7 / 0.9.8 footprint: everything it writes, starts, changes or downloads, and how it is cleaned
+# gui-gate 0.9.7 – 0.9.9 footprint: everything it writes, starts, changes or downloads, and how it is cleaned
 
 Audit of 2026-10-22, file by file, for installing on a real personal machine. Every file in `src/` (all `.rs` and
 `skills.md`), `scripts/install.sh`, `scripts/install.ps1`, the new `scripts/fetch_driver.py` / `scripts/smoke_session.py`,
@@ -15,9 +15,9 @@ cross-checked mechanically (every `fs::write/create/remove/rename/copy`, `OpenOp
 |---|---|---|---|
 | gate binary | `~/.local/bin/gui-gate` · Win `%LOCALAPPDATA%\Programs\gui-gate\bin\gui-gate.exe` | installer | yes (Windows: renamed to `gui-gate.exe.old`, a detached hidden `cmd` deletes it and the empty dirs ~3 s later) |
 | bundled Cua Driver 0.38.0 (official, unmodified, MIT) | Linux `~/.local/lib/gui-gate/cua-driver/` (cua-driver, cua-cursor-theme, wayland-helper/, LICENSE, THIRD_PARTY_NOTICES.md, VERSION) · Win `%LOCALAPPDATA%\Programs\gui-gate\cua-driver\` (cua-driver.exe, cua-driver-uia.exe, cua-cursor-theme.exe, LICENSE, ...) · macOS `~/.local/lib/gui-gate/cua-driver/` (LICENSE, VERSION only) | installer | yes |
-| macOS: `CuaDriver.app` (Cua's signed app, byte-for-byte, so Accessibility / Screen Recording work as with Cua's installer) | `/Applications/CuaDriver.app` (`~/Applications/` when /Applications is not writable) | installer, **only if no CuaDriver.app is there yet** | yes, only when the manifest says gui-gate installed it: `cua-driver stop`, `lsregister -u`, delete, `tccutil reset Accessibility/ScreenCapture com.trycua.driver`; plus `~/.cua-driver`, `~/Library/Caches/cua-driver`, `~/Library/Application Support/Cua Driver` if they did not exist before the install |
-| install manifest | `<lib>/install-manifest` (`created_dir=`, `app=`, `owned_dir=` lines) | installer | yes (it is what uninstall reads) |
-| shell PATH line | `# gui-gate` + `export PATH="<bin>:$PATH"` in `~/.bashrc` (Linux bash) / `~/.bash_profile` (macOS bash) / `~/.zshrc` / `~/.profile`; only if `<bin>` was not on PATH; `--no-modify-path` skips it | install.sh | yes, every `# gui-gate` block (the blank line before it too) |
+| macOS: `CuaDriver.app` (Cua's signed app, byte-for-byte, so Accessibility / Screen Recording work as with Cua's installer) | `/Applications/CuaDriver.app` (`~/Applications/` when /Applications is not writable) | installer, **only if no CuaDriver.app is there yet** | yes, only when the manifest says gui-gate installed it: every process running from the app is stopped and verified gone first (`cua-driver stop` with Cua telemetry off, then SIGTERM, then SIGKILL; uninstall fails and keeps the app if one survives), `lsregister -u`, delete, `tccutil reset Accessibility/ScreenCapture com.trycua.driver`; plus `~/.cua-driver`, `~/Library/Caches/cua-driver`, `~/Library/Application Support/Cua Driver` if they did not exist before the install; `~/Library/Caches` and `~/Library` themselves are recorded as `created_dir` only when missing at install time (a throwaway HOME) and removed once empty |
+| install manifest | `<lib>/install-manifest` (`created_dir=`, `created_file=`, `app=`, `owned_dir=` lines) | installer | yes (it is what uninstall reads) |
+| shell PATH line | `# gui-gate` + `export PATH="<bin>:$PATH"` in exactly one file: `~/.zshrc` (zsh) / `~/.bashrc` (Linux bash) / macOS bash: the first existing of `~/.bash_profile`, `~/.bash_login`, `~/.profile` (what a login shell reads), else `~/.bash_profile` / `~/.profile` (other shells); only if `<bin>` was not on PATH; `--no-modify-path` skips it. A file that did not exist is created with only these two lines and recorded as `created_file=` (0.9.9) | install.sh | yes, every `# gui-gate` block (the blank line before it too); a `created_file` is deleted when nothing but our lines was in it |
 | Windows user Path entry | `HKCU\Environment\Path` += `%LOCALAPPDATA%\Programs\gui-gate\bin` | install.ps1 | yes |
 | reviewer settings | `~/.config/gui-gate/reviewer.env` (600), `reviewer.key` (600; Windows ACL owner-only) | installer / user | yes (`--keep-config` keeps) |
 | role key files, experience memory | anything under `~/.config/gui-gate/` (e.g. `memory.jsonl` from `gui-gate memory add`) | user | yes (`--keep-config` keeps) |
@@ -149,3 +149,34 @@ Path entry Cua's installer added (its uninstaller leaves them). Manually:
   foreground Document text insertion verified, DOM click effects classified with readback, native Wayland windows in
   desktop snapshots, unknown tools reported accurately. Output formats were not re-checked against a live desktop.
 * macOS: the CuaDriver.app daemon a session (or `doctor`) started is stopped at gate exit.
+
+## 8. 0.9.9: zero residue on macOS (release CI of v0.9.8, install-smoke macos-14)
+
+* **Empty `~/.bash_profile` left in a throwaway HOME.** Two bugs together: (a) on macOS bash the installer appended to
+  `~/.bash_profile` even when that file did not exist, creating it without recording it; (b) right after, the
+  installer's `gui-gate cleanup` compared the PATH line's dir (`/var/folders/.../.local/bin`, as written) with the
+  running binary's canonical dir (`/private/var/folders/...`: `/var` is a symlink on macOS) and dropped gui-gate's own
+  fresh line as "stale" - so PATH was not set at all and uninstall found no line, leaving the empty file. Fixed: the
+  cleanup compares dirs after resolving symlinks; the PATH line goes to exactly one file (table above); a profile file
+  the installer creates is recorded as `created_file=` and deleted by uninstall when only our lines were in it. Why
+  `~/.bash_profile` and not the existing `~/.bashrc`: macOS Terminal starts login shells, which read the first of
+  `~/.bash_profile`, `~/.bash_login`, `~/.profile` and never `~/.bashrc`; a line only in `~/.bashrc` would not work.
+* **`~/Library`, `~/Library/Caches` left in a throwaway HOME.** The CuaDriver.app daemon (`cua-driver serve`) puts its
+  socket and pid file in `$HOME/Library/Caches/cua-driver/` (cua-driver 0.38.0 `cua-driver-core/src/daemon.rs`
+  `socket_path_for_namespace`, `serve.rs` `default_pid_file_path`; hard-coded, no env var: `--socket` moves only the
+  socket, the pid file stays; `CUA_DRIVER_RS_HOME` covers only `~/.cua-driver` state). Uninstall already removed
+  `cua-driver/` (owned_dir); now the installer also records `~/Library/Caches` / `~/Library` as `created_dir` when
+  they do not exist at install time, so uninstall removes them once empty. On a real Mac both always exist: no change.
+* **A CuaDriver.app process still running after uninstall** (`/Applications/CuaDriver.app/Contents/MacOS/cua-driver`,
+  no arguments). It was Cua's detached telemetry worker: `cua-driver stop` is a "finite command" that Cua wraps in a
+  child and follows with a worker (the same binary, no arguments, configured by env) unless telemetry is off -
+  uninstall (and the gate's exit-time stop) ran `stop` without the telemetry-off env the gate uses for `mcp`, so the
+  worker started, re-created `~/.cua-driver` and outlived the uninstall. Fixed: every `cua-driver stop` gui-gate runs
+  carries the telemetry/update-check-off env; uninstall stops every process running from the app it installed
+  (`stop`, wait 3 s, SIGTERM, wait 5 s, SIGKILL, verify), refuses to delete the app if one survives, and checks again
+  after deleting it. There is no LaunchAgent/launchd job to remove: the daemon is started by `open -n -g ... --args
+  serve` (LaunchServices) and Cua's autostart is opt-in and not implemented for macOS in 0.38.0.
+* **CI**: the `! grep` / `! pgrep` checks never failed a step (bash's `set -e` ignores a negated command unless it is
+  the last one) - all are now explicit `if ...; then exit 1; fi`; leftover processes are checked right after
+  uninstall and again 3 s later; the throwaway-HOME run also asserts the PATH line is in exactly one profile after
+  install and that a created profile file is in the manifest.

@@ -131,11 +131,11 @@ jobs:
             | GUI_GATE_REVIEWER_KEY=dummy-key bash -s -- --skip-driver --reviewer-url http://127.0.0.1:9/v1 --reviewer-model dummy
           gui-gate check-reviewer --config-only
           test "$(stat -c %a "$HOME/.config/gui-gate/reviewer.key" 2>/dev/null || stat -f %Lp "$HOME/.config/gui-gate/reviewer.key")" = 600
-          ! grep -q dummy-key "$HOME/.config/gui-gate/reviewer.env"
+          if grep -q dummy-key "$HOME/.config/gui-gate/reviewer.env"; then echo "check failed: the key is in reviewer.env" >&2; exit 1; fi
           gui-gate doctor | tee doctor.json || true
           python3 -c "import json; d=json.load(open('doctor.json')); print('driver', d['driver_source'], d['driver_version'], 'tools', d['driver_tools']); assert (d['driver_tools'] or 0) > 0 and d['driver_source'] == 'bundled' and d['driver_version'] == '0.38.0'"
           # one download, Cua's installer never ran: no Cua PATH line, no ~/.cua-driver (bundled driver runs with telemetry off)
-          ! grep -qs "cua-driver-rs installer" "$HOME/.bashrc" "$HOME/.zshrc" "$HOME/.bash_profile" "$HOME/.profile"
+          if grep -qs "cua-driver-rs installer" "$HOME/.bashrc" "$HOME/.zshrc" "$HOME/.bash_profile" "$HOME/.profile"; then echo "check failed: Cua installer PATH line found" >&2; exit 1; fi
           if [ "$(uname -s)" = Linux ]; then test ! -e "$HOME/.cua-driver"; test -x "$HOME/.local/lib/gui-gate/cua-driver/cua-driver"; fi
           if [ "$(uname -s)" = Darwin ]; then codesign --verify --deep --strict /Applications/CuaDriver.app; grep -q "^app=/Applications/CuaDriver.app" "$HOME/.local/lib/gui-gate/install-manifest"; fi
           test -f "$HOME/.local/lib/gui-gate/cua-driver/LICENSE"
@@ -151,7 +151,7 @@ jobs:
           test ! -e "$HOME/.gui-gate"
           test ! -e "$HOME/.cache/gui-gate"
           test ! -e /Applications/CuaDriver.app
-          ! grep -qs "^# gui-gate" "$HOME/.bashrc" "$HOME/.zshrc" "$HOME/.bash_profile" "$HOME/.profile"
+          if grep -qs "^# gui-gate" "$HOME/.bashrc" "$HOME/.zshrc" "$HOME/.bash_profile" "$HOME/.profile"; then echo "check failed: a gui-gate PATH line is left" >&2; exit 1; fi
           # old release + the junk old versions left
           curl -fsSL https://github.com/${{ github.repository }}/releases/download/v0.8.3/install.sh | bash -s -- --skip-driver
           printf '\n# gui-gate\nexport PATH="%s:$PATH"\n\n# gui-gate\nexport PATH="/gone/bin:$PATH"\n' "$HOME/.local/bin" >> "$HOME/.bashrc"
@@ -167,7 +167,7 @@ jobs:
           test ! -e "$HOME/.local/bin/.gui-gate.new"
           test ! -e "$HOME/.pi/agent/mcp.json.bak"
           test "$(grep -c '^# gui-gate' "$HOME/.bashrc")" -le 1
-          ! grep -q /gone/bin "$HOME/.bashrc"
+          if grep -q /gone/bin "$HOME/.bashrc"; then echo "check failed: stale /gone/bin PATH line left" >&2; exit 1; fi
           python3 -c "import json,os; e=json.load(open(os.path.expanduser('~/.pi/agent/mcp.json')))['mcpServers']['gui']; print(e); assert e['command']==os.path.expanduser('~/.local/bin/gui-gate') and '--decider' not in e['args']"
           test -z "$(gui-gate cleanup --quiet)"
       - name: install from the release (Windows)
@@ -247,6 +247,15 @@ jobs:
         env: {GUI_GATE_VERSION: "${{ github.ref_name }}"}
         run: |
           set -eux
+          # nothing of ours may still run: checked right away and again 3 s later (a detached worker shows up late)
+          no_leftover_procs() {
+            for t in 0 3; do
+              sleep "$t"
+              if pgrep -lx gui-gate || pgrep -lx cua-driver || pgrep -lf 'CuaDriver.app/Contents/'; then
+                echo "leftover gui-gate / Cua Driver process after uninstall" >&2; ps -A -o pid,ppid,command | grep -i -e cua -e gui-gate >&2 || true; exit 1
+              fi
+            done
+          }
           export PATH="$HOME/.local/bin:$PATH"
           gui-gate uninstall || true
           test ! -e /Applications/CuaDriver.app
@@ -259,8 +268,8 @@ jobs:
             gui-gate uninstall
             for p in .local/bin/gui-gate .local/lib/gui-gate .config/gui-gate .gui-gate .cache/gui-gate .cua-driver; do test ! -e "$HOME/$p"; done
             test ! -e /Applications/CuaDriver.app
-            ! grep -qs "^# gui-gate" "$HOME/.bashrc" "$HOME/.zshrc" "$HOME/.bash_profile" "$HOME/.profile"
-            ! pgrep -lf 'CuaDriver.app/Contents/MacOS'
+            if grep -qs "^# gui-gate" "$HOME/.bashrc" "$HOME/.zshrc" "$HOME/.bash_profile" "$HOME/.profile"; then echo "check failed: a gui-gate PATH line is left" >&2; exit 1; fi
+            no_leftover_procs
           fi
           true
           FH="$(mktemp -d)"; printf 'alias ll="ls -l"\n' > "$FH/.bashrc"; cp "$FH/.bashrc" rc.orig
@@ -276,6 +285,17 @@ jobs:
             # so a driver session cannot run under a fake HOME; the session check runs in the real HOME below
             HOME="$FH" "$FH/.local/bin/gui-gate" --version
           fi
+          # the PATH line went to exactly one profile and survived the installer's cleanup (0.9.8: macOS's symlinked
+          # $TMPDIR made cleanup drop it as stale); a profile file the installer had to create is in its manifest
+          test "$(( $(grep -ls '^# gui-gate' "$FH/.bashrc" "$FH/.zshrc" "$FH/.bash_profile" "$FH/.bash_login" "$FH/.profile" | wc -l) ))" -eq 1
+          cat "$FH/.local/lib/gui-gate/install-manifest"
+          if [ "$(uname -s)" = Darwin ]; then
+            grep -q "^# gui-gate" "$FH/.bash_profile"
+            grep -qx "created_file=$FH/.bash_profile" "$FH/.local/lib/gui-gate/install-manifest"
+          else
+            grep -q "^# gui-gate" "$FH/.bashrc"
+            if grep -q "^created_file=" "$FH/.local/lib/gui-gate/install-manifest"; then echo "created a profile file although ~/.bashrc exists" >&2; exit 1; fi
+          fi
           HOME="$FH" "$FH/.local/bin/gui-gate" uninstall
           (cd "$FH" && find . | sort) > after.txt
           diff before.txt after.txt
@@ -283,9 +303,7 @@ jobs:
           test ! -e /Applications/CuaDriver.app
           ls "${TMPDIR:-/tmp}" | grep '^gui-gate-' > tmp_after.txt || true
           diff tmp_before.txt tmp_after.txt
-          ! pgrep -lx gui-gate
-          ! pgrep -lx cua-driver
-          ! pgrep -lf 'CuaDriver.app/Contents/MacOS'
+          no_leftover_procs
           echo "zero residue"
       - name: zero residue after uninstall (Windows, throwaway profile)
         if: runner.os == 'Windows'
