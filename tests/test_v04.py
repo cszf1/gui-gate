@@ -522,6 +522,32 @@ class OcclusionHealTests(unittest.TestCase):
         self.assertFalse(r.get("isError"), txt(r))
         self.assertEqual(self.state()["clicked"], ["xy:161,71:desktop"])
 
+    def test_focus_lost_brought_to_front_and_retried_once(self):
+        self.c = Client("--human", "deny")
+        s = self.c.read()
+        self.c.call("fake_mutate", fg_fail_next=1)
+        r = self.c.call("click", element_token=f"{s}:0")
+        self.assertFalse(r.get("isError"), txt(r))
+        self.assertIn("brought it to the front", txt(r))
+        st = self.state()
+        self.assertEqual(st["front"], [4242])
+        self.assertEqual(st["clicked"], ["Increment"])
+        self.c.call("fake_mutate", fg_fail_next=2)
+        s = self.c.read(fresh=True)
+        r = self.c.call("click", element_token=f"{s}:0")
+        self.assertTrue(r.get("isError"))  # only one retry
+        self.assertEqual(self.state()["clicked"], ["Increment"])
+
+    def test_heal_inside_batch_lets_the_batch_go_on(self):
+        self.c = Client("--human", "deny")
+        s = self.c.read()
+        self.c.call("fake_mutate", occlude_next=["menu", "Insert"])
+        r = self.c.call("run_actions", pid=4242, window_id=777, steps=[
+            {"tool": "click", "args": {"element_token": f"{s}:0"}},
+            {"tool": "press_key", "args": {"key": "Tab"}}])
+        self.assertFalse(r.get("isError"), txt(r))
+        self.assertIn("2 GUI action(s) ran", txt(r))
+
     def test_other_owner_not_retried(self):
         self.c = Client("--human", "deny")
         s = self.c.read()
