@@ -454,5 +454,45 @@ class TerminalLineTests(unittest.TestCase):
         self.assertFalse(r.get("isError"), txt(r))
 
 
+class OcclusionHealTests(unittest.TestCase):
+    """0.9.5: a token click refused because another control owns its point is retried once by the gate."""
+
+    def tearDown(self):
+        self.c.close()
+
+    def state(self):
+        return json.loads(txt(self.c.call("fake_state")))
+
+    def test_open_menu_covering_target_escape_and_retry(self):
+        self.c = Client("--human", "deny")
+        s = self.c.read()
+        self.c.call("fake_mutate", occlude_next=["menu", "Insert"])
+        r = self.c.call("click", element_token=f"{s}:0")
+        self.assertFalse(r.get("isError"), txt(r))
+        self.assertIn("pressed Escape", txt(r))
+        st = self.state()
+        self.assertIn("Escape", st["keys"])
+        self.assertEqual(st["clicked"], ["Increment"])
+        ev = [e for e in self.c.events() if e.get("ev") == "action"][-1]
+        self.assertEqual(ev.get("occlusion_heal"), "escape_retry")
+        self.assertFalse(ev.get("is_error"))
+
+    def test_duplicate_object_same_label_clicked_by_desktop_point(self):
+        self.c = Client("--human", "deny")
+        s = self.c.read()
+        self.c.call("fake_mutate", occlude_next=["menu", "Increment"])
+        r = self.c.call("click", element_token=f"{s}:0")
+        self.assertFalse(r.get("isError"), txt(r))
+        self.assertEqual(self.state()["clicked"], ["xy:161,71:desktop"])
+
+    def test_other_owner_not_retried(self):
+        self.c = Client("--human", "deny")
+        s = self.c.read()
+        self.c.call("fake_mutate", occlude_next=["table cell", "B4"])
+        r = self.c.call("click", element_token=f"{s}:0")
+        self.assertTrue(r.get("isError"))
+        self.assertEqual(self.state()["clicked"], [])
+
+
 if __name__ == "__main__":
     unittest.main()
