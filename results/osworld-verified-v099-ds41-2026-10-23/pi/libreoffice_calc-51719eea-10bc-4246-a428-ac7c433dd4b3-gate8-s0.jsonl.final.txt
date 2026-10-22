@@ -1,0 +1,1 @@
+DONE — Added a Revenue column in Sheet1 (`=VLOOKUP(C2,'Retail Price'!$A$2:$B$23,2,0)*E2*(1-F2)`, filled G2:G36) and created Sheet2 containing a real Pivot Table (Product rows × Sum of Revenue, grand total 12985.17), then saved /data/home/BoomerangSales.xlsx in xlsx format.

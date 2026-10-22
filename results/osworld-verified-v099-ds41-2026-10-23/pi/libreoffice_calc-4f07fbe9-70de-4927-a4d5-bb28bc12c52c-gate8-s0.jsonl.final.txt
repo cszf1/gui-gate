@@ -1,0 +1,1 @@
+DONE — In `Padding_Decimals_In_Formular.xlsx` I changed D1's formula to `="The price is "&TEXT(C1;"0.00")&" euros."` so the text now shows "The price is 19.50 euros." (matching C1's 2-decimal format), and saved the file.

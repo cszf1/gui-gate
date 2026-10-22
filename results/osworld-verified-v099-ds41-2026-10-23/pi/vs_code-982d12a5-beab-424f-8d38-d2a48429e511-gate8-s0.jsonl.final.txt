@@ -1,0 +1,1 @@
+DONE — Opened VS Code's Command Palette (Ctrl+Shift+P) → "Preferences: Color Theme", selected the built-in **Dark (Visual Studio)** entry, which applied instantly and was persisted as `"workbench.colorTheme": "Visual Studio Dark"` in `/data/home/.config/Code/User/settings.json`.

@@ -1,0 +1,1 @@
+DONE — Read the Desktop guidelines, exported the essay to PDF (`/home/user/Recruitment_and_retention_of_health_professionals_across_Europe.pdf`, 20 pages) and packed the essay .docx plus that PDF into `/home/user/essay_submission.zip` (both entries verified).

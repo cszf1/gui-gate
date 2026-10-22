@@ -1,0 +1,1 @@
+DONE — Filled the Age column (D2:D29) in /home/user/Employee_Age_By_Birthday.xlsx with `=DATEDIF(Cn;DATE(2026;10;22);"Y")` for all 28 employees as of the reference date 2026-10-22, and saved the file in Calc.

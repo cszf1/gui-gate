@@ -1,0 +1,1 @@
+DONE — Split all 21 combined "First Last Rank" strings in column A of `/data/home/Employee_Roles_and_Ranks.xlsx` into First Name (B), Last Name (C) and Rank (D) using Calc formulas converted to plain values, left column A untouched, and saved the file in xlsx format.

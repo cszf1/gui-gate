@@ -1,0 +1,1 @@
+DONE — Opened VS Code's Extensions view (Ctrl+Shift+X), searched "python", and installed Microsoft's Python extension (ms-python.python v2026.10.0, along with Pylance, Python Debugger and Python Environments, as confirmed by `code --list-extensions` and ~/.vscode/extensions/extensions.json).

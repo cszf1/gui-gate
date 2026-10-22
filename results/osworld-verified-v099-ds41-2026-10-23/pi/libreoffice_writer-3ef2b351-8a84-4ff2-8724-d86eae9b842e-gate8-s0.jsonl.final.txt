@@ -1,0 +1,1 @@
+DONE — Placed the cursor in the first heading paragraph ("Guidelines on drawing up a Constitution") in the open LibreOffice Writer document, applied center alignment with Ctrl+E, and saved with Ctrl+S; the .docx now stores `<w:jc w:val="center"/>` for that paragraph.

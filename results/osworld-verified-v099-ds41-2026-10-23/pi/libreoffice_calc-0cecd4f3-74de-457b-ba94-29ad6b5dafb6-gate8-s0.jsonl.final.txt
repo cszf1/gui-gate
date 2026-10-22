@@ -1,0 +1,1 @@
+DONE — In the open `copy_sheet_insert.xlsx` I renamed Sheet1 to "LARS Resources", copied it (Sheet → Move or Copy Sheet…, Copy + "Insert before Sheet2") naming it "LARS Resources (Backup)", renamed Sheet2 to "LARS Resources (Offline)", and saved; the file now holds the tabs: LARS Resources | LARS Resources (Backup) | LARS Resources (Offline) | Sheet3.

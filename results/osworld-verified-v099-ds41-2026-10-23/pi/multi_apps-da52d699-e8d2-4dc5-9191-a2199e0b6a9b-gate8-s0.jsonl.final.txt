@@ -1,0 +1,1 @@
+DONE — Read the 2022 reading log from the desktop spreadsheet (Calc), cross-checked every book's word count on howlongtoread.com and computed words/day (title words ÷ days read); "Out of the Silent Planet" was slowest at ~1,846 words/day (1,329 with the sheet's own word count), and I typed that title into book_list_result.docx in LibreOffice Writer and saved it.

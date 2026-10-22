@@ -1,0 +1,1 @@
+DONE — In LibreOffice Writer I used Edit ▸ Find & Replace with formatting attributes (Search format = *Italic*; Replace format = *Italic + 14 pt*), did "Replace All" (21 italic runs updated), saved the .docx, and verified on disk that every italic run is now 14 pt (w:sz 28) while all normal text stays 12 pt (w:sz 24).

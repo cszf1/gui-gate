@@ -1,0 +1,3 @@
+FAIL
+
+Thunderbird's Account Setup page is open with the email `anonym-x2024@outlook.com` filled in, but the Password field could not be filled: the safety gate refused typing into the secret password field, and both my approval request and my takeover request (asking you to type it yourself) were declined, so I stopped. To finish, type the password into that field yourself on the still-open page — do not press Continue until you've checked it.
