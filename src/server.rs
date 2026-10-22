@@ -79,6 +79,51 @@ pub fn clear_line_keys() -> Vec<(&'static str, Vec<&'static str>)> {
     vec![("e", vec!["ctrl"]), ("u", vec!["ctrl"])]
 }
 
+re!(app_line, r"^- (.+) \(pid (\d+)\)\s*$");
+re!(noise_app, r"^(kworker/|ksoftirqd/|migration/|cpuhp/|rcu_|irq/|jbd2/|kthreadd$|pool_workqueue|kdevtmpfs$|kauditd$|khungtaskd$|oom_reaper$|kcompactd|ksmd$|khugepaged$|watchdogd$|kswapd|psimon$|idle_inject/|kblockd$|scsi_|card\d|systemd|\(sd-pam\)$|dbus-daemon$|dbus-broker|agetty$|sshd$|sshd-session$|\(udev-worker\)$|containerd|dockerd$|dconf-service$|at-spi|ssh-agent$|gpg-agent$|polkitd$|udisksd$|rtkit-daemon$|cron$|rsyslogd$|gvfs|xdg-permission-|xdg-document-|gui-gate$|cua-driver$)");
+
+/// A process without a command line is a kernel thread (live check on the controlled machine).
+pub fn proc_is_kernel_thread(pid: i64) -> bool {
+    match std::fs::read(format!("/proc/{pid}/cmdline")) {
+        Ok(b) => b.is_empty(),
+        Err(_) => false,
+    }
+}
+
+/// Drop kernel threads and system daemons from a list_apps result (text lines and structured list).
+/// Returns how many entries were hidden. Apps the agent can work with (anything with a desktop name, shells,
+/// interpreters, terminals) stay.
+pub fn filter_apps(res: &mut Value, kthread: &dyn Fn(i64) -> bool) -> usize {
+    let noise = |name: &str, pid: i64| noise_app().is_match(name.trim()) || (pid > 2 && kthread(pid));
+    let mut hidden = 0;
+    if let Some(items) = res.get_mut("content").and_then(|c| c.as_array_mut()) {
+        for it in items.iter_mut() {
+            let Some(tx) = it.get("text").and_then(|x| x.as_str()) else { continue };
+            let mut kept = vec![];
+            for line in tx.lines() {
+                if let Some(c) = app_line().captures(line) {
+                    if noise(&c[1], c[2].parse().unwrap_or(0)) {
+                        hidden += 1;
+                        continue;
+                    }
+                }
+                kept.push(line);
+            }
+            it["text"] = json!(kept.join("\n"));
+        }
+    }
+    if let Some(sc) = res.get_mut("structuredContent").and_then(|v| v.as_object_mut()) {
+        for (_, v) in sc.iter_mut() {
+            if let Some(arr) = v.as_array_mut() {
+                if arr.iter().all(|x| x.get("name").is_some() && x.get("pid").is_some()) {
+                    arr.retain(|x| !noise(x.get("name").and_then(|n| n.as_str()).unwrap_or(""), as_i64(x.get("pid")).unwrap_or(0)));
+                }
+            }
+        }
+    }
+    hidden
+}
+
 pub fn short(text: &str, limit: usize) -> String {
     if text.chars().count() <= limit {
         return text.to_string();
@@ -585,7 +630,20 @@ impl Gate {
                 }
             }
         }
+        let all_apps = name == "list_apps" && truthy(args.get("all"));
+        if name == "list_apps" {
+            if let Some(o) = args.as_object_mut() {
+                o.remove("all");
+            }
+        }
         let mut res = self.tool(&mut inn, name, &args, 120.0);
+        if name == "list_apps" && inn.cfg.policy == "gate" && !all_apps && !is_error(&res) {
+            let hidden = filter_apps(&mut res, &|p| proc_is_kernel_thread(p));
+            if hidden > 0 {
+                inn.add("apps_hidden", hidden as f64);
+                push_text(&mut res, format!("[gate] {hidden} kernel threads / system daemons hidden; call list_apps with all:true to see everything."));
+            }
+        }
         if name == "get_window_state" && text_of(&res).contains("PARTIAL TREE") {
             if let Some(p) = pid {
                 inn.pixel_pids.insert(p);
@@ -1505,6 +1563,19 @@ mod tests {
         assert!(fast_path(&ctx, &f).is_some());
         f.insert("obs_had_shot", 0.0);
         assert!(fast_path(&ctx, &f).is_none());
+    }
+
+    #[test]
+    fn list_apps_noise_is_hidden() {
+        let txt = "Found 7 app(s)\n- systemd (pid 1)\n- kworker/0:1-events (pid 24585)\n- dbus-daemon (pid 6879)\n- LibreOffice Calc (pid 51200)\n- bash (pid 7671)\n- instabox-term (pid 7657)\n- weird-thread (pid 99)";
+        let mut r = json!({"content": [{"type": "text", "text": txt}], "structuredContent": {"apps": [
+            {"name": "systemd", "pid": 1}, {"name": "LibreOffice Calc", "pid": 51200}, {"name": "weird-thread", "pid": 99}]}});
+        let n = filter_apps(&mut r, &|p| p == 99);
+        assert_eq!(n, 4);
+        let t = r["content"][0]["text"].as_str().unwrap();
+        assert!(t.contains("LibreOffice Calc") && t.contains("bash") && t.contains("instabox-term") && t.starts_with("Found"));
+        assert!(!t.contains("kworker") && !t.contains("systemd") && !t.contains("weird-thread"));
+        assert_eq!(r["structuredContent"]["apps"].as_array().unwrap().len(), 1);
     }
 
     #[test]
