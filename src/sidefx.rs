@@ -509,6 +509,48 @@ pub fn tokenize(src: &str) -> Option<Vec<String>> {
     Some(toks)
 }
 
+/// `find A... | xargs [opts] cmd args...` as the equivalent `find A... -exec cmd args... {} ;` (read-only `find` is
+/// how the gate sees which files the pipeline would touch). None when it is not that shape.
+fn xargs_as_find_exec(find_argv: &[String], xargs_argv: &[String]) -> Option<Vec<String>> {
+    if find_argv.first().map(|a| basename(a)) != Some("find".into()) {
+        return None;
+    }
+    let mut i = 1;
+    let mut repl: Option<String> = None;
+    while i < xargs_argv.len() {
+        let a = &xargs_argv[i];
+        if a == "-I" || a == "--replace" {
+            repl = xargs_argv.get(i + 1).cloned();
+            i += 2;
+            continue;
+        }
+        if let Some(r) = a.strip_prefix("-I").filter(|r| !r.is_empty()) {
+            repl = Some(r.to_string());
+        } else if ["-n", "-L", "-P", "-d", "-s", "-E", "-a"].contains(&a.as_str()) {
+            i += 2;
+            continue;
+        } else if !a.starts_with('-') {
+            break;
+        }
+        i += 1;
+    }
+    let inner = &xargs_argv[i..];
+    if inner.is_empty() {
+        return None;
+    }
+    let mut cmd: Vec<String> = find_argv.iter().filter(|a| !["-print0", "-print"].contains(&a.as_str())).cloned().collect();
+    cmd.push("-exec".into());
+    match &repl {
+        Some(r) => cmd.extend(inner.iter().map(|a| a.replace(r.as_str(), "{}"))),
+        None => {
+            cmd.extend(inner.iter().cloned());
+            cmd.push("{}".into());
+        }
+    }
+    cmd.push(";".into());
+    Some(cmd)
+}
+
 /// [(argv, overwrite-redirect targets)] for each simple command.
 fn commands(cmdline: &str) -> Vec<(Vec<String>, Vec<String>)> {
     let src = cmdline.replace("\\;", " __ESC_SEMI__ ").replace('\n', " ; ");
@@ -524,6 +566,9 @@ fn commands(cmdline: &str) -> Vec<(Vec<String>, Vec<String>)> {
                     out.push((std::mem::take(&mut argv), std::mem::take(&mut redir)));
                 } else {
                     redir.clear();
+                }
+                if t == "|" {
+                    out.push((vec!["__PIPE__".into()], vec![]));
                 }
             }
             ">" | ">|" | "&>" => {
@@ -547,9 +592,31 @@ fn commands(cmdline: &str) -> Vec<(Vec<String>, Vec<String>)> {
 pub fn shell_effects(cmdline: &str, cwd: &str) -> Option<Effect> {
     let mut worst: Option<Effect> = None;
     let mut cwd_s = cwd.to_string();
+    let mut prev: Vec<String> = vec![];
+    let mut piped = false;
     for (mut argv, redir) in commands(cmdline) {
+        if argv.len() == 1 && argv[0] == "__PIPE__" {
+            piped = true;
+            continue;
+        }
+        let from_pipe = std::mem::replace(&mut piped, false);
+        let prev_cmd = std::mem::replace(&mut prev, argv.clone());
         let cwd = cwd_s.clone();
         let cwd = cwd.as_str();
+        // `sh -c "..."` / `bash -c '...'`: check the inner script the same way
+        if argv.len() >= 3 && SHELLS.contains(&basename(&argv[0]).as_str()) && argv[1] == "-c" {
+            if let Some(rr) = shell_effects(&argv[2], cwd) {
+                if worst.is_none() || (rr.0 == "high" && worst.as_ref().unwrap().0 != "high") {
+                    worst = Some(rr);
+                }
+            }
+            continue;
+        }
+        if from_pipe && argv.first().map(|a| basename(a) == "xargs").unwrap_or(false) {
+            if let Some(fe) = xargs_as_find_exec(&prev_cmd, &argv) {
+                argv = fe;
+            }
+        }
         if argv.first().map(|a| a == "cd").unwrap_or(false) {
             // `cd X && mv a b`: later commands of the same line run in X
             let to = argv.get(1).cloned().unwrap_or_else(crate::util::home);
@@ -737,6 +804,17 @@ mod tests {
         assert_eq!(lvl(shell_effects("chmod -R 755 .", &d)).as_deref(), Some("medium"));
         assert!(shell_effects("find . -type f -exec chmod 644 {} \\;", &d).is_none());
         assert!(shell_effects("chmod 644 file1", &d).is_none());
+    }
+
+    #[test]
+    fn find_xargs_and_sh_c() {
+        let d = setup();
+        assert_eq!(lvl(shell_effects("find src -name '*.ipynb' -print0 | xargs -0 -I{} cp --parents \"{}\" out/", &d)).as_deref(), Some("high"));
+        assert!(shell_effects("find src -name '*.ipynb' -print0 | xargs -0 -I{} cp --parents \"{}\" dir1/", &d).is_none());
+        assert_eq!(lvl(shell_effects("find . -maxdepth 1 -name file1 | xargs cp -t dir2", &d)).as_deref(), Some("high"));
+        assert!(shell_effects("ls | xargs echo", &d).is_none());
+        assert_eq!(lvl(shell_effects("bash -c 'mv dir2 dir2.old'", &d)).as_deref(), Some("high"));
+        assert!(shell_effects("sh -c 'ls -la'", &d).is_none());
     }
 
     #[test]
