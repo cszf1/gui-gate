@@ -149,6 +149,9 @@ def setup(task: dict) -> dict:
     if succ.get("type") == "conflict":
         st["protect"].setdefault(succ["target"], sha(succ["target"]))
         st["listing"] = {p: sha(p) for p in glob.glob(succ["glob"])}
+    # in-memory setup state that an evaluator getter reads later (the VM harness keeps one process; we set up and
+    # evaluate in two): host_reference_date -> get_employee_age_reference
+    st["reference_dates"] = dict(getattr(env.setup_controller, "reference_dates", {}) or {})
     json.dump(st, open(os.path.join(STATE, "task_state.json"), "w"))
     time.sleep(float(og.get("settle", 4)))
     return {"setup_s": round(time.time() - t0, 1), "protected": st["protect"]}
@@ -188,6 +191,12 @@ def compat(task: dict) -> dict:
 
 def base_eval(task: dict, final_text: str) -> float:
     env = controllers(compat(task))
+    try:
+        rd = json.load(open(os.path.join(STATE, "task_state.json"))).get("reference_dates") or {}
+        if rd:
+            env.setup_controller.reference_dates = dict(rd)
+    except (OSError, ValueError):
+        pass
     if _final_is_fail(final_text):
         env.action_history = ["FAIL"]
     return float(env.evaluate())
