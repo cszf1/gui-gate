@@ -26,3 +26,16 @@ Debian 13 + XFCE at 1440×900 (not Ubuntu GNOME 1920×1080), LibreOffice 25.2, C
 Google Chrome, GIMP 3, xfce4-terminal. One compatibility rewrite is applied: LibreOffice ≥ 24 titles
 windows with an em dash, so `activate_window` targets in task configs/postconfigs are rewritten
 from " - LibreOffice" to " — LibreOffice". Nothing else in any task is changed.
+
+## 0.9.6 options (run_bench.sh)
+- `--max-turns N` (or `PI_MAX_TURNS`): turn cap per run. Default **30** keeps runs comparable with every earlier
+  result in `results/`; OSWorld's official setting is **100** steps (`--max-turns 100` for leaderboard-comparable runs).
+- `PI_TOOLS_096=0`: ablation without the 0.9.6 tools (`run_command`, `check_done`, `set_plan` are switched off in the
+  gate through the MCP server env) and without their prompt lines. Default 1: the prompt asks for set_plan first
+  (feasibility verdict -> FAIL), run_command for file/terminal work, run_actions for known step sequences, and
+  check_done before DONE; Pi's `toolExposure` declares the three tools.
+- `PI_APP_HINTS=0`: no per-app keyboard tips. Default 1: `bench/app_hints.py TASK` picks a static block from
+  `bench/app_hints.md` (LibreOffice Calc / Writer / Impress, Chrome, VLC, GIMP, terminal/files, multi-app); the tips
+  name no gate tool and contain no task-specific answers.
+- `PI_OBS_PRUNE=1`: context hygiene (Pi `context` extension `bench/pi_ext/obs_prune.ts`); default 0.
+- runs.jsonl records `max_turns`, `tools096`, `app_hints`, `obs_prune`.
