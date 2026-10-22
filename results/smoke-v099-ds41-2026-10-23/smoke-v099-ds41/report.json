@@ -1,0 +1,369 @@
+{
+ "summary": {
+  "expected": 3,
+  "rows": 3,
+  "valid": 1,
+  "infra": 2,
+  "success": 1,
+  "score_sum": 1.0,
+  "rate_official": 33.33,
+  "rate_valid": 100.0,
+  "infra_kinds": {
+   "setup_failed": 1,
+   "eval_error": 1
+  },
+  "domains": {
+   "chrome": {
+    "tasks": 1,
+    "valid": 0,
+    "success": 0,
+    "score_sum": 0.0,
+    "infra": 1
+   },
+   "thunderbird": {
+    "tasks": 1,
+    "valid": 1,
+    "success": 1,
+    "score_sum": 1.0,
+    "infra": 0
+   },
+   "libreoffice_calc": {
+    "tasks": 1,
+    "valid": 0,
+    "success": 0,
+    "score_sum": 0.0,
+    "infra": 1
+   }
+  },
+  "stops": {
+   "agent": 1
+  },
+  "turns_mean": 9.0,
+  "turns_median": 9,
+  "wall_mean_s": 268.2,
+  "wall_median_s": 268.2,
+  "wall_total_h": 0.18,
+  "tok_in": 25524,
+  "tok_cache": 97152,
+  "tok_out": 944,
+  "screenshots": 2,
+  "tool_calls": 9,
+  "tools": {
+   "check_done": 3,
+   "set_plan": 2,
+   "get_window_state": 2,
+   "list_apps": 1,
+   "run_actions": 1
+  },
+  "request_human_calls": 0,
+  "final_fail_answers": 0,
+  "reviewer": {
+   "calls": 0,
+   "decisions": {},
+   "ms_mean": null,
+   "ms_median": null
+  },
+  "roles": {
+   "feasibility": {
+    "invocations": 1,
+    "http_calls": 6,
+    "errors": 0,
+    "ms_mean": 42294.1,
+    "ms_median": 42294.1,
+    "timed": 1,
+    "runs_using": 1
+   },
+   "planner": {
+    "invocations": 1,
+    "http_calls": 2,
+    "errors": 0,
+    "ms_mean": null,
+    "ms_median": null,
+    "timed": 0,
+    "runs_using": 1
+   },
+   "verifier": {
+    "invocations": 2,
+    "http_calls": 18,
+    "errors": 0,
+    "ms_mean": 80780.8,
+    "ms_median": 80780.8,
+    "timed": 2,
+    "runs_using": 1
+   },
+   "judge": {
+    "invocations": 0,
+    "http_calls": 0,
+    "errors": 0,
+    "ms_mean": null,
+    "ms_median": null,
+    "timed": 0,
+    "runs_using": 0
+   },
+   "search": {
+    "invocations": 0,
+    "http_calls": 0,
+    "errors": 0,
+    "ms_mean": null,
+    "ms_median": null,
+    "timed": 0,
+    "runs_using": 0
+   },
+   "compact": {
+    "invocations": 0,
+    "http_calls": 0,
+    "errors": 0,
+    "ms_mean": null,
+    "ms_median": null,
+    "timed": 0,
+    "runs_using": 0
+   },
+   "grounder": {
+    "invocations": 0,
+    "http_calls": 0,
+    "errors": 0,
+    "ms_mean": null,
+    "ms_median": null,
+    "timed": 0,
+    "runs_using": 0
+   }
+  },
+  "gate": {
+   "actions": 6,
+   "executed": 6,
+   "interventions": 0,
+   "human_events": 0,
+   "loop_notes": 0,
+   "loop_refused": 0
+  }
+ },
+ "tasks": [
+  {
+   "task": "chrome-da46d875-6b82-4681-9284-653b0c7ae241",
+   "domain": "chrome",
+   "tag": "chrome-da46d875-6b82-4681-9284-653b0c7ae241-gate8-s0",
+   "attempts": 1,
+   "infra": "setup_failed",
+   "stop": null,
+   "wall_s": null,
+   "turns_monitor": null,
+   "error": "Exception(\"Setup step 3 failed: _chrome_open_tabs_setup - Chrome DevTools websocket server not ready at http://127.0.0.1:9222 after 120.0s (last state: debug endpoint not answering: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')))\")"
+  },
+  {
+   "task": "thunderbird-15c3b339-88f7-4a86-ab16-e71c58dcb01e",
+   "domain": "thunderbird",
+   "tag": "thunderbird-15c3b339-88f7-4a86-ab16-e71c58dcb01e-gate8-s0",
+   "attempts": 1,
+   "infra": null,
+   "stop": "agent",
+   "wall_s": 268.2,
+   "turns_monitor": 9,
+   "score": 1.0,
+   "success": true,
+   "final_fail": false,
+   "turns": 9,
+   "tool_calls": 9,
+   "screenshots": 2,
+   "tok_in": 25524,
+   "tok_cache": 97152,
+   "tok_out": 944,
+   "pi_error": null,
+   "final": "DONE \u2014 In Thunderbird's \"Set Up Your Existing Email Address\" account setup tab I filled Name `anonym-x2024`, Email `anonym-x2024@outlook.com` and Password (8 masked characters), then left the form unt",
+   "request_human": 0,
+   "tools": {
+    "set_plan": 2,
+    "list_apps": 1,
+    "get_window_state": 2,
+    "run_actions": 1,
+    "check_done": 3
+   },
+   "gate": {
+    "actions": 6,
+    "executed": 6,
+    "interventions": 0,
+    "decisions": {
+     "direct": 6
+    },
+    "reviewer": [],
+    "reviewer_decisions": {},
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 6,
+      "errors": 0,
+      "ms": [
+       42294.1
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 2,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 2,
+      "http_calls": 18,
+      "errors": 0,
+      "ms": [
+       61999.0,
+       99562.5
+      ]
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 0,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "plan": 2,
+     "briefing": 1,
+     "obs": 3,
+     "img": 2,
+     "delivery_fallback": 1,
+     "action": 6,
+     "batch": 1,
+     "role": 2,
+     "check_done": 3,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "libreoffice_calc-4e6fcf72-daf3-439f-a232-c434ce416af6",
+   "domain": "libreoffice_calc",
+   "tag": "libreoffice_calc-4e6fcf72-daf3-439f-a232-c434ce416af6-gate8-s0",
+   "attempts": 1,
+   "infra": "eval_error",
+   "stop": "agent",
+   "wall_s": 371.1,
+   "turns_monitor": 20,
+   "error": "RuntimeError('Employee age reference date was not initialized during setup')",
+   "score": null,
+   "success": false,
+   "final_fail": null,
+   "turns": 20,
+   "tool_calls": 23,
+   "screenshots": 0,
+   "tok_in": 22361,
+   "tok_cache": 342400,
+   "tok_out": 4173,
+   "pi_error": null,
+   "final": "DONE \u2014 Filled column D of /data/home/Employee_Age_By_Birthday.xlsx (rows 2\u201329) with age formulas `=DATEDIF(Cn,DATE(2026,10,22),\"Y\")` based on the reference date 2026-10-22 and saved the workbook in xl",
+   "request_human": 0,
+   "tools": {
+    "run_command": 8,
+    "list_windows": 2,
+    "set_plan": 3,
+    "get_window_state": 1,
+    "run_actions": 6,
+    "check_done": 3
+   },
+   "gate": {
+    "actions": 31,
+    "executed": 31,
+    "interventions": 0,
+    "decisions": {
+     "direct": 31
+    },
+    "reviewer": [],
+    "reviewer_decisions": {},
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 8,
+      "errors": 0,
+      "ms": [
+       44690.6
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 2,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 2,
+      "http_calls": 18,
+      "errors": 0,
+      "ms": [
+       152974.1,
+       69387.0
+      ]
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 3,
+      "http_calls": 3,
+      "errors": 0,
+      "ms": [
+       5328.0,
+       5577.0,
+       13561.0
+      ]
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 0,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "obs": 9,
+     "briefing": 1,
+     "command": 8,
+     "action": 31,
+     "tree_extra": 10,
+     "plan": 3,
+     "delivery_fallback": 1,
+     "batch": 6,
+     "retro_repeat": 1,
+     "role": 5,
+     "check_done": 3,
+     "shutdown": 1
+    }
+   }
+  }
+ ]
+}
