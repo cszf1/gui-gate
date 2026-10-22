@@ -1,0 +1,7 @@
+78 closed_menu_parent_known(heal: reopen)
+22 open_menu(heal: Escape+retry)
+16 other(no heal)
+15 same_label(heal: desktop click)
+4 unknown
+1 closed_menu_no_parent(note only)
+[(('direct', 'closed_menu_parent_known(heal: reopen)'), 9), (('direct', 'open_menu(heal: Escape+retry)'), 3), (('direct', 'other(no heal)'), 2), (('direct', 'same_label(heal: desktop click)'), 2), (('direct', 'unknown'), 1), (('gate8', 'closed_menu_parent_known(heal: reopen)'), 17), (('gate8', 'open_menu(heal: Escape+retry)'), 1), (('gate8', 'other(no heal)'), 3), (('gate8', 'same_label(heal: desktop click)'), 2)]
