@@ -55,7 +55,72 @@ pub fn stop_mac_daemon_unless(before: bool, driver: &str) {
     if !crate::cleanup::running_gates().is_empty() || !mac_daemon_running() {
         return;
     }
-    let _ = run_argv(&[driver, "stop"], 10.0);
+    let _ = driver_stop(driver);
+}
+
+/// `cua-driver stop` with Cua's telemetry and update check off: `stop` is a "finite command" Cua wraps in a child
+/// and follows with a detached telemetry worker (the same binary, no arguments) unless telemetry is off - that
+/// worker was the CuaDriver.app process left running after 0.9.8's uninstall, and it re-created ~/.cua-driver.
+pub fn driver_stop(driver: &str) -> Option<i32> {
+    run_argv_env(&[driver, "stop"], &crate::install::bundled_driver_env(), 10.0).0
+}
+
+/// (pid, command line) of every process whose program lives inside `app` (`app/Contents/...`; unix, via ps).
+pub fn app_processes(app: &str) -> Vec<(String, String)> {
+    if cfg!(windows) || app.is_empty() {
+        return vec![];
+    }
+    let me = std::process::id().to_string();
+    let prefix = format!("{}/Contents/", app.trim_end_matches('/'));
+    let out = Command::new("ps").args(["-A", "-o", "pid=,command="]).output().map(|o| String::from_utf8_lossy(&o.stdout).to_string()).unwrap_or_default();
+    out.lines().filter_map(|l| {
+        let l = l.trim();
+        let (pid, cmd) = l.split_once(char::is_whitespace)?;
+        let cmd = cmd.trim();
+        (pid != me && cmd.starts_with(&prefix)).then(|| (pid.to_string(), cmd.to_string()))
+    }).collect()
+}
+
+/// Stop every process running from `app` and verify: the daemon gets `cua-driver stop` first (it closes its
+/// socket and exits), whatever is still there after 3 s gets SIGTERM, after another 5 s SIGKILL. Returns the
+/// processes still alive at the end ("pid command"), empty when all are gone.
+pub fn stop_app_processes(app: &str) -> Vec<String> {
+    let wait_gone = |secs: f64| -> Vec<(String, String)> {
+        let t0 = std::time::Instant::now();
+        loop {
+            let left = app_processes(app);
+            if left.is_empty() || t0.elapsed().as_secs_f64() >= secs {
+                return left;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(100));
+        }
+    };
+    if app_processes(app).is_empty() {
+        return vec![];
+    }
+    let bin = format!("{}/Contents/MacOS/cua-driver", app.trim_end_matches('/'));
+    if std::path::Path::new(&bin).is_file() {
+        let _ = driver_stop(&bin);
+    }
+    #[allow(unused_mut)]
+    let mut left = wait_gone(3.0);
+    #[cfg(unix)]
+    {
+        for (sig, secs) in [(sys::SIGTERM, 5.0), (sys::SIGKILL, 2.0)] {
+            if left.is_empty() {
+                break;
+            }
+            for (pid, _) in &left {
+                if let Ok(p) = pid.parse::<i32>() {
+                    unsafe {
+                        sys::kill(p, sig);
+                    }
+                }
+            }
+            left = wait_gone(secs);
+        }
+    }
+    left.into_iter().map(|(p, c)| format!("{p} {c}")).collect()
 }
 
 /// At gate exit on macOS: stop the daemon this session started.
@@ -189,10 +254,16 @@ pub fn alive(pid: i32) -> bool {
 /// Run a program directly (no shell) with a timeout: (exit code, stdout, stderr). Used for the read-only helpers
 /// (pdftotext, python3 reading a document, tesseract) so they work the same on every OS and never outlive the gate.
 pub fn run_argv(argv: &[&str], timeout_s: f64) -> (Option<i32>, String, String) {
+    run_argv_env(argv, &[], timeout_s)
+}
+
+/// `run_argv` with extra environment variables.
+pub fn run_argv_env(argv: &[&str], envs: &[(&str, &str)], timeout_s: f64) -> (Option<i32>, String, String) {
     use std::io::Read;
     use std::process::Stdio;
     let Some((prog, rest)) = argv.split_first() else { return (None, String::new(), "empty command".into()) };
     let mut c = Command::new(prog);
+    c.envs(envs.iter().copied());
     c.args(rest).stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::piped());
     #[cfg(unix)]
     {
@@ -257,6 +328,28 @@ pub fn changed_at(m: &std::fs::Metadata) -> Option<std::time::SystemTime> {
 #[cfg(all(test, target_os = "linux"))]
 mod tests {
     use super::*;
+
+    #[test]
+    fn stop_app_processes_leaves_nothing() {
+        // a fake app bundle whose "driver" ignores `stop` and keeps running (like a stray Cua telemetry worker)
+        let d = std::env::temp_dir().join(format!("gg-app-{}", std::process::id()));
+        let app = d.join("CuaDriver.app");
+        let mac = app.join("Contents").join("MacOS");
+        std::fs::create_dir_all(&mac).unwrap();
+        let bin = mac.join("cua-driver");
+        std::fs::copy("/bin/sleep", &bin).unwrap();
+        let mut kids: Vec<Child> = (0..2).map(|_| Command::new(&bin).arg("30").spawn().unwrap()).collect();
+        let app_s = app.to_string_lossy().to_string();
+        std::thread::sleep(std::time::Duration::from_millis(200));
+        assert_eq!(app_processes(&app_s).len(), 2);
+        let reaper = std::thread::spawn(move || for k in kids.iter_mut() { let _ = k.wait(); });
+        let left = stop_app_processes(&app_s);
+        assert!(left.is_empty(), "{left:?}");
+        reaper.join().unwrap();
+        assert!(app_processes(&app_s).is_empty());
+        assert!(stop_app_processes(&app_s).is_empty()); // nothing running: a no-op
+        let _ = std::fs::remove_dir_all(&d);
+    }
 
     #[test]
     fn kill_all_takes_grandchildren() {

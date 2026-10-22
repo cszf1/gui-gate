@@ -169,6 +169,10 @@ if [[ "$SKIP_DRIVER" != "1" && -d "$tmp/cua-driver" ]]; then
             app_line=""
         else
             if [[ "$app_dest" == "$HOME/Applications/CuaDriver.app" ]]; then note_dir "$HOME/Applications"; fi
+            # the app keeps its daemon socket / pid in ~/Library/Caches/cua-driver (Cua has no setting to move it);
+            # record ~/Library/Caches and ~/Library too when they do not exist yet (a fresh or throwaway HOME), so
+            # uninstall removes them once empty; on a real Mac both always exist and stay
+            note_dir "$HOME/Library/Caches"
             # state the app creates on first use; removed by `gui-gate uninstall` only if it is not there yet
             for d in "$HOME/.cua-driver" "$HOME/Library/Caches/cua-driver" "$HOME/Library/Application Support/Cua Driver"; do
                 [[ -e "$d" ]] || owned+=("$d")
@@ -185,17 +189,13 @@ if [[ "$SKIP_DRIVER" != "1" && -d "$tmp/cua-driver" ]]; then
 elif [[ "$SKIP_DRIVER" == "1" ]]; then
     say "--skip-driver: not installing the bundled Cua Driver; gui-gate looks for one installed separately"
 fi
-mkdir -p "$LIB_DIR"
-{
-    echo "# written by gui-gate's installer; read by \`gui-gate uninstall\`"
-    printf '%s\n' "${created[@]+"${created[@]}"}" | awk 'NF && !seen[$0]++ {print "created_dir=" $0}'
-    if [[ -n "$app_line" ]]; then
-        echo "$app_line"
-        printf '%s\n' "${owned[@]+"${owned[@]}"}" | awk 'NF && !seen[$0]++ {print "owned_dir=" $0}'
-    fi
-} > "$MANIFEST.tmp"
-mv -f "$MANIFEST.tmp" "$MANIFEST"
-
+# PATH: exactly one shell profile gets the line - the one this shell reads at login/startup:
+#   zsh -> ~/.zshrc; bash on Linux -> ~/.bashrc; bash on macOS (Terminal opens login shells, which read the first of
+#   ~/.bash_profile, ~/.bash_login, ~/.profile and never ~/.bashrc) -> the first of those that exists; else ~/.profile.
+# A profile file that does not exist is created holding only our two lines and recorded in the manifest
+# (created_file=), so `gui-gate uninstall` deletes it again when nothing else was added to it.
+created_files=()
+if [[ -f "$MANIFEST" ]]; then while IFS= read -r l; do [[ "$l" == created_file=* && -e "${l#created_file=}" ]] && created_files+=("${l#created_file=}"); done < "$MANIFEST"; fi
 case ":$PATH:" in
     *":$BIN_DIR:"*) ;;
     *)
@@ -203,14 +203,39 @@ case ":$PATH:" in
             line="export PATH=\"$BIN_DIR:\$PATH\""
             case "$(basename "${SHELL:-bash}")" in
                 zsh) rc="$HOME/.zshrc" ;;
-                bash) if [[ "$os" == "Darwin" ]]; then rc="$HOME/.bash_profile"; else rc="$HOME/.bashrc"; fi ;;
+                bash)
+                    if [[ "$os" == "Darwin" ]]; then
+                        rc="$HOME/.bash_profile"
+                        for f in "$HOME/.bash_profile" "$HOME/.bash_login" "$HOME/.profile"; do
+                            if [[ -e "$f" ]]; then rc="$f"; break; fi
+                        done
+                    else
+                        rc="$HOME/.bashrc"
+                    fi ;;
                 *) rc="$HOME/.profile" ;;
             esac
-            grep -qsF "$line" "$rc" || printf '\n# gui-gate\n%s\n' "$line" >> "$rc"
-            say "added $BIN_DIR to PATH in your shell profile (open a new terminal)"
+            if [[ ! -e "$rc" ]]; then
+                printf '# gui-gate\n%s\n' "$line" > "$rc"
+                created_files+=("$rc")
+            elif ! grep -qsF "$line" "$rc"; then
+                printf '\n# gui-gate\n%s\n' "$line" >> "$rc"
+            fi
+            say "added $BIN_DIR to PATH in $rc (open a new terminal)"
         fi
         export PATH="$BIN_DIR:$PATH" ;;
 esac
+
+mkdir -p "$LIB_DIR"
+{
+    echo "# written by gui-gate's installer; read by \`gui-gate uninstall\`"
+    printf '%s\n' "${created[@]+"${created[@]}"}" | awk 'NF && !seen[$0]++ {print "created_dir=" $0}'
+    printf '%s\n' "${created_files[@]+"${created_files[@]}"}" | awk 'NF && !seen[$0]++ {print "created_file=" $0}'
+    if [[ -n "$app_line" ]]; then
+        echo "$app_line"
+        printf '%s\n' "${owned[@]+"${owned[@]}"}" | awk 'NF && !seen[$0]++ {print "owned_dir=" $0}'
+    fi
+} > "$MANIFEST.tmp"
+mv -f "$MANIFEST.tmp" "$MANIFEST"
 
 # leave no residue: remove what older versions left (old copies, old Python package, stale PATH lines,
 # stale MCP entries and flags, our own config backups, old caches); `gui-gate cleanup --dry-run` shows it

@@ -195,6 +195,13 @@ fn profile_files() -> Vec<PathBuf> {
     [".bashrc", ".bash_profile", ".zshrc", ".profile"].iter().map(|f| PathBuf::from(format!("{h}/{f}"))).collect()
 }
 
+/// Whether a PATH-line dir names `keep_dir`: equal as written, or the same dir once symlinks are resolved (on macOS
+/// $TMPDIR is /var/folders/..., a symlink into /private/var: the installer writes the path as given while the running
+/// binary only knows its canonical path, so a plain string compare took gui-gate's own fresh line for a stale one).
+fn same_dir(dir: &str, keep_dir: &str) -> bool {
+    dir == keep_dir || (!dir.is_empty() && !keep_dir.is_empty() && canon(Path::new(dir)) == canon(Path::new(keep_dir)))
+}
+
 /// `# gui-gate` + `export PATH="DIR:$PATH"` blocks: keep one per live dir, drop the rest.
 pub fn clean_profile_text(text: &str, keep_dir: &str) -> (String, usize) {
     let lines: Vec<&str> = text.split('\n').collect();
@@ -205,7 +212,7 @@ pub fn clean_profile_text(text: &str, keep_dir: &str) -> (String, usize) {
     while i < lines.len() {
         if lines[i].trim() == "# gui-gate" && i + 1 < lines.len() && lines[i + 1].trim_start().starts_with("export PATH=\"") {
             let dir = lines[i + 1].trim().trim_start_matches("export PATH=\"").split(':').next().unwrap_or("").to_string();
-            if !kept && dir == keep_dir {
+            if !kept && same_dir(&dir, keep_dir) {
                 kept = true;
                 out.push(lines[i]);
                 out.push(lines[i + 1]);
@@ -724,11 +731,26 @@ fn remove_bundled_app(r: &mut Report, app: &str) {
         r.done.push(format!("would remove {app} (installed by gui-gate) and its permission entries"));
         return;
     }
-    let bin = format!("{app}/Contents/MacOS/cua-driver");
-    let _ = crate::proc::run_argv(&[&bin, "stop"], 10.0);
+    // every process running from the app (the `serve` daemon LaunchServices started, a stray proxy, a Cua
+    // telemetry worker) is stopped and verified gone before the app is deleted
+    let left = crate::proc::stop_app_processes(app);
+    if !left.is_empty() {
+        r.left.push(format!("could not stop {} process(es) of {app}: {}; {app} was not removed", left.len(), left.join(", ")));
+        return;
+    }
+    r.done.push(format!("stopped every process running from {app}"));
     let ls = "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister";
     let _ = crate::proc::run_argv(&[ls, "-u", app], 10.0);
     r.act(format!("remove {app} (the Cua Driver app gui-gate installed)"), || rm(Path::new(app)));
+    // removing the app must not have started anything from it
+    let late = crate::proc::app_processes(app);
+    if !late.is_empty() {
+        let _ = crate::proc::stop_app_processes(app);
+        let still = crate::proc::app_processes(app);
+        if !still.is_empty() {
+            r.left.push(format!("processes of {app} still running: {}", still.iter().map(|(p, c)| format!("{p} {c}")).collect::<Vec<_>>().join(", ")));
+        }
+    }
     for svc in ["Accessibility", "ScreenCapture"] {
         let _ = crate::proc::run_argv(&["tccutil", "reset", svc, "com.trycua.driver"], 10.0);
     }
@@ -772,11 +794,16 @@ remove gui-gate and everything it created: the binary, the bundled Cua Driver, P
             }
         }
     }
-    // PATH lines: a `# gui-gate` block is ours whatever else lives in that dir (Cua's installer adds its own line)
+    // PATH lines: a `# gui-gate` block is ours whatever else lives in that dir (Cua's installer adds its own line).
+    // A profile file the installer created (manifest `created_file=`) is deleted when nothing but our lines was in it.
+    let created_files: Vec<PathBuf> = manifest.iter().filter(|(k, _)| k == "created_file").map(|(_, v)| PathBuf::from(v)).collect();
     for f in profile_files() {
         let Some(t) = read_text(&f) else { continue };
         let (new, n) = clean_profile_text(&t, "\u{0}"); // keep nothing
-        if n > 0 {
+        let ours = created_files.iter().any(|c| c == &f || canon(c) == canon(&f));
+        if ours && new.trim_matches(['\n', '\r']).is_empty() {
+            r.act(format!("remove {} (created by the installer for the PATH line only)", f.display()), || std::fs::remove_file(&f).is_ok());
+        } else if n > 0 {
             r.act(format!("remove gui-gate PATH line(s) from {}", f.display()), || std::fs::write(&f, &new).is_ok());
         }
     }
@@ -908,6 +935,24 @@ remove gui-gate and everything it created: the binary, the bundled Cua Driver, P
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[cfg(unix)]
+    #[test]
+    fn profile_line_through_a_symlinked_home_is_kept() {
+        // macOS $TMPDIR (/var/folders/...) is a symlink into /private/var: the installer writes the symlinked path,
+        // the running binary only knows the canonical one; the fresh line must not be taken for a stale one
+        let d = std::env::temp_dir().join(format!("gg-link-{}", std::process::id()));
+        let real = d.join("real").join(".local").join("bin");
+        std::fs::create_dir_all(&real).unwrap();
+        std::os::unix::fs::symlink(d.join("real"), d.join("link")).unwrap();
+        let written = d.join("link").join(".local").join("bin").to_string_lossy().to_string();
+        let keep = canon(&real).to_string_lossy().to_string();
+        let text = format!("alias ll=x\n\n# gui-gate\nexport PATH=\"{written}:$PATH\"\n");
+        let (new, n) = clean_profile_text(&text, &keep);
+        assert_eq!(n, 0);
+        assert_eq!(new, text);
+        let _ = std::fs::remove_dir_all(&d);
+    }
 
     #[test]
     fn profile_lines() {

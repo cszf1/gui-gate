@@ -167,7 +167,7 @@ irm https://github.com/cszf1/gui-gate/releases/latest/download/install.ps1 | iex
 | 选项（sh 参数 / 环境变量） | 作用 |
 |---|---|
 | `--client claude` / `GUI_GATE_CLIENT=claude,codex` | 顺便写入 Agent 配置 |
-| `--version 0.9.7` / `GUI_GATE_VERSION` | 装指定版本 |
+| `--version 0.9.9` / `GUI_GATE_VERSION` | 装指定版本 |
 | `--bin-dir` / `GUI_GATE_INSTALL_DIR` | gui-gate 目录（默认 `~/.local/bin`，Windows `%LOCALAPPDATA%\Programs\gui-gate\bin`） |
 | `--lib-dir` / `GUI_GATE_LIB_DIR` | 内置驱动目录（默认 `<bin>/../lib/gui-gate`；Windows 固定 `<bin>\..\cua-driver`） |
 | `--skip-driver` / `GUI_GATE_SKIP_DRIVER=1` | 不装内置驱动，改用你另外装的 Cua Driver |
@@ -194,13 +194,13 @@ macOS 上驱动是 Cua 签名的 `CuaDriver.app`，原样放到 `/Applications`�
 | 本体 | `~/.local/bin/gui-gate`；Windows `%LOCALAPPDATA%\Programs\gui-gate\bin\gui-gate.exe` |
 | 内置 Cua Driver + 其 LICENSE、安装清单 `install-manifest` | Linux/macOS `~/.local/lib/gui-gate/`；Windows `%LOCALAPPDATA%\Programs\gui-gate\` |
 | macOS 驱动 App（仅当原来没有时） | `/Applications/CuaDriver.app` |
-| PATH | shell 配置里 `# gui-gate` 两行（仅当目录不在 PATH 时）；Windows 用户 Path 一项 |
+| PATH | 只改一个 shell 配置文件里的 `# gui-gate` 两行（仅当目录不在 PATH 时；zsh `~/.zshrc`，Linux bash `~/.bashrc`，macOS bash 用已存在的 `~/.bash_profile`/`~/.bash_login`/`~/.profile` 中第一个；文件原本不存在时新建并记入安装清单，卸载时若只剩我们的行就删掉）；Windows 用户 Path 一项 |
 | 审核模型设置与密钥（600 权限）、角色密钥、经验记忆 | `~/.config/gui-gate/` |
 | 会话日志（含任务原文和命令；启动时清理 30 天前 / 超过 200 MB 的） | `~/.gui-gate/logs/`（`--log none` 不写） |
 | 外部驱动时的版本检查缓存 | `~/.cache/gui-gate/` |
 | MCP 配置项（只在你 `setup --client` 时） | `~/.claude.json`、`~/.pi/agent/mcp.json`、`~/.cursor/mcp.json`、`~/.codex/config.toml`，不留 .bak |
 | 临时文件 | `$TMPDIR/gui-gate-*`（后台任务日志在 Unix 上一启动就删名；gate 退出时清掉自己的） |
-| 进程 | 由 MCP 客户端启动的 `gui-gate` 和它的 `cua-driver mcp`；客户端关掉 stdin 或发 SIGTERM/SIGINT/SIGHUP 时，gate 结束所有后台任务和仍在跑的命令（整组进程）再退出 |
+| 进程 | 由 MCP 客户端启动的 `gui-gate` 和它的 `cua-driver mcp`（macOS 上还有 CuaDriver.app 的守护进程）；客户端关掉 stdin 或发 SIGTERM/SIGINT/SIGHUP 时，gate 结束所有后台任务和仍在跑的命令（整组进程）再退出；`gui-gate uninstall` 删 CuaDriver.app 前先停掉并确认它的所有进程都已退出 |
 
 没有服务、计划任务、LaunchAgent、systemd 单元，也不改浏览器配置（`inspect kind=page` 只在 Chrome 调试端口
 本来就开着时只读连接本机）。
