@@ -465,6 +465,23 @@ class TerminalLineTests(unittest.TestCase):
         r = self.c.call("press_key", pid=pid, window_id=777, key="Return")
         self.assertFalse(r.get("isError"), txt(r))
 
+    def test_rm_of_own_scratch_runs_rm_of_user_data_refused(self):
+        import time
+        pid = self.term.pid
+        self.c = Client("--human", "deny", "--task", "clone the repo", env={"FAKE_PID": str(pid)})
+        self.c.call("get_window_state", pid=pid, window_id=777)
+        time.sleep(0.05)
+        scratch = os.path.join(self.tmp, "scratch-clone")
+        os.makedirs(scratch)  # created after the gate started: the agent's own work
+        r = self.c.call("type_text", pid=pid, window_id=777, text=f"rm -rf {scratch}")
+        self.assertFalse(r.get("isError"), txt(r))
+        r = self.c.call("press_key", pid=pid, window_id=777, key="Return")
+        self.assertFalse(r.get("isError"), txt(r))
+        self.c.call("type_text", pid=pid, window_id=777, text=f"rm -rf {self.old}")
+        r = self.c.call("press_key", pid=pid, window_id=777, key="Return")
+        self.assertTrue(r.get("isError"), txt(r))
+        self.assertIn("`rm` deletes", txt(r))
+
     def test_rename_task_authorizes_move(self):
         pid = self.term.pid
         self.c = Client("--human", "deny", "--task", f"rename the folder userdir to userdir2", env={"FAKE_PID": str(pid)})
