@@ -74,6 +74,11 @@ fn gate_tools() -> Vec<Value> {
 }
 
 /// Trim a long description at a sentence boundary (each turn resends them all).
+/// readline: ctrl+e (end of line), ctrl+u (kill to line start) - works in bash, zsh (emacs mode), fish, sh/dash with editing.
+pub fn clear_line_keys() -> Vec<(&'static str, Vec<&'static str>)> {
+    vec![("e", vec!["ctrl"]), ("u", vec!["ctrl"])]
+}
+
 pub fn short(text: &str, limit: usize) -> String {
     if text.chars().count() <= limit {
         return text.to_string();
@@ -1077,6 +1082,17 @@ impl Gate {
             "deny" => self.deny_text(inn, &ctx, &dec, "refused"),
             _ => format!("[gate] Not executed: {}.", dec.reason),
         };
+        // a refused risky Enter in a terminal leaves the typed command on the input line: the next command the
+        // agent types would be appended to it and refused again (og04 loop). Clear the line and say so.
+        // (deny / risk_review go through deny_text, which clears it too)
+        let mut text = text;
+        if ctx.risk.is_some() && opt == "ask_human" {
+            if let Some(p) = t.pid {
+                if let Some(note) = self.clear_terminal_line(inn, p, t.window_id) {
+                    text.push_str(&note);
+                }
+            }
+        }
         event["executed"] = json!(false);
         event["gate_ms"] = json!(round_to(gate_ms, 1));
         self.log.write(event);
@@ -1101,6 +1117,29 @@ impl Gate {
             }
         }
         res
+    }
+
+    /// Erase what the agent typed on a terminal's input line (End, then kill to line start). Returns the note for
+    /// the agent, or None when this is not a terminal or nothing was typed since the last Enter.
+    fn clear_terminal_line(&self, inn: &mut Inner, pid: i64, window_id: Option<i64>) -> Option<String> {
+        let typed = inn.state.last_typed.get(&pid).cloned().unwrap_or_default();
+        if typed.trim().is_empty() || !crate::sidefx::is_terminal(pid) {
+            return None;
+        }
+        for k in clear_line_keys() {
+            let mut a = json!({"pid": pid, "key": k.0, "modifiers": k.1});
+            if let Some(w) = window_id.filter(|w| *w != 0) {
+                a["window_id"] = json!(w);
+            }
+            let r = self.tool(inn, "press_key", &a, 10.0);
+            if is_error(&r) {
+                return None;
+            }
+        }
+        inn.state.last_typed.insert(pid, String::new());
+        inn.inc("lines_cleared");
+        self.log.write(json!({"ev": "line_cleared", "aid": inn.aid, "pid": pid, "text": trunc(&typed, 200)}));
+        Some(" The gate has cleared the refused command from the terminal's input line (it was not run); type your next command on the empty line.".into())
     }
 
     // ------------------------------------------------------------------ observe after an action
@@ -1307,12 +1346,16 @@ impl Gate {
         let key = inn.risk_info.get("effect").and_then(|e| e.as_str()).map(String::from)
             .unwrap_or_else(|| authz::effect_key(&risk, &self.dialog_text(inn, ctx)));
         inn.denied_effects.insert(key, who.to_string());
+        let cleared = match (ctx.target.pid, ctx.risk.is_some()) {
+            (Some(p), true) => self.clear_terminal_line(inn, p, ctx.target.window_id).unwrap_or_default(),
+            _ => String::new(),
+        };
         if inn.denials_consec >= inn.cfg.deny_consecutive || inn.denials_total >= inn.cfg.deny_total {
             inn.inc("deny_escalations");
-            return format!("[gate] Not executed: {who} ({}). The gate has now refused {} risky step(s) ({} in a row): stop here and tell the user what you wanted to do and why.",
+            return format!("[gate] Not executed: {who} ({}). The gate has now refused {} risky step(s) ({} in a row): stop here and tell the user what you wanted to do and why.{cleared}",
                            dec.reason, inn.denials_total, inn.denials_consec);
         }
-        format!("[gate] Not executed: {who} ({}). Do not retry it or reach the same result another way (another button, key or command). Instead: {}.",
+        format!("[gate] Not executed: {who} ({}). Do not retry it or reach the same result another way (another button, key or command). Instead: {}.{cleared}",
                 dec.reason, authz::alternative(&risk))
     }
 
