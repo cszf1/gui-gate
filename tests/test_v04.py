@@ -562,7 +562,7 @@ class OcclusionHealTests(unittest.TestCase):
     def test_open_menu_covering_target_escape_and_retry(self):
         self.c = Client("--human", "deny")
         s = self.c.read()
-        self.c.call("fake_mutate", occlude_next=["menu", "Insert"])
+        self.c.call("fake_mutate", occlude_next=["menu", "Insert", "noaction"])
         r = self.c.call("click", element_token=f"{s}:0")
         self.assertFalse(r.get("isError"), txt(r))
         self.assertIn("pressed Escape", txt(r))
@@ -576,7 +576,7 @@ class OcclusionHealTests(unittest.TestCase):
     def test_duplicate_object_same_label_clicked_by_desktop_point(self):
         self.c = Client("--human", "deny")
         s = self.c.read()
-        self.c.call("fake_mutate", occlude_next=["menu", "Increment"])
+        self.c.call("fake_mutate", occlude_next=["menu", "Increment", "noaction"])
         r = self.c.call("click", element_token=f"{s}:0")
         self.assertFalse(r.get("isError"), txt(r))
         self.assertEqual(self.state()["clicked"], ["xy:161,71:desktop"])
@@ -611,7 +611,7 @@ class OcclusionHealTests(unittest.TestCase):
     def test_heal_inside_batch_lets_the_batch_go_on(self):
         self.c = Client("--human", "deny")
         s = self.c.read()
-        self.c.call("fake_mutate", occlude_next=["menu", "Insert"])
+        self.c.call("fake_mutate", occlude_next=["menu", "Insert", "noaction"])
         r = self.c.call("run_actions", pid=4242, window_id=777, steps=[
             {"tool": "click", "args": {"element_token": f"{s}:0"}},
             {"tool": "press_key", "args": {"key": "Tab"}}])
@@ -621,10 +621,24 @@ class OcclusionHealTests(unittest.TestCase):
     def test_other_owner_not_retried(self):
         self.c = Client("--human", "deny")
         s = self.c.read()
-        self.c.call("fake_mutate", occlude_next=["table cell", "B4"])
+        self.c.call("fake_mutate", occlude_next=["table cell", "B4", "noaction"])
         r = self.c.call("click", element_token=f"{s}:0")
         self.assertTrue(r.get("isError"))
         self.assertEqual(self.state()["clicked"], [])
+
+    def test_occluded_token_click_activated_focus_free(self):
+        # m3: 66 token clicks refused for occlusion, many by unnamed owners the old heals never matched
+        self.c = Client("--human", "deny")
+        s = self.c.read()
+        self.c.call("fake_mutate", occlude_next=["panel", "(unnamed)"])
+        r = self.c.call("click", element_token=f"{s}:0")
+        self.assertFalse(r.get("isError"), txt(r))
+        self.assertIn("accessibility action", txt(r))
+        st = self.state()
+        self.assertEqual(st["modes"][-1], "background")
+        self.assertEqual(st["clicked"], ["Increment"])
+        ev = [e for e in self.c.events() if e.get("ev") == "action"][-1]
+        self.assertEqual(ev.get("occlusion_heal"), "background")
 
 
 class TreeDiffTests(unittest.TestCase):

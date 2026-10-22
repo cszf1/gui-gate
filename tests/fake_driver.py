@@ -109,8 +109,14 @@ def call(name, a):
             if sid != snap_id(state["snap"]):
                 return text("element_token is stale or unknown; call get_window_state again to refresh.", err=True,
                             sc={"refusal": "stale"})
-            if state.get("occlude_next"):
-                orole, olab = state.pop("occlude_next")
+            if a.get("delivery_mode") == "background" and state.pop("bg_fail_once", False):
+                return text("click: element has no accessibility action to perform focus-free", err=True)
+            if state.get("occlude_next") and a.get("delivery_mode") != "background":
+                # a pointer click is checked against the point owner; the focus-free path (AT-SPI action) is not
+                occ = state.pop("occlude_next")
+                orole, olab = occ[0], occ[1]
+                if len(occ) > 2 and occ[2] == "noaction":
+                    state["bg_fail_once"] = True
                 return text(f'click: element [{idx}] (pid {PID}) has a snapshot frame at (161, 71), but that screen point is '
                             f'owned by {orole} "{olab}" rather than the observed element; a real pointer click there would '
                             'hit the wrong control. Re-snapshot with get_window_state, or click by pixel from a screenshot.',
