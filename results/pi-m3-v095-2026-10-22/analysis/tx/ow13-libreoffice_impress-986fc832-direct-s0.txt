@@ -1,0 +1,61 @@
+T1 CALL list_apps {}
+T1 CALL list_windows {}
+   -> ✅ Found 157 app(s): 122 running, 35 installed-not-running. / - systemd (pid 1) / - kthreadd (pid 2) / - pool_workqueue_release (pid 3) / - kworker/R-rcu_gp (pid 4) / - kworker/R-sync_wq (pid 5) / - kworker/R-kvfree_rcu_reclaim (pid 6) / - kworker/R-slub_flushwq (pid 7) / - kworker/R-netns (pid 8) / - kworker/0:0H-events_highpri (pid 10) / - kworker/R-mm_percpu_wq (pid 13) / - ksoftirqd/0 (pid 14) / - rcu_preempt (pid 15)
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=14680181 pid=109593 "154_3.pptx — LibreOffice Impress" 1440x849+0+51 app=libreoffice-impress /   window_id=12582915 pid=6966 "xfce4-panel" 1440x27+0+0 app=Xfce4-panel /   window_id=12582926 pid=6966 "xfce4-panel" 306x
+T2 CALL get_window_state {"pid": 109593, "tree_format": "both"}
+   -> window_id=14680181 pid=109593 elements=160 walk_ms=1122 snapshot_id=s00000001 /  / - frame = "154_3.pptx — LibreOffice Impress" /       - [0] button "" (description "Close Document") [actions=[click]] /             - [1] menu "File" [actions=[click]] (closed menu, 30 items; click it to open) /             - [2] menu "Edit" [actions=[click]] (closed menu, 23 items; click it to open) /             - [3] menu "V
+T3 CALL click {"pid": 109593, "element_token": "s00000001:28", "count": 2}
+   -> Clicked element [28] (pid 109593) with a real pointer click (delivery_mode=background, path=x11_xsendevent); not verified — confirm with a screenshot.
+T4 CALL get_window_state {"pid": 109593, "tree_format": "markdown", "since": "latest"}
+   -> window_id=14680181 pid=109593 elements=160 walk_ms=443 snapshot_id=s00000002 /  / no change since s00000001. Rows and indices are as before; use snapshot_id s00000002 in element_tokens (s00000002:N). | Invalidated snapshots s00000001: their element_tokens are stale.
+T5 CALL press_key {"pid": 109593, "key": "a", "modifiers": ["ctrl"]}
+   -> Pressed key 'a' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T6 CALL get_window_state {"pid": 109593, "tree_format": "markdown", "since": "latest"}
+   -> window_id=14680181 pid=109593 elements=182 walk_ms=557 snapshot_id=s00000003 /  / since s00000002: 34 added, 2 changed, 5 removed. Use element_tokens s00000003:N for + and ~ rows and unchanged rows; - ids are from s00000002. / + [104] toggle button "Position and Size" [actions=[activate]] / + panel = "More Options" / + [105] button "" [actions=[click]] / + [106] check box "Keep Ratio" (description "Maintains 
+T7 CALL press_key {"key": "escape", "pid": 109593}
+   -> Pressed key 'escape' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T8 CALL click {"element_token": "s00000003:27", "pid": 109593}
+   -> Clicked element [27] (pid 109593) with a real pointer click (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. [window_point=(611, 488) screen_point=(611, 539)]
+T9 CALL press_key {"key": "f2", "pid": 109593}
+   -> Pressed key 'f2' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T10 CALL press_key {"key": "a", "modifiers": ["ctrl"], "pid": 109593}
+   -> Pressed key 'a' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T11 CALL get_window_state {"pid": 109593, "tree_format": "markdown", "since": "latest"}
+   -> window_id=14680181 pid=109593 elements=238 walk_ms=1014 snapshot_id=s00000004 / this read stops at row [237]: rows past it from a larger read are not in s00000004 / ⚠️ PARTIAL TREE: the 1000 ms timeout_ms budget ran out after 761 node(s) (46 discovered but not visited). Every element listed is real; elements after the cut are missing. If the element you need is absent, retry with a larger timeout_ms (
+T12 CALL press_key {"key": "u", "modifiers": ["ctrl"], "pid": 109593}
+   -> Pressed key 'u' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T13 CALL click {"element_token": "s00000004:126", "pid": 109593}
+   -> ERR click: element [126] (pid 109593) has a snapshot frame at (1089, 316), but that screen point is owned by panel (unnamed) rather than the observed element; a real pointer click there would hit the wrong control. Re-snapshot with get_window_state, or click by pixel from a screenshot.
+T14 CALL get_window_state {"pid": 109593, "tree_format": "markdown", "since": "latest"}
+   -> window_id=14680181 pid=109593 elements=250 walk_ms=430 snapshot_id=s00000005 / this read stops at row [249]: rows past it from a larger read are not in s00000005 / ⚠️ PARTIAL TREE: the max_elements node budget ran out after 772 node(s) (35 discovered but not visited). Every element listed is real; elements after the cut are missing. If the element you need is absent, retry with a larger max_elements o
+T15 CALL click {"element_token": "s00000005:17", "pid": 109593}
+   -> Clicked element [17] (pid 109593) with a real pointer click (delivery_mode=foreground, focus_after=same_pid); appeared: window 14714264 "Print". [window_point=(194, 35) screen_point=(194, 86)]
+T16 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=14680181 pid=109593 "154_3.pptx — LibreOffice Impress" 1440x849+0+51 app=libreoffice-impress /   window_id=14714264 pid=109593 "Print" 804x607+323+189 app=Soffice /   window_id=12582915 pid=6966 "xfce4-panel" 1440x27+
+T17 CALL press_key {"key": "escape", "pid": 109593}
+   -> Pressed key 'escape' as a real key event (delivery_mode=foreground, focus_after=same_pid); not verified — confirm with a screenshot. [pid-only target resolved to window 14714264 "Print" (an open dialog)]
+T18 CALL get_window_state {"pid": 109593, "query": "Font Color", "tree_format": "markdown"}
+   -> window_id=14734576 pid=109593 elements=285 walk_ms=1020 snapshot_id=s00000006 / element_token for row [N] = s00000006:N (row [12] is "s00000006:12") /  / - frame = "154_3.pptx — LibreOffice Impress" /       - root pane = "154_3.pptx — LibreOffice Impress" /         - [12] scroll bar "" value="0.0" [actions=[]] (unlabelled scroll bar; 2nd of 10 scroll bars in this window) /           - [22] menu "Help" value="
+T19 CALL click {"element_token": "s00000006:269", "pid": 109593}
+   -> ERR foreground_unavailable: window 0xe0d4f0 did not become the active, focused window within 800ms (active=0x0, focus_within_target=true, input focus: 0xe0d4f0 (Soffice, pid 109593 soffice.bin)); no input was sent. No window is active at all: the window manager has not set _NET_ACTIVE_WINDOW (it may be restarting, or showing a modal surface of its own that no window list includes)
+T20 CALL click {"element_token": "s00000006:269", "pid": 109593}
+   -> ERR foreground_unavailable: window 0xe0d4f0 did not become the active, focused window within 800ms (active=0x0, focus_within_target=true, input focus: 0xe0d4f0 (Soffice, pid 109593 soffice.bin)); no input was sent. No window is active at all: the window manager has not set _NET_ACTIVE_WINDOW (it may be restarting, or showing a modal surface of its own that no window list includes)
+T21 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=14680181 pid=109593 "154_3.pptx — LibreOffice Impress" 1440x849+0+51 app=libreoffice-impress /   window_id=12582915 pid=6966 "xfce4-panel" 1440x27+0+0 app=Xfce4-panel /   window_id=12582926 pid=6966 "xfce4-panel" 306x
+T22 CALL press_key {"key": "escape", "pid": 109593}
+   -> Pressed key 'escape' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T23 CALL click {"element_token": "s00000006:269", "pid": 109593}
+   -> ERR foreground_unavailable: window 0xe0d4f0 did not become the active, focused window within 800ms (active=0x0, focus_within_target=true, input focus: 0xe0d4f0 (Soffice, pid 109593 soffice.bin)); no input was sent. No window is active at all: the window manager has not set _NET_ACTIVE_WINDOW (it may be restarting, or showing a modal surface of its own that no window list includes)
+T24 CALL get_window_state {"pid": 109593, "query": "Font Color", "tree_format": "elements"}
+   -> window_id=14734576 pid=109593 elements=218 walk_ms=1067 snapshot_id=s00000007 / ⚠️ PARTIAL TREE: the 1000 ms timeout_ms budget ran out after 686 node(s) (29 discovered but not visited). Every element listed is real; elements after the cut are missing. If the element you need is absent, retry with a larger timeout_ms (e.g. 5000) or narrow with query / max_depth. /  / (tree is in structuredContent.element
+T25 CALL press_key {"key": "o", "modifiers": ["alt"], "pid": 109593}
+   -> Pressed key 'o' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T26 CALL get_window_state {"pid": 109593, "query": "Character", "tree_format": "markdown"}
+   -> window_id=14765823 pid=109593 elements=346 walk_ms=1728 snapshot_id=s00000008 / element_token for row [N] = s00000008:N (row [5] is "s00000008:5") /  / - frame = "154_3.pptx — LibreOffice Impress" /       - [0] button "" (description "Close Document") [actions=[click]] /             - [5] menu "Format" [actions=[click]] /               - [35] menu item "Character..." [actions=[click]] /       - root pane = "154
+T27 CALL click {"element_token": "s00000008:35", "pid": 109593}
+   -> ERR foreground_unavailable: window 0xe14eff did not become the active, focused window within 800ms (active=0xe00075, focus_within_target=true, input focus: 0xe14eff (Soffice, pid 109593 soffice.bin)); no input was sent. The window may be minimized, on another workspace, or blocked by a modal dialog — bring_to_front it or target that dialog instead
+T28 CALL press_key {"key": "c", "pid": 109593}
+   -> Pressed key 'c' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T29 CALL get_window_state {"pid": 109593, "tree_format": "markdown", "max_elements": 300}
+   -> Warning: truncated output (original token count: 9574) / Total output lines: 480 /  / window_id=14766840 pid=109593 elements=300 walk_ms=1919 snapshot_id=s00000009 / element_token for row [N] = s00000009:N (row [1] is "s00000009:1"); this read stops at row [299], so rows past it from a larger read are not in s00000009 / ⚠️ PARTIAL TREE: the max_elements node budget ran out after 920 node(s) (61 discovered b
+T30 CALL click {"element_token": "s00000009:35", "pid": 109593}

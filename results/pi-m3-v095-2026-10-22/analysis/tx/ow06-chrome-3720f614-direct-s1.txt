@@ -1,0 +1,65 @@
+T1 CALL list_apps {"all": false}
+T1 CALL list_windows {"on_screen_only": true}
+   -> ✅ Found 154 app(s): 118 running, 36 installed-not-running. / - systemd (pid 1) / - kthreadd (pid 2) / - pool_workqueue_release (pid 3) / - kworker/R-rcu_gp (pid 4) / - kworker/R-sync_wq (pid 5) / - kworker/R-kvfree_rcu_reclaim (pid 6) / - kworker/R-slub_flushwq (pid 7) / - kworker/R-netns (pid 8) / - kworker/0:0H-events_highpri (pid 10) / - kworker/R-mm_percpu_wq (pid 13) / - ksoftirqd/0 (pid 14) / - rcu_preempt (pid 15)
+   -> Found 3 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=12582915 pid=6966 "xfce4-panel" 1440x27+0+0 app=Xfce4-panel /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+851 app=Xfce4-panel
+T2 CALL list_apps {"all": true}
+   -> ✅ Found 154 app(s): 118 running, 36 installed-not-running. / - systemd (pid 1) / - kthreadd (pid 2) / - pool_workqueue_release (pid 3) / - kworker/R-rcu_gp (pid 4) / - kworker/R-sync_wq (pid 5) / - kworker/R-kvfree_rcu_reclaim (pid 6) / - kworker/R-slub_flushwq (pid 7) / - kworker/R-netns (pid 8) / - kworker/0:0H-events_highpri (pid 10) / - kworker/R-mm_percpu_wq (pid 13) / - ksoftirqd/0 (pid 14) / - rcu_preempt (pid 15)
+T3 CALL get_window_state {"pid": 82341}
+   -> ERR No windows found for pid 82341. Provide window_id.
+T4 CALL list_windows {"pid": 82341}
+   -> Found 0 windows:
+T5 CALL get_window_state {"pid": 6982}
+   -> window_id=16777260 pid=6982 elements=0 walk_ms=5 snapshot_id=s00000001 / element_token for row [N] = s00000001:N (row [0] is "s00000001:0") /  / - frame = "Desktop" / 
+T6 CALL get_window_state {"pid": 82341, "window_id": 82341}
+   -> ERR Window target pid 82341, window_id 82341 is stale or no longer running; refresh list_windows.
+T7 CALL list_windows {}
+   -> Found 4 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=12582915 pid=6966 "xfce4-panel" 1440x27+0+0 app=Xfce4-panel /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+851 app=Xfce4-panel
+T8 CALL list_windows {"app": "instabox-term"}
+T8 CALL get_window_state {"pid": 104842}
+   -> Found 0 windows:
+   -> ERR No windows found for pid 104842. Provide window_id.
+T9 CALL get_window_state {"pid": 6966, "window_id": 12582915}
+T9 CALL get_window_state {"pid": 6966, "window_id": 12582926}
+   -> window_id=12582915 pid=6966 elements=3 walk_ms=49 snapshot_id=s00000002 / element_token for row [N] = s00000002:N (row [1] is "s00000002:1") /  /       - [0] toggle button "Applications" [actions=[click]] /       - [1] toggle button "2026-10-22" [actions=[click]] /                 - [2] toggle button "sandbox" [actions=[click]] / 
+   -> window_id=12582926 pid=6966 elements=6 walk_ms=21 snapshot_id=s00000003 / element_token for row [N] = s00000003:N (row [1] is "s00000003:1") /  /       - [0] toggle button "Show Desktop" (description "Minimize all open windows and show the desktop") [actions=[click]] /         - [1] button "Terminal Emulator" (description "Use the command line") [actions=[click]] /         - [2] button "File Manager" (descr
+T10 CALL click {"pid": 6966, "element_token": "s00000003:3"}
+   -> Clicked element [3] (pid 6966). | A popup menu is open, so pid 6966 holds a keyboard grab until it closes.
+T11 CALL get_window_state {"pid": 6966}
+   -> window_id=12582915 pid=6966 elements=3 walk_ms=30 snapshot_id=s00000004 / element_token for row [N] = s00000004:N (row [1] is "s00000004:1") /  /       - [0] toggle button "Applications" [actions=[click]] /       - [1] toggle button "2026-10-22" [actions=[click]] /                 - [2] toggle button "sandbox" [actions=[click]] /  | Invalidated snapshots s00000002: their element_tokens are stale.
+T12 CALL list_windows {}
+   -> Found 4 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=12582915 pid=6966 "xfce4-panel" 1440x27+0+0 app=Xfce4-panel /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+851 app=Xfce4-panel
+T13 CALL press_key {"key": "escape", "pid": 6966}
+   -> Pressed key 'escape' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. [pid-only target resolved to window 12582915 "xfce4-panel"]
+T14 CALL click {"element_token": "s00000003:4", "pid": 6966}
+   -> Clicked element [4] (pid 6966) with a real pointer click (delivery_mode=foreground, focus_after=elsewhere); not verified — confirm with a screenshot. [window_point=(225, 25) screen_point=(792, 876)]
+T15 CALL list_windows {}
+   -> Found 5 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=41996765 pid=82341 "Application Finder" 580x422+435+281 app=Xfce4-appfinder /   window_id=12582915 pid=6966 "xfce4-panel" 1440x27+0+0 app=Xfce4-panel /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+851 app=Xf
+T16 CALL get_window_state {"pid": 82341, "window_id": 41996765}
+   -> window_id=41996765 pid=82341 elements=156 walk_ms=130 snapshot_id=s00000005 / element_token for row [N] = s00000005:N (row [1] is "s00000005:1") /  / - frame = "Application Finder" /       - [0] text "" [actions=[activate]] (unlabelled text; 1st of 1 text in this window) /         - icon = "go-up-symbolic" /     - [1] split pane "" value="180.0" [actions=[]] /           - [2] table column header "" [actions=[cl
+T17 CALL type_text {"pid": 82341, "element_token": "s00000005:0", "text": "chrome"}
+   -> Typed 6 character(s) into element [0] (via targeted AT-SPI); it reads back 'chrome'.
+T18 CALL get_window_state {"pid": 82341, "window_id": 41996765}
+   -> window_id=41996765 pid=82341 elements=45 walk_ms=44 snapshot_id=s00000006 / element_token for row [N] = s00000006:N (row [1] is "s00000006:1") /  / - frame = "Application Finder" /       - [0] text "chrome" value="chrome" [actions=[activate]] /         - icon = "go-up-symbolic" /     - [1] split pane "" value="180.0" [actions=[]] /           - [2] table column header "" [actions=[click]] /           - [3] table c
+T19 CALL click {"element_token": "s00000003:1", "pid": 6966}
+   -> Clicked element [1] (pid 6966) with a real pointer click (delivery_mode=foreground, focus_after=elsewhere); not verified — confirm with a screenshot. [window_point=(81, 25) screen_point=(648, 876)]
+T20 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=41996765 pid=82341 "Application Finder" 580x422+435+281 app=Xfce4-appfinder /   window_id=35651587 pid=135045 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+5+56 app=Xfce4-terminal /   window_id=125829
+T21 CALL get_window_state {"pid": 135045, "window_id": 35651587}
+   -> window_id=35651587 pid=135045 elements=20 walk_ms=20 snapshot_id=s00000007 / element_token for row [N] = s00000007:N (row [1] is "s00000007:1") /  / - frame = "Terminal - sandbox@instabox-gui-pi2: /data/workspace" /       - [0] menu "File" [actions=[click]] (closed menu, 0 items; click it to open) /       - [1] menu "Edit" [actions=[click]] (closed menu, 0 items; click it to open) /       - [2] menu "View" [a
+T22 CALL type_text {"pid": 135045, "element_token": "s00000007:17", "text": "which google-chrome google-chrome-stable chromium chromium-browser 2>/dev/null; ls /usr/share/applications | grep -i -E 'chrome|chromium'"}
+   -> Typed 137 character(s) (terminal emulator: pty/XTest key events).
+T23 CALL press_key {"key": "enter", "pid": 135045}
+   -> Pressed key 'enter' (delivery_mode=foreground).
+T24 CALL get_window_state {"pid": 135045, "window_id": 35651587}
+   -> window_id=35651587 pid=135045 elements=20 walk_ms=27 snapshot_id=s00000008 / element_token for row [N] = s00000008:N (row [1] is "s00000008:1") /  / - frame = "Terminal - sandbox@instabox-gui-pi2: /data/workspace" /       - [0] menu "File" [actions=[click]] (closed menu, 0 items; click it to open) /       - [1] menu "Edit" [actions=[click]] (closed menu, 0 items; click it to open) /       - [2] menu "View" [a
+T25 CALL click {"element_token": "s00000003:3", "pid": 6966}
+   -> Clicked element [3] (pid 6966) with a real pointer click (delivery_mode=foreground, focus_after=target); closed: popup window 12937313 "xfce4-panel" (229x70 at 534,782). [window_point=(177, 25) screen_point=(744, 876)]
+T26 CALL click {"element_token": "s00000003:3", "pid": 6966}
+   -> Clicked element [3] (pid 6966) with a real pointer click (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. [window_point=(177, 25) screen_point=(744, 876)]
+T27 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=41996765 pid=82341 "Application Finder" 580x422+435+281 app=Xfce4-appfinder /   window_id=35651587 pid=135045 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+5+56 app=Xfce4-terminal /   window_id=125829
+T28 CALL click {"element_token": "s00000003:2", "pid": 6966}
+   -> Clicked element [2] (pid 6966) with a real pointer click (delivery_mode=foreground, focus_after=elsewhere); not verified — confirm with a screenshot. [window_point=(129, 25) screen_point=(696, 876)]
+T29 CALL list_windows {}
+   -> Found 9 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=41996765 pid=82341 "Application Finder" 580x422+435+281 app=Xfce4-appfinder /   window_id=35651587 pid=135045 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+5+56 app=Xfce4-terminal /   window_id=398458
+T30 CALL get_window_state {"pid": 135270, "window_id": 54525959}

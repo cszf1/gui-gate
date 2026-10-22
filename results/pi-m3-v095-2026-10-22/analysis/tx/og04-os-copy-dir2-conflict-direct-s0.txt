@@ -1,0 +1,63 @@
+T1 CALL list_apps {}
+T1 CALL list_windows {}
+   -> ✅ Found 156 app(s): 122 running, 34 installed-not-running. / - systemd (pid 1) / - kthreadd (pid 2) / - pool_workqueue_release (pid 3) / - kworker/R-rcu_gp (pid 4) / - kworker/R-sync_wq (pid 5) / - kworker/R-kvfree_rcu_reclaim (pid 6) / - kworker/R-slub_flushwq (pid 7) / - kworker/R-netns (pid 8) / - kworker/0:0H-events_highpri (pid 10) / - kworker/R-mm_percpu_wq (pid 13) / - ksoftirqd/0 (pid 14) / - rcu_preempt (pid 15)
+   -> Found 5 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=41957591 pid=82341 "Application Finder" 580x422+435+281 app=Xfce4-appfinder /   window_id=33554435 pid=102735 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+5+56 app=Xfce4-terminal /   window_id=12582915 pid=6966 "xfce4-panel" 1440x27+0+0 app=Xfce4-panel /   window_id=12582926 pid=6966 "xfce4-
+T2 CALL get_window_state {"pid": 102735}
+   -> window_id=33554435 pid=102735 elements=20 walk_ms=181 snapshot_id=s00000001 / element_token for row [N] = s00000001:N (row [1] is "s00000001:1") /  / - frame = "Terminal - sandbox@instabox-gui-pi2: /data/workspace" /       - [0] menu "File" [actions=[click]] (closed menu, 0 items; click it to open) /       - [1] menu "Edit" [actions=[click]] (closed menu, 0 items; click it to open) /       - [2] menu "View" [
+T3 CALL type_text {"text": "ls -la", "pid": 102735, "window_id": 33554435}
+   -> Typed 6 character(s) (terminal emulator: pty/XTest key events).
+T4 CALL press_key {"key": "enter", "pid": 102735, "window_id": 33554435}
+   -> Pressed key 'enter' (delivery_mode=foreground).
+T5 CALL get_window_state {"pid": 102735, "since": "latest"}
+   -> window_id=33554435 pid=102735 elements=20 walk_ms=160 snapshot_id=s00000002 /  / no change since s00000001. Rows and indices are as before; use snapshot_id s00000002 in element_tokens (s00000002:N). | Invalidated snapshots s00000001: their element_tokens are stale.
+T6 CALL get_window_state {"pid": 6982}
+   -> window_id=16777260 pid=6982 elements=0 walk_ms=18 snapshot_id=s00000003 / element_token for row [N] = s00000003:N (row [0] is "s00000003:0") /  / - frame = "Desktop" / 
+T7 CALL type_text {"pid": 102735, "text": "zenity --info --title=Listing --text=\"$(ls -la /data/workspace 2>&1)\"", "window_id": 33554435}
+   -> Typed 69 character(s) (terminal emulator: pty/XTest key events).
+T8 CALL press_key {"key": "enter", "pid": 102735, "window_id": 33554435}
+   -> Pressed key 'enter' (delivery_mode=foreground).
+T9 CALL list_windows {}
+   -> Found 5 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=41957591 pid=82341 "Application Finder" 580x422+435+281 app=Xfce4-appfinder /   window_id=33554435 pid=102735 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+5+56 app=Xfce4-terminal /   window_id=12582915 pid=6966 "xfce4-panel" 1440x27+0+0 app=Xfce4-panel /   window_id=12582926 pid=6966 "xfce4-
+T10 CALL type_text {"pid": 102735, "text": "xmessage -title Listing \"$(ls -la /data/workspace 2>&1)\"", "window_id": 33554435}
+   -> Typed 56 character(s) (terminal emulator: pty/XTest key events).
+T11 CALL press_key {"key": "enter", "pid": 102735, "window_id": 33554435}
+   -> Pressed key 'enter' (delivery_mode=foreground).
+T12 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=41957591 pid=82341 "Application Finder" 580x422+435+281 app=Xfce4-appfinder /   window_id=33554435 pid=102735 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+5+56 app=Xfce4-terminal /   window_id=31457316 pid=102861 "Listing" 526x508+909+56 app=Xmessage /   window_id=12582915 pid=6966 "xfce4-pa
+T13 CALL get_window_state {"pid": 102861}
+   -> window_id=31457316 pid=102861 elements=1 walk_ms=471 snapshot_id=s00000004 / element_token for row [N] = s00000004:N (row [0] is "s00000004:0") /  / - [0] window "Listing" [actions=[activate]] / 
+T14 CALL get_window_state {"pid": 82341}
+   -> window_id=41957591 pid=82341 elements=156 walk_ms=651 snapshot_id=s00000005 / element_token for row [N] = s00000005:N (row [1] is "s00000005:1") /  / - frame = "Application Finder" /       - [0] text "" [actions=[activate]] (unlabelled text; 1st of 1 text in this window) /         - icon = "go-up-symbolic" /     - [1] split pane "" value="180.0" [actions=[]] /           - [2] table column header "" [actions=[cl
+T15 CALL type_text {"pid": 102735, "text": "thunar /data/workspace &", "window_id": 33554435}
+   -> Typed 24 character(s) (terminal emulator: pty/XTest key events).
+T16 CALL press_key {"key": "enter", "pid": 102735, "window_id": 33554435}
+   -> Pressed key 'enter' (delivery_mode=foreground).
+T17 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=41957591 pid=82341 "Application Finder" 580x422+435+281 app=Xfce4-appfinder /   window_id=33554435 pid=102735 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+5+56 app=Xfce4-terminal /   window_id=31457316 pid=102861 "Listing" 526x508+909+56 app=Xmessage /   window_id=12582915 pid=6966 "xfce4-pa
+T18 CALL list_windows {"app": "thunar"}
+T18 CALL list_apps {"all": true}
+   -> Found 0 windows:
+   -> ✅ Found 157 app(s): 123 running, 34 installed-not-running. / - systemd (pid 1) / - kthreadd (pid 2) / - pool_workqueue_release (pid 3) / - kworker/R-rcu_gp (pid 4) / - kworker/R-sync_wq (pid 5) / - kworker/R-kvfree_rcu_reclaim (pid 6) / - kworker/R-slub_flushwq (pid 7) / - kworker/R-netns (pid 8) / - kworker/0:0H-events_highpri (pid 10) / - kworker/R-mm_percpu_wq (pid 13) / - ksoftirqd/0 (pid 14) / - rcu_preempt (pid 15)
+T19 CALL press_key {"key": "enter", "pid": 102861, "window_id": 31457316}
+   -> Pressed key 'enter' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T20 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=41957591 pid=82341 "Application Finder" 580x422+435+281 app=Xfce4-appfinder /   window_id=33554435 pid=102735 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+5+56 app=Xfce4-terminal /   window_id=31457316 pid=102861 "Listing" 526x508+909+56 app=Xmessage /   window_id=12582915 pid=6966 "xfce4-pa
+T21 CALL click {"pid": 102861, "window_id": 31457316, "x": 470, "y": 480}
+   -> Clicked at (470.0, 480.0) × 1 (delivery_mode=foreground, path=x11_xtest_fg); not verified — confirm with a screenshot. [window_point=(470, 480) screen_point=(1379, 536)]
+T22 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=41957591 pid=82341 "Application Finder" 580x422+435+281 app=Xfce4-appfinder /   window_id=33554435 pid=102735 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+5+56 app=Xfce4-terminal /   window_id=31457316 pid=102861 "Listing" 526x508+909+56 app=Xmessage /   window_id=12582915 pid=6966 "xfce4-pa
+T23 CALL click {"element_token": "s00000002:7", "pid": 102735}
+   -> Clicked element [7] (pid 102735) through its AT-SPI action "click" with the window activated (delivery_mode=foreground, path=ax_fg, focus_after=same_pid): the element had no usable on-screen bounds (the button is not showing (its menu or page is closed)), so no pointer was moved. appeared: window 33554670 "Terminal - sandbox@instabox-gui-pi2: /data/workspace".
+T24 CALL list_windows {}
+   -> Found 8 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=41957591 pid=82341 "Application Finder" 580x422+435+281 app=Xfce4-appfinder /   window_id=31457316 pid=102861 "Listing" 526x508+909+56 app=Xmessage /   window_id=33554435 pid=102735 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+5+56 app=Xfce4-terminal /   window_id=33554670 pid=102735 "Termin
+T25 CALL get_window_state {"pid": 102735, "window_id": 33554670}
+   -> window_id=33554670 pid=102735 elements=20 walk_ms=126 snapshot_id=s00000006 / element_token for row [N] = s00000006:N (row [1] is "s00000006:1") /  / - frame = "Terminal - sandbox@instabox-gui-pi2: /data/workspace" /       - [0] menu "File" [actions=[click]] (closed menu, 0 items; click it to open) /       - [1] menu "Edit" [actions=[click]] (closed menu, 0 items; click it to open) /       - [2] menu "View" [
+T26 CALL type_text {"pid": 102735, "text": "python3 -c \"import subprocess;cs=['ls -la /data/workspace','ls -la /home/user','ls -la /home/user/Desktop','ls -la /root','find / -maxdepth 5 \\( -name file1 -o -name dir1 -o -name dir2 -o -name dir3 \\) 2>/dev/null'];f=open('/tmp/listing.txt','w');[f.write('$ '+c+chr(10)+s
+   -> Typed 435 character(s) (terminal emulator: pty/XTest key events).
+T27 CALL press_key {"key": "enter", "pid": 102735, "window_id": 33554670}
+   -> Pressed key 'enter' (delivery_mode=foreground).
+T28 CALL type_text {"pid": 102735, "text": "mousepad /tmp/listing.txt &", "window_id": 33554670}
+   -> Typed 27 character(s) (terminal emulator: pty/XTest key events).
+T29 CALL press_key {"key": "enter", "pid": 102735, "window_id": 33554670}
+   -> Pressed key 'enter' (delivery_mode=foreground).
+T30 CALL list_windows {}

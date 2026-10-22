@@ -1,0 +1,64 @@
+T1 CALL list_apps {}
+T1 CALL list_windows {}
+   -> ✅ Found 154 app(s): 119 running, 35 installed-not-running. / - systemd (pid 1) / - kthreadd (pid 2) / - pool_workqueue_release (pid 3) / - kworker/R-rcu_gp (pid 4) / - kworker/R-sync_wq (pid 5) / - kworker/R-kvfree_rcu_reclaim (pid 6) / - kworker/R-slub_flushwq (pid 7) / - kworker/R-netns (pid 8) / - kworker/0:0H-events_highpri (pid 10) / - kworker/R-mm_percpu_wq (pid 13) / - ksoftirqd/0 (pid 14) / - rcu_preempt (pid 15)
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=29360245 pid=133904 "Names_Duplicate_Unique.xlsx — LibreOffice Calc" 1440x849+0+51 app=libreoffice-calc /   window_id=12582915 pid=6966 "xfce4-panel" 1440x27+0+0 app=Xfce4-panel /   window_id=12582926 pid=6966 "xfce4-
+T2 CALL get_window_state {"pid": 133904}
+   -> window_id=29360245 pid=133904 elements=117 walk_ms=131 snapshot_id=s00000001 / element_token for row [N] = s00000001:N (row [1] is "s00000001:1"); this read stops at row [116], so rows past it from a larger read are not in s00000001 / ⚠️ PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 336 node(s) (0 discovered but not visited)
+T3 SAY The spreadsheet cell grid isn't expanded in the accessibility tree. Let me try a deeper read to see the cell contents.
+T3 CALL get_window_state {"pid": 133904, "max_elements": 5000, "tree_format": "elements", "query": "Sheet"}
+   -> window_id=29360245 pid=133904 elements=117 walk_ms=144 snapshot_id=s00000002 / ⚠️ PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 336 node(s) (0 discovered but not visited). Every element listed is real; elements after the cut are missing. If the element you need is absent, retry with a larger timeout_ms (e.g. 5000) or narro
+T4 CALL press_key {"pid": 133904, "key": "escape"}
+   -> Pressed key 'escape' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T5 CALL get_window_state {"pid": 133904, "query": "value", "tree_format": "markdown"}
+   -> window_id=29360245 pid=133904 elements=117 walk_ms=169 snapshot_id=s00000003 / element_token for row [N] = s00000003:N (row [12] is "s00000003:12"); this read stops at row [116], so rows past it from a larger read are not in s00000003 / ⚠️ PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 336 node(s) (0 discovered but not visite
+T6 CALL click {"pid": 133904, "window_id": 29360245, "x": 150, "y": 250}
+   -> Clicked at (154.7, 257.9) × 1 (delivery_mode=foreground, path=x11_xtest_fg); not verified — confirm with a screenshot. [window_point=(154, 257) screen_point=(155, 309)]
+T7 CALL press_key {"key": "home", "modifiers": ["ctrl"], "pid": 133904}
+   -> Pressed key 'home' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T8 CALL get_window_state {"pid": 133904, "query": "value", "tree_format": "markdown"}
+   -> window_id=29360245 pid=133904 elements=117 walk_ms=119 snapshot_id=s00000004 / element_token for row [N] = s00000004:N (row [12] is "s00000004:12"); this read stops at row [116], so rows past it from a larger read are not in s00000004 / ⚠️ PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 336 node(s) (0 discovered but not visite
+T9 CALL get_window_state {"max_elements": 20000, "pid": 133904, "tree_format": "elements", "query": "table cell"}
+   -> window_id=29360245 pid=133904 elements=117 walk_ms=203 / ⚠️ PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 336 node(s) (0 discovered but not visited). Every element listed is real; elements after the cut are missing. If the element you need is absent, retry with a larger timeout_ms (e.g. 5000) or narrow with query / max_dep
+T10 CALL list_windows {"app": "instabox"}
+T10 CALL list_apps {"all": true}
+   -> Found 0 windows:
+   -> ✅ Found 154 app(s): 119 running, 35 installed-not-running. / - systemd (pid 1) / - kthreadd (pid 2) / - pool_workqueue_release (pid 3) / - kworker/R-rcu_gp (pid 4) / - kworker/R-sync_wq (pid 5) / - kworker/R-kvfree_rcu_reclaim (pid 6) / - kworker/R-slub_flushwq (pid 7) / - kworker/R-netns (pid 8) / - kworker/0:0H-events_highpri (pid 10) / - kworker/R-mm_percpu_wq (pid 13) / - ksoftirqd/0 (pid 14) / - rcu_preempt (pid 15)
+T11 CALL get_window_state {"pid": 133904, "tree_format": "markdown"}
+   -> window_id=29360245 pid=133904 elements=117 walk_ms=191 snapshot_id=s00000006 / element_token for row [N] = s00000006:N (row [1] is "s00000006:1"); this read stops at row [116], so rows past it from a larger read are not in s00000006 / ⚠️ PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 336 node(s) (0 discovered but not visited)
+T12 CALL click {"element_token": "s00000006:50"}
+   -> ERR click: element [50] (pid 133904) has a snapshot frame at (85, 173), but that screen point is owned by panel "Font Name" rather than the observed element; a real pointer click there would hit the wrong control. Re-snapshot with get_window_state, or click by pixel from a screenshot.
+T13 CALL get_window_state {"pid": 133904, "query": "A1", "tree_format": "markdown", "max_elements": 5000}
+   -> window_id=29360245 pid=133904 elements=117 walk_ms=195 / ⚠️ PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 336 node(s) (0 discovered but not visited). Every element listed is real; elements after the cut are missing. If the element you need is absent, retry with a larger timeout_ms (e.g. 5000) or narrow with query / max_dep
+T14 CALL launch_app {"launch_path": "xfce4-terminal"}
+   -> ERR Tool mcp__gui__launch_app not found
+T15 CALL press_key {"key": "f2", "modifiers": ["alt"], "pid": 6982, "window_id": 16777260}
+   -> Pressed key 'f2' as a real key event (delivery_mode=foreground, focus_after=elsewhere); not verified — confirm with a screenshot.
+T16 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=29360245 pid=133904 "Names_Duplicate_Unique.xlsx — LibreOffice Calc" 1440x849+0+51 app=libreoffice-calc /   window_id=41995702 pid=82341 "Application Finder" 580x100+435+442 app=Xfce4-appfinder /   window_id=12582915 
+T17 CALL get_window_state {"pid": 82341}
+   -> window_id=41995702 pid=82341 elements=155 walk_ms=172 snapshot_id=s00000008 / element_token for row [N] = s00000008:N (row [1] is "s00000008:1") /  / - frame = "Application Finder" /       - [0] text "" [actions=[activate]] (unlabelled text; 1st of 1 text in this window) /         - icon = "go-down-symbolic" /           - [1] table column header "" [actions=[click]] /           - [2] table cell "" [actions=[exp
+T18 CALL type_text {"element_token": "s00000008:0", "pid": 82341, "text": "xfce4-terminal"}
+   -> Typed 14 character(s) into element [0] (via targeted AT-SPI); it reads back 'xfce4-terminal'.
+T19 CALL press_key {"key": "enter", "pid": 82341, "window_id": 41995702}
+   -> Pressed key 'enter' as a real key event (delivery_mode=foreground, focus_after=elsewhere); not verified — confirm with a screenshot.
+T20 CALL list_windows {}
+   -> Found 7 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=29360245 pid=133904 "Names_Duplicate_Unique.xlsx — LibreOffice Calc" 1440x849+0+51 app=libreoffice-calc /   window_id=35651587 pid=134089 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+5+56 app=Xfce4
+T21 CALL get_window_state {"pid": 134089, "query": "terminal"}
+   -> window_id=35651587 pid=134089 elements=20 walk_ms=33 snapshot_id=s00000009 / element_token for row [N] = s00000009:N (row [3] is "s00000009:3") /  / - frame = "Terminal - sandbox@instabox-gui-pi2: /data/workspace" /       - [3] menu "Terminal" [actions=[click]] (closed menu, 0 items; click it to open) /       - [5] menu "Help" [actions=[click]] (closed menu, 0 items; click it to open) /         - [7] button "
+T22 CALL type_text {"element_token": "s00000009:17", "pid": 134089, "text": "unzip -l /home/user/Names_Duplicate_Unique.xlsx\n"}
+   -> Typed 48 character(s) (terminal emulator: pty/XTest key events).
+T23 CALL press_key {"key": "enter", "pid": 134089, "window_id": 35651587}
+   -> Pressed key 'enter' (delivery_mode=foreground).
+T24 CALL get_window_state {"pid": 134089, "query": "unzip", "tree_format": "markdown"}
+   -> window_id=35651587 pid=134089 elements=20 walk_ms=21 /  /  | Invalidated snapshots s00000009: their element_tokens are stale.
+T25 CALL get_window_state {"pid": 134089, "tree_format": "markdown"}
+   -> window_id=35651587 pid=134089 elements=20 walk_ms=33 snapshot_id=s0000000b / element_token for row [N] = s0000000b:N (row [1] is "s0000000b:1") /  / - frame = "Terminal - sandbox@instabox-gui-pi2: /data/workspace" /       - [0] menu "File" [actions=[click]] (closed menu, 0 items; click it to open) /       - [1] menu "Edit" [actions=[click]] (closed menu, 0 items; click it to open) /       - [2] menu "View" [a
+T26 CALL type_text {"element_token": "s0000000b:17", "pid": 134089, "text": "echo hello123 testread\n"}
+   -> Typed 23 character(s) (terminal emulator: pty/XTest key events).
+T27 CALL press_key {"key": "enter", "pid": 134089, "window_id": 35651587}
+   -> Pressed key 'enter' (delivery_mode=foreground).
+T28 CALL get_window_state {"pid": 134089, "prefix": "hello123"}
+   -> ERR Validation failed for tool "mcp__gui__get_window_state": /   - prefix: schema is false /   - root: must not have additional properties /  / Received arguments: / { /   "pid": 134089, /   "prefix": "hello123" / }
+T29 CALL get_window_state {"pid": 134089, "query": "hello123"}
+   -> window_id=35651587 pid=134089 elements=20 walk_ms=41 /  /  | Invalidated snapshots s0000000b: their element_tokens are stale.
+T30 CALL type_text {"element_token": "s0000000b:17", "pid": 134089, "text": "echo hello_writer_test > /home/user/testme.txt\n"}

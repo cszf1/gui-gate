@@ -1,0 +1,67 @@
+T1 CALL list_apps {}
+   -> ✅ Found 166 app(s): 131 running, 35 installed-not-running. / - systemd (pid 1) / - kthreadd (pid 2) / - pool_workqueue_release (pid 3) / - kworker/R-rcu_gp (pid 4) / - kworker/R-sync_wq (pid 5) / - kworker/R-kvfree_rcu_reclaim (pid 6) / - kworker/R-slub_flushwq (pid 7) / - kworker/R-netns (pid 8) / - kworker/0:0H-events_highpri (pid 10) / - kworker/R-mm_percpu_wq (pid 13) / - ksoftirqd/0 (pid 14) / - rcu_preempt (pid 15)
+T2 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=14680067 pid=121014 "DuckDuckGo Private Search Engine - Chromium" 1050x853+10+37 app=Chromium-browser /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+969 app=Xfce4-panel /   window_id=12582915 pid=6966 "xfce4
+T3 CALL list_windows {"app": "instabox"}
+T3 CALL list_windows {"pid": 7657}
+   -> Found 0 windows:
+   -> Found 0 windows:
+T4 CALL get_window_state {"pid": 7657, "include_accessibility_tree": true, "include_screenshot": true}
+   -> ERR No windows found for pid 7657. Provide window_id.
+T5 CALL get_window_state {"pid": 6982, "window_id": 16777260, "include_accessibility_tree": true, "include_screenshot": true}
+   -> window_id=16777260 pid=6982 elements=0 walk_ms=4 snapshot_id=s00000001 / element_token for row [N] = s00000001:N (row [0] is "s00000001:0") /  / - frame = "Desktop" / 
+T6 CALL list_windows {"pid": 6992}
+T6 CALL list_windows {"pid": 6997}
+T6 CALL list_windows {"pid": 7671}
+T6 CALL list_windows {"pid": 7882}
+   -> Found 0 windows:
+   -> Found 0 windows:
+   -> Found 0 windows:
+   -> Found 0 windows:
+T7 CALL get_window_state {"pid": 121014, "window_id": 14680067, "include_accessibility_tree": true, "include_screenshot": false}
+   -> window_id=14680067 pid=121014 elements=119 walk_ms=321 snapshot_id=s00000002 / element_token for row [N] = s00000002:N (row [1] is "s00000002:1") /  / - [0] frame "DuckDuckGo Private Search Engine - Chromium" [actions=[doDefault,showContextMenu]] /   - [1] panel "￼￼" [actions=[doDefault,showContextMenu]] /     - [2] panel "￼￼￼￼￼" [actions=[doDefault,showContextMenu]] /       - [3] button "Minimize" [actions=[
+T8 CALL get_window_state {"pid": 6966, "window_id": 12582915, "include_accessibility_tree": true, "include_screenshot": false}
+   -> window_id=12582915 pid=6966 elements=4 walk_ms=76 snapshot_id=s00000003 / element_token for row [N] = s00000003:N (row [1] is "s00000003:1") /  /       - [0] toggle button "Applications" [actions=[click]] /           - [1] toggle button "DuckDuckGo Private Search Engine - Chromium" [actions=[click]] /       - [2] toggle button "2026-10-22" [actions=[click]] /                 - [3] toggle button "sandbox" [act
+T9 CALL get_window_state {"pid": 6966, "window_id": 12582926, "include_accessibility_tree": true, "include_screenshot": false}
+   -> window_id=12582926 pid=6966 elements=6 walk_ms=107 snapshot_id=s00000004 / element_token for row [N] = s00000004:N (row [1] is "s00000004:1") /  /       - [0] toggle button "Show Desktop" (description "Minimize all open windows and show the desktop") [actions=[click]] /         - [1] button "Terminal Emulator" (description "Use the command line") [actions=[click]] /         - [2] button "File Manager" (desc
+T10 CALL click {"element_token": "s00000004:1", "pid": 6966, "window_id": 12582926}
+   -> Clicked element [1] (pid 6966).
+T11 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=14680067 pid=121014 "DuckDuckGo Private Search Engine - Chromium" 1050x853+10+37 app=Chromium-browser /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+969 app=Xfce4-panel /   window_id=12582915 pid=6966 "xfce4
+T12 CALL list_apps {}
+   -> ✅ Found 166 app(s): 131 running, 35 installed-not-running. / - systemd (pid 1) / - kthreadd (pid 2) / - pool_workqueue_release (pid 3) / - kworker/R-rcu_gp (pid 4) / - kworker/R-sync_wq (pid 5) / - kworker/R-kvfree_rcu_reclaim (pid 6) / - kworker/R-slub_flushwq (pid 7) / - kworker/R-netns (pid 8) / - kworker/0:0H-events_highpri (pid 10) / - kworker/R-mm_percpu_wq (pid 13) / - ksoftirqd/0 (pid 14) / - rcu_preempt (pid 15)
+T13 CALL list_windows {"on_screen_only": true}
+   -> Found 5 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=14680067 pid=121014 "DuckDuckGo Private Search Engine - Chromium" 1050x853+10+37 app=Chromium-browser /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+969 app=Xfce4-panel /   window_id=12582915 pid=6966 "xfce4-panel" 1440x27+0+0 app=Xfce4-panel /   window_id=12583286 pid=6966 "xfce4-panel" 306x3+567+8
+T14 CALL click {"element_token": "s00000003:0", "pid": 6966, "window_id": 12582915}
+   -> Clicked element [0] (pid 6966).
+T15 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=14680067 pid=121014 "DuckDuckGo Private Search Engine - Chromium" 1050x853+10+37 app=Chromium-browser /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+969 app=Xfce4-panel /   window_id=12582915 pid=6966 "xfce4
+T16 CALL get_window_state {"pid": 6966, "window_id": 12582915, "include_accessibility_tree": true, "include_screenshot": false}
+   -> window_id=12582915 pid=6966 elements=4 walk_ms=43 snapshot_id=s00000005 / element_token for row [N] = s00000005:N (row [1] is "s00000005:1") /  /       - [0] toggle button "Applications" [actions=[click]] /           - [1] toggle button "DuckDuckGo Private Search Engine - Chromium" [actions=[click]] /       - [2] toggle button "2026-10-22" [actions=[click]] /                 - [3] toggle button "sandbox" [act
+T17 CALL click {"element_token": "s00000001:0", "pid": 6982, "window_id": 16777260}
+   -> ERR element_token s00000001:0 is out of range: snapshot s00000001 has no rows (0 element(s)). Row numbers belong to one read: a read with a smaller max_elements, max_depth or another query can stop before row [0]. Use a row printed in s00000001, or re-read with a larger max_elements (or a query that matches the target) and use that read's rows.
+T18 CALL click {"x": 720, "y": 450, "window_id": 16777260, "pid": 6982}
+   -> Clicked at (764.6, 477.9) × 1 (delivery_mode=foreground, path=x11_xtest_fg); not verified — confirm with a screenshot. [window_point=(764, 477) screen_point=(765, 478)]
+T19 CALL press_key {"pid": 6982, "window_id": 16777260, "key": "f2", "modifiers": ["alt"]}
+   -> Pressed key 'f2' as a real key event (delivery_mode=foreground, focus_after=elsewhere); not verified — confirm with a screenshot.
+T20 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=14680067 pid=121014 "DuckDuckGo Private Search Engine - Chromium" 1050x853+10+37 app=Chromium-browser /   window_id=41990614 pid=82341 "Application Finder" 580x100+435+442 app=Xfce4-appfinder /   window_id=12582926 pi
+T21 CALL get_window_state {"pid": 82341, "window_id": 41990614, "include_accessibility_tree": true, "include_screenshot": false}
+   -> window_id=41990614 pid=82341 elements=155 walk_ms=183 snapshot_id=s00000006 / element_token for row [N] = s00000006:N (row [1] is "s00000006:1") /  / - frame = "Application Finder" /       - [0] text "" [actions=[activate]] (unlabelled text; 1st of 1 text in this window) /         - icon = "go-down-symbolic" /           - [1] table column header "" [actions=[click]] /           - [2] table cell "" [actions=[exp
+T22 CALL click {"element_token": "s00000006:148", "pid": 82341, "window_id": 41990614}
+   -> Clicked element [148] (pid 82341) through its AT-SPI action "activate" with the window activated (delivery_mode=foreground, path=ax_fg, focus_after=target): the element had no usable on-screen bounds (the table cell is not showing (its menu or page is closed)), so no pointer was moved. Not verified — confirm with a screenshot.
+T23 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=14680067 pid=121014 "DuckDuckGo Private Search Engine - Chromium" 1050x853+10+37 app=Chromium-browser /   window_id=41990614 pid=82341 "Application Finder" 580x100+435+442 app=Xfce4-appfinder /   window_id=12582926 pi
+T24 CALL get_window_state {"pid": 82341, "window_id": 41990614, "include_accessibility_tree": true, "include_screenshot": false}
+   -> window_id=41990614 pid=82341 elements=155 walk_ms=232 snapshot_id=s00000007 / element_token for row [N] = s00000007:N (row [1] is "s00000007:1") /  / - frame = "Application Finder" /       - [0] text "" [actions=[activate]] (unlabelled text; 1st of 1 text in this window) /         - icon = "go-down-symbolic" /           - [1] table column header "" [actions=[click]] /           - [2] table cell "" [actions=[exp
+T25 CALL click {"x": 290, "y": 50, "window_id": 41990614, "pid": 82341}
+   -> ERR No screenshot frame for window 41990614: its latest read had no screenshot and the window changed size since the last one (or it was never captured). Call get_window_state(pid:82341, window_id:41990614) with the default screenshot and take x,y from that image. | [gate] Here is a fresh screenshot of the window; re-aim your x/y on it and retry. | [gate] Window right after the action (snapshot s00000
+T26 CALL type_text {"pid": 82341, "window_id": 41990614, "text": "terminal"}
+   -> Typed 8 character(s) as real key events (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T27 CALL get_window_state {"pid": 82341, "window_id": 41990614, "include_accessibility_tree": true, "include_screenshot": false}
+   -> window_id=41990614 pid=82341 elements=156 walk_ms=167 snapshot_id=s00000009 / element_token for row [N] = s00000009:N (row [1] is "s00000009:1") /  / - frame = "Application Finder" /       - [0] text "terminal" value="terminal" [actions=[activate]] /         - icon = "go-down-symbolic" /           - [1] table column header "" [actions=[click]] /           - [2] table cell "" [actions=[expand or contract,edit,ac
+T28 CALL get_window_state {"pid": 82341, "window_id": 41990630, "include_accessibility_tree": true, "include_screenshot": false}
+   -> window_id=41990630 pid=82341 elements=4 walk_ms=157 snapshot_id=s0000000a / element_token for row [N] = s0000000a:N (row [1] is "s0000000a:1") /  /           - [0] table cell "xfce4-terminal" [actions=[expand or contract,edit,activate]] /           - [1] table cell "xfce4-terminal --preferences" [actions=[expand or contract,edit,activate]] /         - [2] scroll bar "" value="0.0" [actions=[]] (unlabelled s
+T29 CALL click {"element_token": "s0000000a:0", "pid": 82341, "window_id": 41990630}
+   -> ERR foreground_unavailable: window 0x280b9e6 did not become the active, focused window within 800ms (active=0x280b9d6, focus_within_target=false, input focus: 0x600032 (Xfwm4, pid 6956 xfwm4)); no input was sent. The window may be minimized, on another workspace, or blocked by a modal dialog — bring_to_front it or target that dialog instead
+T30 CALL press_key {"key": "a", "modifiers": ["ctrl"], "pid": 82341, "window_id": 41990614}

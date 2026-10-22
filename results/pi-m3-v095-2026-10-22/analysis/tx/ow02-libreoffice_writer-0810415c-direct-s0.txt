@@ -1,0 +1,61 @@
+T1 CALL list_windows {}
+T1 CALL list_apps {}
+   -> Found 5 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=29360245 pid=90981 "Novels_Intro_Packet.docx — LibreOffice Writer" 1440x849+0+51 app=libreoffice-writer /   window_id=12582915 pid=6966 "xfce4-panel" 1440x27+0+0 app=Xfce4-panel /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+969 app=Xfce4-panel /   window_id=12583286 pid=6966 "xfce4-panel" 306x3+567
+   -> ✅ Found 157 app(s): 121 running, 36 installed-not-running. / - systemd (pid 1) / - kthreadd (pid 2) / - pool_workqueue_release (pid 3) / - kworker/R-rcu_gp (pid 4) / - kworker/R-sync_wq (pid 5) / - kworker/R-kvfree_rcu_reclaim (pid 6) / - kworker/R-slub_flushwq (pid 7) / - kworker/R-netns (pid 8) / - kworker/0:0H-events_highpri (pid 10) / - kworker/R-mm_percpu_wq (pid 13) / - ksoftirqd/0 (pid 14) / - rcu_preempt (pid 15)
+T2 CALL get_window_state {"pid": 90981}
+   -> window_id=29360245 pid=90981 elements=131 walk_ms=331 snapshot_id=s00000001 / element_token for row [N] = s00000001:N (row [1] is "s00000001:1") /  / - frame = "Novels_Intro_Packet.docx — LibreOffice Writer" /       - [0] button "" (description "Close Document") [actions=[click]] /             - [1] menu "File" [actions=[click]] (closed menu, 31 items; click it to open) /             - [2] menu "Edit" [action
+T3 CALL click {"pid": 90981, "window_id": 29360245, "x": 300, "y": 350}
+   -> Clicked at (309.5, 361.0) × 1 (delivery_mode=foreground, path=x11_xtest_fg); not verified — confirm with a screenshot. [window_point=(309, 361) screen_point=(309, 412)]
+T4 CALL press_key {"pid": 90981, "key": "home", "modifiers": ["ctrl"]}
+   -> Pressed key 'home' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T5 CALL press_key {"key": "down", "modifiers": ["ctrl", "shift"], "pid": 90981}
+   -> Pressed key 'down' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T6 CALL press_key {"key": "down", "modifiers": ["ctrl", "shift"], "pid": 90981}
+   -> Pressed key 'down' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T7 CALL press_key {"key": "down", "modifiers": ["ctrl", "shift"], "pid": 90981}
+   -> Pressed key 'down' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T8 CALL click {"element_token": "s00000001:129", "pid": 90981}
+   -> Clicked element [129] (pid 90981) with a real pointer click (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. [window_point=(1329, 59) screen_point=(1329, 110)]
+T9 CALL get_window_state {"pid": 90981}
+   -> window_id=29360245 pid=90981 elements=133 walk_ms=361 snapshot_id=s00000002 / element_token for row [N] = s00000002:N (row [1] is "s00000002:1") /  / - frame = "Novels_Intro_Packet.docx — LibreOffice Writer" /       - [0] button "" (description "Close Document") [actions=[click]] /             - [1] menu "File" [actions=[click]] (closed menu, 31 items; click it to open) /             - [2] menu "Edit" [action
+T10 CALL click {"element_token": "s00000002:131", "pid": 90981}
+   -> Clicked element [131] (pid 90981) with a real pointer click (delivery_mode=foreground, focus_after=target); appeared: popup window 29373186 "LibreOffice 25.2" (174x295 at 1177,151). [window_point=(1329, 84) screen_point=(1329, 135)]
+T11 CALL get_window_state {"pid": 90981, "window_id": 29373186}
+   -> window_id=29373186 pid=90981 elements=5 walk_ms=1260 snapshot_id=s00000003 / element_token for row [N] = s00000003:N (row [1] is "s00000003:1") /  /                     - panel = "Custom Value" /                           - [0] combo box "Line Spacing:" [actions=[click]] /                         - label = "Value:" /                         - label = "Line Spacing:" /                       - label = "Custom Val
+T12 CALL click {"element_token": "s00000003:1", "pid": 90981}
+   -> ERR click: element [1] (pid 90981) has a snapshot frame at (1264, 275), but that screen point is owned by panel (unnamed) rather than the observed element; a real pointer click there would hit the wrong control. Re-snapshot with get_window_state, or click by pixel from a screenshot.
+T13 CALL get_window_state {"pid": 90981, "fresh": true, "window_id": 29373186}
+   -> window_id=29373186 pid=90981 elements=5 walk_ms=1007 snapshot_id=s00000004 / element_token for row [N] = s00000004:N (row [1] is "s00000004:1"); this read stops at row [4], so rows past it from a larger read are not in s00000004 / ⚠️ PARTIAL TREE: the 1000 ms timeout_ms budget ran out after 307 node(s) (25 discovered but not visited). Every element listed is real; elements after the cut are missing. I
+T14 CALL get_window_state {"fresh": true, "pid": 90981, "tree_format": "elements", "window_id": 29373186}
+   -> window_id=29373186 pid=90981 elements=5 walk_ms=433 snapshot_id=s00000005 /  / (tree is in structuredContent.elements; pass tree_format "markdown" for the compact text rendering) | Invalidated snapshots s00000004: their element_tokens are stale.
+T15 CALL click {"coordinate_frame": "desktop", "pid": 90981, "x": 1264, "y": 275}
+   -> Clicked at (1264.0, 224.0) × 1 (delivery_mode=foreground, path=x11_xtest_fg); not verified — confirm with a screenshot. [window_point=(1264, 224) screen_point=(1264, 275)]
+T16 CALL get_window_state {"pid": 90981, "query": "Spacing"}
+   -> window_id=29360245 pid=90981 elements=133 walk_ms=548 snapshot_id=s00000006 / element_token for row [N] = s00000006:N (row [13] is "s00000006:13") /  / - frame = "Novels_Intro_Packet.docx — LibreOffice Writer" /       - root pane = "Novels_Intro_Packet.docx — LibreOffice Writer" /         - [13] scroll bar "" value="0.0" [actions=[]] (unlabelled scroll bar; 2nd of 7 scroll bars in this window) /           - t
+T17 CALL list_windows {}
+   -> Found 5 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=29360245 pid=90981 "Novels_Intro_Packet.docx — LibreOffice Writer" 1440x849+0+51 app=libreoffice-writer /   window_id=12582915 pid=6966 "xfce4-panel" 1440x27+0+0 app=Xfce4-panel /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+969 app=Xfce4-panel /   window_id=12583286 pid=6966 "xfce4-panel" 306x3+567
+T18 CALL get_window_state {"pid": 90981, "query": "Selected"}
+   -> window_id=29360245 pid=90981 elements=133 walk_ms=301 snapshot_id=s00000007 / element_token for row [N] = s00000007:N (row [13] is "s00000007:13") /  / - frame = "Novels_Intro_Packet.docx — LibreOffice Writer" /       - root pane = "Novels_Intro_Packet.docx — LibreOffice Writer" /         - [13] scroll bar "" value="0.0" [actions=[]] (unlabelled scroll bar; 2nd of 7 scroll bars in this window) /           - l
+T19 CALL click {"element_token": "s00000007:18", "pid": 90981}
+   -> Clicked element [18] (pid 90981) with a real pointer click (delivery_mode=foreground, focus_after=same_pid); appeared: window 29374522 "Print". [window_point=(194, 35) screen_point=(194, 86)]
+T20 CALL get_window_state {"pid": 90981, "query": "Paragraph"}
+   -> window_id=29374522 pid=90981 elements=36 walk_ms=569 snapshot_id=s00000008 / element_token for row [N] = s00000008:N (row [25] is "s00000008:25") /  / - dialog = "Print" /         - [25] page tab "LibreOffice Writer" [actions=[]] /             - [24] scroll bar "" value="0.0" [actions=[]] (unlabelled scroll bar; 2nd of 2 scroll bars in this window) /               - panel = "Pages:" /                 - [32] che
+T21 CALL press_key {"key": "escape", "pid": 90981, "window_id": 29374522}
+   -> Pressed key 'escape' as a real key event (delivery_mode=foreground, focus_after=same_pid); not verified — confirm with a screenshot.
+T22 CALL get_window_state {"pid": 90981, "query": "Format"}
+   -> window_id=29394954 pid=90981 elements=133 walk_ms=291 snapshot_id=s00000009 / element_token for row [N] = s00000009:N (row [5] is "s00000009:5") /  / - frame = "Novels_Intro_Packet.docx — LibreOffice Writer" /       - [0] button "" (description "Close Document") [actions=[click]] /             - [5] menu "Format" [actions=[click]] (closed menu, 32 items; click it to open) /       - root pane = "Novels_Intro_P
+T23 CALL click {"element_token": "s00000009:5", "pid": 90981}
+   -> ERR foreground_unavailable: window 0x1c0880a did not become the active, focused window within 800ms (active=0x0, focus_within_target=true, input focus: 0x1c0880a (Soffice, pid 90981 soffice.bin)); no input was sent. No window is active at all: the window manager has not set _NET_ACTIVE_WINDOW (it may be restarting, or showing a modal surface of its own that no window list includes)
+T24 CALL list_windows {}
+   -> Found 5 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=29360245 pid=90981 "Novels_Intro_Packet.docx — LibreOffice Writer" 1440x849+0+51 app=libreoffice-writer /   window_id=12582915 pid=6966 "xfce4-panel" 1440x27+0+0 app=Xfce4-panel /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+969 app=Xfce4-panel /   window_id=12583286 pid=6966 "xfce4-panel" 306x3+567
+T25 CALL get_window_state {"pid": 90981}
+   -> window_id=29394954 pid=90981 elements=133 walk_ms=1021 snapshot_id=s0000000a / element_token for row [N] = s0000000a:N (row [1] is "s0000000a:1") /  / - frame = "Novels_Intro_Packet.docx — LibreOffice Writer" /       - [0] button "" (description "Close Document") [actions=[click]] /             - [1] menu "File" [actions=[click]] (closed menu, 31 items; click it to open) /             - [2] menu "Edit" [actio
+T26 CALL run_actions {"pid": 90981, "steps": [{"find": {"label": "Format", "role": "menu"}, "as": "rows", "max": 3}, {"for_each": "rows", "do": [{"tool": "click", "args": {"target": "$item"}}]}]}
+   -> [gate] run_actions: 2 GUI action(s) ran. All done. / find -> rows: 2 match(es) (Format, Format) / 1. click: ok - Clicked element [5] (pid 90981) with a real pointer click (delivery_mode=foreground, focus_after=target); appeared: popup window 29403981 "LibreOffice 25.2" (311x692 at 175,71); closed: popup window 2 / 2. click: ok - Clicked element [18] (pid 90981) with a real pointer click (delivery_mode=f
+T27 CALL click {"element_token": "s0000000c:30", "pid": 90981}
+   -> Clicked element [30] (pid 90981) through its AT-SPI action "click" with the window activated (delivery_mode=foreground, path=ax_fg, focus_after=target): the element had no usable on-screen bounds (the check menu item is not showing (its menu or page is closed)), so no pointer was moved. closed: popup window 29403981 "LibreOffice 25.2" (311x692 at 175,71), popup window 29412686 "LibreOffice 25.2" (
+T28 CALL run_actions {"pid": 90981, "steps": [{"find": {"label": "Format", "role": "menu"}, "as": "rows", "max": 2}, {"tool": "click", "args": {"target": "$item"}}]}
+   -> ERR [gate] run_actions: 0 GUI action(s) ran. STOPPED: step 1: target needs {"label": ..., "role": optional}. Steps after it did NOT run. / find -> rows: 2 match(es) (Format, Format)
+T29 CALL run_actions {"pid": 90981, "steps": [{"find": {"label": "Format", "role": "menu"}, "as": "rows", "max": 2}, {"for_each": "rows", "do": [{"tool": "click", "args": {"target": "$item"}}]}]}
+   -> [gate] run_actions: 2 GUI action(s) ran. All done. / find -> rows: 2 match(es) (Format, Format) / 1. click: ok - Clicked element [5] (pid 90981) with a real pointer click (delivery_mode=foreground, focus_after=target); appeared: popup window 29403981 "LibreOffice 25.2" (311x692 at 175,71). [window_point=(212, 13 / 2. click: ok - Clicked element [18] (pid 90981) with a real pointer click (delivery_mode=f
+T30 CALL list_windows {}

@@ -1,0 +1,60 @@
+T1 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=29360245 pid=113676 "Movie_title_garbage_clean.xlsx — LibreOffice Calc" 1440x849+0+51 app=libreoffice-calc /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+969 app=Xfce4-panel /   window_id=12582915 pid=6966 "
+T2 CALL get_window_state {"pid": 113676}
+   -> window_id=29360245 pid=113676 elements=117 walk_ms=1161 snapshot_id=s00000001 / element_token for row [N] = s00000001:N (row [1] is "s00000001:1"); this read stops at row [116], so rows past it from a larger read are not in s00000001 / ⚠️ PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 336 node(s) (0 discovered but not visited
+T3 CALL get_window_state {"pid": 113676, "query": "Garbage"}
+   -> window_id=29360245 pid=113676 elements=117 walk_ms=566 snapshot_id=s00000002 / element_token for row [N] = s00000002:N (row [13] is "s00000002:13"); this read stops at row [24], so rows past it from a larger read are not in s00000002 / ⚠️ PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 336 node(s) (0 discovered but not visited
+T4 CALL get_window_state {"pid": 113676, "tree_format": "elements", "max_elements": 5000}
+   -> window_id=29360245 pid=113676 elements=117 walk_ms=750 snapshot_id=s00000003 / ⚠️ PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 336 node(s) (0 discovered but not visited). Every element listed is real; elements after the cut are missing. If the element you need is absent, retry with a larger timeout_ms (e.g. 5000) or narro
+T5 CALL press_key {"key": "escape", "pid": 113676}
+   -> Pressed key 'escape' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T6 CALL click {"pid": 113676, "x": 720, "y": 450}
+   -> Clicked at (742.7, 464.2) × 1 (delivery_mode=foreground, path=x11_xtest_fg); not verified — confirm with a screenshot. [window_point=(742, 464) screen_point=(743, 515)]
+T7 CALL get_window_state {"pid": 113676}
+   -> window_id=29360245 pid=113676 elements=117 walk_ms=890 snapshot_id=s00000004 / element_token for row [N] = s00000004:N (row [1] is "s00000004:1"); this read stops at row [116], so rows past it from a larger read are not in s00000004 / ⚠️ PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 336 node(s) (0 discovered but not visited)
+T8 SAY The spreadsheet cell grid isn't exposed via AT-SPI, and there's a first-run dialog that may be blocking. Let me close that dialog first.
+T8 CALL click {"pid": 113676, "element_token": "s00000004:59"}
+   -> ERR click: element [59] (pid 113676) has a snapshot frame at (1363, 216), but that screen point is owned by tool bar "Formula Tool Bar" rather than the observed element; a real pointer click there would hit the wrong control. Re-snapshot with get_window_state, or click by pixel from a screenshot.
+T9 CALL list_apps {}
+   -> ✅ Found 156 app(s): 121 running, 35 installed-not-running. / - systemd (pid 1) / - kthreadd (pid 2) / - pool_workqueue_release (pid 3) / - kworker/R-rcu_gp (pid 4) / - kworker/R-sync_wq (pid 5) / - kworker/R-kvfree_rcu_reclaim (pid 6) / - kworker/R-slub_flushwq (pid 7) / - kworker/R-netns (pid 8) / - kworker/0:0H-events_highpri (pid 10) / - kworker/R-mm_percpu_wq (pid 13) / - ksoftirqd/0 (pid 14) / - rcu_preempt (pid 15)
+T10 CALL press_key {"key": "home", "modifiers": ["ctrl"], "pid": 113676}
+   -> Pressed key 'home' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T11 CALL press_key {"key": "f2", "pid": 113676}
+   -> Pressed key 'f2' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T12 CALL get_window_state {"pid": 113676}
+   -> window_id=29360245 pid=113676 elements=117 walk_ms=688 snapshot_id=s00000005 / element_token for row [N] = s00000005:N (row [1] is "s00000005:1"); this read stops at row [116], so rows past it from a larger read are not in s00000005 / ⚠️ PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 338 node(s) (0 discovered but not visited)
+T13 CALL list_windows {"app": "term"}
+   -> Found 0 windows:
+T14 CALL press_key {"key": "escape", "pid": 113676}
+   -> Pressed key 'escape' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T15 CALL press_key {"key": "f2", "pid": 113676}
+   -> Pressed key 'f2' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T16 CALL get_window_state {"pid": 113676, "query": "Cell"}
+   -> window_id=29360245 pid=113676 elements=117 walk_ms=959 snapshot_id=s00000006 / element_token for row [N] = s00000006:N (row [13] is "s00000006:13"); this read stops at row [24], so rows past it from a larger read are not in s00000006 / ⚠️ PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 338 node(s) (0 discovered but not visited
+T17 CALL press_key {"key": "right", "pid": 113676}
+   -> Pressed key 'right' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T18 CALL press_key {"key": "f2", "pid": 113676}
+   -> Pressed key 'f2' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T19 CALL get_window_state {"pid": 113676, "query": "Paragraph"}
+   -> window_id=29360245 pid=113676 elements=117 walk_ms=1028 snapshot_id=s00000007 / element_token for row [N] = s00000007:N (row [13] is "s00000007:13"); this read stops at row [28], so rows past it from a larger read are not in s00000007 / ⚠️ PARTIAL TREE: the 1000 ms timeout_ms budget ran out after 327 node(s) (11 discovered but not visited). Every element listed is real; elements after the cut are miss
+T20 CALL get_window_state {"pid": 113676}
+   -> window_id=29360245 pid=113676 elements=117 walk_ms=712 snapshot_id=s00000008 / element_token for row [N] = s00000008:N (row [1] is "s00000008:1"); this read stops at row [116], so rows past it from a larger read are not in s00000008 / ⚠️ PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 338 node(s) (0 discovered but not visited)
+T21 CALL press_key {"key": "escape", "pid": 113676}
+   -> Pressed key 'escape' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T22 CALL click {"element_token": "s00000008:51", "pid": 113676}
+   -> ERR click: element [51] (pid 113676) has a snapshot frame at (85, 173), but that screen point is owned by panel "Font Name" rather than the observed element; a real pointer click there would hit the wrong control. Re-snapshot with get_window_state, or click by pixel from a screenshot.
+T23 CALL click {"pid": 113676, "x": 500, "y": 450}
+   -> Clicked at (515.8, 464.2) × 1 (delivery_mode=foreground, path=x11_xtest_fg); not verified — confirm with a screenshot. [window_point=(515, 464) screen_point=(516, 515)] | focus: cell C13
+T24 CALL press_key {"key": "g", "modifiers": ["ctrl"], "pid": 113676}
+   -> Pressed key 'g' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T25 CALL get_window_state {"pid": 113676, "query": "Go"}
+   -> window_id=29360245 pid=113676 elements=117 walk_ms=534 snapshot_id=s00000009 / element_token for row [N] = s00000009:N (row [13] is "s00000009:13"); this read stops at row [92], so rows past it from a larger read are not in s00000009 / ⚠️ PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 336 node(s) (0 discovered but not visited
+T26 CALL get_window_state {"pid": 113676}
+   -> window_id=29360245 pid=113676 elements=117 walk_ms=416 snapshot_id=s0000000a / element_token for row [N] = s0000000a:N (row [1] is "s0000000a:1"); this read stops at row [116], so rows past it from a larger read are not in s0000000a / ⚠️ PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 336 node(s) (0 discovered but not visited)
+T27 CALL click {"pid": 113676, "x": 200, "y": 230}
+   -> Clicked at (206.3, 237.2) × 1 (delivery_mode=foreground, path=x11_xtest_fg); not verified — confirm with a screenshot. [window_point=(206, 237) screen_point=(206, 288)] | focus: cell B2
+T28 CALL press_key {"key": "f2", "pid": 113676}
+   -> Pressed key 'f2' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T29 CALL get_window_state {"pid": 113676, "query": "Paragraph"}
+   -> window_id=29360245 pid=113676 elements=117 walk_ms=811 snapshot_id=s0000000b / element_token for row [N] = s0000000b:N (row [13] is "s0000000b:13"); this read stops at row [28], so rows past it from a larger read are not in s0000000b / ⚠️ PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 338 node(s) (0 discovered but not visited
+T30 CALL click {"pid": 113676, "x": 60, "y": 237}

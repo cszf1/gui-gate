@@ -1,0 +1,64 @@
+T1 CALL list_apps {}
+T1 CALL list_windows {}
+   -> ✅ Found 158 app(s): 123 running, 35 installed-not-running. / - systemd (pid 1) / - kthreadd (pid 2) / - pool_workqueue_release (pid 3) / - kworker/R-rcu_gp (pid 4) / - kworker/R-sync_wq (pid 5) / - kworker/R-kvfree_rcu_reclaim (pid 6) / - kworker/R-slub_flushwq (pid 7) / - kworker/R-netns (pid 8) / - kworker/0:0H-events_highpri (pid 10) / - kworker/R-mm_percpu_wq (pid 13) / - ksoftirqd/0 (pid 14) / - rcu_preempt (pid 15)
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=14680181 pid=112414 "Secrets-of-Monetizing-Video.pptx — LibreOffice Impress" 1440x849+0+51 app=libreoffice-impress /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+969 app=Xfce4-panel /   window_id=12582915 pi
+T2 CALL get_window_state {"pid": 112414}
+   -> window_id=14680181 pid=112414 elements=157 walk_ms=393 snapshot_id=s00000001 / element_token for row [N] = s00000001:N (row [1] is "s00000001:1") /  / - frame = "Secrets-of-Monetizing-Video.pptx — LibreOffice Impress" /       - [0] button "" (description "Close Document") [actions=[click]] /             - [1] menu "File" [actions=[click]] (closed menu, 30 items; click it to open) /             - [2] menu "Edi
+T3 SAY I can see LibreOffice Impress is open with the presentation. Let me open the File menu to save as a new file.
+T3 CALL click {"pid": 112414, "element_token": "s00000001:1"}
+   -> Clicked element [1] (pid 112414). | A popup menu is open, so pid 112414 holds a keyboard grab until it closes.
+T4 CALL get_window_state {"pid": 112414, "query": "Save As"}
+   -> window_id=14709969 pid=112414 elements=204 walk_ms=339 snapshot_id=s00000002 / element_token for row [N] = s00000002:N (row [1] is "s00000002:1") /  / - frame = "Secrets-of-Monetizing-Video.pptx — LibreOffice Impress" /       - [0] button "" (description "Close Document") [actions=[click]] /             - [1] menu "File" [actions=[click]] /               - [25] menu "Templates" [actions=[click]] /              
+T5 CALL get_window_state {"pid": 112414, "window_id": 14709927}
+   -> window_id=14709927 pid=112414 elements=204 walk_ms=1653 snapshot_id=s00000003 / element_token for row [N] = s00000003:N (row [1] is "s00000003:1") /  / - frame = "Secrets-of-Monetizing-Video.pptx — LibreOffice Impress" /       - [0] button "" (description "Close Document") [actions=[click]] /             - [1] menu "File" [actions=[click]] /               - [2] menu "New" [actions=[click]] /                 - [
+T6 CALL click {"pid": 112414, "element_token": "s00000003:31"}
+   -> Clicked element [31] (pid 112414). | The application opened its own window 14709997 "Save as" and it now holds the focus (focus_outcome=same_app_dialog, left in place); pid-only type_text/press_key go to that window.
+T7 CALL get_window_state {"pid": 112414, "window_id": 14709997}
+   -> window_id=14709997 pid=112414 elements=47 walk_ms=730 snapshot_id=s00000004 / element_token for row [N] = s00000004:N (row [1] is "s00000004:1") /  / - dialog = "Save as" /             - [0] text "/data/home/Downloads" value="/data/home/Downloads" [actions=[activate]] /               - [1] text "" [actions=[activate]] (unlabelled text; 2nd of 4 texts in this window) /             - [2] combo box "" [actions=[
+T8 CALL click {"pid": 112414, "element_token": "s00000004:0"}
+   -> Clicked element [0] (pid 112414) with a real pointer click (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. [window_point=(261, 30) screen_point=(595, 286)]
+T9 CALL get_window_state {"pid": 6982, "window_id": 16777260}
+T9 CALL get_window_state {"pid": 112414, "window_id": 14709997, "query": "Desktop"}
+   -> window_id=16777260 pid=6982 elements=0 walk_ms=14 snapshot_id=s00000005 / element_token for row [N] = s00000005:N (row [0] is "s00000005:0") /  / - frame = "Desktop" / 
+   -> window_id=14709997 pid=112414 elements=47 walk_ms=865 /  /  | Invalidated snapshots s00000004: their element_tokens are stale.
+T10 CALL get_window_state {"pid": 112414, "query": "Desktop", "window_id": 14709997}
+   -> window_id=14709997 pid=112414 elements=47 walk_ms=498 /  /  | Invalidated snapshots s00000006: their element_tokens are stale.
+T11 CALL get_window_state {"pid": 112414, "window_id": 14709997}
+   -> window_id=14709997 pid=112414 elements=47 walk_ms=484 snapshot_id=s00000008 / element_token for row [N] = s00000008:N (row [1] is "s00000008:1") /  / - dialog = "Save as" /             - [0] text "/data/home/Downloads" value="/data/home/Downloads" [actions=[activate]] /               - [1] text "" [actions=[activate]] (unlabelled text; 2nd of 4 texts in this window) /             - [2] combo box "" [actions=[
+T12 CALL click {"pid": 112414, "element_token": "s00000008:0"}
+   -> Clicked element [0] (pid 112414) with a real pointer click (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. [window_point=(261, 30) screen_point=(595, 286)]
+T13 CALL press_key {"key": "a", "modifiers": ["ctrl"], "pid": 112414, "window_id": 14709997}
+   -> Pressed key 'a' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T14 CALL type_text {"pid": 112414, "text": "/data/home/Desktop", "window_id": 14709997}
+   -> Typed 18 character(s) as real key events (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T15 CALL press_key {"key": "enter", "pid": 112414, "window_id": 14709997}
+   -> Pressed key 'enter' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T16 CALL get_window_state {"pid": 112414, "window_id": 14709997}
+   -> window_id=14709997 pid=112414 elements=47 walk_ms=395 snapshot_id=s00000009 / element_token for row [N] = s00000009:N (row [1] is "s00000009:1") /  / - dialog = "Save as" /             - [0] text "/data/home/Desktop" value="/data/home/Desktop" [actions=[activate]] /               - [1] text "" [actions=[activate]] (unlabelled text; 2nd of 4 texts in this window) /             - [2] combo box "" [actions=[clic
+T17 CALL click {"pid": 112414, "element_token": "s00000009:0"}
+   -> Clicked element [0] (pid 112414) with a real pointer click (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. [window_point=(261, 30) screen_point=(595, 286)]
+T18 CALL press_key {"key": "a", "modifiers": ["ctrl"], "pid": 112414, "window_id": 14709997}
+   -> Pressed key 'a' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T19 CALL type_text {"pid": 112414, "text": "/data/home", "window_id": 14709997}
+   -> Typed 10 character(s) as real key events (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T20 CALL press_key {"key": "enter", "pid": 112414, "window_id": 14709997}
+   -> Pressed key 'enter' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T21 CALL get_window_state {"pid": 112414, "window_id": 14709997}
+   -> window_id=14709997 pid=112414 elements=88 walk_ms=760 snapshot_id=s0000000a / element_token for row [N] = s0000000a:N (row [1] is "s0000000a:1") /  / - dialog = "Save as" /             - [0] text "/data/home" value="/data/home" [actions=[activate]] /               - [1] text "" [actions=[activate]] (unlabelled text; 2nd of 4 texts in this window) /             - [2] combo box "" [actions=[click]] (unlabelled 
+T22 CALL click {"pid": 112414, "element_token": "s0000000a:0"}
+   -> Clicked element [0] (pid 112414) with a real pointer click (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. [window_point=(261, 30) screen_point=(595, 286)]
+T23 CALL press_key {"key": "a", "modifiers": ["ctrl"], "pid": 112414, "window_id": 14709997}
+   -> Pressed key 'a' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T24 CALL type_text {"pid": 112414, "text": "/home/user/Desktop", "window_id": 14709997}
+   -> Typed 18 character(s) as real key events (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T25 CALL press_key {"key": "enter", "pid": 112414, "window_id": 14709997}
+   -> Pressed key 'enter' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T26 CALL get_window_state {"pid": 112414, "window_id": 14709997}
+   -> window_id=14709997 pid=112414 elements=47 walk_ms=258 snapshot_id=s0000000b / element_token for row [N] = s0000000b:N (row [1] is "s0000000b:1") /  / - dialog = "Save as" /             - [0] text "/home/user/Desktop" value="/home/user/Desktop" [actions=[activate]] /               - [1] text "" [actions=[activate]] (unlabelled text; 2nd of 4 texts in this window) /             - [2] combo box "" [actions=[clic
+T27 CALL click {"element_token": "s0000000b:27", "count": 2, "pid": 112414, "window_id": 14709997}
+   -> Clicked element [27] (pid 112414) with a real pointer click (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. [window_point=(279, 102) screen_point=(613, 358)]
+T28 CALL get_window_state {"pid": 112414, "window_id": 14709997}
+   -> window_id=14709997 pid=112414 elements=42 walk_ms=365 snapshot_id=s0000000c / element_token for row [N] = s0000000c:N (row [1] is "s0000000c:1") /  / - dialog = "Save as" /             - [0] text "/home/user/Desktop/Desktop" value="/home/user/Desktop/Desktop" [actions=[activate]] /               - [1] text "" [actions=[activate]] (unlabelled text; 2nd of 4 texts in this window) /             - [2] combo box "
+T29 CALL click {"element_token": "s0000000c:0", "pid": 112414, "window_id": 14709997}
+   -> Clicked element [0] (pid 112414) with a real pointer click (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. [window_point=(261, 30) screen_point=(595, 286)]
+T30 CALL press_key {"key": "a", "modifiers": ["ctrl"], "pid": 112414, "window_id": 14709997}

@@ -1,0 +1,63 @@
+T1 CALL list_apps {}
+   -> ✅ Found 154 app(s): 121 running, 33 installed-not-running. / - systemd (pid 1) / - kthreadd (pid 2) / - pool_workqueue_release (pid 3) / - kworker/R-rcu_gp (pid 4) / - kworker/R-sync_wq (pid 5) / - kworker/R-kvfree_rcu_reclaim (pid 6) / - kworker/R-slub_flushwq (pid 7) / - kworker/R-netns (pid 8) / - kworker/0:0H-events_highpri (pid 10) / - kworker/R-mm_percpu_wq (pid 13) / - ksoftirqd/0 (pid 14) / - rcu_preempt (pid 15)
+T2 CALL list_windows {}
+   -> Found 8 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651610 pid=144538 "About the Xfce Desktop Environment" 550x600+5+56 app=Xfce4-about /   window_id=42010922 pid=82341 "Application Finder" 580x100+435+442 app=Xfce4-appfinder /   window_id=14680181 pid=156080 "SalesR
+T3 CALL get_window_state {"pid": 156080}
+   -> window_id=14680181 pid=156080 elements=117 walk_ms=161 snapshot_id=s00000001 / element_token for row [N] = s00000001:N (row [1] is "s00000001:1"); this read stops at row [116], so rows past it from a larger read are not in s00000001 / ⚠️ PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 336 node(s) (0 discovered but not visited)
+T4 CALL list_windows {"pid": 7657}
+T4 CALL list_windows {"on_screen_only": true}
+   -> Found 0 windows:
+   -> Found 7 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=35651610 pid=144538 "About the Xfce Desktop Environment" 550x600+5+56 app=Xfce4-about /   window_id=42010922 pid=82341 "Application Finder" 580x100+435+442 app=Xfce4-appfinder /   window_id=14680181 pid=156080 "SalesRep.xlsx — LibreOffice Calc" 1440x849+0+51 app=libreoffice-calc /   window_id=12582926 pid=696
+T5 CALL get_window_state {"pid": 156080, "max_elements": 8000, "max_depth": 30}
+   -> window_id=14680181 pid=156080 elements=117 walk_ms=179 snapshot_id=s00000002 / element_token for row [N] = s00000002:N (row [1] is "s00000002:1"); this read stops at row [116], so rows past it from a larger read are not in s00000002 / ⚠️ PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 336 node(s) (0 discovered but not visited)
+T6 CALL get_window_state {"pid": 156080, "query": "Jan"}
+T6 CALL get_window_state {"pid": 156080, "query": "Total"}
+   -> window_id=14680181 pid=156080 elements=117 walk_ms=144 / ⚠️ PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 336 node(s) (0 discovered but not visited). Every element listed is real; elements after the cut are missing. If the element you need is absent, retry with a larger timeout_ms (e.g. 5000) or narrow with query / max_dep
+   -> window_id=14680181 pid=156080 elements=117 walk_ms=166 / ⚠️ PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 336 node(s) (0 discovered but not visited). Every element listed is real; elements after the cut are missing. If the element you need is absent, retry with a larger timeout_ms (e.g. 5000) or narrow with query / max_dep
+T7 CALL get_window_state {"pid": 82341}
+   -> window_id=42010922 pid=82341 elements=156 walk_ms=112 snapshot_id=s00000005 / element_token for row [N] = s00000005:N (row [1] is "s00000005:1") /  / - frame = "Application Finder" /       - [0] text "writer" value="writer" [actions=[activate]] /         - icon = "dialog-error-symbolic" /         - icon = "go-down-symbolic" /           - [1] table column header "" [actions=[click]] /           - [2] table cell ""
+T8 CALL click {"pid": 82341, "element_token": "s00000005:148", "count": 2}
+   -> ERR click: element [148] (pid 82341) has no usable on-screen bounds (the table cell is not showing (its menu or page is closed)); a real pointer click cannot reach it and this click shape (button 1 × 2) has no AT-SPI action form. No input was sent. Open the containing menu first, re-snapshot with get_window_state, or click by pixel from a screenshot.
+T9 CALL click {"pid": 82341, "element_token": "s00000005:0"}
+   -> Clicked element [0] (pid 82341) with a real pointer click (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. [window_point=(317, 33) screen_point=(752, 475)]
+T10 CALL type_text {"pid": 82341, "text": "xfce4-terminal"}
+   -> Typed 14 character(s) as real key events (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T11 CALL get_window_state {"pid": 82341}
+   -> window_id=42010922 pid=82341 elements=156 walk_ms=165 snapshot_id=s00000006 / element_token for row [N] = s00000006:N (row [1] is "s00000006:1") /  / - frame = "Application Finder" /       - [0] text "writerxfce4-terminal" value="writerxfce4-terminal" [actions=[activate]] /         - icon = "go-down-symbolic" /           - [1] table column header "" [actions=[click]] /           - [2] table cell "" [actions=[ex
+T12 CALL press_key {"pid": 82341, "key": "a", "modifiers": ["ctrl"]}
+   -> Pressed key 'a' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T13 CALL type_text {"pid": 82341, "text": "xfce4-terminal"}
+   -> Typed 14 character(s) as real key events (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T14 CALL get_window_state {"pid": 82341, "query": "xfce4-terminal"}
+   -> window_id=42010938 pid=82341 elements=4 walk_ms=126 snapshot_id=s00000007 / element_token for row [N] = s00000007:N (row [1] is "s00000007:1") /  /           - [0] table cell "xfce4-terminal" [actions=[expand or contract,edit,activate]] /           - [1] table cell "xfce4-terminal --preferences" [actions=[expand or contract,edit,activate]] / 
+T15 CALL click {"pid": 82341, "element_token": "s00000007:0", "count": 2}
+   -> ERR foreground_unavailable: window 0x281093a did not become the active, focused window within 800ms (active=0x281092a, focus_within_target=false, input focus: 0x600032 (Xfwm4, pid 6956 xfwm4)); no input was sent. The window may be minimized, on another workspace, or blocked by a modal dialog — bring_to_front it or target that dialog instead
+T16 CALL list_windows {}
+   -> Found 7 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651610 pid=144538 "About the Xfce Desktop Environment" 550x600+5+56 app=Xfce4-about /   window_id=14680181 pid=156080 "SalesRep.xlsx — LibreOffice Calc" 1440x849+0+51 app=libreoffice-calc /   window_id=42010922 pid=
+T17 CALL press_key {"pid": 82341, "key": "enter"}
+   -> Pressed key 'enter' as a real key event (delivery_mode=foreground, focus_after=elsewhere); not verified — confirm with a screenshot.
+T18 CALL list_windows {}
+   -> Found 8 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651610 pid=144538 "About the Xfce Desktop Environment" 550x600+5+56 app=Xfce4-about /   window_id=14680181 pid=156080 "SalesRep.xlsx — LibreOffice Calc" 1440x849+0+51 app=libreoffice-calc /   window_id=39845891 pid=
+T19 CALL type_text {"pid": 156388, "text": "cd /home/user && python3 -c \"import openpyxl; wb=openpyxl.load_workbook('SalesRep.xlsx', data_only=True); ws=wb.active; print('dims', ws.max_row, ws.max_column); [print(r) for r in ws.iter_rows(values_only=True)]\""}
+   -> Typed 213 character(s) (terminal emulator: pty/XTest key events).
+T20 CALL press_key {"pid": 156388, "key": "enter"}
+   -> Pressed key 'enter' (delivery_mode=foreground).
+T21 CALL get_window_state {"pid": 156388}
+   -> window_id=39845891 pid=156388 elements=20 walk_ms=16 snapshot_id=s00000008 / element_token for row [N] = s00000008:N (row [1] is "s00000008:1") /  / - frame = "Terminal - sandbox@instabox-gui-pi2: /home/user" /       - [0] menu "File" [actions=[click]] (closed menu, 0 items; click it to open) /       - [1] menu "Edit" [actions=[click]] (closed menu, 0 items; click it to open) /       - [2] menu "View" [action
+T22 CALL type_text {"pid": 156388, "text": "cd /home/user && python3 -c \"import openpyxl; wb=openpyxl.load_workbook('SalesRep.xlsx', data_only=True); ws=wb.active; out=[['dims',ws.max_row,ws.max_column]]; out+=[[c.value for c in r] for r in ws.iter_rows()]; open('data.txt','w').write('\\n'.join('\\t'.join('' if v is 
+   -> Typed 347 character(s) (terminal emulator: pty/XTest key events).
+T23 CALL press_key {"pid": 156388, "key": "enter"}
+   -> Pressed key 'enter' (delivery_mode=foreground).
+T24 CALL type_text {"pid": 156388, "text": "libreoffice --writer /home/user/data.txt"}
+   -> Typed 40 character(s) (terminal emulator: pty/XTest key events).
+T25 CALL press_key {"pid": 156388, "key": "enter"}
+   -> Pressed key 'enter' (delivery_mode=foreground).
+T26 CALL list_windows {}
+   -> Found 8 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651610 pid=144538 "About the Xfce Desktop Environment" 550x600+5+56 app=Xfce4-about /   window_id=14680181 pid=156080 "SalesRep.xlsx — LibreOffice Calc" 1440x849+0+51 app=libreoffice-calc /   window_id=39845891 pid=
+T27 CALL get_window_state {"pid": 156080, "window_id": 14720581}
+   -> window_id=14720581 pid=156080 elements=1 walk_ms=226 snapshot_id=s00000009 / element_token for row [N] = s00000009:N (row [0] is "s00000009:0"); this read stops at row [0], so rows past it from a larger read are not in s00000009 / ⚠️ PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 345 node(s) (0 discovered but not visited). Ev
+T28 CALL click {"pid": 156080, "element_token": "s00000009:0"}
+   -> Clicked element [0] (pid 156080) with a real pointer click (delivery_mode=foreground, focus_after=elsewhere); closed: window 14720581. [window_point=(720, 473) screen_point=(720, 473)]
+T29 CALL type_text {"pid": 156388, "text": "cd /home/user && { python3 -c \"import openpyxl; wb=openpyxl.load_workbook('SalesRep.xlsx', data_only=True); ws=wb.active; out=[['dims',ws.max_row,ws.max_column]]; out+=[[c.value for c in r] for r in ws.iter_rows()]; open('data.txt','w').write('\\n'.join('\\t'.join('' if v i
+   -> Typed 408 character(s) (terminal emulator: pty/XTest key events).
+T30 CALL press_key {"pid": 156388, "key": "enter"}

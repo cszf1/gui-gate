@@ -1,0 +1,65 @@
+T1 CALL list_apps {}
+   -> ✅ Found 155 app(s): 120 running, 35 installed-not-running. / - systemd (pid 1) / - kthreadd (pid 2) / - pool_workqueue_release (pid 3) / - kworker/R-rcu_gp (pid 4) / - kworker/R-sync_wq (pid 5) / - kworker/R-kvfree_rcu_reclaim (pid 6) / - kworker/R-slub_flushwq (pid 7) / - kworker/R-netns (pid 8) / - kworker/0:0H-events_highpri (pid 10) / - kworker/R-mm_percpu_wq (pid 13) / - ksoftirqd/0 (pid 14) / - rcu_preempt (pid 15)
+T2 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=29360245 pid=120037 "SalesRep.xlsx — LibreOffice Calc" 1440x849+0+51 app=libreoffice-calc /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+969 app=Xfce4-panel /   window_id=12582915 pid=6966 "xfce4-panel" 1440
+T3 CALL get_window_state {"pid": 120037, "window_id": 29360245}
+   -> window_id=29360245 pid=120037 elements=117 walk_ms=218 snapshot_id=s00000001 / element_token for row [N] = s00000001:N (row [1] is "s00000001:1"); this read stops at row [116], so rows past it from a larger read are not in s00000001 / ⚠️ PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 336 node(s) (0 discovered but not visited)
+T4 CALL get_window_state {"pid": 120037, "window_id": 29360245, "tree_format": "elements", "max_elements": 5000}
+   -> window_id=29360245 pid=120037 elements=117 walk_ms=185 snapshot_id=s00000002 / ⚠️ PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 336 node(s) (0 discovered but not visited). Every element listed is real; elements after the cut are missing. If the element you need is absent, retry with a larger timeout_ms (e.g. 5000) or narro
+T5 CALL list_windows {"app": "term"}
+T5 CALL list_windows {"app": "instabox"}
+T5 CALL list_windows {"app": "Xfce4-panel"}
+   -> Found 0 windows:
+   -> Found 0 windows:
+   -> Found 3 windows: /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+969 app=Xfce4-panel /   window_id=12582915 pid=6966 "xfce4-panel" 1440x27+0+0 app=Xfce4-panel /   window_id=12583286 pid=6966 "xfce4-panel" 306x3+567+897 app=Xfce4-panel
+T6 CALL get_window_state {"pid": 6966, "window_id": 12582915, "tree_format": "markdown"}
+   -> window_id=12582915 pid=6966 elements=4 walk_ms=40 snapshot_id=s00000003 / element_token for row [N] = s00000003:N (row [1] is "s00000003:1") /  /       - [0] toggle button "Applications" [actions=[click]] /           - [1] toggle button "SalesRep.xlsx — LibreOffice Calc" [actions=[click]] /       - [2] toggle button "2026-10-22" [actions=[click]] /                 - [3] toggle button "sandbox" [actions=[click
+T7 CALL get_window_state {"pid": 6966, "window_id": 12582926, "tree_format": "markdown"}
+   -> window_id=12582926 pid=6966 elements=6 walk_ms=40 snapshot_id=s00000004 / element_token for row [N] = s00000004:N (row [1] is "s00000004:1") /  /       - [0] toggle button "Show Desktop" (description "Minimize all open windows and show the desktop") [actions=[click]] /         - [1] button "Terminal Emulator" (description "Use the command line") [actions=[click]] /         - [2] button "File Manager" (descr
+T8 CALL click {"pid": 6966, "window_id": 12582926, "element_token": "s00000004:1"}
+   -> Clicked element [1] (pid 6966).
+T9 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=29360245 pid=120037 "SalesRep.xlsx — LibreOffice Calc" 1440x849+0+51 app=libreoffice-calc /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+969 app=Xfce4-panel /   window_id=12582915 pid=6966 "xfce4-panel" 1440
+T10 CALL list_apps {"all": false}
+   -> ✅ Found 156 app(s): 121 running, 35 installed-not-running. / - systemd (pid 1) / - kthreadd (pid 2) / - pool_workqueue_release (pid 3) / - kworker/R-rcu_gp (pid 4) / - kworker/R-sync_wq (pid 5) / - kworker/R-kvfree_rcu_reclaim (pid 6) / - kworker/R-slub_flushwq (pid 7) / - kworker/R-netns (pid 8) / - kworker/0:0H-events_highpri (pid 10) / - kworker/R-mm_percpu_wq (pid 13) / - ksoftirqd/0 (pid 14) / - rcu_preempt (pid 15)
+T11 CALL list_windows {"pid": 7657}
+T11 CALL list_windows {"pid": 82341}
+   -> Found 0 windows:
+   -> Found 0 windows:
+T12 CALL click {"pid": 120037, "window_id": 29360245, "x": 250, "y": 250}
+   -> Clicked at (257.9, 257.9) × 1 (delivery_mode=background, path=x11_atspi); selected: table cell "C2" (Selection.SelectChild on its container, read back as selected) — the item is selected. [window_point=(257, 257) screen_point=(258, 309)]
+T13 CALL get_window_state {"pid": 120037, "window_id": 29360245, "tree_format": "markdown", "query": "input"}
+   -> window_id=29360245 pid=120037 elements=117 walk_ms=259 / ⚠️ PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 336 node(s) (0 discovered but not visited). Every element listed is real; elements after the cut are missing. If the element you need is absent, retry with a larger timeout_ms (e.g. 5000) or narrow with query / max_dep
+T14 CALL get_window_state {"pid": 120037, "window_id": 29360245, "tree_format": "markdown", "query": "C2"}
+   -> window_id=29360245 pid=120037 elements=117 walk_ms=280 / ⚠️ PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 336 node(s) (0 discovered but not visited). Every element listed is real; elements after the cut are missing. If the element you need is absent, retry with a larger timeout_ms (e.g. 5000) or narrow with query / max_dep
+T15 CALL click {"pid": 6966, "window_id": 12582915, "element_token": "s00000003:0"}
+   -> Clicked element [0] (pid 6966).
+T16 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=29360245 pid=120037 "SalesRep.xlsx — LibreOffice Calc" 1440x849+0+51 app=libreoffice-calc /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+969 app=Xfce4-panel /   window_id=12582915 pid=6966 "xfce4-panel" 1440
+T17 CALL get_window_state {"pid": 6966, "window_id": 12582915, "tree_format": "markdown"}
+   -> window_id=12582915 pid=6966 elements=4 walk_ms=29 snapshot_id=s00000007 / element_token for row [N] = s00000007:N (row [1] is "s00000007:1") /  /       - [0] toggle button "Applications" [actions=[click]] /           - [1] toggle button "SalesRep.xlsx — LibreOffice Calc" [actions=[click]] /       - [2] toggle button "2026-10-22" [actions=[click]] /                 - [3] toggle button "sandbox" [actions=[click
+T18 CALL click {"pid": 6966, "window_id": 12582926, "element_token": "s00000004:1"}
+   -> Clicked element [1] (pid 6966).
+T19 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=29360245 pid=120037 "SalesRep.xlsx — LibreOffice Calc" 1440x849+0+51 app=libreoffice-calc /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+969 app=Xfce4-panel /   window_id=12582915 pid=6966 "xfce4-panel" 1440
+T20 CALL click {"pid": 6966, "window_id": 12582915, "x": 45, "y": 14}
+   -> Clicked at (45.0, 14.0) × 1 (delivery_mode=background, path=x11_atspi); hit: toggle button "" action=click path=/org/a11y/atspi/accessible/23; the AT-SPI action was dispatched, not verified — confirm with a screenshot. [window_point=(45, 14) screen_point=(45, 14)]
+T21 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=29360245 pid=120037 "SalesRep.xlsx — LibreOffice Calc" 1440x849+0+51 app=libreoffice-calc /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+969 app=Xfce4-panel /   window_id=12582915 pid=6966 "xfce4-panel" 1440
+T22 CALL get_window_state {"pid": 6966, "window_id": 12582915, "tree_format": "markdown"}
+   -> window_id=12582915 pid=6966 elements=4 walk_ms=40 snapshot_id=s00000008 / element_token for row [N] = s00000008:N (row [1] is "s00000008:1") /  /       - [0] toggle button "Applications" [actions=[click]] /           - [1] toggle button "SalesRep.xlsx — LibreOffice Calc" [actions=[click]] /       - [2] toggle button "2026-10-22" [actions=[click]] /                 - [3] toggle button "sandbox" [actions=[click
+T23 CALL press_key {"pid": 120037, "window_id": 29360245, "key": "f2"}
+   -> Pressed key 'f2' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T24 CALL get_window_state {"pid": 120037, "window_id": 29360245, "tree_format": "markdown", "query": "input"}
+   -> window_id=29360245 pid=120037 elements=117 walk_ms=474 / ⚠️ PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 338 node(s) (0 discovered but not visited). Every element listed is real; elements after the cut are missing. If the element you need is absent, retry with a larger timeout_ms (e.g. 5000) or narrow with query / max_dep
+T25 CALL get_window_state {"pid": 120037, "window_id": 29360245, "tree_format": "markdown"}
+   -> window_id=29360245 pid=120037 elements=117 walk_ms=240 snapshot_id=s0000000a / element_token for row [N] = s0000000a:N (row [1] is "s0000000a:1"); this read stops at row [116], so rows past it from a larger read are not in s0000000a / ⚠️ PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 338 node(s) (0 discovered but not visited)
+T26 CALL press_key {"pid": 120037, "window_id": 29360245, "key": "escape"}
+   -> Pressed key 'escape' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T27 CALL click {"pid": 120037, "window_id": 29360245, "x": 300, "y": 250}
+   -> Clicked at (309.5, 257.9) × 1 (delivery_mode=foreground, path=x11_xtest_fg); not verified — confirm with a screenshot. [window_point=(309, 257) screen_point=(309, 309)] | focus: cell D4
+T28 CALL get_window_state {"pid": 120037, "window_id": 29360245, "tree_format": "markdown", "query": "Cell"}
+   -> window_id=29360245 pid=120037 elements=117 walk_ms=154 snapshot_id=s0000000b / element_token for row [N] = s0000000b:N (row [13] is "s0000000b:13"); this read stops at row [13], so rows past it from a larger read are not in s0000000b / ⚠️ PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 336 node(s) (0 discovered but not visited
+T29 CALL get_window_state {"pid": 120037, "window_id": 29360245, "tree_format": "markdown"}
+   -> window_id=29360245 pid=120037 elements=117 walk_ms=225 snapshot_id=s0000000c / element_token for row [N] = s0000000c:N (row [1] is "s0000000c:1"); this read stops at row [116], so rows past it from a larger read are not in s0000000c / ⚠️ PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded after 336 node(s) (0 discovered but not visited)
+T30 CALL click {"pid": 120037, "window_id": 29360245, "x": 243, "y": 258}

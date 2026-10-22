@@ -1,0 +1,61 @@
+T1 CALL list_apps {}
+T1 CALL list_windows {}
+   -> ✅ Found 156 app(s): 123 running, 33 installed-not-running. / - systemd (pid 1) / - kthreadd (pid 2) / - pool_workqueue_release (pid 3) / - kworker/R-rcu_gp (pid 4) / - kworker/R-sync_wq (pid 5) / - kworker/R-kvfree_rcu_reclaim (pid 6) / - kworker/R-slub_flushwq (pid 7) / - kworker/R-netns (pid 8) / - kworker/0:0H-events_highpri (pid 10) / - kworker/R-mm_percpu_wq (pid 13) / - ksoftirqd/0 (pid 14) / - rcu_preempt (pid 15)
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651610 pid=144538 "About the Xfce Desktop Environment" 550x600+5+56 app=Xfce4-about /   window_id=37748739 pid=147653 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+565+56 app=Xfce4-terminal /   wind
+T2 CALL get_window_state {"pid": 147653}
+   -> window_id=37748739 pid=147653 elements=20 walk_ms=17 snapshot_id=s00000001 / element_token for row [N] = s00000001:N (row [1] is "s00000001:1") /  / - frame = "Terminal - sandbox@instabox-gui-pi2: /data/workspace" /       - [0] menu "File" [actions=[click]] (closed menu, 0 items; click it to open) /       - [1] menu "Edit" [actions=[click]] (closed menu, 0 items; click it to open) /       - [2] menu "View" [a
+T3 CALL type_text {"text": "pwd; echo '---'; ls -la; echo '---'; find . -maxdepth 2 | head -50; echo '---'; find /tmp -maxdepth 2 -type f 2>/dev/null | head -50; echo '---'; find /tmp -maxdepth 2 -type f 2>/dev/null | wc -l", "element_token": "s00000001:17", "pid": 147653}
+   -> Typed 195 character(s) (terminal emulator: pty/XTest key events).
+T4 CALL get_window_state {"pid": 147653, "since": "s00000001"}
+   -> window_id=37748739 pid=147653 elements=20 walk_ms=27 snapshot_id=s00000002 /  / no change since s00000001. Rows and indices are as before; use snapshot_id s00000002 in element_tokens (s00000002:N). | Invalidated snapshots s00000001: their element_tokens are stale.
+T5 CALL type_text {"element_token": "s00000002:17", "pid": 147653, "text": " { '=== pwd ==='; pwd; echo '=== /data/workspace ==='; ls -la /data/workspace 2>&1; echo '=== /tmp top ==='; ls -la /tmp 2>&1; echo '=== /tmp file count (depth3) ==='; find /tmp -maxdepth 3 -type f 2>/dev/null | wc -l; echo '=== workspace fil
+   -> Typed 454 character(s) (terminal emulator: pty/XTest key events).
+T6 CALL type_text {"element_token": "s00000002:17", "pid": 147653, "text": "mousepad /tmp/inspect.txt &"}
+   -> Typed 27 character(s) (terminal emulator: pty/XTest key events).
+T7 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651610 pid=144538 "About the Xfce Desktop Environment" 550x600+5+56 app=Xfce4-about /   window_id=37748739 pid=147653 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+565+56 app=Xfce4-terminal /   wind
+T8 CALL list_apps {"all": true}
+   -> ✅ Found 156 app(s): 123 running, 33 installed-not-running. / - systemd (pid 1) / - kthreadd (pid 2) / - pool_workqueue_release (pid 3) / - kworker/R-rcu_gp (pid 4) / - kworker/R-sync_wq (pid 5) / - kworker/R-kvfree_rcu_reclaim (pid 6) / - kworker/R-slub_flushwq (pid 7) / - kworker/R-netns (pid 8) / - kworker/0:0H-events_highpri (pid 10) / - kworker/R-mm_percpu_wq (pid 13) / - ksoftirqd/0 (pid 14) / - rcu_preempt (pid 15)
+T9 CALL press_key {"key": "c", "modifiers": ["ctrl"], "element_token": "s00000002:17", "pid": 147653}
+   -> Pressed key 'c' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T10 CALL type_text {"element_token": "s00000002:17", "pid": 147653, "text": "{ echo '=== pwd ==='; pwd; echo '=== /data/workspace ==='; ls -la /data/workspace 2>&1; echo '=== /tmp top ==='; ls -la /tmp 2>&1; echo '=== /tmp file count depth3 ==='; find /tmp -maxdepth 3 -type f 2>/dev/null | wc -l; echo '=== workspace f
+   -> Typed 459 character(s) (terminal emulator: pty/XTest key events).
+T11 CALL press_key {"element_token": "s00000002:17", "key": "enter", "pid": 147653}
+   -> Pressed key 'enter' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T12 CALL type_text {"element_token": "s00000002:17", "pid": 147653, "text": "mousepad /tmp/inspect.txt &"}
+   -> Typed 27 character(s) (terminal emulator: pty/XTest key events).
+T13 CALL press_key {"element_token": "s00000002:17", "key": "enter", "pid": 147653}
+   -> Pressed key 'enter' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T14 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651610 pid=144538 "About the Xfce Desktop Environment" 550x600+5+56 app=Xfce4-about /   window_id=37748739 pid=147653 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+565+56 app=Xfce4-terminal /   wind
+T15 CALL type_text {"element_token": "s00000002:17", "pid": 147653, "text": "zenity --text-info --title=Inspect --width=1000 --height=600 --filename=/tmp/inspect.txt &"}
+   -> Typed 90 character(s) (terminal emulator: pty/XTest key events).
+T16 CALL press_key {"element_token": "s00000002:17", "key": "enter", "pid": 147653}
+   -> Pressed key 'enter' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T17 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651610 pid=144538 "About the Xfce Desktop Environment" 550x600+5+56 app=Xfce4-about /   window_id=37748739 pid=147653 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+565+56 app=Xfce4-terminal /   wind
+T18 CALL get_window_state {"max_depth": 20, "max_elements": 500, "pid": 147653, "query": "SAVED", "tree_format": "both"}
+   -> window_id=37748739 pid=147653 elements=20 walk_ms=21 /  /  | Invalidated snapshots s00000002: their element_tokens are stale.
+T19 CALL type_text {"element_token": "s00000002:17", "pid": 147653, "text": "printf '\\033]0;AGENT_TEST\\007'"}
+   -> ERR element_token is stale; call get_window_state again to refresh; current snapshots for pid 147653: s00000003 (window 37748739)
+T20 CALL get_window_state {"max_depth": 20, "pid": 147653, "tree_format": "markdown"}
+   -> window_id=37748739 pid=147653 elements=20 walk_ms=19 snapshot_id=s00000004 / element_token for row [N] = s00000004:N (row [1] is "s00000004:1") /  / - frame = "Terminal - sandbox@instabox-gui-pi2: /data/workspace" /       - [0] menu "File" [actions=[click]] (closed menu, 0 items; click it to open) /       - [1] menu "Edit" [actions=[click]] (closed menu, 0 items; click it to open) /       - [2] menu "View" [a
+T21 CALL press_key {"element_token": "s00000004:17", "key": "enter", "pid": 147653}
+   -> Pressed key 'enter' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T22 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651610 pid=144538 "About the Xfce Desktop Environment" 550x600+5+56 app=Xfce4-about /   window_id=37748739 pid=147653 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+565+56 app=Xfce4-terminal /   wind
+T23 CALL get_window_state {"max_elements": 500, "pid": 82341, "tree_format": "markdown"}
+   -> ERR No windows found for pid 82341. Provide window_id.
+T24 CALL type_text {"element_token": "s00000004:17", "pid": 147653, "text": "cd /tmp"}
+   -> Typed 7 character(s) (terminal emulator: pty/XTest key events).
+T25 CALL press_key {"element_token": "s00000004:17", "key": "enter", "pid": 147653}
+   -> Pressed key 'enter' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T26 CALL get_window_state {"pid": 147653, "tree_format": "markdown"}
+   -> window_id=37748739 pid=147653 elements=20 walk_ms=25 snapshot_id=s00000005 / element_token for row [N] = s00000005:N (row [1] is "s00000005:1") /  / - frame = "Terminal - sandbox@instabox-gui-pi2: /tmp" /       - [0] menu "File" [actions=[click]] (closed menu, 0 items; click it to open) /       - [1] menu "Edit" [actions=[click]] (closed menu, 0 items; click it to open) /       - [2] menu "View" [actions=[cli
+T27 CALL type_text {"element_token": "s00000005:17", "pid": 147653, "text": "python3 -c \"import tkinter as tk; w=tk.Tk(); w.title('TK_OK'); w.geometry('200x100+600+200'); w.mainloop()\" &"}
+   -> Typed 109 character(s) (terminal emulator: pty/XTest key events).
+T28 CALL press_key {"element_token": "s00000005:17", "key": "enter", "pid": 147653}
+   -> Pressed key 'enter' as a real key event (delivery_mode=foreground, focus_after=elsewhere); not verified — confirm with a screenshot.
+T29 CALL list_windows {}
+   -> Found 7 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651610 pid=144538 "About the Xfce Desktop Environment" 550x600+5+56 app=Xfce4-about /   window_id=37748739 pid=147653 "Terminal - sandbox@instabox-gui-pi2: /tmp" 817x483+565+56 app=Xfce4-terminal /   window_id=33554
+T30 CALL get_window_state {"pid": 147896, "tree_format": "markdown"}

@@ -1,0 +1,61 @@
+T1 CALL list_apps {}
+T1 CALL list_windows {}
+   -> ✅ Found 155 app(s): 120 running, 35 installed-not-running. / - instabox-guest- (pid 1097) / - Xvnc (pid 6862) / - xfce4-session (pid 6891) / - xfwm4 (pid 6956) / - xfsettingsd (pid 6961) / - Panel (pid 6966) / - xfdesktop (pid 6982) / - wrapper-2.0 (pid 6992) / - wrapper-2.0 (pid 6997) / - instabox-term (pid 7657) / - bash (pid 7671) / - bash (pid 7882) / - python (pid 7884) / - python (pid 7895) / - Application Finder (pid 82
+   -> Found 5 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=41996765 pid=82341 "Application Finder" 580x422+435+281 app=Xfce4-appfinder /   window_id=12582915 pid=6966 "xfce4-panel" 1440x27+0+0 app=Xfce4-panel /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+851 app=Xf
+T2 CALL list_apps {"all": true}
+   -> ✅ Found 155 app(s): 120 running, 35 installed-not-running. / - systemd (pid 1) / - kthreadd (pid 2) / - pool_workqueue_release (pid 3) / - kworker/R-rcu_gp (pid 4) / - kworker/R-sync_wq (pid 5) / - kworker/R-kvfree_rcu_reclaim (pid 6) / - kworker/R-slub_flushwq (pid 7) / - kworker/R-netns (pid 8) / - kworker/0:0H-events_highpri (pid 10) / - kworker/R-mm_percpu_wq (pid 13) / - ksoftirqd/0 (pid 14) / - rcu_preempt (pid 15)
+T3 CALL get_window_state {"pid": 82341, "tree_format": "markdown"}
+   -> window_id=41996765 pid=82341 elements=45 walk_ms=45 snapshot_id=s00000001 / element_token for row [N] = s00000001:N (row [1] is "s00000001:1") /  / - frame = "Application Finder" /       - [0] text "chrome" value="chrome" [actions=[activate]] /         - icon = "go-up-symbolic" /     - [1] split pane "" value="180.0" [actions=[]] /           - [2] table column header "" [actions=[click]] /           - [3] table c
+T4 CALL click {"element_token": "s00000001:44", "pid": 82341}
+   -> Clicked element [44] (pid 82341). | The window that held the focus (41996765) was closed by this action (focus_outcome=window_closed); the focus moved to 16777260 "Desktop". A popup menu is open, so pid 82341 holds a keyboard grab until it closes.
+T5 CALL list_windows {"app": "chrom"}
+   -> Found 1 windows: /   window_id=33554435 pid=135544 "DuckDuckGo Private Search Engine - Chromium" 1050x853+20+47 app=Chromium
+T6 CALL get_window_state {"pid": 135544, "tree_format": "markdown", "max_depth": 6}
+   -> window_id=33554435 pid=135544 elements=33 walk_ms=105 snapshot_id=s00000002 / element_token for row [N] = s00000002:N (row [1] is "s00000002:1") /  / - [0] frame "DuckDuckGo Private Search Engine - Chromium" [actions=[doDefault,showContextMenu]] /   - [1] panel "￼￼" [actions=[doDefault,showContextMenu]] /     - [2] panel "￼￼￼￼￼" [actions=[doDefault,showContextMenu]] /       - [3] button "Minimize" [actions=[p
+T7 CALL press_key {"key": "l", "modifiers": ["ctrl"], "pid": 135544}
+   -> Pressed key 'l' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. | [gate] Window right after the action (snapshot s00000003; tokens are s00000003:N, older tokens are stale). / - [0] frame "DuckDuckGo Private Search Engine - Chromium" [actions=[doDefault,showContextMenu]] /   - [1] panel "￼￼" [actions=[doDefault,showContextMenu]] /     - [2] pa
+T8 CALL type_text {"text": "chrome://settings/languages", "pid": 135544}
+   -> Typed 27 character(s) as real key events (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T9 CALL press_key {"key": "enter", "pid": 135544}
+   -> Pressed key 'enter' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. | [gate] Window right after the action (snapshot s00000004; tokens are s00000004:N, older tokens are stale). / - [0] frame "Settings - Languages - Chromium" [actions=[doDefault,showContextMenu]] /   - [1] panel "￼￼" [actions=[doDefault,showContextMenu]] /     - [2] panel "￼￼￼
+T10 CALL get_window_state {"pid": 135544, "tree_format": "elements", "query": "language"}
+   -> window_id=33554435 pid=135544 elements=159 walk_ms=176 snapshot_id=s00000006 /  / (tree is in structuredContent.elements; pass tree_format "markdown" for the compact text rendering) | Invalidated snapshots s00000005: their element_tokens are stale.
+T11 CALL get_window_state {"pid": 135544, "query": "language", "tree_format": "markdown"}
+   -> window_id=33554435 pid=135544 elements=159 walk_ms=251 snapshot_id=s00000007 / element_token for row [N] = s00000007:N (row [1] is "s00000007:1") /  / - [0] frame "Settings - Languages - Chromium" [actions=[doDefault,showContextMenu]] /   - [1] panel "￼￼" [actions=[doDefault,showContextMenu]] /     - [2] panel "￼￼￼￼￼" [actions=[doDefault,showContextMenu]] /       - [6] panel "￼￼￼￼￼￼￼￼￼￼￼￼￼" [actions=[doDefaul
+T12 CALL click {"element_token": "s00000007:101", "pid": 135544}
+   -> Clicked element [101] (pid 135544) with a real pointer click (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. [window_point=(902, 301) screen_point=(922, 348)] | [gate] Window right after the action (snapshot s00000008; tokens are s00000008:N, older tokens are stale). The tree is partial here (grid/canvas); read with include_screenshot:true before aiming by
+T13 CALL type_text {"pid": 135544, "text": "Xenothian", "element_token": "s00000008:36"}
+   -> Typed 9 character(s) as real key events (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T14 CALL get_window_state {"pid": 135544, "query": "Xenothian", "tree_format": "markdown"}
+   -> window_id=33554435 pid=135544 elements=56 walk_ms=155 /  /  | Invalidated snapshots s00000008: their element_tokens are stale.
+T15 CALL get_window_state {"pid": 135544, "query": "Add languages", "tree_format": "markdown"}
+   -> window_id=33554435 pid=135544 elements=56 walk_ms=159 snapshot_id=s0000000a / element_token for row [N] = s0000000a:N (row [1] is "s0000000a:1") /  / - [0] frame "Settings - Languages - Chromium" [actions=[doDefault,showContextMenu]] /   - [1] panel "￼￼" [actions=[doDefault,showContextMenu]] /     - [2] panel "￼￼￼￼￼" [actions=[doDefault,showContextMenu]] /       - [6] panel "￼￼￼￼￼￼￼￼￼￼￼￼￼" [actions=[doDefault
+T16 CALL get_window_state {"max_elements": 500, "pid": 135544, "query": "Search languages", "tree_format": "markdown"}
+   -> window_id=33554435 pid=135544 elements=56 walk_ms=190 snapshot_id=s0000000b / element_token for row [N] = s0000000b:N (row [1] is "s0000000b:1") /  / - [0] frame "Settings - Languages - Chromium" [actions=[doDefault,showContextMenu]] /   - [1] panel "￼￼" [actions=[doDefault,showContextMenu]] /     - [2] panel "￼￼￼￼￼" [actions=[doDefault,showContextMenu]] /       - [6] panel "￼￼￼￼￼￼￼￼￼￼￼￼￼" [actions=[doDefault
+T17 CALL get_window_state {"max_elements": 500, "pid": 135544, "tree_format": "elements"}
+   -> window_id=33554435 pid=135544 elements=56 walk_ms=171 snapshot_id=s0000000c /  / (tree is in structuredContent.elements; pass tree_format "markdown" for the compact text rendering) | Invalidated snapshots s0000000b: their element_tokens are stale.
+T18 CALL click {"element_token": "s0000000c:36", "pid": 135544}
+   -> Clicked element [36] (pid 135544) with a real pointer click (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. [window_point=(676, 282) screen_point=(696, 329)] | [gate] Window right after the action (snapshot s0000000d; tokens are s0000000d:N, older tokens are stale). Only rows that changed since snapshot s00000008 are shown (36 of 63 rows, with their parent
+T19 CALL type_text {"element_token": "s0000000d:37", "pid": 135544, "text": "Xeno"}
+   -> Typed 4 character(s) as real key events (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T20 CALL click {"element_token": "s0000000d:40", "pid": 135544}
+   -> Clicked element [40] (pid 135544) with a real pointer click (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. [window_point=(758, 282) screen_point=(778, 329)] | [gate] Window right after the action (snapshot s0000000e; tokens are s0000000e:N, older tokens are stale). The tree is partial here (grid/canvas); read with include_screenshot:true before aiming by 
+T21 CALL click {"element_token": "s0000000e:37", "pid": 135544}
+   -> Clicked element [37] (pid 135544) with a real pointer click (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. [window_point=(686, 282) screen_point=(706, 329)] | [gate] Window right after the action (snapshot s0000000f; tokens are s0000000f:N, older tokens are stale). The tree is partial here (grid/canvas); read with include_screenshot:true before aiming by 
+T22 CALL type_text {"element_token": "s0000000f:37", "pid": 135544, "text": "Xeno"}
+   -> Typed 4 character(s) as real key events (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T23 CALL get_window_state {"pid": 135544, "tree_format": "markdown", "max_elements": 200}
+   -> window_id=33554435 pid=135544 elements=58 walk_ms=119 snapshot_id=s00000010 / element_token for row [N] = s00000010:N (row [1] is "s00000010:1") /  / - [0] frame "Settings - Languages - Chromium" [actions=[doDefault,showContextMenu]] /   - [1] panel "￼￼" [actions=[doDefault,showContextMenu]] /     - [2] panel "￼￼￼￼￼" [actions=[doDefault,showContextMenu]] /       - [3] button "Minimize" [actions=[press,showCon
+T24 CALL click {"element_token": "s00000010:40", "pid": 135544}
+   -> Clicked element [40] (pid 135544) with a real pointer click (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. [window_point=(758, 282) screen_point=(778, 329)] | [gate] Window right after the action (snapshot s00000011; tokens are s00000011:N, older tokens are stale). The tree is partial here (grid/canvas); read with include_screenshot:true before aiming by 
+T25 CALL type_text {"element_token": "s00000011:37", "pid": 135544, "text": "Xhosa"}
+   -> Typed 5 character(s) as real key events (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T26 CALL get_window_state {"max_elements": 100, "pid": 135544, "tree_format": "markdown"}
+   -> window_id=33554435 pid=135544 elements=61 walk_ms=173 snapshot_id=s00000012 / element_token for row [N] = s00000012:N (row [1] is "s00000012:1") /  / - [0] frame "Settings - Languages - Chromium" [actions=[doDefault,showContextMenu]] /   - [1] panel "￼￼" [actions=[doDefault,showContextMenu]] /     - [2] panel "￼￼￼￼￼" [actions=[doDefault,showContextMenu]] /       - [3] button "Minimize" [actions=[press,showCon
+T27 CALL click {"element_token": "s00000012:39", "pid": 135544}
+   -> Clicked element [39] (pid 135544) with a real pointer click (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. [window_point=(758, 282) screen_point=(778, 329)] | [gate] Window right after the action (snapshot s00000013; tokens are s00000013:N, older tokens are stale). The tree is partial here (grid/canvas); read with include_screenshot:true before aiming by 
+T28 CALL type_text {"element_token": "s00000013:37", "pid": 135544, "text": "Atlan"}
+   -> Typed 5 character(s) as real key events (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T29 CALL get_window_state {"max_elements": 100, "pid": 135544, "tree_format": "markdown"}
+   -> window_id=33554435 pid=135544 elements=57 walk_ms=181 snapshot_id=s00000014 / element_token for row [N] = s00000014:N (row [1] is "s00000014:1") /  / - [0] frame "Settings - Languages - Chromium" [actions=[doDefault,showContextMenu]] /   - [1] panel "￼￼" [actions=[doDefault,showContextMenu]] /     - [2] panel "￼￼￼￼￼" [actions=[doDefault,showContextMenu]] /       - [3] button "Minimize" [actions=[press,showCon
+T30 CALL click {"element_token": "s00000014:42", "pid": 135544}

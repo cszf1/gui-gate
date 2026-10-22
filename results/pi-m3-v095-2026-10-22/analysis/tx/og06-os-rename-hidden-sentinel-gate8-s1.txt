@@ -1,0 +1,65 @@
+T1 CALL list_windows {}
+T1 CALL list_apps {}
+   -> Found 5 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651610 pid=144538 "About the Xfce Desktop Environment" 550x600+5+56 app=Xfce4-about /   window_id=12582915 pid=6966 "xfce4-panel" 1440x27+0+0 app=Xfce4-panel /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+
+   -> ✅ Found 155 app(s): 120 running, 35 installed-not-running. / - instabox-guest- (pid 1097) / - Xvnc (pid 6862) / - xfce4-session (pid 6891) / - xfwm4 (pid 6956) / - xfsettingsd (pid 6961) / - Panel (pid 6966) / - xfdesktop (pid 6982) / - wrapper-2.0 (pid 6992) / - wrapper-2.0 (pid 6997) / - instabox-term (pid 7657) / - bash (pid 7671) / - bash (pid 7882) / - python (pid 7884) / - python (pid 7895) / - Application Finder (pid 82
+T2 CALL get_window_state {"pid": 6982, "window_id": 16777260}
+   -> window_id=16777260 pid=6982 elements=0 walk_ms=3 snapshot_id=s00000001 / element_token for row [N] = s00000001:N (row [0] is "s00000001:0") /  / - frame = "Desktop" / 
+T3 CALL list_apps {"all": true}
+   -> ✅ Found 155 app(s): 120 running, 35 installed-not-running. / - systemd (pid 1) / - kthreadd (pid 2) / - pool_workqueue_release (pid 3) / - kworker/R-rcu_gp (pid 4) / - kworker/R-sync_wq (pid 5) / - kworker/R-kvfree_rcu_reclaim (pid 6) / - kworker/R-slub_flushwq (pid 7) / - kworker/R-netns (pid 8) / - kworker/0:0H-events_highpri (pid 10) / - kworker/R-mm_percpu_wq (pid 13) / - ksoftirqd/0 (pid 14) / - rcu_preempt (pid 15)
+T4 CALL list_windows {"pid": 7657}
+T4 CALL list_windows {"pid": 82341}
+   -> Found 0 windows:
+   -> Found 0 windows:
+T5 CALL get_window_state {"pid": 6982, "query": "todo"}
+T5 CALL get_window_state {"pid": 6966, "window_id": 12582915}
+   -> window_id=16777260 pid=6982 elements=0 walk_ms=2 /  /  | Invalidated snapshots s00000002: their element_tokens are stale.
+   -> window_id=12582915 pid=6966 elements=4 walk_ms=21 snapshot_id=s00000004 / element_token for row [N] = s00000004:N (row [1] is "s00000004:1") /  /       - [0] toggle button "Applications" [actions=[click]] /           - [1] toggle button "About the Xfce Desktop Environment" [actions=[click]] /       - [2] toggle button "2026-10-22" [actions=[click]] /                 - [3] toggle button "sandbox" [actions=[cli
+T6 CALL click {"pid": 6966, "element_token": "s00000004:0"}
+   -> Clicked element [0] (pid 6966). | A popup menu is open, so pid 6966 holds a keyboard grab until it closes. | [gate] Window right after the action (snapshot s00000005; tokens are s00000005:N, older tokens are stale). Nothing in the tree changed since snapshot s00000004 (4 rows); its [N] are valid as s00000005:N. / 
+T7 CALL get_window_state {"window_id": 12582915, "pid": 6966}
+   -> [gate] Nothing has been done since snapshot s00000005, which came back with your last action (same window, its tokens s00000005:N are current). Use that tree (when it listed only changed rows, the other rows are as in your earlier reads, same [N]). Call again with fresh:true only if you really need a new read.
+T8 CALL list_windows {}
+   -> Found 5 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651610 pid=144538 "About the Xfce Desktop Environment" 550x600+5+56 app=Xfce4-about /   window_id=12582915 pid=6966 "xfce4-panel" 1440x27+0+0 app=Xfce4-panel /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+
+T9 CALL get_window_state {"window_id": 12582915, "pid": 6966, "fresh": true}
+   -> window_id=12582915 pid=6966 elements=4 walk_ms=33 snapshot_id=s00000006 / element_token for row [N] = s00000006:N (row [1] is "s00000006:1") /  /       - [0] toggle button "Applications" [actions=[click]] /           - [1] toggle button "About the Xfce Desktop Environment" [actions=[click]] /       - [2] toggle button "2026-10-22" [actions=[click]] /                 - [3] toggle button "sandbox" [actions=[cli
+T10 CALL press_key {"key": "escape", "pid": 6966}
+   -> Pressed key 'escape' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. [pid-only target resolved to window 12582915 "xfce4-panel"] | [gate] Window right after the action (snapshot s00000007; tokens are s00000007:N, older tokens are stale). Nothing in the tree changed since snapshot s00000006 (4 rows); its [N] are valid as s00000007:N. / 
+T11 CALL get_window_state {"window_id": 12582926, "pid": 6966, "fresh": true}
+   -> window_id=12582926 pid=6966 elements=6 walk_ms=28 snapshot_id=s00000008 / element_token for row [N] = s00000008:N (row [1] is "s00000008:1") /  /       - [0] toggle button "Show Desktop" (description "Minimize all open windows and show the desktop") [actions=[click]] /         - [1] button "Terminal Emulator" (description "Use the command line") [actions=[click]] /         - [2] button "File Manager" (descr
+T12 CALL click {"element_token": "s00000008:2", "pid": 6966}
+   -> Clicked element [2] (pid 6966) with a real pointer click (delivery_mode=foreground, focus_after=elsewhere); appeared: popup window 12998794 "xfce4-panel" (231x70 at 581,782). [window_point=(129, 25) screen_point=(696, 876)] | [gate] Window right after the action (snapshot s00000009; tokens are s00000009:N, older tokens are stale). Nothing in the tree changed since snapshot s00000008 (6 rows); its 
+T13 CALL get_window_state {"fresh": true, "pid": 6966, "window_id": 12998794}
+   -> window_id=12998794 pid=6966 elements=11 walk_ms=31 snapshot_id=s0000000a / element_token for row [N] = s0000000a:N (row [1] is "s0000000a:1") /  /       - [0] toggle button "Applications" [actions=[click]] /           - [1] toggle button "workspace - Thunar" [actions=[click]] /           - [2] toggle button "About the Xfce Desktop Environment" [actions=[click]] /       - [3] toggle button "2026-10-22" [action
+T14 CALL click {"element_token": "s0000000a:1", "pid": 6966, "window_id": 12998794}
+   -> ERR foreground_unavailable: window 0xc6588a did not become the active, focused window within 800ms (active=0x0, focus_within_target=true, input focus: 0xc6588a (Xfce4-panel, pid 6966 xfce4-panel)); no input was sent. No window is active at all: the window manager has not set _NET_ACTIVE_WINDOW (it may be restarting, or showing a modal surface of its own that no window list includes) | [gate] Window ri
+T15 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651610 pid=144538 "About the Xfce Desktop Environment" 550x600+5+56 app=Xfce4-about /   window_id=37748743 pid=145538 "workspace - Thunar" 640x480+565+56 app=Thunar /   window_id=12582915 pid=6966 "xfce4-panel" 1440
+T16 CALL get_window_state {"window_id": 37748743, "pid": 145538, "fresh": true}
+   -> window_id=37748743 pid=145538 elements=189 walk_ms=164 snapshot_id=s0000000c / element_token for row [N] = s0000000c:N (row [1] is "s0000000c:1") /  / - frame = "workspace - Thunar" /         - [0] toggle button "Menu" [actions=[click]] /         - button = "Back" (disabled) /         - button = "Forward" (disabled) /         - [1] button "Open Parent" [actions=[click]] /         - [2] button "Home" [actions=[cli
+T17 CALL click {"element_token": "s0000000c:35", "pid": 145538, "window_id": 37748743}
+   -> ERR [gate] Not executed: the gate's reviewer doubts this step: decision model: 'right_target' is unlikely (P=0.07 < 0.50). The window's fresh tree is attached: pick the target from it and send the action again (no need to read the window yourself). | [gate] Window now (nothing was executed) (snapshot s0000000e; tokens are s0000000e:N, older tokens are stale). Nothing in the tree changed since snapshot
+T18 CALL press_key {"key": "l", "modifiers": ["ctrl"], "pid": 145538, "window_id": 37748743}
+   -> Pressed key 'l' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. | [gate] Window right after the action (snapshot s0000000f; tokens are s0000000f:N, older tokens are stale). Nothing in the tree changed since snapshot s0000000e (199 rows); its [N] are valid as s0000000f:N. / 
+T19 CALL get_window_state {"fresh": true, "pid": 145538, "query": "location", "window_id": 37748743}
+   -> window_id=37748743 pid=145538 elements=189 walk_ms=144 /  /  | Invalidated snapshots s00000010: their element_tokens are stale.
+T20 CALL click {"element_token": "s0000000e:15", "pid": 145538, "window_id": 37748743}
+   -> Clicked element [15] (pid 145538) with a real pointer click (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. [window_point=(376, 47) screen_point=(941, 103)] | [gate] your token was stale; re-bound to s00000012:15 from a fresh tree read. Older tokens for this window are now stale. | [gate] Window right after the action (snapshot s00000013; tokens are s00000
+T21 CALL get_window_state {"fresh": true, "pid": 145538, "query": "entry", "window_id": 37748743}
+   -> window_id=37748743 pid=145538 elements=189 walk_ms=183 /  /  | Invalidated snapshots s00000014: their element_tokens are stale.
+T22 CALL get_window_state {"fresh": true, "max_elements": 300, "pid": 145538, "window_id": 37748743}
+   -> window_id=37748743 pid=145538 elements=189 walk_ms=137 snapshot_id=s00000016 / element_token for row [N] = s00000016:N (row [1] is "s00000016:1") /  / - frame = "workspace - Thunar" /         - [0] toggle button "Menu" [actions=[click]] /         - button = "Back" (disabled) /         - button = "Forward" (disabled) /         - [1] button "Open Parent" [actions=[click]] /         - [2] button "Home" [actions=[cli
+T23 CALL click {"element_token": "s00000016:18", "pid": 145538, "window_id": 37748743}
+   -> Clicked element [18] (pid 145538) through its AT-SPI action "click" with the window activated (delivery_mode=foreground, path=ax_fg, focus_after=elsewhere): the element had no usable on-screen bounds (the button is not showing (its menu or page is closed)), so no pointer was moved. Not verified — confirm with a screenshot. | [gate] Window right after the action (snapshot s00000017; tokens are s000
+T24 CALL list_windows {}
+   -> Found 8 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651610 pid=144538 "About the Xfce Desktop Environment" 550x600+5+56 app=Xfce4-about /   window_id=37748743 pid=145538 "workspace - Thunar" 640x480+565+56 app=Thunar /   window_id=39845891 pid=145641 "Terminal - sand
+T25 CALL get_window_state {"fresh": true, "pid": 145641, "window_id": 39845891}
+   -> window_id=39845891 pid=145641 elements=20 walk_ms=23 snapshot_id=s00000018 / element_token for row [N] = s00000018:N (row [1] is "s00000018:1") /  / - frame = "Terminal - sandbox@instabox-gui-pi2: /data/workspace" /       - [0] menu "File" [actions=[click]] (closed menu, 0 items; click it to open) /       - [1] menu "Edit" [actions=[click]] (closed menu, 0 items; click it to open) /       - [2] menu "View" [a
+T26 CALL click {"element_token": "s00000018:17", "pid": 145641, "window_id": 39845891}
+   -> Clicked element [17] (pid 145641) with a real pointer click (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. [window_point=(401, 254) screen_point=(1019, 666)] | [gate] Window right after the action (snapshot s00000019; tokens are s00000019:N, older tokens are stale). Nothing in the tree changed since snapshot s00000018 (21 rows); its [N] are valid as s0000
+T27 CALL type_text {"pid": 145641, "text": "find / -maxdepth 5 -name 'todo_list_Jan_1' -type d 2>/dev/null\n", "window_id": 39845891}
+   -> Typed 63 character(s) (terminal emulator: pty/XTest key events).
+T28 CALL click {"element_token": "s00000016:38", "pid": 145538, "window_id": 37748743}
+   -> ERR [gate] Not executed: stale token and no unique element with the same role+label. The window's fresh tree is attached: pick the target from it and send the action again (no need to read the window yourself). | [gate] Window now (nothing was executed) (snapshot s0000001b; tokens are s0000001b:N, older tokens are stale). Nothing in the tree changed since snapshot s00000017 (199 rows); its [N] are val
+T29 CALL get_window_state {"fresh": true, "pid": 145538, "query": "home", "window_id": 37748743}
+   -> window_id=37748743 pid=145538 elements=189 walk_ms=184 snapshot_id=s0000001c / element_token for row [N] = s0000001c:N (row [2] is "s0000001c:2") /  / - frame = "workspace - Thunar" /         - [2] button "Home" [actions=[click]] /     - [25] split pane "" value="170.0" [actions=[]] /       - [24] menu "Help" [actions=[click]] (closed menu, 0 items; click it to open) /         - [18] button "Open Terminal Here"
+T30 CALL click {"element_token": "s0000001c:2", "pid": 145538, "window_id": 37748743}

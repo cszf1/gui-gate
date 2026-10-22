@@ -1,0 +1,60 @@
+T1 CALL list_apps {}
+   -> ✅ Found 158 app(s): 124 running, 34 installed-not-running. / - systemd (pid 1) / - kthreadd (pid 2) / - pool_workqueue_release (pid 3) / - kworker/R-rcu_gp (pid 4) / - kworker/R-sync_wq (pid 5) / - kworker/R-kvfree_rcu_reclaim (pid 6) / - kworker/R-slub_flushwq (pid 7) / - kworker/R-netns (pid 8) / - kworker/0:0H-events_highpri (pid 10) / - kworker/R-mm_percpu_wq (pid 13) / - ksoftirqd/0 (pid 14) / - rcu_preempt (pid 15)
+T2 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651587 pid=111483 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+5+412 app=Xfce4-terminal /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+969 app=Xfce4-panel /   window_id=12582915 pid=6966 
+T3 CALL get_window_state {"pid": 111483, "window_id": 35651587}
+   -> window_id=35651587 pid=111483 elements=20 walk_ms=21 snapshot_id=s00000001 / element_token for row [N] = s00000001:N (row [1] is "s00000001:1") /  / - frame = "Terminal - sandbox@instabox-gui-pi2: /data/workspace" /       - [0] menu "File" [actions=[click]] (closed menu, 0 items; click it to open) /       - [1] menu "Edit" [actions=[click]] (closed menu, 0 items; click it to open) /       - [2] menu "View" [a
+T4 CALL click {"pid": 111483, "window_id": 35651587, "element_token": "s00000001:17"}
+   -> Clicked element [17] (pid 111483) with a real pointer click (delivery_mode=background, path=x11_xsendevent); not verified — confirm with a screenshot.
+T5 CALL type_text {"pid": 111483, "window_id": 35651587, "text": "pwd"}
+   -> Typed 3 character(s) (terminal emulator: pty/XTest key events).
+T6 CALL press_key {"pid": 111483, "window_id": 35651587, "key": "enter"}
+   -> Pressed key 'enter' (delivery_mode=foreground).
+T7 CALL get_window_state {"pid": 111483, "window_id": 35651587, "query": "pwd"}
+   -> window_id=35651587 pid=111483 elements=20 walk_ms=57 /  /  | Invalidated snapshots s00000001: their element_tokens are stale.
+T8 CALL get_window_state {"pid": 111483, "window_id": 35651587}
+   -> window_id=35651587 pid=111483 elements=20 walk_ms=24 snapshot_id=s00000003 / element_token for row [N] = s00000003:N (row [1] is "s00000003:1") /  / - frame = "Terminal - sandbox@instabox-gui-pi2: /data/workspace" /       - [0] menu "File" [actions=[click]] (closed menu, 0 items; click it to open) /       - [1] menu "Edit" [actions=[click]] (closed menu, 0 items; click it to open) /       - [2] menu "View" [a
+T9 SAY Let me inspect the filesystem state using a dialog that exposes its text to the accessibility tree, so I can read it.
+T9 CALL type_text {"pid": 111483, "window_id": 35651587, "text": "ls -la /tmp | zenity --text-info --title=TMPLIST --width=900 --height=600"}
+   -> Typed 73 character(s) (terminal emulator: pty/XTest key events).
+T10 CALL press_key {"pid": 111483, "window_id": 35651587, "key": "enter"}
+   -> Pressed key 'enter' (delivery_mode=foreground).
+T11 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651587 pid=111483 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+5+412 app=Xfce4-terminal /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+969 app=Xfce4-panel /   window_id=12582915 pid=6966 
+T12 CALL list_apps {"all": true}
+   -> ✅ Found 158 app(s): 124 running, 34 installed-not-running. / - systemd (pid 1) / - kthreadd (pid 2) / - pool_workqueue_release (pid 3) / - kworker/R-rcu_gp (pid 4) / - kworker/R-sync_wq (pid 5) / - kworker/R-kvfree_rcu_reclaim (pid 6) / - kworker/R-slub_flushwq (pid 7) / - kworker/R-netns (pid 8) / - kworker/0:0H-events_highpri (pid 10) / - kworker/R-mm_percpu_wq (pid 13) / - ksoftirqd/0 (pid 14) / - rcu_preempt (pid 15)
+T13 CALL click {"pid": 111483, "window_id": 35651587, "element_token": "s00000003:17"}
+   -> Clicked element [17] (pid 111483) with a real pointer click (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot. [window_point=(401, 254) screen_point=(406, 666)]
+T14 CALL type_text {"pid": 111483, "window_id": 35651587, "text": "sleep 60"}
+   -> Typed 8 character(s) (terminal emulator: pty/XTest key events).
+T15 CALL press_key {"pid": 111483, "window_id": 35651587, "key": "enter"}
+   -> Pressed key 'enter' (delivery_mode=foreground).
+T16 CALL list_apps {"all": true}
+   -> ✅ Found 159 app(s): 125 running, 34 installed-not-running. / - systemd (pid 1) / - kthreadd (pid 2) / - pool_workqueue_release (pid 3) / - kworker/R-rcu_gp (pid 4) / - kworker/R-sync_wq (pid 5) / - kworker/R-kvfree_rcu_reclaim (pid 6) / - kworker/R-slub_flushwq (pid 7) / - kworker/R-netns (pid 8) / - kworker/0:0H-events_highpri (pid 10) / - kworker/R-mm_percpu_wq (pid 13) / - ksoftirqd/0 (pid 14) / - rcu_preempt (pid 15)
+T17 CALL type_text {"pid": 111483, "window_id": 35651587, "text": "pwd > /tmp/info.txt; echo ---TMP--- >> /tmp/info.txt; ls -la /tmp >> /tmp/info.txt; echo ---WS--- >> /tmp/info.txt; ls -la /data/workspace >> /tmp/info.txt; echo ---WSREC--- >> /tmp/info.txt; find /data/workspace -maxdepth 4 -printf '%M %p\\n' >> /tmp/
+   -> Typed 360 character(s) (terminal emulator: pty/XTest key events).
+T18 CALL press_key {"pid": 111483, "window_id": 35651587, "key": "enter"}
+   -> Pressed key 'enter' (delivery_mode=foreground).
+T19 CALL type_text {"pid": 111483, "window_id": 35651587, "text": "mousepad /tmp/info.txt"}
+   -> Typed 22 character(s) (terminal emulator: pty/XTest key events).
+T20 CALL press_key {"pid": 111483, "window_id": 35651587, "key": "enter"}
+   -> Pressed key 'enter' (delivery_mode=foreground).
+T21 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651587 pid=111483 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+5+412 app=Xfce4-terminal /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+969 app=Xfce4-panel /   window_id=12582915 pid=6966 
+T22 CALL type_text {"pid": 111483, "window_id": 35651587, "text": "for e in mousepad leafpad gedit xed featherpad nano; do command -v $e >/dev/null && $e /tmp/info.txt >/dev/null 2>&1 & done"}
+   -> Typed 123 character(s) (terminal emulator: pty/XTest key events).
+T23 CALL press_key {"pid": 111483, "window_id": 35651587, "key": "enter"}
+   -> Pressed key 'enter' (delivery_mode=foreground).
+T24 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651587 pid=111483 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+5+412 app=Xfce4-terminal /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+969 app=Xfce4-panel /   window_id=12582915 pid=6966 
+T25 CALL press_key {"pid": 111483, "window_id": 35651587, "key": "c", "modifiers": ["ctrl"]}
+   -> Pressed key 'c' as a real key event (delivery_mode=foreground, focus_after=target); not verified — confirm with a screenshot.
+T26 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651587 pid=111483 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+5+412 app=Xfce4-terminal /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+969 app=Xfce4-panel /   window_id=12582915 pid=6966 
+T27 CALL get_window_state {"pid": 82341}
+   -> ERR No windows found for pid 82341. Provide window_id.
+T28 CALL list_apps {"all": true}
+   -> ✅ Found 158 app(s): 124 running, 34 installed-not-running. / - systemd (pid 1) / - kthreadd (pid 2) / - pool_workqueue_release (pid 3) / - kworker/R-rcu_gp (pid 4) / - kworker/R-sync_wq (pid 5) / - kworker/R-kvfree_rcu_reclaim (pid 6) / - kworker/R-slub_flushwq (pid 7) / - kworker/R-netns (pid 8) / - kworker/0:0H-events_highpri (pid 10) / - kworker/R-mm_percpu_wq (pid 13) / - ksoftirqd/0 (pid 14) / - rcu_preempt (pid 15)
+T29 CALL type_text {"pid": 111483, "window_id": 35651587, "text": "python3 -c \"\nimport gi\ngi.require_version('Gtk','3.0')\nfrom gi.repository import Gtk\nw=Gtk.Window(title='VIEWINFO')\ntv=Gtk.TextView()\nbuf=tv.get_buffer()\ntry:\n    buf.set_text(open('/tmp/info.txt').read())\nexcept Exception as e:\n    buf.set_
+   -> Typed 327 character(s) (terminal emulator: pty/XTest key events).
+T30 CALL press_key {"pid": 111483, "window_id": 35651587, "key": "enter"}

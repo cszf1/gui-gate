@@ -1,0 +1,59 @@
+T1 CALL list_apps {}
+   -> ✅ Found 156 app(s): 122 running, 34 installed-not-running. / - systemd (pid 1) / - kthreadd (pid 2) / - pool_workqueue_release (pid 3) / - kworker/R-rcu_gp (pid 4) / - kworker/R-sync_wq (pid 5) / - kworker/R-kvfree_rcu_reclaim (pid 6) / - kworker/R-slub_flushwq (pid 7) / - kworker/R-netns (pid 8) / - kworker/0:0H-events_highpri (pid 10) / - kworker/R-mm_percpu_wq (pid 13) / - ksoftirqd/0 (pid 14) / - rcu_preempt (pid 15)
+T2 CALL list_windows {}
+   -> Found 5 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651587 pid=141551 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+5+56 app=Xfce4-terminal /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+851 app=Xfce4-panel /   window_id=12582915 pid=6966 "
+T3 CALL get_window_state {"pid": 141551, "window_id": 35651587}
+   -> window_id=35651587 pid=141551 elements=20 walk_ms=24 snapshot_id=s00000001 / element_token for row [N] = s00000001:N (row [1] is "s00000001:1") /  / - frame = "Terminal - sandbox@instabox-gui-pi2: /data/workspace" /       - [0] menu "File" [actions=[click]] (closed menu, 0 items; click it to open) /       - [1] menu "Edit" [actions=[click]] (closed menu, 0 items; click it to open) /       - [2] menu "View" [a
+T4 CALL type_text {"pid": 141551, "window_id": 35651587, "text": "pwd; echo '---'; ls -la /tmp; echo '---'; ls -la /data/workspace 2>/dev/null; echo '==='; find /tmp /data/workspace -name '*failed.ipynb' 2>/dev/null\n"}
+   -> Typed 150 character(s) (terminal emulator: pty/XTest key events).
+T5 CALL get_window_state {"pid": 141551, "window_id": 35651587, "since": "latest"}
+   -> window_id=35651587 pid=141551 elements=20 walk_ms=20 snapshot_id=s00000002 /  / since s00000001: 0 added, 1 changed, 0 removed. Use element_tokens s00000002:N for + and ~ rows and unchanged rows; - ids are from s00000001. / ~ [19] scroll bar "" value="279.0" [actions=[]] (unlabelled scroll bar; 2nd of 2 scroll bars in this window) | Invalidated snapshots s00000001: their element_tokens are stale.
+T6 CALL get_window_state {"pid": 141551, "query": "failed", "window_id": 35651587}
+   -> window_id=35651587 pid=141551 elements=20 walk_ms=19 /  /  | Invalidated snapshots s00000002: their element_tokens are stale.
+T7 CALL type_text {"pid": 141551, "text": "which mousepad xed gedit pluma vim nano 2>/dev/null; echo '---'; find /tmp -name '*failed.ipynb' > /tmp/list_tmp.txt 2>/dev/null; find /data/workspace -name '*failed.ipynb' > /tmp/list_ws.txt 2>/dev/null; wc -l /tmp/list_tmp.txt /tmp/list_ws.txt\n", "window_id": 35651587}
+   -> Typed 246 character(s) (terminal emulator: pty/XTest key events).
+T8 CALL type_text {"pid": 141551, "text": "for e in mousepad pluma gedit xed; do command -v $e >/dev/null 2>&1 && { $e /tmp/list_tmp.txt & exit; }; done; echo NOEDITOR\n", "window_id": 35651587}
+   -> Typed 125 character(s) (terminal emulator: pty/XTest key events).
+T9 CALL list_windows {}
+   -> Found 5 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651587 pid=141551 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+5+56 app=Xfce4-terminal /   window_id=12582926 pid=6966 "xfce4-panel" 306x49+567+851 app=Xfce4-panel /   window_id=12582915 pid=6966 "
+T10 CALL type_text {"pid": 141551, "text": "T=$(cat /tmp/list_tmp.txt /tmp/list_ws.txt); if command -v zenity >/dev/null 2>&1; then zenity --info --width=700 --height=500 --text=\"$T\" 2>/dev/null; elif command -v xmessage >/dev/null 2>&1; then xmessage \"$T\"; fi\n", "window_id": 35651587}
+   -> Typed 217 character(s) (terminal emulator: pty/XTest key events).
+T11 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651587 pid=141551 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+5+56 app=Xfce4-terminal /   window_id=33554468 pid=141675 "xmessage" 57x67+691+442 app=Xmessage /   window_id=12582926 pid=6966 "xfce4
+T12 CALL get_window_state {"pid": 141675, "window_id": 33554468}
+   -> window_id=33554468 pid=141675 elements=1 walk_ms=455 snapshot_id=s00000004 / element_token for row [N] = s00000004:N (row [0] is "s00000004:0") /  / - [0] window "xmessage" [actions=[activate]] / 
+T13 CALL type_text {"pid": 141551, "text": "cat > /tmp/show.py <<'EOF'\nimport tkinter as tk, pathlib\ndef rd(f):\n    try: return pathlib.Path(f).read_text(errors=\"ignore\")\n    except Exception as e: return \"ERR %s\" % e\ns = \"\"\nfor f in (\"/tmp/list_tmp.txt\",\"/tmp/list_ws.txt\"):\n    s += \"### %s (%d byte
+   -> Typed 486 character(s) (terminal emulator: pty/XTest key events).
+T14 CALL list_windows {}
+   -> Found 6 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651587 pid=141551 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+5+56 app=Xfce4-terminal /   window_id=33554468 pid=141675 "xmessage" 57x67+691+442 app=Xmessage /   window_id=12582926 pid=6966 "xfce4
+T15 CALL click {"pid": 141675, "window_id": 33554468, "x": 28, "y": 55}
+   -> Clicked at (28.0, 55.0) × 1 (delivery_mode=background, path=x11_xsendevent); not verified — confirm with a screenshot. [window_point=(28, 55) screen_point=(719, 497)]
+T16 CALL list_windows {}
+   -> Found 7 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651587 pid=141551 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+5+56 app=Xfce4-terminal /   window_id=33554449 pid=141700 "lists" 646x414+789+481 app=Tk /   window_id=12582926 pid=6966 "xfce4-panel"
+T17 CALL get_window_state {"pid": 141700, "window_id": 33554449}
+   -> window_id=33554449 pid=141700 elements=1 walk_ms=457 snapshot_id=s00000005 / element_token for row [N] = s00000005:N (row [0] is "s00000005:0") /  / - [0] window "lists" [actions=[activate]] / 
+T18 CALL type_text {"pid": 141551, "text": "cat > /tmp/win.py <<'EOF'\nimport sys, tkinter as tk, os\nbase = sys.argv[1]\nout=[]\nfor root,dirs,files in os.walk(base):\n    for f in files:\n        if f.endswith(\"failed.ipynb\"):\n            out.append(os.path.relpath(os.path.join(root,f), base))\nr=tk.Tk(); r.title
+   -> Typed 394 character(s) (terminal emulator: pty/XTest key events).
+T19 CALL list_windows {}
+   -> Found 8 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651587 pid=141551 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+5+56 app=Xfce4-terminal /   window_id=33554449 pid=141700 "lists" 646x414+789+481 app=Tk /   window_id=37748740 pid=141719 "[]" 120x60
+T20 CALL type_text {"pid": 141551, "text": "cat > /tmp/scan.py <<'EOF'\nimport tkinter as tk, os\nroots = [\"/home/user\",\"/tmp\",\"/data\",\"/opt\",\"/srv\",\"/var/tmp\"]\nfound={}\nfor base in roots:\n    L=[]\n    for root,dirs,files in os.walk(base):\n        for f in files:\n            if f.endswith(\"failed.ip
+   -> Typed 602 character(s) (terminal emulator: pty/XTest key events).
+T21 CALL list_windows {}
+   -> Found 8 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651587 pid=141551 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+5+56 app=Xfce4-terminal /   window_id=33554449 pid=141700 "lists" 646x414+789+481 app=Tk /   window_id=37748740 pid=141719 "[]" 120x60
+T22 CALL list_windows {}
+   -> Found 9 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651587 pid=141551 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+5+56 app=Xfce4-terminal /   window_id=33554449 pid=141700 "lists" 646x414+789+481 app=Tk /   window_id=37748740 pid=141719 "[]" 120x60
+T23 CALL type_text {"pid": 141551, "text": "python3 - <<'EOF'\nimport tkinter as tk, os\ninfo=[]\nfor p in (\"/home/user\",\"/data/home\",\"/data/workspace\",\"/tmp\"):\n    info.append(p+\" islink=\"+str(os.path.islink(p))+\" real=\"+os.path.realpath(p))\np1=\"/home/user/test_environment/dir1/a_failed.ipynb\"\np2=\"/
+   -> Typed 828 character(s) (terminal emulator: pty/XTest key events).
+T24 CALL list_windows {}
+   -> Found 10 windows: /   window_id=16777260 pid=6982 "Desktop" 1440x900+0+0 app=Xfdesktop /   window_id=31457287 pid=104842 "Appearance" 400x540+520+180 app=Xfce4-appearance-settings /   window_id=35651587 pid=141551 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" 817x483+5+56 app=Xfce4-terminal /   window_id=33554449 pid=141700 "lists" 646x414+789+481 app=Tk /   window_id=37748740 pid=141719 "[]" 120x6
+T25 CALL click {"element_token": "s00000001:7", "pid": 141551}
+   -> ERR element_token is stale; call get_window_state again to refresh; current snapshots for pid 141551: s00000003 (window 35651587)
+T26 CALL get_window_state {"pid": 141551, "window_id": 35651587, "fresh": true}
+   -> window_id=35651587 pid=141551 elements=20 walk_ms=26 snapshot_id=s00000006 / element_token for row [N] = s00000006:N (row [1] is "s00000006:1") /  / - frame = "Terminal - sandbox@instabox-gui-pi2: /data/workspace" /       - [0] menu "File" [actions=[click]] (closed menu, 0 items; click it to open) /       - [1] menu "Edit" [actions=[click]] (closed menu, 0 items; click it to open) /       - [2] menu "View" [a
+T27 CALL click {"element_token": "s00000006:7", "pid": 141551}
+   -> Clicked element [7] (pid 141551). | The application opened its own window 35651938 "Terminal - sandbox@instabox-gui-pi2: /data/workspace" and it now holds the focus (focus_outcome=same_app_dialog, left in place); pid-only type_text/press_key go to that window.
+T28 CALL type_text {"pid": 141551, "text": "cd /home/user\nrm -rf /home/user/fails\nmkdir -p /home/user/fails\nfind . -type f -name '*failed.ipynb' -exec cp --parents {} /home/user/fails/ \\;\necho COPIED\n", "window_id": 35651938}
+   -> Typed 156 character(s) (terminal emulator: pty/XTest key events).
+T29 CALL type_text {"pid": 141551, "text": "cat > /tmp/ver.py <<'EOF'\nimport tkinter as tk, os, hashlib\nbase=\"/home/user\"\ndst=os.path.join(base,\"fails\")\ndef sha(p):\n    h=hashlib.sha256()\n    with open(p,\"rb\") as f:\n        for c in iter(lambda:f.read(65536),b\"\"): h.update(c)\n    return h.hexdigest()[:
+   -> Typed 946 character(s) (terminal emulator: pty/XTest key events).
+T30 CALL list_windows {}
