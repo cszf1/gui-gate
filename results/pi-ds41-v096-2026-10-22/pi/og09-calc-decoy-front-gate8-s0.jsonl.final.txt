@@ -1,0 +1,1 @@
+DONE — In SalesRep.xlsx I added a new sheet "Sheet2" with headers "Month" and "Total" (A1:B1) and month totals Jan–Jun in rows 2–7 as SUM formulas over Sheet1 (4852, 4587, 3943, 3857, 4677, 4243), then saved the file.

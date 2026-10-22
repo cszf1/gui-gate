@@ -1,0 +1,1 @@
+There's a placeholder PDF already present; I'll export properly via LibreOffice's GUI.

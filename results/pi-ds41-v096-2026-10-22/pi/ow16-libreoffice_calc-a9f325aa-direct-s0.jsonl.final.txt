@@ -1,0 +1,1 @@
+DONE — Filled C2:C29 ("Clean Movie Titles") with the titles from column B, whitespace collapsed/trimmed and each word capitalized with remaining letters lowercased (e.g. "    MiniONs     IN             blACK" → "Minions In Black"), then converted the formulas to plain values, saved as xlsx; no other cells were touched.

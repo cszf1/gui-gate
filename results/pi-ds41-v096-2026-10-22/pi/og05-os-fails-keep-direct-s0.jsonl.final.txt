@@ -1,0 +1,1 @@
+DONE — Found the 3 `*failed.ipynb` files (`dir1/a_failed.ipynb`, `dir2/subdir1/c_failed.ipynb`, `dir3/e_failed.ipynb`) under `/home/user/test_environment` and copied them with `cp --parents -n` into `test_environment/fails/`, keeping the `dir1/`, `dir2/subdir1/`, `dir3/` hierarchy (existing `fails/KEEP.txt` untouched); verified with `cmp`.

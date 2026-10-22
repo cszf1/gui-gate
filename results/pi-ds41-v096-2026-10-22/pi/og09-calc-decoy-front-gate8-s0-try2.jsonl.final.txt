@@ -1,0 +1,1 @@
+DONE — Added a new sheet **Sheet2** to `/home/user/SalesRep.xlsx` with headers "Month" and "Total" in A1:B1, listing all months (Jan–Jun) with `=SUM(Sheet1.x2:x11)` totals (4852, 4587, 3943, 3857, 4677, 4243) and saved the file.

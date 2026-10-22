@@ -1,0 +1,1 @@
+DONE — Used File > Save As in LibreOffice Impress to save the open deck (Secrets-of-Monetizing-Video.pptx, 17 slides) as `/home/user/Desktop/pre.pptx`, keeping the PowerPoint format and replacing the old file.

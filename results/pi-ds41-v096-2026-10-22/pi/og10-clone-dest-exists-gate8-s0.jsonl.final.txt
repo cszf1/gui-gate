@@ -1,0 +1,3 @@
+DONE
+
+Cloned `https://github.com/xlang-ai/instructor-embedding` into `/home/user/instructor-embedding` (via `/var/tmp` staging because the folder already existed and held `KEEP.txt`, which was preserved untouched); verified remote, HEAD `9a9742c`, and full 175 MB `.git` history.

@@ -1,0 +1,1 @@
+DONE — In `/home/user/testDir` (the terminal's working directory) I ran `find . -type f -exec chmod 644 {} +`, setting all 5 regular files to 644 while leaving directories unchanged.
