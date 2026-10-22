@@ -112,3 +112,25 @@ Tests: cargo 87 + 5 ignored (new: v097 phantom, roles allowlist + JSON extractio
 websocket frame/crop, jobs, memory); python 130 (new tests/test_v097.py: 12 - tool lists, phantom mapping /
 triple-click emulation / unknown names / off by default, inspect file/env/locate/howto/memory/page/image, search role
 over a local fake endpoint, jobs start/poll/stop and the risk check at start).
+
+### Round 19 - feasibility first, task briefing, end-state plans, working memory (commit below)
+- Task briefing (built once, attached to the first tool result after the task is known, or to gate_task's answer):
+  `## Feasibility` = the read-only fact sheet (inspect env) + the feasibility role's verdict with evidence and notes
+  when configured (Pointer gate prompt; probes through the read-only allowlist; a destructive probe is refused and
+  the model is told so) + "decide first"; `## Skills` = built-in skills picked by task words and open window titles
+  (Intelligence-Indeed static skills; the feasibility notes are the dynamic skill shared with the planner);
+  `## Plan` = the planner role's milestones with predicates (Pointer planner prompt), installed as the agent's plan
+  when it has none; `## Experience` = the 2 closest memory entries. Capped at 6,000 chars. Event `briefing`.
+- `GUI_GATE_FEASIBILITY_FIRST`: the first GUI action (or run_actions) before any set_plan verdict is refused once,
+  with the briefing ("Nothing was executed. First decide whether this task can be done ..."); run_command (read-only
+  probing) is not held. An infeasible role verdict is advisory (the acting model decides and replies FAIL) - Pointer's
+  gate also had 2/333 false alarms, and in MCP the gate cannot end the agent's turn.
+- `GUI_GATE_STATE_PLAN` (`src/plancheck.rs`): set_plan milestones may be `{state, check}`, `checks:[{n, check}]`
+  attaches predicates (file_exists, file_changed, file_contains (office files by their saved text), title_contains,
+  not_title_contains, window_open, app_running, terminal_contains, cell); set_plan answers with each check's status
+  (holds / not yet / unknown); re-sent milestones keep their done marks (revision mid-task); milestones that read
+  like clicks get a one-line "restate as end state" note (Pointer "states, not steps"; HIPPO plan check);
+  `facts:{k:v}` working memory (UiPath store_info/delete_info, HIPPO facts), shown in set_plan / check_done.
+Tests: cargo 88 + 5 (plancheck predicates + recipe detection); python 139 (+9: state plans, 0.9.6 schema without the
+flag, feasibility-first once, briefing text, gate_task briefing, feasibility role with a refused destructive probe
+and a read-only probe, planner role seeding the plan + plan line, unreachable role harmless, experience memory).
