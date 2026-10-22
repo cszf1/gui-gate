@@ -353,6 +353,9 @@ fn augment_tools(result: &mut Value, shared: &Arc<Mutex<Shared>>, toolset: &str,
         if name == "get_window_state" {
             props.insert("fresh".into(), json!({"type": "boolean", "description": "Force a new read even though nothing was done since the tree that came back with your last action."}));
         }
+        if name == "list_apps" {
+            props.insert("all".into(), json!({"type": "boolean", "description": "Also list kernel threads and system daemons (hidden by default)."}));
+        }
         if is_gated(&name) {
             props.insert("gate_confirm".into(), json!({"type": "string", "description": "Confirmation code the gate gave for a high-risk action, only after the user approved it."}));
         }
