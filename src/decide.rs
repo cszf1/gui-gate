@@ -77,6 +77,25 @@ pub fn after(f: &Feats, o: &str) -> Feats {
 }
 
 /// What a failed step costs, in seconds: noticing it and redoing it takes about two model turns plus clean-up,
+/// A plain navigation key (arrows, Tab, Page Up/Down, Home/End), optionally with Shift/Ctrl.
+pub fn is_nav_key(ctx: &ActionCtx) -> bool {
+    if ctx.tool != "press_key" && ctx.tool != "hotkey" {
+        return false;
+    }
+    let mut keys: Vec<String> = vec![];
+    if let Some(k) = ctx.args.get("key").and_then(|k| k.as_str()) {
+        keys.push(k.to_lowercase());
+    }
+    if let Some(a) = ctx.args.get("keys").and_then(|k| k.as_array()) {
+        keys.extend(a.iter().filter_map(|k| k.as_str()).map(|k| k.to_lowercase()));
+    }
+    let mods: Vec<String> = ctx.args.get("modifiers").and_then(|m| m.as_array())
+        .map(|a| a.iter().filter_map(|k| k.as_str()).map(|k| k.to_lowercase()).collect()).unwrap_or_default();
+    let nav = regex::Regex::new(r"^(up|down|left|right|tab|page_?up|page_?down|pgup|pgdn|home|end|arrow_?(up|down|left|right))$").unwrap();
+    let ok_mod = |k: &str| matches!(k, "shift" | "ctrl" | "control");
+    !keys.is_empty() && keys.iter().any(|k| nav.is_match(k)) && keys.iter().all(|k| nav.is_match(k) || ok_mod(k)) && mods.iter().all(|m| ok_mod(m))
+}
+
 /// scaled by how hard the step is to undo and by how stuck the run already is (consecutive known failures).
 pub fn fail_cost(ctx: &ActionCtx, f: &Feats, cfg: &GateConfig) -> f64 {
     let base = 2.0 * cfg.turn_cost + cfg.side_cost;
@@ -270,7 +289,9 @@ pub fn hard_rules(ctx: &ActionCtx, f: &Feats, cfg: &GateConfig, confirmed: bool,
     if fget(f, "last_err") != 0.0 && fget(f, "repeat") >= 1.0 {
         return Some(Decision::new("look_full", 0.0, "the identical action just failed; its effect is unknown, so it must not be re-sent blind", "rule"));
     }
-    if fget(f, "repeat") >= 2.0 && fget(f, "last_unverif") != 0.0 {
+    // moving through a list or text with arrow/Tab/Page keys repeats the same key by design: not a loop
+    // (all logs: 117 such presses executed, 0 errors; the 6 that went to the reviewer were denied and re-sent)
+    if fget(f, "repeat") >= 2.0 && fget(f, "last_unverif") != 0.0 && !is_nav_key(ctx) {
         return Some(Decision::new("review", 0.0, "same action sent repeatedly without a confirmed effect (possible loop)", "rule"));
     }
     if kind == "pixel" && (fget(f, "window_changed") != 0.0 || fget(f, "last_popup") != 0.0) && fget(f, "acts_since_obs") >= 1.0 {
@@ -440,5 +461,24 @@ mod tests {
         cfg.fail_exp = 1.5;
         let c15 = fail_cost(&ctx("click", "token", "Bold"), &f, &cfg);
         assert!(c15 > c1 * 1.4);
+    }
+
+    #[test]
+    fn repeated_arrow_keys_are_not_a_loop() {
+        let mut f = feats();
+        f["repeat"] = 2.0;
+        f["last_unverif"] = 1.0;
+        let mut c = ctx("press_key", "keyboard", "");
+        c.args = serde_json::json!({"key": "Down"});
+        assert!(is_nav_key(&c));
+        let cfg = GateConfig::default();
+        assert!(hard_rules(&c, &f, &cfg, false, false).map(|d| d.option != "review").unwrap_or(true));
+        c.args = serde_json::json!({"key": "Return"});
+        assert!(!is_nav_key(&c));
+        assert_eq!(hard_rules(&c, &f, &cfg, false, false).unwrap().option, "review");
+        c.args = serde_json::json!({"key": "down", "modifiers": ["shift"]});
+        assert!(is_nav_key(&c));
+        c.args = serde_json::json!({"key": "Tab", "modifiers": ["alt"]});
+        assert!(!is_nav_key(&c));
     }
 }
