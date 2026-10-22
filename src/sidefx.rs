@@ -164,12 +164,12 @@ pub fn splitext_ext(name: &str) -> String {
     }
 }
 
-fn p(path: &str, cwd: &str) -> String {
+pub fn p(path: &str, cwd: &str) -> String {
     let e = expandvars(&expanduser(path));
     normpath(&if e.starts_with('/') { e } else { join(cwd, &e) })
 }
 
-fn is_dir(p: &str) -> bool {
+pub fn is_dir(p: &str) -> bool {
     Path::new(p).is_dir()
 }
 
@@ -177,11 +177,11 @@ pub fn nonempty_file(p: &str) -> bool {
     fs::metadata(p).map(|m| m.is_file() && m.len() > 0).unwrap_or(false)
 }
 
-fn exists(p: &str) -> bool {
+pub fn exists(p: &str) -> bool {
     fs::symlink_metadata(p).is_ok() && Path::new(p).exists()
 }
 
-fn realpath(p: &str) -> PathBuf {
+pub fn realpath(p: &str) -> PathBuf {
     fs::canonicalize(p).unwrap_or_else(|_| PathBuf::from(normpath(p)))
 }
 
@@ -300,7 +300,62 @@ fn cp_like(argv: &[String], cwd: &str) -> Option<Effect> {
     Some(("high".into(), format!("`{tool}` would overwrite existing file(s): {}{more}", names.join(", "))))
 }
 
+/// `soffice --headless --convert-to FMT [--outdir D] files...` writes D/<stem>.<fmt> without asking: an existing file
+/// of that name (og02: the PDF that is already there) is replaced silently.
+fn soffice_convert(argv: &[String], cwd: &str) -> Option<Effect> {
+    let mut fmt: Option<String> = None;
+    let mut outdir = cwd.to_string();
+    let mut inputs: Vec<String> = vec![];
+    let mut i = 1;
+    while i < argv.len() {
+        let a = &argv[i];
+        if a == "--convert-to" || a == "-convert-to" {
+            fmt = argv.get(i + 1).cloned();
+            i += 2;
+            continue;
+        }
+        if a == "--outdir" || a == "-outdir" {
+            if let Some(d) = argv.get(i + 1) {
+                outdir = p(d, cwd);
+            }
+            i += 2;
+            continue;
+        }
+        if let Some(v) = a.strip_prefix("--convert-to=") {
+            fmt = Some(v.to_string());
+        } else if let Some(v) = a.strip_prefix("--outdir=") {
+            outdir = p(v, cwd);
+        } else if !a.starts_with('-') {
+            inputs.push(a.clone());
+        }
+        i += 1;
+    }
+    let fmt = fmt?;
+    let ext = fmt.split(':').next().unwrap_or("").trim().to_lowercase();
+    if ext.is_empty() {
+        return None;
+    }
+    let mut hit = vec![];
+    for src in expand(&inputs, cwd) {
+        let b = basename(&src);
+        let e = splitext_ext(&b);
+        let stem = &b[..b.len() - e.len()];
+        let tgt = join(&outdir, &format!("{stem}.{ext}"));
+        if nonempty_file(&tgt) && realpath(&tgt) != realpath(&src) {
+            hit.push(relpath(&tgt, cwd));
+        }
+    }
+    if hit.is_empty() {
+        return None;
+    }
+    Some(("high".into(), format!("`soffice --convert-to` would overwrite existing file(s): {}", hit.join(", "))))
+}
+
 static SESSION_START: OnceLock<std::time::SystemTime> = OnceLock::new();
+
+pub fn session_start() -> Option<std::time::SystemTime> {
+    SESSION_START.get().copied()
+}
 
 /// Remember when this gate started: paths created or modified after it are the agent's own work, not user data.
 pub fn mark_session_start() {
@@ -308,7 +363,7 @@ pub fn mark_session_start() {
 }
 
 /// True when the path was created/changed during this gate session (the agent's own work, so moving it is harmless).
-fn session_owned(path: &str, start: Option<std::time::SystemTime>) -> bool {
+pub fn session_owned(path: &str, start: Option<std::time::SystemTime>) -> bool {
     let Some(start) = start else { return false };
     fs::symlink_metadata(path).and_then(|m| m.modified()).map(|t| t >= start).unwrap_or(false)
 }
@@ -551,9 +606,71 @@ fn xargs_as_find_exec(find_argv: &[String], xargs_argv: &[String]) -> Option<Vec
     Some(cmd)
 }
 
+/// `for V in a b c; do BODY; done` -> `BODY[V=a] ; BODY[V=b] ; BODY[V=c]` (simple word lists only, globs kept for
+/// `expand`), so a loop that copies into an existing file is judged like the unrolled commands (a loop over
+/// `$(...)` or `"$@"` stays as it was).
+pub fn unroll_for_loops(src: &str) -> String {
+    static R: OnceLock<Regex> = OnceLock::new();
+    let rx = R.get_or_init(|| Regex::new(r"\bfor\s+([A-Za-z_][A-Za-z0-9_]*)\s+in\s+([^;\n]*?)\s*[;\n]\s*do\s+(.*?)\s*;?\s*\bdone\b").unwrap());
+    let mut out = src.to_string();
+    for _ in 0..4 {
+        let Some(c) = rx.captures(&out) else { break };
+        let (var, list, body) = (c[1].to_string(), c[2].to_string(), c[3].to_string());
+        if list.contains('$') || list.contains('`') {
+            break;
+        }
+        let Some(words) = tokenize(&list) else { break };
+        let parts: Vec<String> = words.iter().map(|w| {
+            body.replace(&format!("\"${{{var}}}\""), w).replace(&format!("\"${var}\""), w)
+                .replace(&format!("${{{var}}}"), w).replace(&format!("${var}"), w)
+        }).collect();
+        let m = c.get(0).unwrap();
+        out = format!("{}{}{}", &out[..m.start()], parts.join(" ; "), &out[m.end()..]);
+    }
+    out
+}
+
+/// `echo|printf WORDS | xargs [-n N] [-I R] CMD ARGS` as the command lines xargs would run (one per word).
+fn xargs_from_echo(prev: &[String], xargs_argv: &[String]) -> Option<String> {
+    let p0 = prev.first().map(|a| basename(a))?;
+    if p0 != "echo" && p0 != "printf" {
+        return None;
+    }
+    let words: Vec<String> = prev[1..].iter().filter(|w| !w.starts_with('-') && !w.contains('%') && !w.contains('\\')).cloned().collect();
+    let mut i = 1;
+    let mut repl: Option<String> = None;
+    while i < xargs_argv.len() {
+        let a = &xargs_argv[i];
+        if a == "-I" || a == "--replace" {
+            repl = xargs_argv.get(i + 1).cloned();
+            i += 2;
+            continue;
+        }
+        if let Some(r) = a.strip_prefix("-I").filter(|r| !r.is_empty()) {
+            repl = Some(r.to_string());
+        } else if ["-n", "-L", "-P", "-d", "-s", "-E", "-a"].contains(&a.as_str()) {
+            i += 2;
+            continue;
+        } else if !a.starts_with('-') {
+            break;
+        }
+        i += 1;
+    }
+    let inner = &xargs_argv[i..];
+    if inner.is_empty() || words.is_empty() {
+        return None;
+    }
+    let q = |w: &str| format!("'{}'", w.replace('\'', ""));
+    let lines: Vec<String> = words.iter().map(|w| match &repl {
+        Some(r) => inner.iter().map(|a| q(&a.replace(r.as_str(), w))).collect::<Vec<_>>().join(" "),
+        None => format!("{} {}", inner.iter().map(|a| q(a)).collect::<Vec<_>>().join(" "), q(w)),
+    }).collect();
+    Some(lines.join(" ; "))
+}
+
 /// [(argv, overwrite-redirect targets)] for each simple command.
 fn commands(cmdline: &str) -> Vec<(Vec<String>, Vec<String>)> {
-    let src = cmdline.replace("\\;", " __ESC_SEMI__ ").replace('\n', " ; ");
+    let src = unroll_for_loops(&cmdline.replace('\n', " ; ")).replace("\\;", " __ESC_SEMI__ ");
     let Some(toks) = tokenize(&src) else { return vec![] };
     let mut out = vec![];
     let (mut argv, mut redir): (Vec<String>, Vec<String>) = (vec![], vec![]);
@@ -615,6 +732,14 @@ pub fn shell_effects(cmdline: &str, cwd: &str) -> Option<Effect> {
         if from_pipe && argv.first().map(|a| basename(a) == "xargs").unwrap_or(false) {
             if let Some(fe) = xargs_as_find_exec(&prev_cmd, &argv) {
                 argv = fe;
+            } else if let Some(unrolled) = xargs_from_echo(&prev_cmd, &argv) {
+                // `echo dir1 dir2 | xargs -n 1 cp file1`: judge the commands xargs would build
+                if let Some(rr) = shell_effects(&unrolled, cwd) {
+                    if worst.is_none() || (rr.0 == "high" && worst.as_ref().unwrap().0 != "high") {
+                        worst = Some(rr);
+                    }
+                }
+                continue;
             }
         }
         if argv.first().map(|a| a == "cd").unwrap_or(false) {
@@ -644,6 +769,7 @@ pub fn shell_effects(cmdline: &str, cwd: &str) -> Option<Effect> {
                 "mv" | "rsync" => cp_like(&argv, cwd).or_else(|| move_away(&argv, cwd)),
                 "find" => find_exec(&argv, cwd),
                 "chmod" => chmod(&argv, false),
+                "soffice" | "libreoffice" | "lowriter" | "localc" | "loimpress" | "soffice.bin" => soffice_convert(&argv, cwd),
                 "rm" => {
                     let tg: Vec<String> = argv[1..].iter().filter(|a| !a.starts_with('-')).cloned().collect();
                     // the agent's own scratch (created during this session) is not user data
@@ -777,7 +903,11 @@ mod tests {
         assert_eq!(r.0, "high");
         assert!(r.1.contains("dir2/file1"));
         assert!(shell_effects("cp -n file1 dir2", &d).is_none());
-        assert!(shell_effects("for d in dir1 dir2; do cp file1 $d; done", &d).is_none());
+        // a loop is judged like its unrolled commands (was a blind spot before 0.9.6 R11)
+        assert_eq!(lvl(shell_effects("for d in dir1 dir2; do cp file1 $d; done", &d)).as_deref(), Some("high"));
+        assert_eq!(lvl(shell_effects("for d in dir1 dir2; do cp file1 \"$d\"/; done", &d)).as_deref(), Some("high"));
+        assert!(shell_effects("for d in dir1; do cp file1 ${d}/; done", &d).is_none());
+        assert!(shell_effects("for f in $(ls); do cp file1 $f; done", &d).is_none());
     }
 
     #[test]

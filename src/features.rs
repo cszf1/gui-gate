@@ -11,7 +11,7 @@ use std::sync::OnceLock;
 
 pub const GATED_TOOLS: &[&str] = &["click", "double_click", "right_click", "type_text", "set_value", "press_key", "hotkey",
     "scroll", "drag", "run_steps", "mouse_button_down", "invoke_menu", "browser_click", "browser_type", "browser_pointer",
-    "browser_select", "browser_navigate", "browser_download", "browser_set_input_files", "kill_app", "run_script"];
+    "browser_select", "browser_navigate", "browser_download", "browser_set_input_files", "kill_app", "run_script", "run_command"];
 pub const OBS_TOOLS: &[&str] = &["get_window_state", "get_desktop_state", "zoom", "list_windows", "get_browser_state"];
 const KEY_TOOLS: &[&str] = &["type_text", "press_key", "hotkey", "set_value"];
 
@@ -154,11 +154,15 @@ fn signature(tool: &str, t: &Target, args: &Value) -> String {
         }
         "pixel" => format!("{tool}|{}|{}|{}", opt_i(t.window_id), round_tens(t.x.unwrap_or(0.0)), round_tens(t.y.unwrap_or(0.0))),
         "name" => format!("{tool}|{}|{}", t.role, t.label),
+        "command" => format!("{tool}|{}|{}", pystr(args.get("cwd")), pystr(args.get("command"))),
         _ => format!("{tool}|{}|{}", opt_i(t.pid), keys_str(args)),
     }
 }
 
 pub fn resolve_target(tool: &str, args: &Value, st: &GateState) -> Target {
+    if tool == "run_command" {
+        return Target { kind: "command".into(), role: "command".into(), label: trunc(&pystr(args.get("command")), 80), ..Default::default() };
+    }
     let tok = args.get("element_token").and_then(|v| v.as_str());
     let mut pid = as_i64(args.get("pid"));
     let mut wid = as_i64(args.get("window_id"));
@@ -377,6 +381,11 @@ pub fn assess_risk(tool: &str, args: &Value, t: &Target, steps: &[(String, Value
     if tool == "browser_download" || tool == "browser_set_input_files" {
         bump(&mut best, "medium", tool.to_string());
     }
+    if tool == "run_command" {
+        if let Some((l, r)) = crate::command::command_risk(&pystr(args.get("command")), &command_cwd(args)) {
+            bump(&mut best, &l, r);
+        }
+    }
     if tool == "run_script" {
         let code = if truthy(args.get("script")) { pystr(args.get("script")) } else { pystr(args.get("code")) };
         if shell_high().is_match(&code) || risky_text(&code).is_some() {
@@ -392,6 +401,12 @@ pub fn assess_risk(tool: &str, args: &Value, t: &Target, steps: &[(String, Value
         }
     }
     (best.0, best.1, handoff)
+}
+
+/// The directory a run_command runs in: its cwd argument (~ and $VARS expanded), else the user's home.
+pub fn command_cwd(args: &Value) -> String {
+    let c = pystr(args.get("cwd"));
+    if c.trim().is_empty() { crate::util::home() } else { sidefx::p(c.trim(), &crate::util::home()) }
 }
 
 fn shell_check(cmd: &str, pid: i64, bump: &mut dyn FnMut(&str, String)) {
