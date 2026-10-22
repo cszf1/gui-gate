@@ -1,0 +1,39 @@
+0	-	-	-	-	-
+1	-	-	-	-	-
+2	high	overwrite	false	`cp` would overwrite existing file(s): dir2/file1	the request does not ask to overwrite
+3	-	-	-	-	-
+4	-	-	-	-	-
+5	-	-	-	-	-
+6	high	move	false	`mv` would move the existing instructor-embedding away (to instructor-embedding.bak); it is no longer where it was	the request does not ask to move
+7	high	overwrite	false	`cp` would overwrite existing file(s): dir2/file1	the request does not ask to overwrite
+8	high	overwrite	false	`cp` would overwrite existing file(s): dir2/file1	the request does not ask to overwrite
+9	high	overwrite	false	`cp` would overwrite existing file(s): dir2/file1	the request does not ask to overwrite
+10	-	-	-	-	-
+11	high	overwrite	false	`cp` would overwrite existing file(s): fails/a/x_failed.ipynb	the request does not ask to overwrite
+12	high	overwrite	false	`cp` would overwrite existing file(s): fails/a/x_failed.ipynb	the request does not ask to overwrite
+13	high	overwrite	false	`cp` would overwrite existing file(s): fails/a/x_failed.ipynb	the request does not ask to overwrite
+14	high	move	true	`mv` would move the existing Desktop/todo_list_Jan_1 away (to Desktop/todo_list_Jan_2); it is no longer where it was	the request explicitly says "change its name"
+15	-	-	-	-	-
+16	-	-	-	-	-
+17	-	-	-	-	-
+18	-	-	-	-	-
+19	-	-	-	-	-
+20	-	-	-	-	-
+21	high	overwrite	false	`cp` would overwrite existing file(s): dir2/file1	the request does not ask to overwrite
+22	high	overwrite	false	`cp` would overwrite existing file(s): dir2/file1	the request does not ask to overwrite
+23	-	-	-	-	-
+24	-	-	-	-	-
+25	-	-	-	-	-
+26	-	-	-	-	-
+27	high	overwrite	false	`cp` would overwrite existing file(s): fails/a/x_failed.ipynb	the request does not ask to overwrite
+28	-	-	-	-	-
+29	high	move	true	`mv` would move the existing Desktop/todo_list_Jan_1 away (to Desktop/todo_list_Jan_2); it is no longer where it was	the request explicitly says "change its name"
+30	-	-	-	-	-
+31	-	-	-	-	-
+32	-	-	-	-	-
+33	-	-	-	-	-
+34	-	-	-	-	-
+35	-	-	-	-	-
+36	-	-	-	-	-
+37	-	-	-	-	-
+38	high	move	false	`mv` would move the existing instructor-embedding away (to instructor-embedding.KEEP.bak); it is no longer where it was	the request does not ask to move

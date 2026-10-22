@@ -1,0 +1,32 @@
+pi-ds41-v094-2026-10-21     exp=1.5     1369 interv=0.084 caught=0.336 prec=0.417 look_full=21.0 review=10.0
+pi-ds41-v094-2026-10-21     exp=1.5 rev 1369 interv=0.088 caught=0.336 prec=0.397 look_full=21.0 review=10.0
+pi-ds41-v094-2026-10-21     exp=1.0     1369 interv=0.077 caught=0.294 prec=0.400 look_full=12.0 review=10.0
+pi-ds41-v094-2026-10-21     exp=1.0 rev 1369 interv=0.081 caught=0.294 prec=0.378 look_full=12.0 review=10.0
+pi-ds41-2026-10-21          exp=1.5     125 interv=0.088 caught=0.308 prec=0.364 look_full=1.0 review=0
+pi-ds41-2026-10-21          exp=1.5 rev 125 interv=0.088 caught=0.308 prec=0.364 look_full=1.0 review=0
+pi-ds41-2026-10-21          exp=1.0     125 interv=0.088 caught=0.308 prec=0.364 look_full=1.0 review=0
+pi-ds41-2026-10-21          exp=1.0 rev 125 interv=0.088 caught=0.308 prec=0.364 look_full=1.0 review=0
+osworld-2026-10-21          exp=1.5     1948 interv=0.145 caught=0.451 prec=0.426 look_full=101.0 review=3.0
+osworld-2026-10-21          exp=1.5 rev 1948 interv=0.151 caught=0.451 prec=0.408 look_full=101.0 review=3.0
+osworld-2026-10-21          exp=1.0     1948 interv=0.123 caught=0.380 prec=0.423 look_full=58.0 review=3.0
+osworld-2026-10-21          exp=1.0 rev 1948 interv=0.129 caught=0.380 prec=0.402 look_full=58.0 review=3.0
+osworld-2026-10-21-gate034  exp=1.5     906 interv=0.126 caught=0.495 prec=0.421 look_full=38.0 review=0
+osworld-2026-10-21-gate034  exp=1.5 rev 906 interv=0.131 caught=0.495 prec=0.403 look_full=38.0 review=0
+osworld-2026-10-21-gate034  exp=1.0     906 interv=0.108 caught=0.412 prec=0.408 look_full=22.0 review=0
+osworld-2026-10-21-gate034  exp=1.0 rev 906 interv=0.114 caught=0.412 prec=0.388 look_full=22.0 review=0
+osworld-2026-10-21-v036     exp=1.5     80 interv=0.025 caught=0.000 prec=0.000 look_full=0 review=0
+osworld-2026-10-21-v036     exp=1.5 rev 80 interv=0.038 caught=0.333 prec=0.333 look_full=0 review=0
+osworld-2026-10-21-v036     exp=1.0     80 interv=0.025 caught=0.000 prec=0.000 look_full=0 review=0
+osworld-2026-10-21-v036     exp=1.0 rev 80 interv=0.038 caught=0.333 prec=0.333 look_full=0 review=0
+osworld-2026-10-20-aborted  exp=1.5     53 interv=0.491 caught=0.459 prec=0.654 look_full=11.0 review=0
+osworld-2026-10-20-aborted  exp=1.5 rev 53 interv=0.491 caught=0.459 prec=0.654 look_full=11.0 review=0
+osworld-2026-10-20-aborted  exp=1.0     53 interv=0.434 caught=0.405 prec=0.652 look_full=8.0 review=0
+osworld-2026-10-20-aborted  exp=1.0 rev 53 interv=0.434 caught=0.405 prec=0.652 look_full=8.0 review=0
+smoke-fresh-2026-10-21      exp=1.5     354 interv=0.090 caught=0.591 prec=0.813 look_full=6.0 review=18.0
+smoke-fresh-2026-10-21      exp=1.5 rev 354 interv=0.102 caught=0.591 prec=0.722 look_full=6.0 review=18.0
+smoke-fresh-2026-10-21      exp=1.0     354 interv=0.085 caught=0.591 prec=0.867 look_full=4.0 review=18.0
+smoke-fresh-2026-10-21      exp=1.0 rev 354 interv=0.096 caught=0.591 prec=0.765 look_full=4.0 review=18.0
+ALL                         exp=1.5     5001 interv=0.122 caught=0.434 prec=0.451 look_full=186.0 review=31.0
+ALL                         exp=1.5 rev 5001 interv=0.128 caught=0.436 prec=0.432 look_full=186.0 review=31.0
+ALL                         exp=1.0     5001 interv=0.106 caught=0.373 prec=0.446 look_full=107.0 review=31.0
+ALL                         exp=1.0 rev 5001 interv=0.112 caught=0.374 prec=0.425 look_full=107.0 review=31.0
