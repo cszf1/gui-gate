@@ -32,6 +32,7 @@ mod roles;
 mod inspect;
 mod jobs;
 mod memory;
+mod plancheck;
 
 use decide::GateConfig;
 use util::*;

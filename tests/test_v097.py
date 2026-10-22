@@ -244,3 +244,158 @@ class JobTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class PlanTests(unittest.TestCase):
+    def test_state_milestones_checks_facts(self):
+        d = tempfile.mkdtemp()
+        c = Client("--human", "deny", env={"GUI_GATE_STATE_PLAN": "1"})
+        try:
+            r = c.call("set_plan", feasible=True, milestones=["Click the Data menu, then Sort", {"state": f"{d}/out.txt holds the total", "check": {"file_contains": [f"{d}/out.txt", "42"]}}],
+                       facts={"total": "42"})
+            t = txt(r)
+            self.assertIn("milestone(s) 1 read like clicks", t)
+            self.assertIn("[check: not yet:", t)
+            self.assertIn("Facts: total=42", t)
+            open(os.path.join(d, "out.txt"), "w").write("sum 42\n")
+            r = c.call("set_plan", done=[1], checks=[{"n": 1, "check": {"file_exists": f"{d}/out.txt"}}])
+            self.assertIn("1. [x]", txt(r))
+            self.assertIn("[check: holds:", txt(r))
+            r = c.call("set_plan", milestones=["Click the Data menu, then Sort", "new end state"], facts={"total": None})
+            self.assertIn("1. [x]", txt(r))  # unchanged milestone keeps its done mark
+            self.assertNotIn("Facts:", txt(r))
+            ev = [e for e in c.events() if e.get("ev") == "plan"]
+            self.assertEqual(ev[0]["checks"], 1)
+        finally:
+            c.close()
+
+    def test_without_flag_set_plan_is_096(self):
+        c = Client("--human", "deny")
+        try:
+            tools = {t["name"]: t for t in c.rpc("tools/list", {})["tools"]}
+            self.assertNotIn("checks", tools["set_plan"]["inputSchema"]["properties"])
+            r = c.call("set_plan", milestones=["Click the Data menu"])
+            self.assertNotIn("read like clicks", txt(r))
+        finally:
+            c.close()
+
+
+class FeasibilityFirstTests(unittest.TestCase):
+    def test_first_action_needs_a_verdict_once(self):
+        c = Client("--human", "deny", "--task", "Sort the rows of \"zz-nope.xlsx\" in LibreOffice Calc by date",
+                   env={"GUI_GATE_FEASIBILITY_FIRST": "1", "GUI_GATE_SKILLS": "1"})
+        try:
+            r = c.call("click", element_token=f"{c.read()}:0")
+            t = txt(r)
+            self.assertIn("Nothing was executed. First decide whether this task can be done", t)
+            st = json.loads(txt(c.call("fake_state")))
+            self.assertEqual(st["clicked"], [])
+            r = c.call("click", element_token=f"{c.read()}:0")
+            self.assertIn("Clicked element [0]", txt(r))  # asked once only
+            ev = [e for e in c.events() if e.get("ev") in ("verdict_required", "briefing")]
+            self.assertEqual([e["ev"] for e in ev], ["briefing", "verdict_required"])
+            self.assertIn("libreoffice_calc", ev[0]["skills"])
+        finally:
+            c.close()
+
+    def test_briefing_text_and_set_plan_unlocks(self):
+        c = Client("--human", "deny", "--task", "Sort the rows of \"zz-nope.xlsx\" in LibreOffice Calc by date",
+                   env={"GUI_GATE_FEASIBILITY_FIRST": "1", "GUI_GATE_SKILLS": "1"})
+        try:
+            r = c.call("list_windows")
+            t = txt(r)
+            self.assertIn("[gate] Task briefing", t)
+            self.assertIn('"zz-nope.xlsx": NOT found', t)
+            self.assertIn("[libreoffice_calc]", t)
+            self.assertIn("[environment]", t)
+            self.assertIn("required before your first action", t)
+            c.call("set_plan", feasible=True, milestones=["zz-nope.xlsx is sorted by date and saved"])
+            r = c.call("click", element_token=f"{c.read()}:0")
+            self.assertIn("Clicked element [0]", txt(r))
+            self.assertNotIn("Task briefing", txt(r))  # once
+        finally:
+            c.close()
+
+    def test_gate_task_gets_the_briefing(self):
+        c = Client("--human", "deny", env={"GUI_GATE_SKILLS": "1"})
+        try:
+            r = c.call("gate_task", request="Change the Chrome font size to 20")
+            self.assertIn("[gate] Noted.", txt(r))
+            self.assertIn("[chrome]", txt(r))
+        finally:
+            c.close()
+
+
+class RoleBriefingTests(unittest.TestCase):
+    def test_feasibility_role_probes_read_only_and_reports(self):
+        victim = tempfile.mkdtemp()
+        open(os.path.join(victim, "keep.txt"), "w").write("x")
+        calls = []
+
+        def script(system, user):
+            calls.append(user)
+            if "Feasibility Gate" not in system:
+                return "{}"
+            if len(calls) == 1:
+                return json.dumps({"probe": "sh", "command": f"rm -rf {victim}"})
+            if len(calls) == 2:
+                return json.dumps({"probe": "sh", "command": "ls /sys/class/power_supply 2>/dev/null; echo probed-ok"})
+            return json.dumps({"final": {"feasible": False, "reason": "no battery on this machine", "evidence": ["/sys/class/power_supply is empty"], "notes": []}})
+        llm = FakeLLM(script)
+        c = Client("--human", "deny", "--task", "Show the battery percentage in the panel",
+                   env={"GUI_GATE_FEASIBILITY_FIRST": "1", **llm.env("feasibility")})
+        try:
+            t = txt(c.call("list_windows"))
+            self.assertIn("INFEASIBLE - no battery on this machine", t)
+            self.assertIn("call set_plan with feasible:false", t)
+            self.assertTrue(os.path.exists(os.path.join(victim, "keep.txt")))  # the destructive probe was refused
+            self.assertIn("refused:", calls[1])
+            self.assertIn("probed-ok", calls[2])
+            self.assertIn("PROBES SO FAR", calls[2])
+            b = next(e for e in c.events() if e.get("ev") == "briefing")
+            self.assertEqual(b["feasibility"]["verdict"], False)
+            self.assertEqual(b["feasibility"]["probes"], 2)
+        finally:
+            c.close()
+            llm.close()
+
+    def test_planner_role_seeds_the_plan(self):
+        d = tempfile.mkdtemp()
+
+        def script(system, user):
+            return json.dumps({"final": {"milestones": [{"state": f"{d}/done.txt exists", "check": {"file_exists": f"{d}/done.txt"}}, "the app shows the result"], "infeasible_reason": ""}})
+        llm = FakeLLM(script)
+        c = Client("--human", "deny", "--task", f"Create {d}/done.txt", env={"GUI_GATE_STATE_PLAN": "1", **llm.env("planner")})
+        try:
+            t = txt(c.call("list_windows"))
+            self.assertIn("## Plan (from the gate's planner", t)
+            self.assertIn("(check {", t)
+            r = c.call("run_command", command=f"touch {d}/done.txt")
+            self.assertIn("[plan] 0/2 done; next: 1.", txt(r))
+            r = c.call("set_plan", done=[1])
+            self.assertIn("holds:", txt(r))
+        finally:
+            c.close()
+            llm.close()
+
+    def test_unreachable_role_is_harmless(self):
+        c = Client("--human", "deny", "--task", "Do something", env={"GUI_GATE_FEASIBILITY_FIRST": "1", "GUI_GATE_ROLE_FEASIBILITY_URL": "http://127.0.0.1:9/v1",
+                                                                     "GUI_GATE_ROLE_FEASIBILITY_MODEL": "x", "GUI_GATE_ROLE_FEASIBILITY_TIMEOUT": "1"})
+        try:
+            t = txt(c.call("list_windows"))
+            self.assertIn("the feasibility role gave no verdict", t)
+            self.assertIn("hardware:", t)
+        finally:
+            c.close()
+
+    def test_experience_memory_in_briefing(self):
+        f = tempfile.NamedTemporaryFile("w", suffix=".jsonl", delete=False)
+        f.write(json.dumps({"task": "Make the Chrome font size bigger, 20", "steps": ["hotkey ctrl+l", "type_text chrome://settings/fonts"]}) + "\n")
+        f.close()
+        c = Client("--human", "deny", "--task", "Set the default font size in Chrome to 24", env={"GUI_GATE_MEMORY": f.name})
+        try:
+            t = txt(c.call("list_windows"))
+            self.assertIn("## Experience", t)
+            self.assertIn("chrome://settings/fonts", t)
+        finally:
+            c.close()

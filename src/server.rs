@@ -137,6 +137,18 @@ pub fn plan_enabled() -> bool {
 }
 
 fn plan_tool() -> Value {
+    let mut t = plan_tool_096();
+    if crate::v097::on("STATE_PLAN") {
+        t["description"] = json!("Your own plan and working memory, kept by the gate. Call it once at the start with your feasibility verdict and 2-6 milestones that describe END STATES, not clicks (\"report.xlsx is sorted by date and saved\", not \"click Data > Sort\"): feasible:false when the task cannot be done on this computer (the app has no such feature, the thing asked for does not exist, files or hardware are missing, it would need a workaround) - then reply FAIL with the reason. Attach checks the gate can verify without you: checks:[{n:1, check:{file_changed:\"~/Desktop/report.xlsx\"}}] (file_exists, file_changed, file_contains:[path,text], title_contains, not_title_contains, window_open, app_running, terminal_contains, cell:[\"B3\",\"value\"]). Revise the plan when you learn something (send milestones again; done marks of unchanged milestones are kept). facts:{key: value} stores values you will need later (null deletes). Every action result ends with a one-line progress note; check_done evaluates the checks.");
+        let p = &mut t["inputSchema"]["properties"];
+        p["milestones"]["description"] = json!("2-6 end states (replaces the current list)");
+        p["checks"] = json!({"type": "array", "items": {"type": "object"}, "description": "[{n: milestone number, check: {predicate: value}}]"});
+        p["facts"] = json!({"type": "object", "description": "working memory: {key: value} (value null removes the key)"});
+    }
+    t
+}
+
+fn plan_tool_096() -> Value {
     json!({"name": "set_plan",
         "description": "Your own plan, kept by the gate (no model involved). Call it once at the start with 2-6 short milestones and your feasibility verdict: feasible:false when the task cannot be done on this computer (the app has no such feature or setting, the thing asked for does not exist, the file or data is not there) - then reply FAIL with the reason instead of trying. Later calls mark milestones done (done: [numbers]) or replace the list. Every action result then ends with a one-line progress note, and check_done lists milestones still open.",
         "inputSchema": {"type": "object", "properties": {
@@ -478,6 +490,11 @@ pub struct Inner {
     pub lb: crate::loopbreak::LoopTrack,
     pub plan: Vec<(String, bool)>,   // set_plan milestones (text, done)
     pub plan_verdict: String,
+    /// 0.9.7: milestone predicates (parallel to plan), working-memory facts, briefing state
+    pub plan_checks: Vec<Option<Value>>,
+    pub facts: Vec<(String, String)>,
+    pub briefed: bool,
+    pub verdict_nagged: bool,
     pub risk_info: Value,
     pub cur_ack: bool,
 }
@@ -696,7 +713,7 @@ impl Gate {
                 want_shot: HashSet::new(), seen_pids: HashSet::new(), fg_sticky: false, pixel_pids: HashSet::new(),
                 probe_disabled: false, denied_effects: HashMap::new(), step_doubted: HashSet::new(), acted: false, read_streak: 0, hinted: HashSet::new(), cells_seen: HashMap::new(), term_seen: HashMap::new(), denials_consec: 0, denials_total: 0,
                 task_locked, task_source, in_batch: false, batch_ctx: Value::Null, pix_age: HashMap::new(),
-                last_auto: HashMap::new(), seen_rows: HashMap::new(), recent: vec![], plan: vec![], plan_verdict: String::new(), lb: Default::default(), risk_info: Value::Null, cur_ack: false,
+                last_auto: HashMap::new(), seen_rows: HashMap::new(), recent: vec![], plan: vec![], plan_verdict: String::new(), plan_checks: vec![], facts: vec![], briefed: false, verdict_nagged: false, lb: Default::default(), risk_info: Value::Null, cur_ack: false,
             }),
             shared, out, log: Arc::new(EventLog::new(log_path)), child: Mutex::new(child), child_cmd,
             init_params: Mutex::new(None), client_elicit, client_pending, restarts: AtomicU64::new(0), human,
@@ -848,6 +865,22 @@ impl Gate {
                 return;
             }
         };
+        // 0.9.7 feasibility first: no GUI action before the agent stated its feasibility verdict (once)
+        if crate::v097::on("FEASIBILITY_FIRST") && plan_enabled() && (is_gated(&name) || name == "run_actions") && name != "run_command" {
+            let mut inn = self.inner.lock().unwrap_or_else(|e| e.into_inner());
+            if inn.plan_verdict.is_empty() && !inn.verdict_nagged {
+                inn.verdict_nagged = true;
+                inn.inc("verdict_required");
+                self.log.write(json!({"ev": "verdict_required", "tool": name}));
+                drop(inn);
+                let pre = if name0 == "gate_task" { None } else { self.briefing() };
+                let mut r = text_result("[gate] Nothing was executed. First decide whether this task can be done on this computer at all: call set_plan with feasible:true and your milestones (end states), or feasible:false with the reason and reply FAIL. Use the briefing / inspect kind=env for facts. Then send this action again.", false);
+                if let Some(b) = pre { push_text(&mut r, b); }
+                self.out.send(&json!({"jsonrpc": "2.0", "id": msg["id"], "result": r}));
+                return;
+            }
+        }
+        let brief_first = if name != "gate_task" { self.briefing() } else { None };
         let me = self.clone();
         let nm = name.clone();
         let res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(move || {
@@ -883,6 +916,10 @@ impl Gate {
         let mut result = result;
         if let Some(n) = alias_note {
             push_text(&mut result, format!("[gate] {n}."));
+        }
+        let brief = brief_first.or_else(|| if name == "gate_task" && !is_error(&result) { self.briefing() } else { None });
+        if let Some(b) = brief {
+            push_text(&mut result, b);
         }
         {
             let mut inn = self.inner.lock().unwrap_or_else(|e| e.into_inner());
@@ -2300,11 +2337,54 @@ impl Gate {
     }
 
     fn set_plan(&self, args: &Value) -> Value {
+        let state_plan = crate::v097::on("STATE_PLAN");
         let mut inn = self.inner.lock().unwrap_or_else(|e| e.into_inner());
+        let mut notes: Vec<String> = vec![];
         if let Some(ms) = args.get("milestones").and_then(|v| v.as_array()) {
-            let ms: Vec<(String, bool)> = ms.iter().map(|m| trunc(pystr(Some(m)).trim(), 160)).filter(|m| !m.is_empty()).take(12).map(|m| (m, false)).collect();
-            if !ms.is_empty() {
-                inn.plan = ms;
+            // 0.9.7: a milestone may be {state, check}; re-sent milestones keep their done marks
+            let mut items: Vec<(String, Option<Value>)> = vec![];
+            for m in ms.iter().take(12) {
+                let (t, c) = if m.is_object() && state_plan {
+                    (pystr(m.get("state").or(m.get("milestone")).or(m.get("text"))), m.get("check").filter(|c| c.is_object()).cloned())
+                } else {
+                    (pystr(Some(m)), None)
+                };
+                let t = trunc(t.trim(), 160);
+                if !t.is_empty() {
+                    items.push((t, c));
+                }
+            }
+            if !items.is_empty() {
+                let old: Vec<(String, bool)> = std::mem::take(&mut inn.plan);
+                let old_checks = std::mem::take(&mut inn.plan_checks);
+                inn.plan = items.iter().map(|(t, _)| (t.clone(), state_plan && old.iter().any(|o| o.0 == *t && o.1))).collect();
+                inn.plan_checks = items.iter().map(|(t, c)| c.clone().or_else(|| old.iter().position(|o| o.0 == *t).and_then(|i| old_checks.get(i).cloned().flatten()))).collect();
+                if state_plan {
+                    let recipe: Vec<usize> = inn.plan.iter().enumerate().filter(|(_, m)| crate::plancheck::recipe_like(&m.0)).map(|(i, _)| i + 1).collect();
+                    if !recipe.is_empty() {
+                        inn.inc("plan_recipe_warn");
+                        notes.push(format!("milestone(s) {} read like clicks; restate them as the END STATE they produce (what will be true / saved / shown), so another route still counts if this one breaks", recipe.iter().map(|i| i.to_string()).collect::<Vec<_>>().join(", ")));
+                    }
+                }
+            }
+        }
+        if state_plan {
+            for c in args.get("checks").and_then(|v| v.as_array()).cloned().unwrap_or_default() {
+                let n = as_i64(c.get("n")).unwrap_or(0);
+                if n >= 1 && (n as usize) <= inn.plan.len() && c.get("check").map(|x| x.is_object()).unwrap_or(false) {
+                    let i = n as usize - 1;
+                    if inn.plan_checks.len() < inn.plan.len() { let l = inn.plan.len(); inn.plan_checks.resize(l, None); }
+                    inn.plan_checks[i] = c.get("check").cloned();
+                }
+            }
+            if let Some(f) = args.get("facts").and_then(|v| v.as_object()) {
+                for (k, v) in f {
+                    inn.facts.retain(|x| x.0 != *k);
+                    if !v.is_null() {
+                        inn.facts.push((trunc(k, 60), trunc(&pystr(Some(v)), 300)));
+                    }
+                }
+                inn.facts.truncate(30);
             }
         }
         for d in args.get("done").and_then(|v| v.as_array()).cloned().unwrap_or_default() {
@@ -2323,10 +2403,167 @@ impl Gate {
             self.log.write(json!({"ev": "plan", "feasible": false, "reason": reason, "milestones": inn.plan.len()}));
             return text_result(format!("[gate] Noted: you judge this task infeasible here ({}). If you are sure, stop and reply FAIL with that reason; if not, set_plan again with feasible:true and continue.", if reason.is_empty() { "no reason given" } else { &reason }), false);
         }
-        inn.plan_verdict = "feasible".into();
-        self.log.write(json!({"ev": "plan", "feasible": true, "milestones": inn.plan.len(), "done": inn.plan.iter().filter(|m| m.1).count()}));
-        let list: Vec<String> = inn.plan.iter().enumerate().map(|(i, m)| format!("{}. [{}] {}", i + 1, if m.1 { "x" } else { " " }, m.0)).collect();
-        text_result(format!("[gate] Plan noted:\n{}", list.join("\n")), false)
+        if args.get("feasible").is_some() || inn.plan_verdict.is_empty() {
+            inn.plan_verdict = "feasible".into();
+        }
+        let status = if state_plan && inn.plan_checks.iter().any(|c| c.is_some()) { self.plan_check_status(&mut inn) } else { vec![] };
+        self.log.write(json!({"ev": "plan", "feasible": true, "milestones": inn.plan.len(), "done": inn.plan.iter().filter(|m| m.1).count(),
+                              "checks": inn.plan_checks.iter().filter(|c| c.is_some()).count(), "facts": inn.facts.len(), "notes": notes.len()}));
+        let list: Vec<String> = inn.plan.iter().enumerate().map(|(i, m)| {
+            let st = status.iter().find(|x| x.0 == i).map(|x| format!("  [check: {}]", x.1)).unwrap_or_default();
+            format!("{}. [{}] {}{st}", i + 1, if m.1 { "x" } else { " " }, m.0)
+        }).collect();
+        let mut t = format!("[gate] Plan noted:\n{}", list.join("\n"));
+        if !inn.facts.is_empty() {
+            t.push_str(&format!("\nFacts: {}", inn.facts.iter().map(|(k, v)| format!("{k}={v}")).collect::<Vec<_>>().join("; ")));
+        }
+        for n in notes {
+            t.push_str(&format!("\n[gate] {n}"));
+        }
+        text_result(t, false)
+    }
+
+    /// What the milestone predicates say now: (milestone index, "holds: ..." / "not yet: ..." / "unknown: ...").
+    fn plan_check_status(&self, inn: &mut Inner) -> Vec<(usize, String)> {
+        let ctx = self.plan_ctx(inn);
+        let mut out = vec![];
+        for (i, c) in inn.plan_checks.clone().iter().enumerate() {
+            if let Some(c) = c {
+                let (r, why) = crate::plancheck::eval(c, &ctx);
+                out.push((i, format!("{} {why}", match r { Some(true) => "holds:", Some(false) => "not yet:", None => "unknown:" })));
+            }
+        }
+        out
+    }
+
+    fn plan_ctx(&self, inn: &mut Inner) -> crate::plancheck::Ctx {
+        let home = home();
+        let wins = self.all_windows(inn);
+        let mut roots = vec![home.clone(), format!("{home}/Desktop"), format!("{home}/Documents")];
+        let mut terminal = String::new();
+        let mut cells = String::new();
+        let need_cells = inn.plan_checks.iter().flatten().any(|c| c.get("cell").is_some());
+        for (p, w, title) in &wins {
+            if crate::sidefx::is_terminal(*p) {
+                let c = crate::sidefx::shell_cwd(*p);
+                if !roots.contains(&c) { roots.push(c); }
+                if terminal.is_empty() {
+                    terminal = crate::atspi::terminal_text(*p, title, Duration::from_millis(800)).unwrap_or_default();
+                }
+            }
+            if need_cells && cells.is_empty() && title.contains("LibreOffice") && is_spreadsheet_app(*p) {
+                let key = format!("{p}:{w}");
+                cells = self.tree_extra(inn, *p, &key, &format!("frame = \"{title}\"\n(cell grid)\ncell grid not expanded"), false).unwrap_or_default();
+            }
+        }
+        crate::plancheck::Ctx { titles: wins.into_iter().map(|w| w.2).collect(), terminal, cells, roots, start: crate::sidefx::session_start() }
+    }
+
+    /// 0.9.7 task briefing (Intelligence-Indeed dynamic skill + Pointer feasibility gate / planner + HIPPO memory):
+    /// built once when the task is known, from read-only facts, the feasibility and planner roles when configured,
+    /// the built-in skills and the experience memory. None when no feature that contributes to it is on.
+    fn briefing(&self) -> Option<String> {
+        let feas = crate::v097::on("FEASIBILITY_FIRST");
+        let skills = crate::v097::on("SKILLS");
+        let planr = crate::v097::on("STATE_PLAN") && self.roles.get("planner").is_some();
+        let mem = crate::memory::path().is_some();
+        if !(feas || skills || planr || mem) {
+            return None;
+        }
+        let t0 = Instant::now();
+        let (task, titles, wtext) = {
+            let mut inn = self.inner.lock().unwrap_or_else(|e| e.into_inner());
+            if inn.briefed || inn.cfg.task.trim().is_empty() {
+                return None;
+            }
+            inn.briefed = true;
+            let w = self.all_windows(&mut inn);
+            let titles: Vec<String> = w.iter().map(|x| x.2.clone()).filter(|t| !DESKTOP_WINDOWS.contains(&t.as_str())).collect();
+            let wtext = w.iter().filter(|x| !DESKTOP_WINDOWS.contains(&x.2.as_str())).map(|(p, id, t)| format!("pid {p} window {id}: \"{t}\"")).collect::<Vec<_>>().join("\n");
+            (inn.cfg.task.clone(), titles, wtext)
+        };
+        let wt = wtext.clone();
+        let windows = move || if wt.is_empty() { "(no app windows open)".to_string() } else { wt.clone() };
+        let facts = crate::inspect::env_facts(&task, "");
+        let mut parts: Vec<String> = vec![];
+        let mut ev = json!({"ev": "briefing"});
+        let mut feas_notes = String::new();
+        if feas {
+            let mut sec = String::new();
+            if let Some(role) = self.roles.get("feasibility") {
+                let prompt = format!("TASK (verbatim): {task}\n\nOPEN WINDOWS:\n{}\n\nFACTS THE GATE ALREADY PROBED:\n{facts}", windows());
+                let (fin, log, calls, err) = crate::roles::probe_agent(role, crate::roles::FEASIBILITY_SYSTEM, &prompt, &windows, true);
+                ev["feasibility"] = json!({"calls": calls, "probes": log.len(), "error": err, "verdict": fin.as_ref().and_then(|f| f.get("feasible")).cloned()});
+                if let Some(f) = fin {
+                    let ok = f.get("feasible").and_then(|b| b.as_bool()).unwrap_or(true);
+                    let notes: Vec<String> = f.get("notes").and_then(|n| n.as_array()).map(|a| a.iter().map(|x| pystr(Some(x))).collect()).unwrap_or_default();
+                    let evid: Vec<String> = f.get("evidence").and_then(|n| n.as_array()).map(|a| a.iter().map(|x| pystr(Some(x))).collect()).unwrap_or_default();
+                    feas_notes = format!("{} {}", pystr(f.get("reason")), notes.join(" "));
+                    sec.push_str(&format!("Feasibility check by the gate's {} ({}): {} - {}\n", role.name, role.backend(), if ok { "FEASIBLE" } else { "INFEASIBLE" }, pystr(f.get("reason"))));
+                    if !evid.is_empty() { sec.push_str(&format!("Evidence: {}\n", evid.join("; "))); }
+                    if !notes.is_empty() { sec.push_str(&format!("Notes for the work: {}\n", notes.join("; "))); }
+                    if !ok {
+                        sec.push_str("If you agree, call set_plan with feasible:false and the reason, and reply FAIL. If you have evidence it can be done, say so in set_plan and go on.\n");
+                        let mut inn = self.inner.lock().unwrap_or_else(|e| e.into_inner());
+                        inn.inc("briefing_infeasible");
+                    }
+                } else {
+                    sec.push_str(&format!("(the feasibility role gave no verdict: {})\n", err.unwrap_or_default()));
+                }
+            }
+            sec.push_str(&facts);
+            sec.push_str("\nDecide first whether the task can be done here: call set_plan with feasible true/false (required before your first action). Infeasible = the app lacks the feature, the files / hardware are missing, the thing asked for does not exist, or it needs a workaround.");
+            parts.push(format!("## Feasibility\n{sec}"));
+        }
+        if skills {
+            let sk = crate::inspect::select_skills(&task, &titles);
+            let mut sec = String::new();
+            for (n, b) in &sk {
+                sec.push_str(&format!("[{n}] {b}\n"));
+            }
+            ev["skills"] = json!(sk.iter().map(|x| x.0.clone()).collect::<Vec<_>>());
+            parts.push(format!("## Skills\n{}", sec.trim_end()));
+        }
+        if planr {
+            let role = self.roles.get("planner").unwrap();
+            let prompt = format!("TASK (verbatim): {task}\n\nOPEN WINDOWS:\n{}\n\nFACTS:\n{facts}\n\nFEASIBILITY NOTES: {feas_notes}", windows());
+            let (fin, log, calls, err) = crate::roles::probe_agent(role, crate::roles::PLANNER_SYSTEM, &prompt, &windows, true);
+            ev["planner"] = json!({"calls": calls, "probes": log.len(), "error": err});
+            if let Some(f) = fin {
+                let ms: Vec<Value> = f.get("milestones").and_then(|m| m.as_array()).cloned().unwrap_or_default();
+                let items: Vec<(String, Option<Value>)> = ms.iter().take(12).map(|m| if m.is_object() {
+                    (trunc(pystr(m.get("state")).trim(), 160), m.get("check").filter(|c| c.is_object()).cloned())
+                } else { (trunc(pystr(Some(m)).trim(), 160), None) }).filter(|x| !x.0.is_empty()).collect();
+                if !items.is_empty() {
+                    let mut inn = self.inner.lock().unwrap_or_else(|e| e.into_inner());
+                    if inn.plan.is_empty() {
+                        inn.plan = items.iter().map(|x| (x.0.clone(), false)).collect();
+                        inn.plan_checks = items.iter().map(|x| x.1.clone()).collect();
+                    }
+                    let list: Vec<String> = items.iter().enumerate().map(|(i, x)| format!("{}. {}{}", i + 1, x.0, x.1.as_ref().map(|c| format!("  (check {c})")).unwrap_or_default())).collect();
+                    let inf = pystr(f.get("infeasible_reason"));
+                    parts.push(format!("## Plan (from the gate's planner {}; it is now your plan - revise it with set_plan when you learn more)\n{}{}", role.backend(), list.join("\n"),
+                        if inf.trim().is_empty() { String::new() } else { format!("\nThe planner suspects it may be infeasible: {inf}") }));
+                    ev["planner"]["milestones"] = json!(items.len());
+                }
+            }
+        }
+        if mem {
+            let txt = crate::memory::lookup_text(&task, 2);
+            if !txt.contains("no earlier") && !txt.contains("not configured") {
+                parts.push(format!("## Experience\n{txt}"));
+            }
+        }
+        if parts.is_empty() {
+            return None;
+        }
+        let out = trunc(&format!("[gate] Task briefing (read once; the gate's notes for this task):\n{}", parts.join("\n")), 6000);
+        ev["chars"] = json!(out.chars().count());
+        ev["ms"] = json!(round_to(t0.elapsed().as_secs_f64() * 1000.0, 1));
+        self.log.write(ev);
+        let mut inn = self.inner.lock().unwrap_or_else(|e| e.into_inner());
+        inn.inc("briefings");
+        Some(out)
     }
 
     /// Evidence for the agent's own completion decision (no model; the gate never says "done" or "not done").
