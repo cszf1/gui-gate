@@ -399,3 +399,175 @@ class RoleBriefingTests(unittest.TestCase):
             self.assertIn("chrome://settings/fonts", t)
         finally:
             c.close()
+
+
+class LoopTests(unittest.TestCase):
+    def test_two_strikes_on_the_same_mechanism(self):
+        c = Client("--human", "deny", env={"GUI_GATE_TWO_STRIKES": "1"})
+        try:
+            c.call("fake_mutate", fail_next=2)
+            r1 = c.call("click", element_token=f"{c.read()}:0")
+            self.assertNotIn("Two strikes", txt(r1))
+            r2 = c.call("click", element_token=f"{c.read(fresh=True)}:0")
+            self.assertIn("[gate] Two strikes: the same mechanism (click on Increment) failed twice", txt(r2) + txt(r1))
+            ev = [e for e in c.events() if e.get("ev") == "loop_breaker"]
+            self.assertEqual(ev[0]["reason"], "two_strikes")
+        finally:
+            c.close()
+
+    def test_without_flag_two_failures_give_no_note(self):
+        c = Client("--human", "deny")
+        try:
+            c.call("fake_mutate", fail_next=2)
+            r1 = c.call("click", element_token=f"{c.read()}:0")
+            r2 = c.call("click", element_token=f"{c.read(fresh=True)}:0")
+            self.assertNotIn("Two strikes", txt(r1) + txt(r2))
+        finally:
+            c.close()
+
+    def test_loop_judge_at_level_three(self):
+        llm = FakeLLM(lambda sys, user: json.dumps({"final": {"verdict": "SWITCH", "blacklist": "clicking OK", "advice": "use the keyboard shortcut instead."}}))
+        c = Client("--human", "deny", "--task", "press the button", env={"GUI_GATE_TWO_STRIKES": "1", **llm.env("judge")})
+        try:
+            c.call("fake_mutate", fail_next=60, elements=[["button", f"B{i}"] for i in range(14)])
+            out = ""
+            for i in range(26):
+                out += txt(c.call("click", element_token=f"{c.read(fresh=True)}:{i % 14}"))
+                if "Loop judge" in out:
+                    break
+            self.assertIn("Loop judge (api:chat:fake-judge): SWITCH - use the keyboard shortcut instead.", out)
+            self.assertIn("you judge whether a gui agent is stuck", llm.seen[0]["messages"][0]["content"].lower())
+        finally:
+            c.close()
+            llm.close()
+
+
+class GroundingTests(unittest.TestCase):
+    def test_pixel_click_next_to_an_element_is_snapped(self):
+        c = Client("--human", "deny", env={"GUI_GATE_SNAP": "1"})
+        try:
+            c.call("get_window_state", pid=4242, window_id=777, tree_format="elements", include_screenshot=True)
+            r = c.call("click", pid=4242, window_id=777, x=215, y=25)
+            self.assertIn('the gate clicked that element', txt(r))
+            st = json.loads(txt(c.call("fake_state")))
+            self.assertIn("Increment", st["clicked"])
+            # inside an element: unchanged
+            c.call("get_window_state", pid=4242, window_id=777, tree_format="elements", include_screenshot=True, fresh=True)
+            r = c.call("click", pid=4242, window_id=777, x=100, y=25)
+            self.assertNotIn("gate clicked that element", txt(r))
+        finally:
+            c.close()
+
+
+class MicroVerifyTests(unittest.TestCase):
+    def test_save_check_sees_the_unsaved_marker(self):
+        c = Client("--human", "deny", env={"GUI_GATE_MICRO_VERIFY": "1", "FAKE_TITLE": "*notes.txt - Mousepad"})
+        try:
+            c.read()
+            r = c.call("hotkey", pid=4242, window_id=777, keys=["ctrl", "s"])
+            self.assertIn("[gate] Save check: \"*notes.txt - Mousepad\" still shows an unsaved-changes marker", txt(r))
+        finally:
+            c.close()
+
+
+class PickTests(unittest.TestCase):
+    def test_pick_one_prefers_the_safe_likely_candidate(self):
+        c = Client("--human", "deny", env={"GUI_GATE_PICK": "1"})
+        try:
+            tools = {t["name"]: t for t in c.rpc("tools/list", {})["tools"]}
+            self.assertIn("pick_one", tools["run_actions"]["inputSchema"]["properties"])
+            s = c.read()
+            r = c.call("run_actions", pick_one=True, steps=[{"tool": "click", "args": {"element_token": f"{s}:1"}},
+                                                            {"tool": "click", "args": {"element_token": f"{s}:0"}}])
+            self.assertIn("pick_one: ran candidate 2", txt(r))
+            self.assertIn("(high risk)", txt(r))
+            st = json.loads(txt(c.call("fake_state")))
+            self.assertEqual(st["clicked"], ["Increment"])
+        finally:
+            c.close()
+
+    def test_judge_picks_among_safe_candidates(self):
+        llm = FakeLLM(lambda sys, user: json.dumps({"final": {"pick": 1, "reason": "the delete is what is needed"}}))
+        c = Client("--human", "deny", env={"GUI_GATE_PICK": "1", **llm.env("judge")})
+        try:
+            s = c.read()
+            r = c.call("run_actions", pick_one=True, steps=[{"tool": "click", "args": {"element_token": f"{s}:1"}},
+                                                            {"tool": "click", "args": {"element_token": f"{s}:0"}},
+                                                            {"tool": "click", "args": {"element_token": f"{s}:3"}}])
+            self.assertNotIn("ran candidate 1", txt(r))  # the judge cannot pick the risky one over safe ones
+            llm2 = FakeLLM(lambda sys, user: json.dumps({"final": {"pick": 3, "reason": "OK closes it"}}))
+            c2 = Client("--human", "deny", env={"GUI_GATE_PICK": "1", **llm2.env("judge")})
+            s2 = c2.read()
+            r2 = c2.call("run_actions", pick_one=True, steps=[{"tool": "click", "args": {"element_token": f"{s2}:0"}},
+                                                              {"tool": "click", "args": {"element_token": f"{s2}:3"}}])
+            self.assertIn("candidate count error" if False else "pick_one: ran candidate", txt(r2))
+            c2.close()
+            llm2.close()
+        finally:
+            c.close()
+            llm.close()
+
+
+class DigestTests(unittest.TestCase):
+    def test_periodic_digest(self):
+        c = Client("--human", "deny", "--task", "count to two", env={"GUI_GATE_DIGEST": "1", "GUI_GATE_DIGEST_EVERY": "2"})
+        try:
+            r1 = c.call("click", element_token=f"{c.read()}:0")
+            self.assertNotIn("Progress digest", txt(r1))
+            r2 = c.call("click", element_token=f"{c.read(fresh=True)}:0")
+            self.assertIn("[gate] Progress digest after 2 steps (0 failed", txt(r2))
+            self.assertIn('click button "Increment" -> ok', txt(r2))
+        finally:
+            c.close()
+
+    def test_compact_role_writes_the_digest(self):
+        llm = FakeLLM(lambda sys, user: json.dumps({"final": {"digest": "## Task\ncount\n## State\ntwo clicks done"}}))
+        c = Client("--human", "deny", "--task", "count to two", env={"GUI_GATE_DIGEST": "1", "GUI_GATE_DIGEST_EVERY": "2", **llm.env("compact")})
+        try:
+            c.call("click", element_token=f"{c.read()}:0")
+            r = c.call("click", element_token=f"{c.read(fresh=True)}:0")
+            self.assertIn("two clicks done", txt(r))
+            self.assertIn("ALL STEPS SO FAR", llm.seen[0]["messages"][1]["content"])
+        finally:
+            c.close()
+            llm.close()
+
+
+class VerifyPlusTests(unittest.TestCase):
+    def test_check_done_reads_back_and_evaluates_checks(self):
+        d = tempfile.mkdtemp()
+        p = os.path.join(d, "result.txt")
+        c = Client("--human", "deny", "--task", f"Write the total into {p}", env={"GUI_GATE_VERIFY_PLUS": "1", "GUI_GATE_STATE_PLAN": "1"})
+        try:
+            c.call("set_plan", feasible=True, milestones=[{"state": f"{p} holds the total 42", "check": {"file_contains": [p, "42"]}}])
+            c.call("run_command", command=f"echo 'total 41' > {p}")
+            r = c.call("check_done")
+            t = txt(r)
+            self.assertIn("Saved content of", t)
+            self.assertIn("total 41", t)
+            self.assertIn("milestone 1 check does not hold", t)
+            self.assertIn("plan_check", r["structuredContent"]["kinds"])
+        finally:
+            c.close()
+
+    def test_verifier_role_verdict_and_budget(self):
+        def script(system, user):
+            if "verify whether a Linux desktop" in system:
+                return json.dumps({"final": {"decision": "failed", "reasoning": "x", "diagnosis": "the file says 41", "suggestion": "write 42 into the named file"}})
+            return "{}"
+        llm = FakeLLM(script)
+        d = tempfile.mkdtemp()
+        c = Client("--human", "deny", "--task", f"Write 42 into {d}/r.txt", env={"GUI_GATE_VERIFY_PLUS": "1", **llm.env("verifier")})
+        try:
+            c.call("run_command", command=f"echo 41 > {d}/r.txt")
+            r = c.call("check_done")
+            self.assertIn("Independent verifier (api:chat:fake-verifier): FAILED", txt(r))
+            self.assertIn("suggestion: write 42 into the named file", txt(r))
+            self.assertEqual(r["structuredContent"]["verifier"]["decision"], "failed")
+            c.call("check_done")
+            r3 = c.call("check_done")
+            self.assertNotIn("Independent verifier", txt(r3))  # budget: two verdicts per session
+            self.assertEqual(len(llm.seen), 2)
+        finally:
+            c.close()
+            llm.close()

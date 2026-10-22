@@ -134,3 +134,37 @@ over a local fake endpoint, jobs start/poll/stop and the risk check at start).
 Tests: cargo 88 + 5 (plancheck predicates + recipe detection); python 139 (+9: state plans, 0.9.6 schema without the
 flag, feasibility-first once, briefing text, gate_task briefing, feasibility role with a refused destructive probe
 and a read-only probe, planner role seeding the plan + plan line, unreachable role harmless, experience memory).
+
+### Round 20 - verify, recover, ground, pick, digest (commit below)
+- `GUI_GATE_VERIFY_PLUS`: check_done adds each milestone check's status (a failing check is gap `plan_check`; a
+  milestone whose check holds but is not marked done is pointed out instead of reported open), the facts, and the
+  saved content of up to 2 named / changed documents (docx/xlsx/pptx/odt/ods/odp/csv/txt/... read from disk:
+  "what a checker reading the file sees" - Pointer's verifier rule: disk and GUI must agree). The verifier role (Pointer
+  verifier prompt: wrong target, surface lookalike, substitute, wrong key, unused artifact, partial completion; read-only
+  probes) appends DONE / FAILED (diagnosis + concrete different suggestion) / INFEASIBLE; budget 2 verdicts per
+  session (Pointer max_replan_count 1 -> one retry after a FAILED).
+- `GUI_GATE_MICRO_VERIFY` (VLAA micro-verification): after ctrl+s / ctrl+shift+s the gate looks for a save dialog
+  (Keep Current Format / Save As / overwrite) or a title that still has an unsaved marker; after type_text on an
+  element it checks that the text shows up in the post-action read.
+- `GUI_GATE_TWO_STRIKES` (Pointer two strikes; VLAA tier 1/2; OS-Symphony screen-state loop detection):
+  `LoopTrack::push_ext` - the same mechanism (mode + target label / command word / "pixels") without progress twice in a
+  row raises level 1 at once ("Two strikes ... switch to a genuinely different mechanism"); the window state after an
+  action (title + hash of the element set) recurring 3 times within 8 actions with no progress raises level 2
+  ("change the overall strategy", re-sending refused). Judge role at level 3 (VLAA tier 3): KEEP / SWITCH + blacklist
+  + advice, on both the executed and the refused path.
+- `GUI_GATE_SNAP` (UiPath crop-and-refine, model-free): a pixel click that lands in no element but within 10 px of a
+  labelled element of the newest read is sent to that element (element_index); only when the read's frames are in the
+  screenshot's pixel space (width bound). Grounder role via `inspect kind=locate` (vision model on a fresh screenshot,
+  point snapped to the element under it).
+- `GUI_GATE_PICK` (GTA1 / bBoN at step level): `run_actions {pick_one:true, steps:[2-6 candidates]}` - ranked by
+  P(direct succeeds) from the predictor minus risk (high -1, medium -0.3) and loop-breaker penalties; the judge role
+  picks among the safe candidates (it cannot prefer a risky one over a safe one); the chosen one runs through the
+  normal gate. Trajectory-level BoN is excluded (see "not absorbed").
+- `GUI_GATE_DIGEST` (Pointer compaction summary / OpenAPA pruning / HIPPO memory-first context): every
+  `GUI_GATE_DIGEST_EVERY` (8) executed steps the action result carries a progress digest (task, plan, facts, last steps
+  with ok/FAILED, loop level); the compact role writes it (Pointer's summary format) when configured. The gate keeps a
+  200-line step history for it.
+Fake driver: `click` accepts `element_index` (an index of the newest read, like cua-driver).
+Tests: cargo 89 + 5 (two strikes / recurring state); python 150 (+11: two strikes vs. 0.9.6, loop judge at level 3,
+snap, save check, pick_one ranking + judge restriction, digest + compact role, check_done read-back + plan checks,
+verifier verdict + budget).

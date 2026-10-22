@@ -17,6 +17,10 @@ pub struct LoopTrack {
     pub hist: VecDeque<Entry>,
     pub level: u8,
     pub progress_run: u32,
+    /// 0.9.7 GUI_GATE_TWO_STRIKES: mechanism of each recent step and the window state after it
+    pub mechs: VecDeque<(String, bool)>,
+    pub states: VecDeque<String>,
+    pub last_reason: &'static str,
 }
 
 /// The way an action acts on the UI.
@@ -106,6 +110,64 @@ impl LoopTrack {
     }
 }
 
+impl LoopTrack {
+    /// 0.9.7 (Pointer "two strikes, then switch"; VLAA tier 1 modality switch / tier 2 recurring screen state;
+    /// OS-Symphony screen-similarity loop detection). On top of `push`: the same mechanism (mode + target) failing twice
+    /// in a row raises level 1 at once; the window state after an action recurring 3 times within the last 8 actions
+    /// (with no progress in between) raises level 2. `state`: a fingerprint of the window after the action.
+    pub fn push_ext(&mut self, sig: &str, mode: &str, mech: &str, failed: bool, confirmed: bool, state: Option<String>) -> Option<u8> {
+        let before = self.level;
+        let base = self.push(sig, mode, failed, confirmed);
+        let np = self.hist.back().map(|e| e.np).unwrap_or(false);
+        if self.hist.is_empty() {
+            // push() just reset the tracker after three working steps
+            self.mechs.clear();
+            self.states.clear();
+            self.last_reason = "";
+            return None;
+        }
+        self.mechs.push_back((mech.to_string(), np));
+        while self.mechs.len() > 4 {
+            self.mechs.pop_front();
+        }
+        if let Some(st) = state {
+            self.states.push_back(if np { st } else { format!("{st}#{}", self.hist.len()) });
+            while self.states.len() > 8 {
+                self.states.pop_front();
+            }
+        }
+        let mut lvl = self.level;
+        let mut reason = if base.is_some() { "window" } else { "" };
+        let n = self.mechs.len();
+        if n >= 2 && self.mechs[n - 1].1 && self.mechs[n - 2].1 && self.mechs[n - 1].0 == self.mechs[n - 2].0 && lvl < 1 {
+            lvl = 1;
+            reason = "two_strikes";
+        }
+        if let Some(last) = self.states.back() {
+            if !last.contains('#') && self.states.iter().filter(|x| *x == last).count() >= 3 && lvl < 2 {
+                lvl = 2;
+                reason = "state_repeat";
+            }
+        }
+        if lvl > before {
+            self.level = lvl;
+            self.last_reason = reason;
+            return Some(lvl);
+        }
+        base
+    }
+}
+
+/// The note for a level reached by push_ext.
+pub fn note_ext(level: u8, t: &LoopTrack) -> String {
+    match t.last_reason {
+        "two_strikes" => format!("[gate] Two strikes: the same mechanism ({}) failed twice in a row. Do not try a third variation of it - switch to a genuinely different mechanism now: {}.",
+                                 t.mechs.back().map(|m| m.0.replace('|', " on ")).unwrap_or_default(), switch_advice(&t.dominant_mode())),
+        "state_repeat" => format!("[gate] Loop breaker (level {level}/3): the window came back to the same state 3 times after your actions. Change the overall strategy (menu navigation -> keyboard shortcuts / a different dialog / code with run_command / ask the person), not just the control. Re-sending one of the steps that led back here is now refused."),
+        _ => note(level, t),
+    }
+}
+
 pub fn switch_advice(mode: &str) -> &'static str {
     match mode {
         "click" | "pixel" => "stop clicking that control: use the keyboard (the app's shortcut, F10 or Alt+letter to open menus and arrows/Enter to pick, Tab to move between fields), invoke_menu with the menu path, or the same element_token with delivery_mode \"background\"",
@@ -189,6 +251,32 @@ mod tests {
         }
         assert_eq!(top, 3);
         assert!(note(3, &t).contains("run_command") && note(3, &t).contains("FAIL"));
+    }
+
+    #[test]
+    fn two_strikes_and_recurring_states() {
+        let mut t = LoopTrack::default();
+        assert_eq!(t.push_ext("click|1|button|Save|a", "click", "click|Save", true, false, None), None);
+        assert_eq!(t.push_ext("click|1|button|Save|b", "click", "click|Save", true, false, None), Some(1));
+        assert!(note_ext(1, &t).starts_with("[gate] Two strikes") && note_ext(1, &t).contains("click on Save"));
+        // a different mechanism failing is not a second strike of the first
+        let mut t = LoopTrack::default();
+        t.push_ext("click|1|button|Save", "click", "click|Save", true, false, None);
+        assert_eq!(t.push_ext("hotkey|1|ctrl+s", "keyboard", "keyboard|win", true, false, None), None);
+        // the same screen state three times with no progress -> level 2
+        let mut t = LoopTrack::default();
+        let mut got = None;
+        for (i, m) in ["click|A", "keyboard|w", "click|B", "keyboard|x", "click|C"].iter().enumerate() {
+            let r = t.push_ext(&format!("s{i}"), m.split('|').next().unwrap(), m, i % 2 == 0, false, Some("Dialog|abc".into()));
+            if r.is_some() { got = r; }
+        }
+        assert_eq!(got, Some(2));
+        assert_eq!(t.last_reason, "state_repeat");
+        // working steps on the same state do not count
+        let mut t = LoopTrack::default();
+        for i in 0..6 {
+            assert_eq!(t.push_ext(&format!("ok{i}"), "click", &format!("click|b{i}"), false, true, Some("Same|x".into())), None);
+        }
     }
 
     /// Offline replay: GG_LOOP_LOGS=<file with one gate log path per line> GG_LOOP_OUT=<tsv>
