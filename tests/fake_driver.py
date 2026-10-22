@@ -11,7 +11,7 @@ import struct
 import sys
 import zlib
 
-PID, WID = 4242, 777
+PID, WID = int(os.environ.get("FAKE_PID") or 4242), 777
 state = {
     "snap": 0,
     "elements": [("button", "Increment"), ("button", "Delete file"), ("text", "count=0"), ("button", "OK"), ("button", "OK")],
@@ -22,10 +22,11 @@ state = {
     "clicked": [],
     "fail_next": 0,
     "count": 0,
+    "keys": [],
 }
 TOOLS = [{"name": n, "inputSchema": {"type": "object", "properties": {"pid": {"type": "integer"},
          **({"delivery_mode": {"type": "string"}} if n in ("click", "type_text", "press_key", "hotkey") else {})}}}
-         for n in ["get_window_state", "click", "type_text", "press_key", "hotkey", "list_windows", "verify_state",
+         for n in ["fake_state", "get_window_state", "click", "type_text", "press_key", "hotkey", "list_windows", "verify_state",
                    "run_steps", "fake_mutate", "launch_app", "fake_crash"]]
 
 
@@ -126,6 +127,10 @@ def call(name, a):
         ok = any((not sel.get("role") or r == sel["role"]) and sel.get("label_contains", "") in l
                  for r, l in state["elements"])
         return text("verify", sc={"status": "satisfied" if ok else "unsatisfied"})
+    if name == "press_key":
+        state["keys"].append("+".join(list(a.get("modifiers") or []) + [a.get("key", "")]))
+    if name == "fake_state":
+        return text(json.dumps({"keys": state["keys"], "clicked": state["clicked"]}))
     if name == "fake_crash":
         os._exit(3)
     if name == "fake_mutate":

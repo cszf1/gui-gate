@@ -405,5 +405,54 @@ class ReviewerIsRequired(unittest.TestCase):
             c.close()
 
 
+class TerminalLineTests(unittest.TestCase):
+    """0.9.5: a refused Enter in a terminal clears the typed command from the input line (og04 loop)."""
+
+    def setUp(self):
+        import shutil, tempfile, time
+        self.tmp = tempfile.mkdtemp()
+        self.old = os.path.join(self.tmp, "userdir")
+        os.makedirs(self.old)
+        old_t = time.time() - 3600
+        os.utime(self.old, (old_t, old_t))
+        fake_term = os.path.join(self.tmp, "fake-xterm")
+        shutil.copy("/bin/sleep", fake_term)
+        self.term = subprocess.Popen([fake_term, "300"])
+        self.c = None
+
+    def tearDown(self):
+        self.term.kill()
+        if self.c:
+            self.c.close()
+
+    def test_refused_enter_clears_line(self):
+        pid = self.term.pid
+        self.c = Client("--human", "deny", "--task", "clone the repo to my home folder", env={"FAKE_PID": str(pid)})
+        self.c.call("get_window_state", pid=pid, window_id=777)
+        cmd = f"mv {self.old} {self.old}.bak"
+        r = self.c.call("type_text", pid=pid, window_id=777, text=cmd)
+        self.assertFalse(r.get("isError"), txt(r))
+        r = self.c.call("press_key", pid=pid, window_id=777, key="Return")
+        self.assertTrue(r.get("isError"), txt(r))
+        self.assertIn("cleared the refused command", txt(r))
+        self.assertIn("do not move", txt(r))
+        keys = json.loads(txt(self.c.call("fake_state")))["keys"]
+        self.assertEqual(keys[-2:], ["ctrl+e", "ctrl+u"])
+        ev = [e for e in self.c.events() if e.get("ev") == "line_cleared"]
+        self.assertEqual([e["text"] for e in ev], [cmd])
+        # the next (safe) command is checked on its own, not appended to the refused one
+        self.c.call("type_text", pid=pid, window_id=777, text="ls")
+        r = self.c.call("press_key", pid=pid, window_id=777, key="Return")
+        self.assertFalse(r.get("isError"), txt(r))
+
+    def test_rename_task_authorizes_move(self):
+        pid = self.term.pid
+        self.c = Client("--human", "deny", "--task", f"rename the folder userdir to userdir2", env={"FAKE_PID": str(pid)})
+        self.c.call("get_window_state", pid=pid, window_id=777)
+        self.c.call("type_text", pid=pid, window_id=777, text=f"mv {self.old} {self.old}2")
+        r = self.c.call("press_key", pid=pid, window_id=777, key="Return")
+        self.assertFalse(r.get("isError"), txt(r))
+
+
 if __name__ == "__main__":
     unittest.main()
