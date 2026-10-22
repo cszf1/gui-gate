@@ -1,0 +1,4 @@
+gui: connected, 19 tools (codemode, global)
+  /data/home/.local/bin/gui-gate --policy direct --human deny
+  tools: list_apps, list_windows, get_window_state, launch_app, bring_to_front, invoke_menu, click, double_click, right_click, drag, type_text, press_key, hotkey, set_value, scroll, request_human, gate_task, gate_report, run_actions
+  offers resources

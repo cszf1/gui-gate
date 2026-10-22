@@ -1,0 +1,1 @@
+Underline the body text of the slide only, without underlining the title or table. Then set the font color of all text on the slide, including the title, body text, and table text, to the "Dark Red 2" color from the LibreOffice color palette.

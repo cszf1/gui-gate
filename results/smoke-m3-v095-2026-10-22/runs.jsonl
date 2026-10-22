@@ -1,0 +1,2 @@
+{"tag":"ow07-libreoffice_writer-ecc2413d-direct-s0","task":"ow07-libreoffice_writer-ecc2413d","cond":"direct","seed":0,"attempt":1,"infra":null,"screen":"1440x900","think":"medium","model":"inception/mercury-3","gg":"0.9.5","pi":{"turns": 30, "stop": "max_turns", "rc": 143, "wall_s": 73.9}}
+{"tag":"ow07-libreoffice_writer-ecc2413d-gate8-s0","task":"ow07-libreoffice_writer-ecc2413d","cond":"gate8","seed":0,"attempt":1,"infra":null,"screen":"1440x900","think":"medium","model":"inception/mercury-3","gg":"0.9.5","pi":{"turns": 30, "stop": "max_turns", "rc": 143, "wall_s": 92.7}}

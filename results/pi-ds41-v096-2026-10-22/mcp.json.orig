@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "gui": {
+      "command": "/data/home/.local/bin/gui-gate"
+    }
+  }
+}
