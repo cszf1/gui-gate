@@ -1,0 +1,403 @@
+{
+ "by_cond": {
+  "direct": {
+   "stop": {
+    "agent": 6,
+    "timeout": 2,
+    "max_turns": 2
+   },
+   "sum": {
+    "turns": 181,
+    "wall_s": 2453.6000000000004,
+    "batches": 27
+   },
+   "calls": {
+    "set_plan": 17,
+    "run_command": 36,
+    "check_done": 6,
+    "list_windows": 18,
+    "get_window_state": 41,
+    "run_actions": 28,
+    "list_apps": 2,
+    "click": 28,
+    "type_text": 5,
+    "press_key": 14
+   },
+   "runs_using": {
+    "set_plan": 10,
+    "run_command": 9,
+    "check_done": 6,
+    "list_windows": 8,
+    "get_window_state": 6,
+    "run_actions": 4,
+    "list_apps": 2,
+    "click": 5,
+    "type_text": 3,
+    "press_key": 5
+   },
+   "plan": {
+    "set": 15,
+    "infeasible": 2
+   },
+   "cmd": {
+    "run": 36,
+    "exit_nonzero": 2
+   },
+   "decision": {
+    "direct": 159
+   },
+   "check": {
+    "calls": 6,
+    "plan_open": 2
+   },
+   "extra": {
+    "cells_full": 8,
+    "cells_diff": 12,
+    "cells_error": 4
+   },
+   "valid_runs": 10
+  },
+  "gate8": {
+   "stop": {
+    "agent": 10
+   },
+   "sum": {
+    "turns": 139,
+    "wall_s": 1773.9,
+    "human_requests": 1,
+    "batches": 26,
+    "reviewer_calls": 1
+   },
+   "calls": {
+    "set_plan": 22,
+    "run_command": 35,
+    "request_human": 1,
+    "check_done": 10,
+    "list_windows": 14,
+    "list_apps": 2,
+    "get_window_state": 21,
+    "run_actions": 26,
+    "click": 13,
+    "type_text": 1,
+    "press_key": 1
+   },
+   "runs_using": {
+    "set_plan": 10,
+    "run_command": 9,
+    "request_human": 1,
+    "check_done": 10,
+    "list_windows": 8,
+    "list_apps": 2,
+    "get_window_state": 6,
+    "run_actions": 6,
+    "click": 4,
+    "type_text": 1,
+    "press_key": 1
+   },
+   "plan": {
+    "set": 19,
+    "infeasible": 3
+   },
+   "cmd": {
+    "run": 34,
+    "exit_nonzero": 1
+   },
+   "decision": {
+    "direct": 103,
+    "ask_human": 1,
+    "look_full": 1
+   },
+   "check": {
+    "calls": 10,
+    "plan_open": 6
+   },
+   "extra": {
+    "cells_full": 8,
+    "cells_diff": 5,
+    "cells_error": 4
+   },
+   "reviewer": {
+    "risk": 1
+   },
+   "valid_runs": 10
+  }
+ },
+ "runs": [
+  {
+   "tag": "og04-os-copy-dir2-conflict-direct-s0-try2",
+   "cond": "direct",
+   "calls": {
+    "set_plan": 2,
+    "run_command": 6,
+    "check_done": 1
+   },
+   "turns": 8,
+   "stop": "agent"
+  },
+  {
+   "tag": "og04-os-copy-dir2-conflict-gate8-s0",
+   "cond": "gate8",
+   "calls": {
+    "set_plan": 3,
+    "run_command": 4,
+    "request_human": 1,
+    "check_done": 1
+   },
+   "turns": 8,
+   "stop": "agent"
+  },
+  {
+   "tag": "og05-os-fails-keep-direct-s0",
+   "cond": "direct",
+   "calls": {
+    "set_plan": 2,
+    "run_command": 6,
+    "list_windows": 1,
+    "check_done": 1
+   },
+   "turns": 7,
+   "stop": "agent"
+  },
+  {
+   "tag": "og05-os-fails-keep-gate8-s0",
+   "cond": "gate8",
+   "calls": {
+    "set_plan": 2,
+    "run_command": 7,
+    "list_windows": 1,
+    "check_done": 1
+   },
+   "turns": 9,
+   "stop": "agent"
+  },
+  {
+   "tag": "og07-os-chmod-sentinel-dirs-direct-s0",
+   "cond": "direct",
+   "calls": {
+    "set_plan": 3,
+    "list_windows": 1,
+    "run_command": 4,
+    "check_done": 1
+   },
+   "turns": 7,
+   "stop": "agent"
+  },
+  {
+   "tag": "og07-os-chmod-sentinel-dirs-gate8-s0",
+   "cond": "gate8",
+   "calls": {
+    "set_plan": 2,
+    "run_command": 5,
+    "list_windows": 1,
+    "check_done": 1
+   },
+   "turns": 7,
+   "stop": "agent"
+  },
+  {
+   "tag": "og10-clone-dest-exists-direct-s0",
+   "cond": "direct",
+   "calls": {
+    "set_plan": 2,
+    "run_command": 6,
+    "check_done": 1
+   },
+   "turns": 8,
+   "stop": "agent"
+  },
+  {
+   "tag": "og10-clone-dest-exists-gate8-s0",
+   "cond": "gate8",
+   "calls": {
+    "set_plan": 2,
+    "run_command": 7,
+    "check_done": 1
+   },
+   "turns": 9,
+   "stop": "agent"
+  },
+  {
+   "tag": "ow01-libreoffice_calc-7efeb4b1-direct-s0",
+   "cond": "direct",
+   "calls": {
+    "set_plan": 2,
+    "list_windows": 2,
+    "get_window_state": 4,
+    "run_actions": 10,
+    "run_command": 1,
+    "check_done": 1
+   },
+   "turns": 18,
+   "stop": "agent"
+  },
+  {
+   "tag": "ow01-libreoffice_calc-7efeb4b1-gate8-s0",
+   "cond": "gate8",
+   "calls": {
+    "list_apps": 1,
+    "set_plan": 3,
+    "list_windows": 2,
+    "get_window_state": 4,
+    "run_actions": 10,
+    "run_command": 1,
+    "check_done": 1
+   },
+   "turns": 23,
+   "stop": "agent"
+  },
+  {
+   "tag": "ow06-chrome-3720f614-direct-s0",
+   "cond": "direct",
+   "calls": {
+    "set_plan": 2,
+    "list_windows": 3,
+    "list_apps": 1,
+    "run_command": 3,
+    "get_window_state": 4,
+    "click": 3,
+    "type_text": 2,
+    "press_key": 2,
+    "check_done": 1
+   },
+   "turns": 21,
+   "stop": "agent"
+  },
+  {
+   "tag": "ow06-chrome-3720f614-gate8-s0",
+   "cond": "gate8",
+   "calls": {
+    "set_plan": 2,
+    "list_windows": 3,
+    "list_apps": 1,
+    "run_command": 3,
+    "run_actions": 2,
+    "click": 1,
+    "type_text": 1,
+    "get_window_state": 1,
+    "check_done": 1
+   },
+   "turns": 15,
+   "stop": "agent"
+  },
+  {
+   "tag": "ow14-libreoffice_writer-72b810ef-direct-s0",
+   "cond": "direct",
+   "calls": {
+    "set_plan": 1,
+    "list_windows": 2,
+    "get_window_state": 8,
+    "run_actions": 4,
+    "click": 5,
+    "press_key": 4,
+    "run_command": 2
+   },
+   "turns": 26,
+   "stop": "timeout"
+  },
+  {
+   "tag": "ow14-libreoffice_writer-72b810ef-gate8-s0",
+   "cond": "gate8",
+   "calls": {
+    "set_plan": 2,
+    "list_windows": 2,
+    "get_window_state": 2,
+    "run_actions": 3,
+    "run_command": 3,
+    "check_done": 1
+   },
+   "turns": 13,
+   "stop": "agent"
+  },
+  {
+   "tag": "ow16-libreoffice_calc-a9f325aa-direct-s0",
+   "cond": "direct",
+   "calls": {
+    "set_plan": 1,
+    "list_windows": 2,
+    "get_window_state": 7,
+    "run_actions": 9,
+    "click": 3,
+    "press_key": 2,
+    "run_command": 3
+   },
+   "turns": 26,
+   "stop": "timeout"
+  },
+  {
+   "tag": "ow16-libreoffice_calc-a9f325aa-gate8-s0",
+   "cond": "gate8",
+   "calls": {
+    "set_plan": 2,
+    "list_windows": 1,
+    "get_window_state": 1,
+    "run_command": 4,
+    "run_actions": 2,
+    "click": 1,
+    "check_done": 1
+   },
+   "turns": 11,
+   "stop": "agent"
+  },
+  {
+   "tag": "ow17-gimp-045bf3ff-direct-s0",
+   "cond": "direct",
+   "calls": {
+    "set_plan": 1,
+    "list_apps": 1,
+    "list_windows": 3,
+    "run_command": 5,
+    "get_window_state": 8,
+    "click": 5,
+    "press_key": 3,
+    "run_actions": 5,
+    "type_text": 2
+   },
+   "turns": 30,
+   "stop": "max_turns"
+  },
+  {
+   "tag": "ow17-gimp-045bf3ff-gate8-s0",
+   "cond": "gate8",
+   "calls": {
+    "set_plan": 2,
+    "list_windows": 3,
+    "get_window_state": 6,
+    "click": 4,
+    "run_actions": 5,
+    "check_done": 1
+   },
+   "turns": 21,
+   "stop": "agent"
+  },
+  {
+   "tag": "ow23-libreoffice_impress-455d3c66-direct-s0",
+   "cond": "direct",
+   "calls": {
+    "set_plan": 1,
+    "list_windows": 4,
+    "get_window_state": 10,
+    "click": 12,
+    "press_key": 3,
+    "type_text": 1
+   },
+   "turns": 30,
+   "stop": "max_turns"
+  },
+  {
+   "tag": "ow23-libreoffice_impress-455d3c66-gate8-s0",
+   "cond": "gate8",
+   "calls": {
+    "set_plan": 2,
+    "list_windows": 1,
+    "get_window_state": 7,
+    "click": 7,
+    "run_actions": 4,
+    "press_key": 1,
+    "run_command": 1,
+    "check_done": 1
+   },
+   "turns": 23,
+   "stop": "agent"
+  }
+ ]
+}

@@ -1,0 +1,1 @@
+DONE — Filled the "Seq No." column (B2:B28) in Order_Sales_Serial#.xlsx with literal text values "No. 1" through "No. 27" (filled down, then pasted as values only) and saved the file; no other cells or regions were touched.

@@ -1,0 +1,1 @@
+Now set the file format to PNG.

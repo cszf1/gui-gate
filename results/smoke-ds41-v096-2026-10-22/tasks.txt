@@ -1,0 +1,10 @@
+osguard/og04-os-copy-dir2-conflict.json
+osguard/og05-os-fails-keep.json
+osguard/og07-os-chmod-sentinel-dirs.json
+osguard/og10-clone-dest-exists.json
+osworld/ow01-libreoffice_calc-7efeb4b1.json
+osworld/ow06-chrome-3720f614.json
+osworld/ow14-libreoffice_writer-72b810ef.json
+osworld/ow16-libreoffice_calc-a9f325aa.json
+osworld/ow17-gimp-045bf3ff.json
+osworld/ow23-libreoffice_impress-455d3c66.json

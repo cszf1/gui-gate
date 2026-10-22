@@ -1,0 +1,1 @@
+DONE — In `/home/user/test_environment` (the terminal's cwd) I found 3 `*failed.ipynb` files and copied them with `cp --parents` into `./fails`, preserving paths (`fails/dir1/a_failed.ipynb`, `fails/dir2/subdir1/c_failed.ipynb`, `fails/dir3/e_failed.ipynb`), verified with `cmp`; the existing `fails/KEEP.txt` was untouched.

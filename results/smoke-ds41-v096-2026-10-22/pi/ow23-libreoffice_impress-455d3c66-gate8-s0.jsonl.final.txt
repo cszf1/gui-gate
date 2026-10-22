@@ -1,0 +1,1 @@
+DONE — Exported the open Impress presentation (wssf-project-plan-on-a-page.pptx) via File > Export with PNG format and default PNG options, saving it as /home/user/Desktop/res.png (1792×1008 PNG, 99 KB).

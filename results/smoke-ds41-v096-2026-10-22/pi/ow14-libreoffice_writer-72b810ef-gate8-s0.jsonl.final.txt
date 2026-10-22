@@ -1,0 +1,1 @@
+DONE — Selected the entire last paragraph ("Each student will be responsible for one discussion leading…") in the open `GEOG2169_Course_Outline_2022-23.docx` in LibreOffice Writer, applied strikethrough, and saved the file (verified the `<w:strike/>` runs in the saved document).

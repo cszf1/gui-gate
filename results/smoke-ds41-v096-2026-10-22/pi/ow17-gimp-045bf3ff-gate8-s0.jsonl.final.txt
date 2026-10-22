@@ -1,0 +1,1 @@
+FAIL — GIMP 3.0.4 has no CMYK mode: `Image > Mode` only offers RGB, Grayscale and Indexed, and the only CMYK-related feature (`Colors > Components > Decompose > CMYK`) merely splits gate.jpeg into four grayscale channel layers rather than producing a real CMYK image. I cancelled that dialog, so your image is unchanged.

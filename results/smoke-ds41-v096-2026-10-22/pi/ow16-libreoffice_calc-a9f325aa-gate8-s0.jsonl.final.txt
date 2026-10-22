@@ -1,0 +1,1 @@
+DONE — Copied all 28 movie titles from "Garbage Movie titles" (B2:B29) into "Clean Movie Titles" (C2:C29), collapsing redundant whitespace and title-casing each word (first letter upper, rest lower), and saved Movie_title_garbage_clean.xlsx; no other cells were touched.

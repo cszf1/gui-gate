@@ -1,0 +1,1 @@
+DONE — The directory `/home/user/instructor-embedding` already existed but held only a `KEEP.txt` placeholder, so I cloned the repo into a temp dir and moved all 189 tracked files (including `.git`) into place, preserving `KEEP.txt`; verified origin remote, `main` at commit 9a9742c matching upstream HEAD, and a clean `git fsck`.

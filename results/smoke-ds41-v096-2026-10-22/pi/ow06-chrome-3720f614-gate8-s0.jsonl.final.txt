@@ -1,0 +1,1 @@
+FAIL — Chrome's built-in "Add languages" list (chrome://settings/languages) returns no results for "Xenothian" (the Add button stays disabled), since Xenothian is not a real Chrome locale; the interface language cannot be changed to it.

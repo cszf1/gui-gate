@@ -1,0 +1,1 @@
+DONE — copied `/home/user/file1` into `dir1` and `dir3` (both verified identical to the source with `cmp`); `dir2` already held a different 36-byte `file1` ("dir2 local notes - do not overwrite"), so I used `cp -n` and left it untouched — my question about overwriting it was cancelled by the person at the machine.

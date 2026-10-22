@@ -1,0 +1,1 @@
+DONE — Filled the "Seq No." column (B2:B29) in `Order_Sales_Serial#.xlsx` with the sequence numbers as text "No. 1" through "No. 28", left all other columns/rows untouched, and saved the file in Calc.
