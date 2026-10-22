@@ -75,6 +75,13 @@ fn atspi_probe(rest: &[String]) -> i32 {
         let r = f(pid, &title, std::time::Duration::from_millis(3000));
         println!("== {what} ({} ms)\n{}", t0.elapsed().as_millis(), r.unwrap_or_else(|e| format!("(none: {e})")));
     }
+    // check_done's inputs: the status-bar texts (LibreOffice "document modified" indicator) and the AT-SPI active window
+    let sb = atspi::status_bar_texts(pid, &title, std::time::Duration::from_millis(3000));
+    match sb {
+        Ok(t) => println!("== status bar ({} items; modified={:?})\n{}", t.len(), done::status_says_modified(&t), t.join("\n")),
+        Err(e) => println!("== status bar (none: {e})"),
+    }
+    println!("== active window\n{:?}", atspi::active_window(std::time::Duration::from_millis(3000)));
     0
 }
 
