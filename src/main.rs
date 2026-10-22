@@ -49,6 +49,8 @@ options:
   --delivery {auto,background,foreground}  input delivery
   --toolset {core,all}                core (default): only the tools a GUI task needs
   --no-auto-observe                   do not return the fresh window tree after each action
+  --text-only                         the acting model cannot see images (also GUI_GATE_TEXT_ONLY=1): no
+                                      screenshots, tree-only advice, notes when content is not in the tree
   --task TEXT | --task-file PATH      the user's request, verbatim (or GUI_GATE_TASK / GUI_GATE_TASK_FILE)
   --mode {both,single}                both (default): single-step tools + run_actions; single: one action per call
   --weights PATH|prior_v1             trained weights JSON (default: built-in osworld_v2)
@@ -122,6 +124,7 @@ fn main() {
             "--delivery" => { let v = val(); choices("--delivery", &v, &["auto", "background", "foreground"]); cfg.delivery = v; }
             "--toolset" => { let v = val(); choices("--toolset", &v, &["core", "all"]); cfg.toolset = v; }
             "--no-auto-observe" => cfg.auto_observe = false,
+            "--text-only" => cfg.text_only = true,
             "--task" => cfg.task = val(),
             "--task-file" => task_file = Some(val()),
             "--mode" => { let v = val(); choices("--mode", &v, &["both", "single", "batch"]); mode = Some(v); }
