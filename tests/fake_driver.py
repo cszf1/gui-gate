@@ -95,6 +95,10 @@ def call(name, a):
             sc["elements"] = [{"element_index": i, "element_token": f"{sid}:{i}", "role": r, "label": l,
                                "enabled": True, "frame": {"x": 10, "y": 10 + 40 * i, "w": 200, "h": 34}}
                               for i, (r, l) in enumerate(els)]
+            # like cua-driver: the rows are only in structuredContent.elements
+            del sc["tree_markdown"]
+            return text(f"window_id={w} pid={PID} snapshot_id={sid}\n\n(tree is in structuredContent.elements; pass "
+                        'tree_format "markdown" for the compact text rendering)', sc=sc, img=shot)
         return text(f"window_id={w} pid={PID} snapshot_id={sid}\n{md}", sc=sc, img=shot)
     if name == "click":
         tok = a.get("element_token")

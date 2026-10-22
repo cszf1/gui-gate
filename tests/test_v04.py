@@ -165,6 +165,30 @@ class ReviewerTests(unittest.TestCase):
             c.close()
             rev.close()
 
+    def test_step_review_sees_rows_and_a_resent_doubted_step_runs(self):
+        # m3 run: the pre-click re-read is tree_format "elements" -> the reviewer used to get no rows (25/30 calls);
+        # a step the reviewer doubted and the agent re-sent after the fresh look was doubted again (ow16 x3)
+        rev = _Rev("deny")
+        c = Client("--human", "deny", "--task", "increment the counter", env=dict(os.environ, GUI_GATE_REVIEWER_URL=rev.url))
+        try:
+            c.call("fake_mutate", fail_next=1)
+            s = c.read(fresh=True)
+            c.call("click", element_token=f"{s}:2")           # fails -> next try is doubted
+            s = c.read(fresh=True)
+            r = c.call("click", element_token=f"{s}:2")
+            self.assertEqual(r["structuredContent"]["gate"]["decision"], "look_light", txt(r))
+            window = json.loads(rev.seen[-1]["messages"][1]["content"]) if rev.seen[-1]["messages"][1]["content"].startswith("{") else rev.seen[-1]["messages"][1]["content"]
+            self.assertIn("Increment", json.dumps(window))   # element rows reached the reviewer
+            s = c.read(fresh=True)
+            r = c.call("click", element_token=f"{s}:2")       # re-sent after the fresh look -> runs
+            self.assertFalse(r.get("isError"), txt(r))
+            ev = [e for e in c.events() if e.get("ev") == "action"][-1]
+            self.assertIn("reviewer_insist", ev["trail"])
+            self.assertEqual(len(rev.seen), 1)
+        finally:
+            c.close()
+            rev.close()
+
     def test_reviewer_allow(self):
         r, _ = self.run_send("allow")
         self.assertFalse(r.get("isError"), txt(r))
@@ -288,7 +312,7 @@ class ProgramTests(unittest.TestCase):
             {"tool": "click", "args": {"target": {"label": "Increment"}}},
             {"read": {"label_regex": "^count="}, "as": "counter"}])
         self.assertIn("count=1", txt(r))
-        self.assertEqual(r["structuredContent"]["batch"]["read"], ['counter: text "count=1" [actions=[click]]'])
+        self.assertEqual(r["structuredContent"]["batch"]["read"], ['counter: text "count=1"'])
 
     def test_loop_cannot_run_away(self):
         self.c.read()

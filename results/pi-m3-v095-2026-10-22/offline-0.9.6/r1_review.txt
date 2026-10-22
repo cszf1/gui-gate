@@ -1,0 +1,5 @@
+pi-ds41-2026-10-21            step reviews 0 no rows 0 (elements-format read 0 ) denies 3 refusals removed by insist 1 [('og02-writer-pdf-exists-gate8-s', 'View_Person_Organization')]
+pi-ds41-v094-2026-10-21       step reviews 0 no rows 0 (elements-format read 0 ) denies 13 refusals removed by insist 1 [('ow24-libreoffice_calc-1de60575', '')]
+pi-m3-v095-2026-10-22         step reviews 30 no rows 25 (elements-format read 25 ) denies 29 refusals removed by insist 4 [('og04-os-copy-dir2-conflict-gat', 'dir1'), ('ow16-libreoffice_calc-a9f325aa', 'Text CSV (.csv)'), ('ow23-libreoffice_impress-455d3', 'wssf-project-plan-on-a-p'), ('ow23-libreoffice_impress-455d3', 'PNG - Portable Network G')]
+smoke-pi                      step reviews 0 no rows 0 (elements-format read 0 ) denies 1 refusals removed by insist 0 []
+TOTAL reviews 30 no rows 25 elements-format 25 denies 46 removed 6
