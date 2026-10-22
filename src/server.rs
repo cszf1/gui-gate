@@ -141,6 +141,23 @@ pub fn focus_lost(txt: &str) -> bool {
 
 /// A token click the driver refused because another control owns the element's point:
 /// (desktop x, desktop y, owner role, owner label).
+re!(prompt_rx, r"[$#%>]\s*$");
+
+/// the terminal text ends at a shell prompt (user@host:dir$, #, %, >)
+pub fn at_prompt(t: &str) -> bool {
+    t.lines().rev().find(|l| !l.trim().is_empty()).map(|l| prompt_rx().is_match(l)).unwrap_or(false)
+}
+
+/// typed text that commits a line / cell (Enter or Tab inside or at the end)
+pub fn commits_input(text: &str) -> bool {
+    text.contains('\n') || text.contains('\r') || text.contains('\t')
+}
+
+/// GUI_GATE_TYPED_LOOK=0: no terminal text / cell changes after committing type_text
+pub fn typed_look_enabled() -> bool {
+    std::env::var("GUI_GATE_TYPED_LOOK").map(|v| v != "0").unwrap_or(true)
+}
+
 pub fn no_window_list_enabled() -> bool {
     std::env::var("GUI_GATE_NO_WINDOW_LIST").map(|v| v != "0").unwrap_or(true)
 }
@@ -955,7 +972,12 @@ impl Gate {
 
     /// What the driver's tree leaves out, from AT-SPI: visible spreadsheet cells, a terminal's visible text.
     /// `diff`: the gate's own post-action look - only what changed since the window's last cells/text shown.
+    /// `settle`: right after an action, re-read a terminal until its text holds still (a command may still print).
     pub fn tree_extra(&self, inn: &mut Inner, pid: i64, key: &str, txt: &str, diff: bool) -> Option<String> {
+        self.tree_extra_s(inn, pid, key, txt, diff, false)
+    }
+
+    pub fn tree_extra_s(&self, inn: &mut Inner, pid: i64, key: &str, txt: &str, diff: bool, settle: bool) -> Option<String> {
         let budget = Duration::from_millis(1500);
         let t0 = Instant::now();
         if grid_not_listed(txt) && crate::atspi::cells_enabled() && is_spreadsheet_app(pid) {
@@ -978,14 +1000,38 @@ impl Gate {
             };
         }
         if crate::atspi::term_text_enabled() && crate::sidefx::is_terminal(pid) {
-            let r = crate::atspi::terminal_text(pid, &window_title_of(txt), budget);
+            let title = window_title_of(txt);
+            let mut r = crate::atspi::terminal_text(pid, &title, budget);
+            let mut running = false;
+            if settle {
+                // wait (<= ~2.4 s) until the text holds still AND ends at a shell prompt (a command may still print)
+                for _ in 0..8 {
+                    let Ok(prev) = r.clone() else { break };
+                    if at_prompt(&prev) {
+                        std::thread::sleep(Duration::from_millis(150));
+                        let again = crate::atspi::terminal_text(pid, &title, budget);
+                        let same = again.as_ref().ok() == Some(&prev);
+                        r = again;
+                        if same {
+                            break;
+                        }
+                        continue;
+                    }
+                    std::thread::sleep(Duration::from_millis(300));
+                    r = crate::atspi::terminal_text(pid, &title, budget);
+                }
+                running = r.as_ref().map(|t| !at_prompt(t)).unwrap_or(false);
+            }
             let ms = round_to(t0.elapsed().as_secs_f64() * 1000.0, 1);
             return match r {
                 Ok(t) => {
                     let same = inn.term_seen.get(key) == Some(&t);
                     inn.term_seen.insert(key.to_string(), t.clone());
                     inn.inc("term_reads");
-                    let out = if diff && same { "[gate] Terminal text unchanged since the last read.".to_string() } else { t };
+                    let mut out = if diff && same { "[gate] Terminal text unchanged since the last read.".to_string() } else { t };
+                    if running {
+                        out.push_str("\n[gate] No shell prompt yet: the command may still be running (or waiting for input); read the window again to see the rest.");
+                    }
                     self.log.write(json!({"ev": "tree_extra", "kind": "terminal", "pid": pid, "ms": ms, "chars": out.len(), "same": same}));
                     Some(out)
                 }
@@ -1561,6 +1607,26 @@ impl Gate {
             if trail.iter().any(|x| x == "healed") {
                 push_text(&mut res, format!("[gate] your token was stale; re-bound to {} from a fresh tree read. Older tokens for this window are now stale.", pystr(args.get("element_token"))));
             }
+            // typing that commits (a newline / tab) into a terminal or a spreadsheet: hand back what it produced (the
+            // command output / the cells that changed) instead of the agent spending its next turn on a re-read
+            if name == "type_text" && !is_error(&res) && inn.cfg.policy == "gate" && inn.cfg.auto_observe && !inn.in_batch
+                && commits_input(&pystr(args.get("text"))) && typed_look_enabled() {
+                if let Some(p) = t.pid {
+                    let term = crate::sidefx::is_terminal(p);
+                    if term || is_spreadsheet_app(p) {
+                        let wid = t.window_id.filter(|w| *w != 0).or(inn.state.window_of_pid.get(&p).copied()).unwrap_or(0);
+                        let key = format!("{p}:{wid}");
+                        let ctx_txt = newest_obs_text(&inn.state, p);
+                        // the extra decides by app; a spreadsheet needs the grid marker it looks for
+                        let probe = if term { ctx_txt.clone() } else { format!("{ctx_txt}\n(cell grid)") };
+                        std::thread::sleep(Duration::from_millis(250));
+                        if let Some(e) = self.tree_extra_s(inn, p, &key, &probe, !term, true) {
+                            inn.inc("typed_looks");
+                            push_text(&mut res, format!("[gate] After your typing:\n{e}"));
+                        }
+                    }
+                }
+            }
             // also after an error: the agent gets the fresh tree (and fresh tokens) in the same turn instead of spending one on a re-read
             if AUTO_OBS_TOOLS.contains(&name) && inn.cfg.policy == "gate" && inn.cfg.auto_observe && !inn.in_batch {
                 if let Some(p) = t.pid {
@@ -1754,7 +1820,7 @@ impl Gate {
         let extra = {
             let k = format!("{pid}:{}", as_i64(scv.get("window_id")).or(as_i64(a.get("window_id"))).unwrap_or(0));
             let txt = format!("{md}\n{}", text_of(&r));
-            self.tree_extra(inn, pid, &k, &txt, true)
+            self.tree_extra_s(inn, pid, &k, &txt, true, true)
         };
         if let Some(e) = &extra {
             push_text(&mut r, e.clone());
@@ -2158,6 +2224,14 @@ mod tests {
         assert!(streak_hint(2).is_none() && streak_hint(4).is_none());
         assert!(streak_hint(3).unwrap().contains("3 reads in a row"));
         assert!(streak_hint(6).is_some());
+    }
+
+    #[test]
+    fn typed_commit() {
+        assert!(commits_input("ls -la\n") && commits_input("3\t4\t5") && !commits_input("hello"));
+        assert!(at_prompt("x\nsandbox@h:/tmp$\n\n"));
+        assert!(!at_prompt("sandbox@h:/tmp$ sleep 1; echo slow"));
+        assert!(at_prompt("root@h:~#"));
     }
 
     #[test]

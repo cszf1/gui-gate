@@ -1,0 +1,11 @@
+direct calc     no commit                        1
+direct terminal commit                           18
+direct terminal commit -> next call is a read    3
+direct terminal no commit                        7
+direct terminal then Enter/Tab key               25
+gate8  calc     no commit                        4
+gate8  calc     then Enter/Tab key               2
+gate8  terminal commit                           7
+gate8  terminal commit -> next call is a read    1
+gate8  terminal no commit                        3
+gate8  terminal then Enter/Tab key               19
