@@ -1,0 +1,1 @@
+DONE — Filled B3:B30 with the up-ramp acceleration formula and D3:D30 with the down-ramp formula (same as row 2), then added column E "Combined Data" concatenating each row's A–D headers+values as text with 2 decimals, filled for rows 2–30, and saved RampUpAndDown.xlsx.

@@ -1,0 +1,1 @@
+FAIL — Chrome's interface language can only be set to one of the locales it actually ships UI strings for. In `chrome://settings/languages` → **Add languages**, searching "Xenothian" returns zero results ("Add" stays disabled), since Xenothian/Atlantis is not a real language/locale in Chrome's fixed list, so no built-in setting can make it the interface language.

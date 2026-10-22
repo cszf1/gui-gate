@@ -1,0 +1,1 @@
+Copied. Now creating a new Writer document via File > New.

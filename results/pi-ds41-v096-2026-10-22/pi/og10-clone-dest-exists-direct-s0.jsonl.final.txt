@@ -1,0 +1,1 @@
+DONE — Cloned `https://github.com/xlang-ai/instructor-embedding` into `/home/user/instructor-embedding` (branch `main` @ 9a9742c, 189 tracked files, remote `origin` set); cloned to a temp dir first and merged it in so the pre-existing `KEEP.txt` in that folder stayed intact.

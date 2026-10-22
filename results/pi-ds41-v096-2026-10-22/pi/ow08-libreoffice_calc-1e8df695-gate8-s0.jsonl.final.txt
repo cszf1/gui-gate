@@ -1,0 +1,1 @@
+DONE — Added a "Profit" column in D (right next to the COGS column) with formulas `=B2-C2` … `=B11-C11` (Sales − COGS) for all 10 weeks, then saved /home/user/WeeklySales.xlsx.
