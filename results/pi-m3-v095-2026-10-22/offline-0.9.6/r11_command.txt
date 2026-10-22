@@ -1,0 +1,6 @@
+== m3
+direct: runs with typed shell commands 9 (success 0), commands 38, calls before the first command 9.6/run, after it 20.7/run (reads 9.6), GUI calls on the terminal window 8.1/run
+gate8: runs with typed shell commands 11 (success 0), commands 21, calls before the first command 13.8/run, after it 16.7/run (reads 6.5), GUI calls on the terminal window 6.5/run
+== ds41
+direct: runs with typed shell commands 5 (success 2), commands 18, calls before the first command 10.0/run, after it 11.6/run (reads 4.2), GUI calls on the terminal window 9.8/run
+gate8: runs with typed shell commands 5 (success 3), commands 19, calls before the first command 8.6/run, after it 13.8/run (reads 4.4), GUI calls on the terminal window 10.8/run

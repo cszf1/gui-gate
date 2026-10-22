@@ -29,7 +29,7 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 const CORE_TOOLS: &[&str] = &["list_apps", "list_windows", "get_window_state", "launch_app", "bring_to_front", "click",
     "double_click", "right_click", "type_text", "press_key", "hotkey", "scroll", "set_value", "drag", "invoke_menu",
-    "gate_report", "request_human", "gate_task", "run_actions"];
+    "gate_report", "request_human", "gate_task", "run_actions", "run_command", "check_done", "set_plan"];
 const RARE_PARAMS: &[&str] = &["session", "capture_mode", "screenshot_out_file", "verbose", "full_output", "display_only",
     "cursor_id", "delivery_mode", "scope", "from_zoom", "capture_id", "timeout_ms", "max_image_dimension", "target"];
 const AUTO_OBS_TOOLS: &[&str] = &["click", "double_click", "right_click", "press_key", "hotkey", "scroll", "invoke_menu", "drag"];
@@ -580,6 +580,9 @@ fn augment_tools(result: &mut Value, shared: &Arc<Mutex<Shared>>, toolset: &str,
     }
     let mut all = tools;
     all.extend(gate_tools());
+    if crate::command::enabled() {
+        all.push(crate::command::tool_schema());
+    }
     if batch_mode != "off" {
         all.push(batch::run_actions_tool());
     }
@@ -1078,6 +1081,48 @@ impl Gate {
         Some(parts.join(";"))
     }
 
+    /// (pid, window_id, title) of every listed window (desktop and panels included).
+    pub fn all_windows(&self, inn: &mut Inner) -> Vec<(i64, i64, String)> {
+        let r = self.tool(inn, "list_windows", &json!({}), 10.0);
+        sc(&r).get("windows").and_then(|w| w.as_array()).map(|ws| ws.iter().map(|w| {
+            let t = pystr(w.get("title"));
+            (as_i64(w.get("pid")).unwrap_or(0), as_i64(w.get("window_id")).unwrap_or(0), if t.is_empty() { pystr(w.get("name")) } else { t })
+        }).collect()).unwrap_or_default()
+    }
+
+    /// run_command: execute after the gate allowed it; the result says what changed and warns when a changed file is
+    /// open in an app (the app's own save would write its old copy back over the change).
+    fn exec_command(&self, inn: &mut Inner, args: &Value) -> Value {
+        let cmd = pystr(args.get("command"));
+        let cwd = crate::features::command_cwd(args);
+        if cmd.trim().is_empty() {
+            return text_result("[run_command] empty command", true);
+        }
+        if !std::path::Path::new(&cwd).is_dir() {
+            return text_result(format!("[run_command] cwd {cwd} is not a directory"), true);
+        }
+        let tmo = args.get("timeout_s").and_then(|v| v.as_f64()).unwrap_or(30.0);
+        let r = crate::command::run(&cmd, &cwd, tmo);
+        inn.inc("commands_run");
+        let (mut t, err) = crate::command::result_text(&r, &cwd, 4000);
+        if !r.changed.is_empty() {
+            let wins = self.all_windows(inn);
+            for (p, _) in r.changed.iter().take(40) {
+                let b = crate::sidefx::basename(p);
+                if let Some((_, _, title)) = wins.iter().find(|(_, _, ti)| crate::authz::is_open_document(Some(&b), &[ti.clone()])) {
+                    t.push_str(&format!("\n[gate] {b} is open in the window \"{}\": that app still holds its old copy, and its own save (or the task's final save) would write it back over your change. Reload it there (LibreOffice: File > Reload, do not save first) or close it without saving, then check the content.", trunc(title, 80)));
+                    inn.inc("command_open_doc_warn");
+                    break;
+                }
+            }
+        }
+        self.log.write(json!({"ev": "command", "aid": inn.aid, "cwd": cwd, "exit": r.code, "timed_out": r.timed_out,
+            "ms": round_to(r.ms, 1), "out_bytes": r.out_bytes, "changed": r.changed.len()}));
+        let mut res = text_result(t, err);
+        res["structuredContent"] = json!({"exit_code": r.code, "timed_out": r.timed_out, "changed_files": r.changed.iter().map(|x| x.0.clone()).collect::<Vec<_>>()});
+        res
+    }
+
     pub fn titles(&self, inn: &mut Inner, pid: i64) -> Vec<String> {
         let r = self.tool(inn, "list_windows", &json!({"pid": pid}), 10.0);
         sc(&r).get("windows").and_then(|w| w.as_array()).map(|ws| ws.iter().map(|w| {
@@ -1418,6 +1463,10 @@ impl Gate {
         if dec.option == "review" {
             dec = self.review_step(inn, &ctx, dec, &mut trail, &mut judge);
         }
+        // a command has no GUI target to look at or re-aim: only the risk path (and the loop breaker) can hold it
+        if name == "run_command" && !dec.is(&["ask_human", "risk_review", "deny", "handoff", "direct"]) {
+            dec = Decision::new("direct", dec.p_direct, format!("command (no GUI target; predictor said {})", dec.option), "rule").with_scores(&dec.scores);
+        }
         let mut opt = dec.option.clone();
         {
             let bo = inn.stats.entry("by_option").or_insert(json!({}));
@@ -1484,7 +1533,7 @@ impl Gate {
 
         if opt == "direct" {
             let t0 = Instant::now();
-            let mut res = self.tool(inn, name, &args, 120.0);
+            let mut res = if name == "run_command" { self.exec_command(inn, &args) } else { self.tool(inn, name, &args, 120.0) };
             // (also inside a batch: a healed step lets the rest of the batch run instead of stopping it)
             // m3 run: 66 token clicks refused because another control owns the element's point (stale frame, the
             // item's menu closed, a toolbar/panel on top); the gate's pixel/menu heals fixed 1 of 8 and never ran for
@@ -1991,7 +2040,9 @@ impl Gate {
             inn.risk_info["denied_before"] = json!(true);
             return Some(Decision::new("deny", 0.0, format!("{}; the same effect was already refused ({prev})", dec.reason), "rule"));
         }
-        let titles = t.pid.map(|p| self.titles(inn, p)).unwrap_or_default();
+        // a command has no window: the working-document exception looks at every open window's title
+        let titles = if ctx.tool == "run_command" { self.all_windows(inn).into_iter().map(|w| w.2).collect() }
+            else { t.pid.map(|p| self.titles(inn, p)).unwrap_or_default() };
         let label = t.the_label().to_string();
         let (mut ok, mut why) = authz::authorized(&risk, &inn.cfg.task, &label, &dialog, &titles);
         if ok && inn.task_source.as_deref() == Some("agent") && authz::OPERATOR_ONLY.contains(&hz) && !why.starts_with("replaces the document") {
@@ -2009,6 +2060,8 @@ impl Gate {
             let keys = if truthy(ctx.args.get("keys")) { ctx.args.get("keys").cloned() } else { ctx.args.get("key").cloned() };
             let action = json!({"tool": ctx.tool, "target_role": t.the_role(), "target_label": label, "rule_that_fired": risk,
                 "risk_level": ctx.risk_level, "typed_text": trunc(&pystr(ctx.args.get("text")), 300), "keys": keys,
+                "command": if ctx.tool == "run_command" { json!(trunc(&pystr(ctx.args.get("command")), 1500)) } else { Value::Null },
+                "command_cwd": if ctx.tool == "run_command" { json!(crate::features::command_cwd(&ctx.args)) } else { Value::Null },
                 "window_titles": titles.iter().take(4).collect::<Vec<_>>(), "dialog_text": tail(&dialog, 1500)});
             let mut action = action;
             let (recent, line) = self.review_context(inn, ctx);

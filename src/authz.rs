@@ -63,7 +63,7 @@ pub fn hazard_of(reason: &str) -> &'static str {
         "power"
     } else if r.contains("install") {
         "install"
-    } else if r.contains("typed a dangerous command") || r.contains("enter would run") {
+    } else if r.contains("typed a dangerous command") || r.contains("enter would run") || r.contains("would run:") || r.contains("could not parse") {
         "command"
     } else {
         "other"
@@ -188,6 +188,9 @@ pub fn alternative_for(hz: &str) -> &'static str {
 const ALTERNATIVES_CP: &str = "do not overwrite it: copy to the other destinations, and for the conflicting one use a name that does not exist yet (e.g. `cp -n`, or `cp file dir/file.copy`), then report it";
 
 pub fn alternative(reason: &str) -> &'static str {
+    if reason.starts_with("`soffice") {
+        return "do not overwrite it: convert into a new folder (`--outdir` a directory that has no file of that name) or copy the source to a new name first, finish the task with that file, and mention both paths in your final answer";
+    }
     if (reason.starts_with("`cp`") || reason.starts_with("`mv`") || reason.contains("would overwrite existing file")) && !reason.contains("would move the existing") {
         return ALTERNATIVES_CP;
     }

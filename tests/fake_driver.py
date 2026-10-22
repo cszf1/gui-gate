@@ -16,7 +16,7 @@ state = {
     "snap": 0,
     "elements": [("button", "Increment"), ("button", "Delete file"), ("text", "count=0"), ("button", "OK"), ("button", "OK")],
     "windows": [{"window_id": WID, "pid": PID, "x": 0, "y": 0, "width": 500, "height": 300, "is_on_screen": True,
-                 "title": "Fixture"}],
+                 "title": os.environ.get("FAKE_TITLE") or "Fixture"}],
     "win_elems": {},   # window_id -> elements of a popup window (menus, dialogs)
     "snap_win": {},    # snapshot id -> window_id it was read from
     "clicked": [],
