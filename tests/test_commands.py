@@ -293,3 +293,36 @@ class LoopBreakerTests(unittest.TestCase):
             self.assertEqual([e for e in self.c.events() if e.get("ev") == "loop_breaker"], [])
             self.c.close()
         self.c = Client("--human", "deny")
+
+
+class PlanTests(unittest.TestCase):
+    def tearDown(self):
+        self.c.close()
+
+    def test_plan_progress_and_check_done(self):
+        self.c = Client("--human", "deny")
+        r = self.c.call("set_plan", milestones=["open Format menu", "set spacing", "save"], feasible=True)
+        self.assertIn("Plan noted", txt(r))
+        s = self.c.read()
+        r = self.c.call("click", element_token=f"{s}:0")
+        self.assertIn("[plan] 0/3 done; next: 1. open Format menu", txt(r))
+        self.c.call("set_plan", done=[1, 2])
+        r = self.c.call("press_key", pid=4242, window_id=777, key="f2")
+        self.assertIn("[plan] 2/3 done; next: 3. save", txt(r))
+        r = self.c.call("check_done")
+        self.assertIn("plan_open", r["structuredContent"]["kinds"])
+        self.c.call("set_plan", done=[3])
+        r = self.c.call("check_done")
+        self.assertNotIn("plan_open", r["structuredContent"]["kinds"])
+
+    def test_infeasible_verdict(self):
+        self.c = Client("--human", "deny")
+        r = self.c.call("set_plan", milestones=["find a Xenothian language option"], feasible=False,
+                        reason="Chrome has no Xenothian interface language")
+        self.assertIn("reply FAIL", txt(r))
+        ev = [e for e in self.c.events() if e.get("ev") == "plan"]
+        self.assertEqual(ev[-1]["feasible"], False)
+
+    def test_off_switch(self):
+        self.c = Client("--human", "deny", env={"GUI_GATE_PLAN": "0"})
+        self.assertNotIn("set_plan", [t["name"] for t in self.c.rpc("tools/list", {})["tools"]])

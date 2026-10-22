@@ -131,6 +131,32 @@ pub fn check_done_enabled() -> bool {
     std::env::var("GUI_GATE_CHECK_DONE").map(|v| v != "0").unwrap_or(true)
 }
 
+/// GUI_GATE_PLAN=0 removes set_plan (and its progress line).
+pub fn plan_enabled() -> bool {
+    std::env::var("GUI_GATE_PLAN").map(|v| v != "0").unwrap_or(true)
+}
+
+fn plan_tool() -> Value {
+    json!({"name": "set_plan",
+        "description": "Your own plan, kept by the gate (no model involved). Call it once at the start with 2-6 short milestones and your feasibility verdict: feasible:false when the task cannot be done on this computer (the app has no such feature or setting, the thing asked for does not exist, the file or data is not there) - then reply FAIL with the reason instead of trying. Later calls mark milestones done (done: [numbers]) or replace the list. Every action result then ends with a one-line progress note, and check_done lists milestones still open.",
+        "inputSchema": {"type": "object", "properties": {
+            "milestones": {"type": "array", "items": {"type": "string"}, "description": "2-6 short steps (replaces the current list)"},
+            "done": {"type": "array", "items": {"type": "integer"}, "description": "numbers (1-based) of milestones now done"},
+            "feasible": {"type": "boolean", "description": "false = this task cannot be done here"},
+            "reason": {"type": "string", "description": "why (required with feasible:false)"}},
+            "required": []}})
+}
+
+/// "[plan] 2/5 done; next: 3. save as pre.pptx"
+pub fn plan_line(plan: &[(String, bool)]) -> Option<String> {
+    if plan.is_empty() {
+        return None;
+    }
+    let done = plan.iter().filter(|m| m.1).count();
+    let next = plan.iter().enumerate().find(|(_, m)| !m.1).map(|(i, m)| format!("; next: {}. {}", i + 1, trunc(&m.0, 80))).unwrap_or_else(|| "; all milestones done - call check_done, then reply".into());
+    Some(format!("[plan] {done}/{} done{next}", plan.len()))
+}
+
 const DESKTOP_WINDOWS: &[&str] = &["Desktop", "xfce4-panel", "xfdesktop", "Xfce4-panel", ""];
 
 /// GUI_GATE_STEP_INSIST=0 turns off "a re-sent doubted step runs".
@@ -596,6 +622,9 @@ fn augment_tools(result: &mut Value, shared: &Arc<Mutex<Shared>>, toolset: &str,
     if check_done_enabled() {
         all.push(crate::done::tool_schema());
     }
+    if plan_enabled() {
+        all.push(plan_tool());
+    }
     if batch_mode != "off" {
         all.push(batch::run_actions_tool());
     }
@@ -801,6 +830,7 @@ impl Gate {
                 "request_human" => me.request_human(&args),
                 "gate_task" => me.set_task(&args),
                 "check_done" => me.check_done(&args),
+                "set_plan" => me.set_plan(&args),
                 "run_actions" => {
                     let mut inn = me.inner.lock().unwrap_or_else(|e| e.into_inner());
                     batch::run_actions(&me, &mut inn, &args)
@@ -836,6 +866,13 @@ impl Gate {
                     inn.read_streak = 0;
                     inn.acted = true;
                 }
+            }
+        }
+        if is_gated(&name) || name == "run_actions" {
+            let inn = self.inner.lock().unwrap_or_else(|e| e.into_inner());
+            if let Some(l) = plan_line(&inn.plan).filter(|_| plan_enabled()) {
+                drop(inn);
+                push_text(&mut result, l);
             }
         }
         if self.inner.lock().unwrap_or_else(|e| e.into_inner()).cfg.text_only {
@@ -2217,6 +2254,36 @@ impl Gate {
         text_result("[gate] Noted.", false)
     }
 
+    fn set_plan(&self, args: &Value) -> Value {
+        let mut inn = self.inner.lock().unwrap_or_else(|e| e.into_inner());
+        if let Some(ms) = args.get("milestones").and_then(|v| v.as_array()) {
+            let ms: Vec<(String, bool)> = ms.iter().map(|m| trunc(pystr(Some(m)).trim(), 160)).filter(|m| !m.is_empty()).take(12).map(|m| (m, false)).collect();
+            if !ms.is_empty() {
+                inn.plan = ms;
+            }
+        }
+        for d in args.get("done").and_then(|v| v.as_array()).cloned().unwrap_or_default() {
+            if let Some(i) = as_i64(Some(&d)) {
+                if i >= 1 && (i as usize) <= inn.plan.len() {
+                    inn.plan[i as usize - 1].1 = true;
+                }
+            }
+        }
+        let feasible = args.get("feasible").map(|v| truthy(Some(v))).unwrap_or(true);
+        let reason = trunc(pystr(args.get("reason")).trim(), 400);
+        inn.inc("plan_calls");
+        if !feasible {
+            inn.plan_verdict = format!("infeasible: {reason}");
+            inn.inc("plan_infeasible");
+            self.log.write(json!({"ev": "plan", "feasible": false, "reason": reason, "milestones": inn.plan.len()}));
+            return text_result(format!("[gate] Noted: you judge this task infeasible here ({}). If you are sure, stop and reply FAIL with that reason; if not, set_plan again with feasible:true and continue.", if reason.is_empty() { "no reason given" } else { &reason }), false);
+        }
+        inn.plan_verdict = "feasible".into();
+        self.log.write(json!({"ev": "plan", "feasible": true, "milestones": inn.plan.len(), "done": inn.plan.iter().filter(|m| m.1).count()}));
+        let list: Vec<String> = inn.plan.iter().enumerate().map(|(i, m)| format!("{}. [{}] {}", i + 1, if m.1 { "x" } else { " " }, m.0)).collect();
+        text_result(format!("[gate] Plan noted:\n{}", list.join("\n")), false)
+    }
+
     /// Evidence for the agent's own completion decision (no model; the gate never says "done" or "not done").
     fn check_done(&self, args: &Value) -> Value {
         let t0 = Instant::now();
@@ -2608,6 +2675,15 @@ mod tests {
         assert!(t.contains("LibreOffice Calc") && t.contains("bash") && t.contains("instabox-term") && t.starts_with("Found"));
         assert!(!t.contains("kworker") && !t.contains("systemd") && !t.contains("weird-thread"));
         assert_eq!(r["structuredContent"]["apps"].as_array().unwrap().len(), 1);
+    }
+
+    #[test]
+    fn plan_progress_line() {
+        assert_eq!(plan_line(&[]), None);
+        let p = vec![("a".to_string(), true), ("b".to_string(), false)];
+        assert_eq!(plan_line(&p).unwrap(), "[plan] 1/2 done; next: 2. b");
+        let p = vec![("a".to_string(), true)];
+        assert!(plan_line(&p).unwrap().contains("all milestones done"));
     }
 
     #[test]

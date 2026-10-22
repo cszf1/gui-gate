@@ -1,0 +1,4 @@
+m3: infeasible-task runs 8: replied FAIL 0, DONE 0, cut at max_turns 7; tool calls spent 235 (29.4/run)
+   progress line cost if a plan is set: ~60-110 chars x 14.4 actions/run = ~1.2 KB/run
+ds41: infeasible-task runs 4: replied FAIL 0, DONE 1, cut at max_turns 4; tool calls spent 122 (30.5/run)
+   progress line cost if a plan is set: ~60-110 chars x 14.4 actions/run = ~1.2 KB/run
