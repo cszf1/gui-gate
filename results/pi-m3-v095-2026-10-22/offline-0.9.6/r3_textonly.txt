@@ -1,0 +1,4 @@
+direct: runs 68; agent/gate reads with screenshot 731 (median 345 ms) vs tree-only 97 (median 272 ms); re-encode 14.4 s total, 59.2 MB JPEG produced and dropped by the client; est. read time saved 0.8 s/run
+   vision advice in tool results (per run): {'confirm with a screenshot': 7.31, 'include_screenshot:true': 0.22, 'fresh screenshot': 0.12, 'take x,y from that image': 0.12, 'No screenshot frame': 0.13}
+gate8: runs 68; agent/gate reads with screenshot 713 (median 475 ms) vs tree-only 685 (median 388 ms); re-encode 15.2 s total, 62.0 MB JPEG produced and dropped by the client; est. read time saved 0.9 s/run
+   vision advice in tool results (per run): {'confirm with a screenshot': 8.68, 'include_screenshot:true': 6.04, 'fresh screenshot': 0.62, 'take x,y from that image': 0.24, 'No screenshot frame': 0.24}

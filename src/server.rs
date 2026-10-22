@@ -194,6 +194,20 @@ pub fn tree_delta(seen: &HashSet<String>, cur: &[&str], thr: f64) -> Option<Vec<
 }
 
 /// GUI_GATE_STALL_HINTS=0 turns off the read-stall hints.
+/// Driver advice that assumes eyes ("confirm with a screenshot") rewritten for a text-only client.
+pub fn text_only_rewrite(res: &mut Value) {
+    if let Some(arr) = res.get_mut("content").and_then(|c| c.as_array_mut()) {
+        for c in arr.iter_mut() {
+            if let Some(t) = c.get("text").and_then(|t| t.as_str()) {
+                if t.contains("confirm with a screenshot") {
+                    let n = t.replace("confirm with a screenshot", "confirm from the tree");
+                    c["text"] = json!(n);
+                }
+            }
+        }
+    }
+}
+
 pub fn stall_hints_enabled() -> bool {
     std::env::var("GUI_GATE_STALL_HINTS").map(|v| v != "0").unwrap_or(true)
 }
@@ -716,6 +730,9 @@ impl Gate {
                 }
             }
         }
+        if self.inner.lock().unwrap_or_else(|e| e.into_inner()).cfg.text_only {
+            text_only_rewrite(&mut result);
+        }
         // v0.9.4: screenshots go back to the agent as full-size JPEG (all policies, so bench conditions match)
         if let Some(mut ev) = crate::shot::reencode_result(&mut result, &self.shot) {
             {
@@ -749,6 +766,13 @@ impl Gate {
             }
         }
         let pid = as_i64(args.get("pid"));
+        let mut shot_refused = false;
+        if name == "get_window_state" && inn.cfg.text_only {
+            // the client cannot use images: never capture (saves the capture + re-encode on every read)
+            shot_refused = truthy(args.get("include_screenshot"));
+            args["include_screenshot"] = json!(false);
+            inn.inc("screenshots_skipped");
+        }
         if name == "get_window_state" && inn.cfg.policy == "gate" && args.get("include_screenshot").is_none() {
             if let Some(p) = pid {
                 if inn.seen_pids.contains(&p) && !inn.want_shot.contains(&p) && !inn.pixel_pids.contains(&p) {
@@ -771,7 +795,10 @@ impl Gate {
                 push_text(&mut res, format!("[gate] {hidden} kernel threads / system daemons hidden; call list_apps with all:true to see everything."));
             }
         }
-        if name == "get_window_state" && text_of(&res).contains("PARTIAL TREE") {
+        if shot_refused {
+            push_text(&mut res, "[gate] text-only session: no screenshot is taken (the model cannot see images); use the tree rows and their element_tokens.".into());
+        }
+        if name == "get_window_state" && text_of(&res).contains("PARTIAL TREE") && !inn.cfg.text_only {
             if let Some(p) = pid {
                 inn.pixel_pids.insert(p);
             }
@@ -1336,7 +1363,12 @@ impl Gate {
                 if has_xy {
                     inn.pixel_pids.insert(p);
                 }
-                if err && no_frame().is_match(&txt) {
+                if err && no_frame().is_match(&txt) && inn.cfg.text_only {
+                    // a text-only client has no frame to aim in: point it at element tokens instead
+                    push_text(&mut res, "[gate] x/y aiming needs a screenshot, which this text-only session does not get. Aim with an element_token from the tree below instead (or keyboard navigation).".into());
+                    self.auto_observe(inn, p, t.window_id, &mut res, true);
+                    inn.inc("frame_recoveries");
+                } else if err && no_frame().is_match(&txt) {
                     // the driver lost its pixel frame: hand back a fresh screenshot + tree in this same result
                     inn.pixel_pids.insert(p);
                     push_text(&mut res, "[gate] Here is a fresh screenshot of the window; re-aim your x/y on it and retry.".into());
@@ -1398,6 +1430,14 @@ impl Gate {
                     format!("[gate] Not executed: {}. The window's fresh tree is attached: pick the target from it and send the action again (no need to read the window yourself).", dec.reason)
                 } else {
                     format!("[gate] Not executed: {}. Re-read the window without a screenshot (get_window_state {loc}, include_screenshot:false, since:\"latest\") and retry with the fresh token.", dec.reason)
+                }
+            }
+            "look_full" if inn.cfg.text_only => {
+                inn.inc("model_turns_requested");
+                if t.pid.is_some() && inn.cfg.auto_observe && inn.cfg.policy == "gate" {
+                    format!("[gate] Not executed: {}. The window's fresh tree is attached: check the target in it and send the action again (no need to read the window yourself).", dec.reason)
+                } else {
+                    format!("[gate] Not executed: {}. Re-read the window (get_window_state {loc}) and check the target before retrying.", dec.reason)
                 }
             }
             "look_full" => {
@@ -1515,7 +1555,7 @@ impl Gate {
             let wid = if let Some(n) = new.last() { n.parse::<i64>().ok() } else { window_id.filter(|w| *w != 0).or(inn.state.window_of_pid.get(&pid).copied()) };
             note = if !new.is_empty() { format!("A new window/dialog opened (window_id={}); this is its tree.\n", wid.map(|w| w.to_string()).unwrap_or_default()) } else { String::new() };
             // screenshot only while the agent aims by pixels in this app (an x/y action within the last two)
-            shot = inn.pixel_pids.contains(&pid) && inn.pix_age.get(&pid).copied().unwrap_or(99) <= 1;
+            shot = !inn.cfg.text_only && inn.pixel_pids.contains(&pid) && inn.pix_age.get(&pid).copied().unwrap_or(99) <= 1;
             a = json!({"pid": pid, "include_screenshot": shot});
             if let Some(w) = wid.filter(|w| *w != 0) {
                 a["window_id"] = json!(w);
@@ -1533,10 +1573,10 @@ impl Gate {
             break;
         }
         let partial = text_of(&r).contains("PARTIAL TREE");
-        if partial {
+        if partial && !inn.cfg.text_only {
             inn.pixel_pids.insert(pid);
         }
-        if partial && !shot && inn.pix_age.get(&pid).copied().unwrap_or(99) <= 3 {
+        if partial && !shot && !inn.cfg.text_only && inn.pix_age.get(&pid).copied().unwrap_or(99) <= 3 {
             // a grid/canvas the tree cannot show: the agent will aim by pixels, so give it the picture
             shot = true;
             a["include_screenshot"] = json!(true);
@@ -1595,7 +1635,9 @@ impl Gate {
         inn.add("auto_obs_chars", lines.iter().map(|l| l.len() + 1).sum::<usize>() as f64);
         inn.add("auto_obs_chars_full", all_lines.iter().take(MAX_TREE_LINES).map(|l| l.len() + 1).sum::<usize>() as f64);
         let mut busy = if loading_rx().is_match(&md) { " The UI still looks busy.".to_string() } else { String::new() };
-        if partial && !shot {
+        if partial && !shot && inn.cfg.text_only {
+            busy.push_str(" The tree is partial here (grid/canvas): what is not listed cannot be read from the tree.");
+        } else if partial && !shot {
             busy.push_str(" The tree is partial here (grid/canvas); read with include_screenshot:true before aiming by x/y.");
         }
         let snap = pystr(scv.get("snapshot_id"));
@@ -1926,6 +1968,13 @@ mod tests {
         assert_eq!(parent_menu(tree, 4).as_deref(), Some("Export As"));
         assert_eq!(parent_menu(tree, 1), None);
         assert_eq!(parent_menu(tree, 99), None);
+    }
+
+    #[test]
+    fn text_only_rewrites_screenshot_advice() {
+        let mut r = json!({"content": [{"type": "text", "text": "Pressed key 'a'; not verified \u{2014} confirm with a screenshot."}]});
+        text_only_rewrite(&mut r);
+        assert!(r["content"][0]["text"].as_str().unwrap().ends_with("confirm from the tree."));
     }
 
     #[test]
