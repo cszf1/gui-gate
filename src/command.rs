@@ -255,7 +255,8 @@ fn changed_files(root: &str, since: SystemTime, out: &mut Vec<(String, u64)>, de
 
 pub fn run(cmd: &str, cwd: &str, timeout_s: f64) -> Ran {
     let t0 = Instant::now();
-    let since = SystemTime::now() - Duration::from_millis(5);
+    // file timestamps use the kernel's coarse clock (a tick behind the precise one): leave a margin
+    let since = SystemTime::now() - Duration::from_millis(200);
     let mut c = Command::new("bash");
     c.arg("-c").arg(cmd).current_dir(cwd).stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::piped())
         .env("PAGER", "cat").env("GIT_PAGER", "cat").env("TERM", "dumb").env("DEBIAN_FRONTEND", "noninteractive")
