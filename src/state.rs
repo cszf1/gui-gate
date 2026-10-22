@@ -35,11 +35,12 @@ pub struct Element {
     pub label: String,
     pub frame: Option<Frame>,
     pub enabled: Option<bool>,
+    pub value: Option<String>,
 }
 
 impl Element {
     pub fn new(index: i64, role: &str, label: &str) -> Self {
-        Element { index, role: role.into(), label: label.into(), frame: None, enabled: None }
+        Element { index, role: role.into(), label: label.into(), frame: None, enabled: None, value: None }
     }
 }
 
@@ -101,6 +102,7 @@ pub fn parse_elements(sc: &Value) -> IndexMap<i64, Element> {
                 label: pystr(e.get("label")),
                 frame: frame_of(e.get("frame")),
                 enabled: e.get("enabled").and_then(|b| b.as_bool()),
+                value: e.get("value").filter(|v| !v.is_null()).map(|v| pystr(Some(v))).filter(|v| !v.is_empty()),
             });
         }
     }
@@ -117,6 +119,17 @@ pub fn parse_elements(sc: &Value) -> IndexMap<i64, Element> {
         }
     }
     els
+}
+
+/// Flat markdown rows (`- [N] role "label"`) for a read that came back without tree_markdown.
+pub fn elements_markdown(els: &IndexMap<i64, Element>) -> String {
+    let mut v: Vec<&Element> = els.values().collect();
+    v.sort_by_key(|e| e.index);
+    v.iter().map(|e| {
+        let dis = if e.enabled == Some(false) { " (disabled)" } else { "" };
+        let val = e.value.as_ref().map(|v| format!(" value=\"{}\"", trunc(&v.replace('\n', " "), 200))).unwrap_or_default();
+        format!("- [{}] {} \"{}\"{}{}", e.index, e.role, e.label.replace('\n', " ").replace('"', "\\\""), val, dis)
+    }).collect::<Vec<_>>().join("\n")
 }
 
 #[derive(Default)]
@@ -188,7 +201,12 @@ impl GateState {
         };
         let mut els = parse_elements(&sc);
         let prev = self.latest_by_window.get(&key).map(|&i| i);
-        let md = s(&sc, "tree_markdown").to_string();
+        let mut md = s(&sc, "tree_markdown").to_string();
+        if !md.lines().any(|l| row_re().is_match(l) || row_nolabel_re().is_match(l)) && !els.is_empty() {
+            // a read in tree_format "elements" (the gate's own pre-click re-read, or the agent's choice) has no
+            // markdown rows; keep a flat rendering so the reviewer and the dialog/risk checks still see the window
+            md = elements_markdown(&els);
+        }
         let mut alltext = md.clone() + "\n";
         alltext.push_str(&text_of(result));
         let since = truthy(args.get("since"));
@@ -306,5 +324,23 @@ mod tests {
         assert_eq!(els[&0].role, "push button");
         assert_eq!(els[&0].label, "Save");
         assert_eq!(els[&3].role, "separator");
+    }
+
+    #[test]
+    fn elements_only_read_keeps_rows_in_text() {
+        // the gate's own pre-click re-read uses tree_format "elements": no tree_markdown, rows only in elements
+        let mut st = GateState::default();
+        let res = json!({"structuredContent": {"pid": 9, "window_id": 4, "snapshot_id": "s1", "elements": [
+            {"element_index": 0, "role": "table cell", "label": "Text CSV (.csv)"},
+            {"element_index": 2, "role": "push button", "label": "Say \"hi\"", "enabled": false}]},
+            "content": [{"type": "text", "text": "window_id=4 pid=9 elements=2\n(tree is in structuredContent.elements)"}]});
+        let o = st.record_observation(&json!({"pid": 9, "tree_format": "elements"}), &res, None).unwrap();
+        let t = &st.get(o).text;
+        assert!(t.contains("- [0] table cell \"Text CSV (.csv)\""), "{t}");
+        assert!(t.contains("[2] push button") && t.contains("(disabled)"), "{t}");
+        // and the rendering parses back to the same elements
+        let back = parse_elements(&json!({"tree_markdown": elements_markdown(&st.get(o).elements)}));
+        assert_eq!(back[&2].label, "Say \\\"hi\\\"");
+        assert_eq!(back[&0].role, "table cell");
     }
 }

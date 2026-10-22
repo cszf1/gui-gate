@@ -126,6 +126,11 @@ pub fn filter_apps(res: &mut Value, kthread: &dyn Fn(i64) -> bool) -> usize {
 
 re!(occluded_rx, r#"element \[(\d+)\] \(pid \d+\) has a snapshot frame at \((-?\d+), (-?\d+)\), but that screen point is owned by ([\w ]+?) "([^"]*)" rather than the observed element"#);
 
+/// GUI_GATE_STEP_INSIST=0 turns off "a re-sent doubted step runs".
+fn step_insist_enabled() -> bool {
+    std::env::var("GUI_GATE_STEP_INSIST").map(|v| v != "0").unwrap_or(true)
+}
+
 const FOCUS_HEAL_TOOLS: &[&str] = &["click", "double_click", "right_click", "press_key", "hotkey", "type_text", "scroll", "set_value"];
 
 /// The driver could not focus the target window and says it sent nothing, so one retry cannot double an effect.
@@ -283,6 +288,7 @@ pub struct Inner {
     pub pixel_pids: HashSet<i64>,
     pub probe_disabled: bool,
     pub denied_effects: HashMap<String, String>,
+    pub step_doubted: HashSet<String>, // signatures the step reviewer doubted (look_light) and the agent has not re-sent yet
     pub denials_consec: u32,
     pub denials_total: u32,
     pub task_locked: bool,
@@ -487,7 +493,7 @@ impl Gate {
             inner: Mutex::new(Inner {
                 cfg, state: GateState::default(), stats: new_stats(), aid: 0, confirm_codes: HashMap::new(),
                 want_shot: HashSet::new(), seen_pids: HashSet::new(), fg_sticky: false, pixel_pids: HashSet::new(),
-                probe_disabled: false, denied_effects: HashMap::new(), denials_consec: 0, denials_total: 0,
+                probe_disabled: false, denied_effects: HashMap::new(), step_doubted: HashSet::new(), denials_consec: 0, denials_total: 0,
                 task_locked, task_source, in_batch: false, batch_ctx: Value::Null, pix_age: HashMap::new(),
                 last_auto: HashMap::new(), seen_rows: HashMap::new(), recent: vec![], risk_info: Value::Null, cur_ack: false,
             }),
@@ -1559,6 +1565,14 @@ impl Gate {
     /// otherwise the formula's next-best option. The acting model is never asked to approve its own step.
     fn review_step(&self, inn: &mut Inner, ctx: &ActionCtx, dec: Decision, trail: &mut Vec<String>, judge: &mut Value) -> Decision {
         let t = &ctx.target;
+        // the agent re-sends a step the reviewer doubted after the gate's fresh look: the step review only saves
+        // turns (risky effects go through risk_gate), so a second doubt would just loop; let it run once more.
+        if dec.tier != "rule" && inn.step_doubted.contains(&ctx.signature) && step_insist_enabled() {
+            inn.step_doubted.remove(&ctx.signature);
+            inn.inc("review_insist");
+            trail.push("reviewer_insist".into());
+            return Decision::new("direct", dec.p_direct, "re-sent after the reviewer's doubt and a fresh look; runs (step review is advisory)", "review").with_scores(&dec.scores);
+        }
         if let Some(rv) = Some(&self.reviewer).filter(|r| r.available()) {
             let keys = if truthy(ctx.args.get("keys")) { ctx.args.get("keys").cloned() } else { ctx.args.get("key").cloned() };
             let action = json!({"tool": ctx.tool, "target_kind": t.kind, "target_role": t.the_role(), "target_label": t.the_label(),
@@ -1581,6 +1595,7 @@ impl Gate {
                     return Decision::new("direct", dec.p_direct, format!("independent reviewer: {}", s(&r, "reason")), "review").with_scores(&dec.scores);
                 }
                 trail.push("reviewer_deny".into());
+                inn.step_doubted.insert(ctx.signature.clone());
                 return Decision::new("look_light", dec.p_direct, format!("the gate's reviewer doubts this step: {}", s(&r, "reason")), "review").with_scores(&dec.scores);
             }
             trail.push("reviewer_down".into());
@@ -1816,7 +1831,7 @@ mod tests {
     #[test]
     fn nearest_and_opener() {
         let fr = |x: f64, y: f64| Some(Frame { x, y, w: 40.0, h: 20.0 });
-        let old = Element { index: 5, role: "menu".into(), label: "Insert".into(), frame: fr(100.0, 10.0), enabled: None };
+        let old = Element { index: 5, role: "menu".into(), label: "Insert".into(), frame: fr(100.0, 10.0), enabled: None, value: None };
         let a = Element { index: 7, frame: fr(101.0, 10.0), ..old.clone() };
         let b = Element { index: 90, frame: fr(600.0, 300.0), ..old.clone() };
         assert_eq!(nearest(&old, vec![b, a.clone()])[0].index, 7);
