@@ -97,6 +97,12 @@ def call(name, a):
             if sid != snap_id(state["snap"]):
                 return text("element_token is stale or unknown; call get_window_state again to refresh.", err=True,
                             sc={"refusal": "stale"})
+            if state.get("occlude_next"):
+                orole, olab = state.pop("occlude_next")
+                return text(f'click: element [{idx}] (pid {PID}) has a snapshot frame at (161, 71), but that screen point is '
+                            f'owned by {orole} "{olab}" rather than the observed element; a real pointer click there would '
+                            'hit the wrong control. Re-snapshot with get_window_state, or click by pixel from a screenshot.',
+                            err=True)
             if state["fail_next"]:
                 state["fail_next"] -= 1
                 return text("click failed: target_occluded", err=True, sc={"code": "target_occluded"})
@@ -117,6 +123,7 @@ def call(name, a):
         if "x" in a:
             if os.environ.get("FAKE_NO_FRAME") and not state.get("last_shot", True):
                 return text(f"No screenshot frame for window {WID}: its latest read had no screenshot", err=True)
+            state["clicked"].append(f"xy:{a['x']},{a['y']}:{a.get('coordinate_frame', 'window')}")
             return text(f"Clicked at {a['x']},{a['y']}", sc={"effect": "unverifiable", "route": "pixel"})
         return text("missing target", err=True)
     if name == "list_windows":
@@ -141,6 +148,8 @@ def call(name, a):
                                      "height": 100, "is_on_screen": True})
         if "fail_next" in a:
             state["fail_next"] = a["fail_next"]
+        if "occlude_next" in a:
+            state["occlude_next"] = a["occlude_next"]
         return text("mutated")
     return text(f"{name} ok delivery={a.get('delivery_mode', 'background')}", sc={})
 

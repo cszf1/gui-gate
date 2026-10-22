@@ -124,6 +124,33 @@ pub fn filter_apps(res: &mut Value, kthread: &dyn Fn(i64) -> bool) -> usize {
     hidden
 }
 
+re!(occluded_rx, r#"element \[(\d+)\] \(pid \d+\) has a snapshot frame at \((-?\d+), (-?\d+)\), but that screen point is owned by ([\w ]+?) "([^"]*)" rather than the observed element"#);
+
+/// A token click the driver refused because another control owns the element's point:
+/// (desktop x, desktop y, owner role, owner label).
+pub fn occlusion(txt: &str) -> Option<(i64, i64, String, String)> {
+    let c = occluded_rx().captures(txt)?;
+    Some((c[2].parse().ok()?, c[3].parse().ok()?, c[4].trim().to_string(), c[5].to_string()))
+}
+
+/// The menu a row of a tree markdown sits under (nearest less-indented row whose role is "menu").
+pub fn parent_menu(tree: &str, idx: i64) -> Option<String> {
+    let rowrx = Regex::new(r#"^(\s*)- \[(\d+)\] ([\w ]+?) "([^"]*)""#).ok()?;
+    let lines: Vec<&str> = tree.lines().collect();
+    let pos = lines.iter().position(|l| rowrx.captures(l).map(|c| c[2].parse::<i64>().ok() == Some(idx)).unwrap_or(false))?;
+    let mut ind = rowrx.captures(lines[pos])?[1].len();
+    for l in lines[..pos].iter().rev() {
+        let Some(c) = rowrx.captures(l) else { continue };
+        if c[1].len() < ind {
+            if c[3].trim() == "menu" && !c[4].is_empty() {
+                return Some(c[4].to_string());
+            }
+            ind = c[1].len();
+        }
+    }
+    None
+}
+
 pub fn short(text: &str, limit: usize) -> String {
     if text.chars().count() <= limit {
         return text.to_string();
@@ -797,6 +824,100 @@ impl Gate {
         Some((Some(format!("{}:{}", ob.snapshot_id, cands[0].index)), Some(cands[0].clone())))
     }
 
+    /// The driver refused a token click because another control owns the element's point. One gate-side retry:
+    ///  * the owner is the same control (same label, a duplicate accessible object): click that desktop point;
+    ///  * an open menu covers it: Escape, re-read, re-bind the token, click again;
+    ///  * the target sat in a menu that has closed since the read: re-open that menu, re-bind, click the item.
+    /// Returns the result to hand back (successful retry, or the original error plus a note) and what was tried.
+    fn heal_occlusion(&self, inn: &mut Inner, ctx: &ActionCtx, args: &Value, err_txt: &str) -> Option<(Value, String)> {
+        let (x, y, orole, olab) = occlusion(err_txt)?;
+        let t = &ctx.target;
+        let pid = t.pid?;
+        let el = t.element.clone()?;
+        let wid = t.window_id.or(t.obs.and_then(|o| inn.state.get(o).window_id)).filter(|w| *w != 0);
+        let mut base = json!({"pid": pid});
+        if let Some(w) = wid {
+            base["window_id"] = json!(w);
+        }
+        for k in ["count", "button", "modifiers", "modifier"] {
+            if let Some(v) = args.get(k) {
+                base[k] = v.clone();
+            }
+        }
+        let same = !olab.trim().is_empty() && authz::norm(&olab) == authz::norm(&el.label);
+        inn.inc("occlusion_heals_tried");
+        if same {
+            let mut a = base.clone();
+            a["x"] = json!(x);
+            a["y"] = json!(y);
+            a["coordinate_frame"] = json!("desktop");
+            let r = self.tool(inn, "click", &a, 30.0);
+            if !is_error(&r) {
+                inn.inc("occlusion_heals");
+                let mut r = r;
+                push_text(&mut r, format!("[gate] The token click was refused because a duplicate \"{olab}\" object owns that point; the gate clicked the same control at its desktop point ({x},{y}) instead."));
+                return Some((r, "same_control_pixel".into()));
+            }
+            return None;
+        }
+        let parent = t.obs.and_then(|o| parent_menu(&inn.state.get(o).text, el.index));
+        let mut opened = String::new();
+        if orole == "menu" {
+            let mut k = base.clone();
+            k["key"] = json!("Escape");
+            if is_error(&self.tool(inn, "press_key", &k, 10.0)) {
+                return None;
+            }
+            std::thread::sleep(Duration::from_millis(200));
+        } else if let (Some(pm), true) = (parent.clone(), el.role.contains("item") || el.role == "menu") {
+            // the menu that held the item has closed: open it again from a fresh read
+            let mut menu_ctx = ctx.clone();
+            if let Some(e) = menu_ctx.target.element.as_mut() {
+                e.role = "menu".into();
+                e.label = pm.clone();
+            }
+            let Some((Some(mtok), _)) = self.refresh(inn, &menu_ctx) else {
+                return Some((self.closed_menu_note(err_txt, &el.label, Some(&pm)), "closed_menu_note".into()));
+            };
+            let mut a = base.clone();
+            a["element_token"] = json!(mtok);
+            if is_error(&self.tool(inn, "click", &a, 30.0)) {
+                return Some((self.closed_menu_note(err_txt, &el.label, Some(&pm)), "closed_menu_note".into()));
+            }
+            std::thread::sleep(Duration::from_millis(250));
+            opened = pm;
+        } else {
+            return None;
+        }
+        match self.refresh(inn, ctx) {
+            Some((Some(tok), _)) => {
+                let mut a = base.clone();
+                a["element_token"] = json!(tok.clone());
+                let r = self.tool(inn, "click", &a, 30.0);
+                if is_error(&r) {
+                    return None;
+                }
+                inn.inc("occlusion_heals");
+                let mut r = r;
+                let how = if opened.is_empty() {
+                    format!("the open menu \"{olab}\" covered it; the gate pressed Escape, re-read the window and clicked it again ({tok})")
+                } else {
+                    format!("its menu \"{opened}\" had closed; the gate re-opened that menu and clicked the item ({tok})")
+                };
+                push_text(&mut r, format!("[gate] Your click on \"{}\" was first refused: {how}. Older tokens for this window are stale.", el.label));
+                Some((r, if opened.is_empty() { "escape_retry".into() } else { "reopen_menu".into() }))
+            }
+            _ if !opened.is_empty() => Some((text_result(format!("{err_txt}\n[gate] The menu that held \"{}\" had closed; the gate opened \"{opened}\" again but the item is not in it now: read the fresh tree below and pick the item from it.", el.label), true), "reopened_item_missing".into())),
+            _ => None,
+        }
+    }
+
+    fn closed_menu_note(&self, err_txt: &str, label: &str, parent: Option<&str>) -> Value {
+        let p = parent.map(|p| format!("open the menu \"{p}\" again and then click \"{label}\" in the same run_actions call, or use its keyboard shortcut"))
+            .unwrap_or_else(|| format!("open its menu again, then click \"{label}\" in the same run_actions call"));
+        text_result(format!("{err_txt}\n[gate] The menu that held \"{label}\" is closed now, so its old position belongs to another control: {p}."), true)
+    }
+
     fn heal(&self, inn: &mut Inner, ctx: &ActionCtx) -> Option<String> {
         let el = ctx.target.element.as_ref()?;
         if el.label.is_empty() || ctx.target.pid.is_none() {
@@ -1007,6 +1128,12 @@ impl Gate {
         if opt == "direct" {
             let t0 = Instant::now();
             let mut res = self.tool(inn, name, &args, 120.0);
+            if name == "click" && is_error(&res) && !inn.in_batch && inn.cfg.policy == "gate" {
+                if let Some((r2, how)) = self.heal_occlusion(inn, &ctx, &args, &text_of(&res)) {
+                    event["occlusion_heal"] = json!(how);
+                    res = r2;
+                }
+            }
             let ms = t0.elapsed().as_secs_f64() * 1000.0;
             inn.add("driver_ms", ms);
             inn.inc("executed");
@@ -1566,6 +1693,20 @@ mod tests {
         assert!(fast_path(&ctx, &f).is_some());
         f.insert("obs_had_shot", 0.0);
         assert!(fast_path(&ctx, &f).is_none());
+    }
+
+    #[test]
+    fn occlusion_parse_and_parent_menu() {
+        let e = "click: element [95] (pid 48238) has a snapshot frame at (161, 71), but that screen point is owned by menu \"Insert\" rather than the observed element; a real pointer click there would hit the wrong control.";
+        assert_eq!(occlusion(e), Some((161, 71, "menu".into(), "Insert".into())));
+        let e2 = "click: element [3] (pid 1) has a snapshot frame at (5, 6), but that screen point is owned by table cell \"B4\" rather than the observed element";
+        assert_eq!(occlusion(e2).unwrap().2, "table cell");
+        assert!(occlusion("click failed: target_occluded").is_none());
+        let tree = "- [0] menu bar \"\"\n  - [1] menu \"File\" [actions=[click]]\n    - [2] menu item \"Open...\"\n    - [3] menu \"Export As\"\n      - [4] menu item \"Export Directly as PDF\"\n  - [5] menu \"Edit\"";
+        assert_eq!(parent_menu(tree, 2).as_deref(), Some("File"));
+        assert_eq!(parent_menu(tree, 4).as_deref(), Some("Export As"));
+        assert_eq!(parent_menu(tree, 1), None);
+        assert_eq!(parent_menu(tree, 99), None);
     }
 
     #[test]
