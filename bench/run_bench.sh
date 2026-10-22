@@ -15,6 +15,9 @@ SEEDS=${4:-"0"}
 THINK=${PI_THINK:-medium}
 TMO=${PI_TIMEOUT:-480}
 MAXT=${PI_MAX_TURNS:-30}
+# context hygiene (opt-in, off by default so runs stay comparable): a Pi `context` extension keeps only the newest
+# window observation in full and summarises older ones (bench/pi_ext/obs_prune.ts = bench/context_hygiene.py prune())
+OBS_PRUNE=${PI_OBS_PRUNE:-0}
 HERE=$(cd "$(dirname "$0")" && pwd)
 OSW=/data/workspace/osworld
 mkdir -p $OUT/pi $OUT/gate $OUT/eval $OUT/shots
@@ -56,7 +59,8 @@ run_one() {  # task cond seed attempt
       $PY -c "import json,sys;print(json.load(open(sys.argv[1]))['instruction'])" $HERE/tasks/$task > $OUT/task/$tag.txt
       GA='"--policy","gate","--task-file","'$OUT/task/$tag.txt'"';;
   esac
-  local TOOLS='mcp__gui__*' CWD=/tmp HINT=""
+  local TOOLS='mcp__gui__*' CWD=/tmp HINT="" EXT=()
+  [ "$OBS_PRUNE" = 1 ] && EXT=(--extension "$HERE/pi_ext/obs_prune.ts")
   if [ "$c" = gate_cm ]; then
     TOOLS='mcp__gui__*,codemode'; CWD=$OUT/cmcwd; mkdir -p $CWD/.pi
     echo '{"codemode":{"mode":"on"}}' > $CWD/.pi/settings.json
@@ -87,7 +91,7 @@ When the task is complete, reply DONE and one line on what you did. If the task 
     return 0
   fi
   local st=$(cd $CWD && $PY $HERE/pi_monitor.py --out $OUT/pi/$tag.jsonl --max-turns $MAXT --timeout $TMO -- \
-      pi --no-session --tools "$TOOLS" --thinking $THINK --mode json -p "$PROMPT")
+      pi --no-session "${EXT[@]}" --tools "$TOOLS" --thinking $THINK --mode json -p "$PROMPT")
   $PY -c "from PIL import ImageGrab; im=ImageGrab.grab(); im.resize((im.width//2, im.height//2)).save('$OUT/shots/$tag.png')" 2>/dev/null
   $PY $HERE/osworld_native.py eval $HERE/tasks/$task --final $OUT/pi/$tag.jsonl.final.txt --out $OUT/eval/$tag.eval.json > /dev/null 2>&1
   local infra=null
@@ -95,7 +99,7 @@ When the task is complete, reply DONE and one line on what you did. If the task 
   if echo "$st" | grep -q '"stop": "agent"' && grep -q 'thinking must be passed back\|"stopReason":"error"' $OUT/pi/$tag.jsonl 2>/dev/null; then
     infra='"relay_error"'
   fi
-  echo "{\"tag\":\"$tag\",\"task\":\"$name\",\"cond\":\"$c\",\"seed\":$s,\"attempt\":$att,\"infra\":$infra,\"screen\":\"$scr\",\"think\":\"$THINK\",\"model\":\"$model\",\"gg\":\"$ggv\",\"text_only\":$TEXT_ONLY,\"pi\":$st}" >> $OUT/runs.jsonl
+  echo "{\"tag\":\"$tag\",\"task\":\"$name\",\"cond\":\"$c\",\"seed\":$s,\"attempt\":$att,\"infra\":$infra,\"screen\":\"$scr\",\"think\":\"$THINK\",\"model\":\"$model\",\"gg\":\"$ggv\",\"text_only\":$TEXT_ONLY,\"obs_prune\":$OBS_PRUNE,\"pi\":$st}" >> $OUT/runs.jsonl
   [ "$infra" = '"relay_error"' ] && return 9
   return 0
 }

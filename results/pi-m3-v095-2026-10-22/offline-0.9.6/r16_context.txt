@@ -1,0 +1,6 @@
+== pi-m3-v095-2026-10-22
+direct: runs 68; tool-result text resent over all model calls 1.18 MB/run -> 0.35 MB/run (71% less); screenshots resent 175 -> 24 per run; tool-result text in the last call's context 67 KB -> 16 KB per run
+gate8: runs 68; tool-result text resent over all model calls 1.35 MB/run -> 0.23 MB/run (83% less); screenshots resent 162 -> 12 per run; tool-result text in the last call's context 85 KB -> 11 KB per run
+== pi-ds41-v094-2026-10-21
+direct: runs 36; tool-result text resent over all model calls 0.89 MB/run -> 0.25 MB/run (72% less); screenshots resent 127 -> 21 per run; tool-result text in the last call's context 52 KB -> 11 KB per run
+gate8: runs 34; tool-result text resent over all model calls 1.69 MB/run -> 0.28 MB/run (83% less); screenshots resent 141 -> 13 per run; tool-result text in the last call's context 120 KB -> 15 KB per run

@@ -66,3 +66,40 @@ class ResetCopyTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ContextHygieneTests(unittest.TestCase):
+    MSGS = [
+        {"role": "user", "content": [{"type": "text", "text": "task"}]},
+        {"role": "toolResult", "toolName": "mcp__gui__get_window_state", "content": [
+            {"type": "text", "text": 'window_id=1 pid=2 snapshot_id=s00000001\n- frame = "Doc.docx - LibreOffice Writer"\n  - [0] button "A"\n  - [1] button "B"'},
+            {"type": "image", "data": "x", "mimeType": "image/jpeg"}]},
+        {"role": "toolResult", "toolName": "mcp__gui__click", "content": [
+            {"type": "text", "text": 'Clicked element [1].\n[gate] Window right after the action (snapshot s00000002; tokens ...)\n- frame = "Doc.docx - LibreOffice Writer"\n  - [0] button "A"'}]},
+        {"role": "toolResult", "toolName": "mcp__gui__run_command", "content": [{"type": "text", "text": "[run_command] exit 0\nout"}]},
+        {"role": "toolResult", "toolName": "mcp__gui__get_window_state", "content": [
+            {"type": "text", "text": 'window_id=1 pid=2 snapshot_id=s00000003\n- frame = "Doc.docx - LibreOffice Writer"\n  - [0] button "A"'}]},
+    ]
+
+    def test_prune_rule(self):
+        import context_hygiene as ch
+        out = ch.prune(self.MSGS)
+        self.assertEqual(out[0], self.MSGS[0])
+        self.assertEqual(out[4], self.MSGS[4])  # the newest observation stays whole
+        self.assertEqual(out[3], self.MSGS[3])  # command output is not an observation
+        self.assertEqual(len(out[1]["content"]), 1)  # the old screenshot is dropped
+        self.assertIn('older window read summarised - "Doc.docx - LibreOffice Writer", snapshot s00000001, 2 rows', out[1]["content"][0]["text"])
+        self.assertTrue(out[2]["content"][0]["text"].startswith("Clicked element [1].\n[client: older window read summarised"))
+
+    def test_pi_extension_matches_python(self):
+        import context_hygiene as ch
+        import shutil
+        if not shutil.which("node"):
+            self.skipTest("node not installed")
+        d = tempfile.mkdtemp()
+        mjs = os.path.join(d, "obs_prune.mjs")
+        shutil.copy(os.path.join(ROOT, "bench", "pi_ext", "obs_prune.ts"), mjs)
+        js = f"import {{prune}} from '{mjs}'; let s=''; process.stdin.on('data',d=>s+=d); process.stdin.on('end',()=>console.log(JSON.stringify(prune(JSON.parse(s)))));"
+        r = subprocess.run(["node", "--input-type=module", "-e", js], input=json.dumps(self.MSGS), capture_output=True, text=True)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(json.loads(r.stdout), json.loads(json.dumps(ch.prune(self.MSGS))))
