@@ -1,0 +1,52 @@
+
+## A. Phantom tool calls (tool names the agent invented)
+- none
+- m3: 0 of 3990 tool calls (0.00%) used a name outside the advertised tools
+- ds41: 0 of 1729 tool calls (0.00%) used a name outside the advertised tools
+- v096: 0 of 341 tool calls (0.00%) used a name outside the advertised tools
+
+## B. Two strikes vs the 0.9.6 loop breaker (gate logs, gate8 only - the breaker is gate-policy only)
+- m3 loop_replay: notes in 15/68 runs (successful runs with a note: 2/8); level-1 notes 15
+- m3 loop_replay_097: notes in 27/68 runs (successful runs with a note: 2/8); level-1 notes 28, of which two-strikes 21
+  m3: first note earlier with two strikes in 20 runs (12 where 0.9.6 never fired; median 4 actions earlier otherwise)
+- ds41 loop_replay: notes in 10/34 runs (successful runs with a note: 0/12); level-1 notes 10
+- ds41 loop_replay_097: notes in 16/34 runs (successful runs with a note: 1/12); level-1 notes 17, of which two-strikes 14
+  ds41: first note earlier with two strikes in 13 runs (6 where 0.9.6 never fired; median 3 actions earlier otherwise)
+- v096 loop_replay: notes in 0/10 runs (successful runs with a note: 0/7); level-1 notes 0
+- v096 loop_replay_097: notes in 0/10 runs (successful runs with a note: 0/7); level-1 notes 0, of which two-strikes 0
+  v096: first note earlier with two strikes in 0 runs (0 where 0.9.6 never fired; median - actions earlier otherwise)
+
+## C. Reading a file with code / the terminal (inspect kind=file replaces these)
+- m3: 2 of 35 shell commands only read a file (cat/head/python print/unzip -p ...), in 2 runs
+- ds41: 0 of 8 shell commands only read a file (cat/head/python print/unzip -p ...), in 0 runs
+- v096: 1 of 71 shell commands only read a file (cat/head/python print/unzip -p ...), in 1 runs
+
+## D. Infeasible tasks (ow06 Chrome UI language 'Xenothian', ow17 GIMP CMYK)
+- m3 ow06: 4 runs, replied FAIL 0, set_plan feasible:false 0, scored success 0
+- m3 ow17: 4 runs, replied FAIL 0, set_plan feasible:false 0, scored success 0
+- ds41 ow06: 2 runs, replied FAIL 0, set_plan feasible:false 0, scored success 0
+- ds41 ow17: 2 runs, replied FAIL 0, set_plan feasible:false 0, scored success 0
+- v096 ow06: 2 runs, replied FAIL 2, set_plan feasible:false 4, scored success 2
+- v096 ow17: 2 runs, replied FAIL 1, set_plan feasible:false 1, scored success 1
+- model-free fact sheet: both apps are installed and no file/hardware is missing, so inspect env shows no evidence of
+  infeasibility for either task (0/2); catching them needs knowledge of the app's features = the feasibility role
+  (Pointer: 24/28 infeasible caught, 2/333 false alarms with Sonnet 4.6) or the acting model's own verdict.
+
+## E. Premature DONEs (final reply DONE, evaluator score 0)
+- m3: 8 premature DONE(s): og01-impress-pre-pptx-exists-direct-s0, og01-impress-pre-pptx-exists-gate8-s0, ow09-libreoffice_impress-b8adbc24-direct-s0, ow10-vlc-d06f0d4d-gate8-s0, ow14-libreoffice_writer-72b810ef-gate8-s0, og10-clone-dest-exists-gate8-s0, ow10-vlc-d06f0d4d-gate8-s1, ow14-libreoffice_writer-72b810ef-direct-s1
+- ds41: 4 premature DONE(s): og01-impress-pre-pptx-exists-direct-s0, og01-impress-pre-pptx-exists-gate8-s0, og07-os-chmod-sentinel-dirs-gate8-s0, ow17-gimp-045bf3ff-gate8-s0
+- v096: 5 premature DONE(s): og04-os-copy-dir2-conflict-direct-s0-try2, og04-os-copy-dir2-conflict-gate8-s0, ow01-libreoffice_calc-7efeb4b1-direct-s0, ow16-libreoffice_calc-a9f325aa-gate8-s0, ow23-libreoffice_impress-455d3c66-gate8-s0
+  0.9.7 coverage by inspection of each case (docs/sota-absorb-2026-10-22.md, round 21): saved-content read-back
+  (VERIFY_PLUS) shows text content, not formatting/colour/settings; plan checks need the agent to state a checkable
+  end state; the verifier role can probe settings files and document XML (python-docx / vlcrc) = the only
+  0.9.7 part that targets formatting and settings gaps.
+
+## F. Save actions (ctrl+s / ctrl+shift+s) - micro-verification target
+- m3: 14 save keystrokes; a format / save-as / overwrite dialog showed up in that or the next result 6 times
+- ds41: 28 save keystrokes; a format / save-as / overwrite dialog showed up in that or the next result 13 times
+- v096: 3 save keystrokes; a format / save-as / overwrite dialog showed up in that or the next result 0 times
+
+## G. Pixel clicks (snap target) and digest cost
+- m3: 193 pixel clicks executed (33 driver errors) over 136 runs; 13.7 executed steps/run -> 1 digest(s)/run at the default every 8 (~0.8-1.2 KB each, resent with every later model call)
+- ds41: 197 pixel clicks executed (24 driver errors) over 68 runs; 19.9 executed steps/run -> 2 digest(s)/run at the default every 8 (~0.8-1.2 KB each, resent with every later model call)
+- v096: 22 pixel clicks executed (8 driver errors) over 20 runs; 13.1 executed steps/run -> 1 digest(s)/run at the default every 8 (~0.8-1.2 KB each, resent with every later model call)

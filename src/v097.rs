@@ -221,6 +221,22 @@ mod tests {
          "list_windows", "list_apps", "launch_app", "bring_to_front", "run_command", "inspect"].iter().map(|s| s.to_string()).collect()
     }
 
+    /// Offline: GG_PHANTOM_IN=<file: one "name<TAB>known1,known2,..." per line> GG_PHANTOM_OUT=<tsv>
+    /// cargo test -- --ignored phantom_replay -> name, mapped-to (or "-"), nearest tools.
+    #[test]
+    #[ignore]
+    fn phantom_replay() {
+        let (Ok(inp), Ok(outp)) = (std::env::var("GG_PHANTOM_IN"), std::env::var("GG_PHANTOM_OUT")) else { return };
+        let mut out = String::new();
+        for l in std::fs::read_to_string(inp).unwrap().lines() {
+            let (name, ks) = l.split_once('\t').unwrap_or((l, ""));
+            let known: Vec<String> = ks.split(',').map(String::from).collect();
+            let m = phantom_alias(name, &json!({}), &known).map(|x| x.0).unwrap_or_else(|| "-".into());
+            out.push_str(&format!("{name}\t{m}\t{}\n", nearest_tools(name, &known, 3).join(",")));
+        }
+        std::fs::write(outp, out).unwrap();
+    }
+
     #[test]
     fn phantom_names_are_normalised_and_mapped() {
         assert_eq!(normalize_name("triple_click_safe"), "triple_click");
