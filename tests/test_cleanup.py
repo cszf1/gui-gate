@@ -78,7 +78,7 @@ class CleanupTests(unittest.TestCase):
         fake = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fake_driver.py")
         open(self.drv, "w").write(f"#!/bin/sh\nenv > '{h}/driver-env.txt'\nexec {sys.executable} '{fake}' \"$@\"\n")
         os.chmod(self.drv, 0o755)
-        open(os.path.join(self.lib, "cua-driver", "VERSION"), "w").write("0.37.0\n")
+        open(os.path.join(self.lib, "cua-driver", "VERSION"), "w").write("0.38.0\n")
         os.makedirs(os.path.join(h, "made-by-installer"))
         os.makedirs(os.path.join(h, "not-empty"))
         open(os.path.join(h, "not-empty", "x"), "w").close()
@@ -165,7 +165,7 @@ class CleanupTests(unittest.TestCase):
         d = json.loads(p.stdout)
         self.assertEqual(d["driver_source"], "bundled", d)
         self.assertEqual(d["driver"], self.drv)
-        self.assertEqual(d["driver_version"], "0.37.0")
+        self.assertEqual(d["driver_version"], "0.38.0")
         self.assertGreater(d["driver_tools"] or 0, 0, d)
         seen = open(os.path.join(self.h, "driver-env.txt")).read()
         for kv in ("CUA_DRIVER_RS_TELEMETRY_ENABLED=0", "CUA_TELEMETRY_ENABLED=0", "CUA_DRIVER_RS_UPDATE_CHECK=0", "DO_NOT_TRACK=1"):

@@ -53,7 +53,7 @@ fn env_python() -> Option<String> {
 
 // ------------------------------------------------------------------ the bundled Cua Driver (0.9.7)
 /// Cua Driver version shipped inside every gui-gate release archive (changes only with a gui-gate release).
-pub const BUNDLED_DRIVER_VERSION: &str = "0.37.0";
+pub const BUNDLED_DRIVER_VERSION: &str = "0.38.0";
 
 /// gui-gate's own install root for everything besides the gate binary:
 /// unix `<bin>/../lib/gui-gate` (default ~/.local/lib/gui-gate), Windows `<bin>\..` (%LOCALAPPDATA%\Programs\gui-gate).
@@ -280,6 +280,14 @@ pub fn configure(client: &str, name: &str, home_dir: Option<&str>) -> String {
 }
 
 // ------------------------------------------------------------------ checks
+/// macOS: stops the CuaDriver.app daemon a doctor run started (on drop), unless it was running before.
+struct StopDaemon(bool, String);
+
+impl Drop for StopDaemon {
+    fn drop(&mut self) {
+        crate::proc::stop_mac_daemon_unless(self.0, &self.1);
+    }
+}
 /// Real end-to-end check: start the driver's MCP server, initialize, list tools.
 pub fn doctor(cmd: Option<Vec<String>>) -> Value {
     let src = match find_driver() {
@@ -296,6 +304,7 @@ pub fn doctor(cmd: Option<Vec<String>>) -> Value {
     rep["driver_tools"] = Value::Null;
     let full = cmd.clone().or_else(|| d.as_ref().map(|p| vec![p.clone(), "mcp".into()]));
     if let Some(full) = full {
+        let _stop = StopDaemon(crate::proc::mac_daemon_running(), full[0].clone());
         match ChildMCP::spawn(&full, Arc::new(|_m| {}), false) {
             Ok(child) => {
                 let init = child.call("initialize", Some(json!({"protocolVersion": "2025-06-18", "capabilities": {},

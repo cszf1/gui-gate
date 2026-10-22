@@ -30,7 +30,7 @@ $env:GUI_GATE_CLIENT="claude"; irm https://github.com/cszf1/gui-gate/releases/la
 
 两种用法同时提供：**单步**（`click`、`type_text`……每次一个动作）和 **批量**（`run_actions`，一次一串步骤，
 支持 find / for_each / if / read，功能对标 Pi codemode，但不需要 JS 引擎）。每个动作不管哪种方式都过门控。
-`--mode single` 只给单步。Cua Driver 用的是官方预编译版本（macOS、Linux x86_64/arm64、Windows），测试版本 0.37.0。
+`--mode single` 只给单步。Cua Driver 用的是官方预编译版本（macOS、Linux x86_64/arm64、Windows），测试版本 0.38.0（随 gui-gate 发布包附带）。
 
 ```
 Agent (Pi 等) ──MCP stdio──▶ gui-gate ──▶ cua-driver（手脚：AT-SPI / UIA / AX + 输入）
@@ -150,7 +150,7 @@ run_actions run_command check_done set_plan`；0.9.7 开 `INSPECT` 时多一个 
 
 ## 安装
 
-**只下载一样东西**：每个平台一个 gui-gate 发布包，里面是 gui-gate 本体 + 它测试过的 Cua Driver 0.37.0
+**只下载一样东西**：每个平台一个 gui-gate 发布包，里面是 gui-gate 本体 + 它测试过的 Cua Driver 0.38.0
 （Cua 官方原版构建，MIT；发版时已核对 Cua 的 SHA256SUMS 和 Sigstore 签名，见 NOTICE / `scripts/cua-driver.lock`）。
 安装器校验 SHA256 → 放好两者 → 加 PATH → 自检（`gui-gate doctor`）。**不再运行 Cua 的安装器**（因此没有 Windows
 开机计划任务、没有 junction、没有 Cua 的 PATH 行和安装遥测）。不需要 Python、Rust 或管理员权限。

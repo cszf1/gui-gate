@@ -620,7 +620,7 @@ pub fn cleanup_main(argv: &[String]) -> i32 {
 }
 
 /// gui-gate processes other than this one (an MCP client still has the server open), for the uninstall report.
-fn running_gates() -> Vec<String> {
+pub fn running_gates() -> Vec<String> {
     let me = std::process::id();
     let mut out = vec![];
     if cfg!(target_os = "linux") {

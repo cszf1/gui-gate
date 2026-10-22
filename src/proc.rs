@@ -31,6 +31,38 @@ pub fn unregister(id: u32) {
     }
 }
 
+/// macOS: whether the CuaDriver.app daemon (`cua-driver serve`, which `cua-driver mcp` starts through LaunchServices)
+/// was already running before this gate started; if not, the gate stops it again when it ends.
+static MAC_DAEMON_BEFORE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(true);
+
+pub fn mac_daemon_running() -> bool {
+    cfg!(target_os = "macos")
+        && Command::new("pgrep").args(["-f", "CuaDriver.app/Contents/MacOS/cua-driver serve"]).output()
+            .map(|o| !o.stdout.is_empty()).unwrap_or(false)
+}
+
+pub fn note_mac_daemon() {
+    if cfg!(target_os = "macos") {
+        MAC_DAEMON_BEFORE.store(mac_daemon_running(), Ordering::SeqCst);
+    }
+}
+
+/// Stop the CuaDriver.app daemon if `before` says this process started it (macOS; not while another gui-gate runs).
+pub fn stop_mac_daemon_unless(before: bool, driver: &str) {
+    if !cfg!(target_os = "macos") || before || !driver.contains("CuaDriver.app/") {
+        return;
+    }
+    if !crate::cleanup::running_gates().is_empty() || !mac_daemon_running() {
+        return;
+    }
+    let _ = run_argv(&[driver, "stop"], 10.0);
+}
+
+/// At gate exit on macOS: stop the daemon this session started.
+pub fn stop_mac_daemon_if_ours(driver: &str) {
+    stop_mac_daemon_unless(MAC_DAEMON_BEFORE.load(Ordering::SeqCst), driver);
+}
+
 pub fn set_driver(pid: u32) {
     DRIVER.store(pid as i32, Ordering::SeqCst);
 }
