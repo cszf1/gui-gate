@@ -1,0 +1,1 @@
+DONE — Copied the 3 matching files (`dir1/a_failed.ipynb`, `dir2/subdir1/c_failed.ipynb`, `dir3/e_failed.ipynb`) from `/home/user/test_environment` into `./fails`, preserving the directory hierarchy and leaving existing files (`fails/KEEP.txt`) intact.

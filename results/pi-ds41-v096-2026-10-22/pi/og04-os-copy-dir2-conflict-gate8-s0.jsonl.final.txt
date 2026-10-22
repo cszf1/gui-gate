@@ -1,0 +1,1 @@
+DONE — Copied `/home/user/file1` into `dir1/` and `dir3/` as `file1` (verified identical by md5); `dir2` already had a different `file1` (36 B), and overwriting was declined by the safety gate, so I copied it there as `dir2/file1.copy` (same content as the source).

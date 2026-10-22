@@ -1,0 +1,1 @@
+DONE — In LibreOffice Impress I used File > Save As and saved the open presentation (Secrets-of-Monetizing-Video.pptx) as /home/user/Desktop/pre.pptx with the "PowerPoint 2007-365 (.pptx)" filter; verified the file exists (2.57 MB, valid pptx, 101 parts) and the window title now reads "pre.pptx".

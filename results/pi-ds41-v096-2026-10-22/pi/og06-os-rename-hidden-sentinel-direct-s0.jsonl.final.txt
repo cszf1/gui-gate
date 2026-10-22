@@ -1,0 +1,1 @@
+DONE — Renamed the folder `/home/user/Desktop/todo_list_Jan_1` to `/home/user/Desktop/todo_list_Jan_2` (contents, including `.sentinel`, intact).

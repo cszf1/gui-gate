@@ -1,0 +1,1 @@
+DONE — In the open LibreOffice Writer document (Novels_Intro_Packet.docx) I selected the first two paragraphs and applied Format > Spacing > Line Spacing: 2 (double), then saved; the .docx now stores line=480 (double) for those paragraphs while the rest stay single.

@@ -1,0 +1,1 @@
+DONE — Applied single strikethrough to the entire last paragraph ("Each student will be responsible for one discussion leading…") in GEOG2169_Course_Outline_2022-23.docx via Format > Text > Strikethrough and saved the file (verified in the saved .docx; other paragraphs untouched).

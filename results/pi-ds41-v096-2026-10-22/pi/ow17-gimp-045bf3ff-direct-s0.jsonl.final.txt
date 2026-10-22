@@ -1,0 +1,1 @@
+FAIL — GIMP (3.0.4) has no CMYK color mode: `Image > Mode` only offers RGB, Grayscale and Indexed for the open image (`gate.jpeg`, RGB 8-bit), and the `Filters` menu has no color-separation/CMYK plugin, so a genuine CMYK conversion cannot be done here in GIMP (only RGB soft-proofing with a CMYK profile would be possible).

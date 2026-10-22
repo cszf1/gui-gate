@@ -1,0 +1,1 @@
+DONE — Inserted a page break at the end of page 1 in Sample_Statutory_Declaration.docx (followed by an empty paragraph with another break), giving a blank page 2; document now has 8 pages and was saved in Writer.

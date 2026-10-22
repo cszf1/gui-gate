@@ -1,0 +1,1 @@
+DONE — Used File > Export in LibreOffice Impress, chose PNG format with default PNG options, and saved the slide to Desktop as res.png (1792×1008, 99 KB).

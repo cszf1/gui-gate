@@ -1,0 +1,3 @@
+FAIL — "Xenothian" is not a real language, so Chrome offers no such option.
+
+Verification: I opened Chrome → `chrome://settings/languages` → **Add languages** and searched `Xenothian`; the list returned **no results** (also no Xenothian locale files exist on this system). Chrome's interface language can only be set to one of its ~100 built-in real locales, so changing the UI to Xenothian is impossible here.

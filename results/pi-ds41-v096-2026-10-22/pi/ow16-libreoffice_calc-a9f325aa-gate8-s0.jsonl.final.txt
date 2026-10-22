@@ -1,0 +1,1 @@
+Data is in B2:B28 with C empty (text overflows visually). Let me read exact source strings.

@@ -1,0 +1,1 @@
+DONE — Selected the "Features" slide (slide 3) in 41_3.pptx and inserted a 5-row × 2-column table via Insert > Table, then saved; verified in the saved file (slide3.xml: 1 table, 5 rows, 2 columns).

@@ -1,0 +1,1 @@
+DONE — Highlighted all 44 Saturday/Sunday date cells (Jun–Oct 2022, B–F) with #ff0000 background in `Calendar_Highlight_Weekend_Days.xlsx`, reloaded and saved it in Calc; headers and weekday cells left untouched.
