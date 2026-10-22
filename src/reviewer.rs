@@ -174,6 +174,19 @@ const S1_STEP: [(&str, &str); 2] = [
     ("useful", "Is this action a sensible next step toward the user's request (not a repeat of something that already failed)?"),
 ];
 
+/// A key press or typing without an element target has no "target" to be right about (v094: P(right_target)
+/// 0.05-0.36 on such steps); judge it on usefulness only.
+pub fn step_questions(action: &Value) -> &'static [(&'static str, &'static str)] {
+    let kind = action.get("target_kind").and_then(|k| k.as_str()).unwrap_or("");
+    let tool = action.get("tool").and_then(|k| k.as_str()).unwrap_or("");
+    let unlabeled = action.get("target_label").and_then(|l| l.as_str()).unwrap_or("").is_empty();
+    if unlabeled && (matches!(kind, "keyboard" | "none" | "") || matches!(tool, "press_key" | "hotkey")) {
+        &S1_STEP[1..]
+    } else {
+        &S1_STEP
+    }
+}
+
 pub struct Reviewer {
     http: Option<Http>,
     timeout: Option<f64>,
@@ -226,7 +239,7 @@ impl Reviewer {
         let prompt = format!("User's request (verbatim):\n{t}\n\nProposed action:\n{}\n\nCurrent window (accessibility tree, may be partial):\n{}",
                              trunc(&serde_json::to_string_pretty(action).unwrap_or_default(), 3000), tail(window, 4000));
         let state = json!({"user_request": t, "proposed_action": action, "window": tail(window, 4000)});
-        self.call(STEP_SYSTEM, &prompt, &state, &S1_STEP)
+        self.call(STEP_SYSTEM, &prompt, &state, step_questions(action))
     }
 
     pub fn prompt(task: &str, action: &Value) -> String {
@@ -491,5 +504,16 @@ mod tests {
     fn parse_fenced() {
         assert_eq!(super::parse("```json\n{\"decision\": \"deny\", \"reason\": \"not asked\"}\n```").unwrap()["decision"], "deny");
         assert!(super::parse("maybe").is_none());
+    }
+
+    #[test]
+    fn keyboard_steps_are_judged_on_usefulness_only() {
+        let k = json!({"tool": "press_key", "target_kind": "keyboard", "target_label": "", "keys": "Return"});
+        assert_eq!(step_questions(&k).len(), 1);
+        assert_eq!(step_questions(&k)[0].0, "useful");
+        let c = json!({"tool": "click", "target_kind": "token", "target_label": "OK"});
+        assert_eq!(step_questions(&c).len(), 2);
+        let t = json!({"tool": "press_key", "target_kind": "token", "target_label": "", "keys": "Return"});
+        assert_eq!(step_questions(&t).len(), 1);
     }
 }
