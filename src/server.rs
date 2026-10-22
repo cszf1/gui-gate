@@ -208,6 +208,11 @@ pub fn text_only_rewrite(res: &mut Value) {
     }
 }
 
+/// GUI_GATE_FOCUS_BG=0 turns off the focus-free retry of a token click.
+pub fn focus_bg_enabled() -> bool {
+    std::env::var("GUI_GATE_FOCUS_BG").map(|v| v != "0").unwrap_or(true)
+}
+
 pub fn stall_hints_enabled() -> bool {
     std::env::var("GUI_GATE_STALL_HINTS").map(|v| v != "0").unwrap_or(true)
 }
@@ -538,7 +543,7 @@ impl Gate {
         let task_source = if task_locked { Some("operator".to_string()) } else { None };
         Arc::new(Gate {
             inner: Mutex::new(Inner {
-                cfg, state: GateState::default(), stats: new_stats(), aid: 0, confirm_codes: HashMap::new(),
+                state: GateState::with_text_only(cfg.text_only), cfg, stats: new_stats(), aid: 0, confirm_codes: HashMap::new(),
                 want_shot: HashSet::new(), seen_pids: HashSet::new(), fg_sticky: false, pixel_pids: HashSet::new(),
                 probe_disabled: false, denied_effects: HashMap::new(), step_doubted: HashSet::new(), acted: false, read_streak: 0, hinted: HashSet::new(), denials_consec: 0, denials_total: 0,
                 task_locked, task_source, in_batch: false, batch_ctx: Value::Null, pix_age: HashMap::new(),
@@ -1296,6 +1301,24 @@ impl Gate {
                 if let Some((r2, how)) = self.heal_occlusion(inn, &ctx, &args, &text_of(&res)) {
                     event["occlusion_heal"] = json!(how);
                     res = r2;
+                }
+            }
+            // m3 run: bring_to_front + the same foreground retry healed 0 of 41. When the input focus is already inside
+            // the target (focus_within_target=true: a popup list / menu of the active window), a token click can go the
+            // focus-free way (AT-SPI action / synthetic event) instead.
+            if is_error(&res) && inn.cfg.policy == "gate" && name == "click" && args.get("element_token").is_some()
+                && focus_lost(&text_of(&res)) && text_of(&res).contains("focus_within_target=true") && focus_bg_enabled() {
+                let mut a2 = args.clone();
+                a2["delivery_mode"] = json!("background");
+                inn.inc("focus_heals_bg_tried");
+                let r2 = self.tool(inn, name, &a2, 120.0);
+                if !is_error(&r2) {
+                    inn.inc("focus_heals_bg");
+                    event["focus_heal"] = json!("background");
+                    res = r2;
+                    push_text(&mut res, "[gate] The window would not take focus (nothing was sent); the gate sent the click focus-free instead. Check the result in the tree.".into());
+                } else {
+                    event["focus_heal_bg"] = json!(false);
                 }
             }
             if is_error(&res) && inn.cfg.policy == "gate" && FOCUS_HEAL_TOOLS.contains(&name) && focus_lost(&text_of(&res)) {

@@ -64,6 +64,8 @@ def text(t, err=False, sc=None, img=False):
 
 
 def call(name, a):
+    if name == "click":
+        state.setdefault("modes", []).append(a.get("delivery_mode"))
     if state.get("fg_fail_next") and name in ("click", "press_key", "type_text"):
         state["fg_fail_next"] -= 1
         return text(f"foreground_unavailable: window 0x1 did not become the active, focused window within 800ms "
@@ -147,7 +149,8 @@ def call(name, a):
     if name == "press_key":
         state["keys"].append("+".join(list(a.get("modifiers") or []) + [a.get("key", "")]))
     if name == "fake_state":
-        return text(json.dumps({"keys": state["keys"], "clicked": state["clicked"], "front": state.get("front", [])}))
+        return text(json.dumps({"keys": state["keys"], "clicked": state["clicked"], "front": state.get("front", []),
+                                "modes": state.get("modes", [])}))
     if name == "fake_crash":
         os._exit(3)
     if name == "fake_mutate":
