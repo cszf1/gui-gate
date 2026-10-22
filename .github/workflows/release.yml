@@ -251,13 +251,31 @@ jobs:
           gui-gate uninstall || true
           test ! -e /Applications/CuaDriver.app
           curl -fsSL -o smoke_session.py https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/scripts/smoke_session.py
+          if [ "$(uname -s)" = Darwin ]; then
+            # real HOME: full install, a driver session with a background job, uninstall; then nothing of ours is left
+            curl -fsSL https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/install.sh | GUI_GATE_REVIEWER_KEY=dummy-key bash -s -- --no-prompt --reviewer-url http://127.0.0.1:9/v1 --reviewer-model dummy
+            gui-gate doctor
+            python3 smoke_session.py "$HOME/.local/bin/gui-gate"
+            gui-gate uninstall
+            for p in .local/bin/gui-gate .local/lib/gui-gate .config/gui-gate .gui-gate .cache/gui-gate .cua-driver; do test ! -e "$HOME/$p"; done
+            test ! -e /Applications/CuaDriver.app
+            ! grep -qs "^# gui-gate" "$HOME/.bashrc" "$HOME/.zshrc" "$HOME/.bash_profile" "$HOME/.profile"
+            ! pgrep -lf 'CuaDriver.app/Contents/MacOS'
+          fi
+          true
           FH="$(mktemp -d)"; printf 'alias ll="ls -l"\n' > "$FH/.bashrc"; cp "$FH/.bashrc" rc.orig
           (cd "$FH" && find . | sort) > before.txt
           ls "${TMPDIR:-/tmp}" | grep '^gui-gate-' > tmp_before.txt || true
           curl -fsSL https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/install.sh -o install.sh
           HOME="$FH" SHELL=/bin/bash GUI_GATE_REVIEWER_KEY=dummy-key bash install.sh --no-prompt --reviewer-url http://127.0.0.1:9/v1 --reviewer-model dummy
-          HOME="$FH" "$FH/.local/bin/gui-gate" doctor
-          HOME="$FH" python3 smoke_session.py "$FH/.local/bin/gui-gate"
+          if [ "$(uname -s)" = Linux ]; then
+            HOME="$FH" "$FH/.local/bin/gui-gate" doctor
+            HOME="$FH" python3 smoke_session.py "$FH/.local/bin/gui-gate"
+          else
+            # macOS: `cua-driver mcp` talks to the CuaDriver.app daemon, which LaunchServices starts with the real HOME,
+            # so a driver session cannot run under a fake HOME; the session check runs in the real HOME below
+            HOME="$FH" "$FH/.local/bin/gui-gate" --version
+          fi
           HOME="$FH" "$FH/.local/bin/gui-gate" uninstall
           (cd "$FH" && find . | sort) > after.txt
           diff before.txt after.txt
