@@ -1,0 +1,1 @@
+DONE — Exported the open document (`View_Person_Organizational_Summary.docx`) to PDF via File ▸ Export As ▸ Export Directly as PDF. The gate blocked overwriting the pre-existing placeholder `/home/user/Desktop/View_Person_Organizational_Summary.pdf`, so the export was saved as `/home/user/Desktop/View_Person_Organizational_Summary_1.pdf` (251 KB, same base name).

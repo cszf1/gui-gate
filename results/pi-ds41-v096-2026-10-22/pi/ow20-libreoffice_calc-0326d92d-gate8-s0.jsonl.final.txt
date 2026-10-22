@@ -1,0 +1,1 @@
+DONE — Added a "Total" row (SUM of each month) and a "Growth" row (Feb–Jun month-on-month %), plus a bar chart titled "Total" (Jan–Jun) and a line chart titled "Growth" (Feb–Jun only) in SalesRep.xlsx, then saved and reloaded it in LibreOffice.

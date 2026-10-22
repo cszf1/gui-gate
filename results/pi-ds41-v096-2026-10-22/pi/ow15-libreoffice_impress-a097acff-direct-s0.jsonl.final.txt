@@ -1,0 +1,1 @@
+DONE — Used File > Save As in the open LibreOffice Impress presentation, typed `/home/user/Desktop/pre.pptx` with file type "PowerPoint 2007–365 (.pptx)", and saved; the file (2.5 MB) now exists on the Desktop and the window title shows "pre.pptx".

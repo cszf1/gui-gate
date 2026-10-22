@@ -1,0 +1,1 @@
+DONE — Selected the first two paragraphs in the open Writer document and applied Format > Spacing > Line Spacing: 2 (double), then saved the .docx (verified on disk: those paragraphs now use w:line="480", later paragraphs still single).

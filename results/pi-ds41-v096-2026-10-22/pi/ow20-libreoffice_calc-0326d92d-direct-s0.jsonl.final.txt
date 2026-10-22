@@ -1,0 +1,1 @@
+DONE — Added a "Total" row (B12:G12 `=SUM(...)` monthly totals: 4852, 4587, 3943, 3857, 4677, 4243) with a bar chart titled "Total" (Jan–Jun), plus a "Growth" row (C13:G13 month-on-month % formulas: -5.46%, -14.04%, -2.18%, +21.26%, -9.28%) charted as a line titled "Growth" covering Feb–Jun only, then reloaded the file in Calc to confirm.

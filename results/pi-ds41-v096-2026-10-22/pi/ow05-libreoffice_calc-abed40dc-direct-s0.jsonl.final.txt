@@ -1,0 +1,1 @@
+DONE — Read B2:B18 ("Names with Duplicates") and entered the 6 unique names in first-occurrence order into D2:D7 ("Unique Names"): Keira Daily, 50 Dollar Dollar, Jonah Mountain, Jeff Tunnels, Emma Stoned, Morgan Prisoner; saved the workbook.

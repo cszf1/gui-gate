@@ -1,0 +1,1 @@
+DONE — Added a "Profit" column in D (right after COGS) in WeeklySales.xlsx with =Sales−COGS formulas for Weeks 1–10 (e.g. Week 1: 11,577.18), and saved the file.

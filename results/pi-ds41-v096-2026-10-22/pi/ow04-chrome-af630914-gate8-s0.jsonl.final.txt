@@ -1,0 +1,1 @@
+DONE — In Chrome I opened chrome://settings/fonts (Settings → Appearance → Customize fonts) and dragged the **Font size** slider all the way to the maximum (**Huge / 72 px**), which was written to the profile's preferences (`default_font_size: 72`) and verified after a page reload.

@@ -1,0 +1,3 @@
+All milestones are complete and verified from the saved file.
+
+DONE — Filled B3:B30 and D3:D30 by filling the existing acceleration formulas down, then added "Combined Data" in E1 with an E2:E30 formula concatenating each row's A–D headers and values (values rounded to 2 decimals), and saved RampUpAndDown.xlsx.

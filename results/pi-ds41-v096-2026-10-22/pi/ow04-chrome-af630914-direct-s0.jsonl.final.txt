@@ -1,0 +1,1 @@
+DONE — Opened `chrome://settings/fonts` in the running Chromium/Chrome and dragged the "Font size" slider to its maximum (72 pt, was 16); the setting is saved in `/home/user/.config/google-chrome/Default/Preferences` (`default_font_size: 72`).
