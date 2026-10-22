@@ -141,6 +141,30 @@ pub fn focus_lost(txt: &str) -> bool {
 
 /// A token click the driver refused because another control owns the element's point:
 /// (desktop x, desktop y, owner role, owner label).
+pub fn no_window_list_enabled() -> bool {
+    std::env::var("GUI_GATE_NO_WINDOW_LIST").map(|v| v != "0").unwrap_or(true)
+}
+
+/// list_windows rows minus the desktop and panels, at most 12
+pub fn window_rows_for_agent(lw: &str) -> String {
+    lw.lines()
+        .filter(|l| l.contains("window_id=") && !l.contains("app=Xfdesktop") && !l.contains("app=Xfce4-panel") && !l.contains("\"xfce4-panel\""))
+        .map(|l| l.trim().to_string())
+        .take(12)
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+/// any "owned by another control" refusal, named owner or not
+pub fn occluded_any(txt: &str) -> bool {
+    txt.contains("has a snapshot frame at") && txt.contains("but that screen point is owned by")
+}
+
+/// GUI_GATE_OCCLUSION_BG=0 turns off the focus-free retry of a token click refused for occlusion.
+pub fn occlusion_bg_enabled() -> bool {
+    std::env::var("GUI_GATE_OCCLUSION_BG").map(|v| v != "0").unwrap_or(true)
+}
+
 pub fn occlusion(txt: &str) -> Option<(i64, i64, String, String)> {
     let c = occluded_rx().captures(txt)?;
     Some((c[2].parse().ok()?, c[3].parse().ok()?, c[4].trim().to_string(), c[5].to_string()))
@@ -824,6 +848,19 @@ impl Gate {
                 push_text(&mut res, format!("[gate] {hidden} kernel threads / system daemons hidden; call list_apps with all:true to see everything."));
             }
         }
+        // m3 run: 31 reads of a pid without a window (a helper from list_apps: instabox-term, an app finder...);
+        // each cost a turn plus a list_windows. Hand the window list back with the error.
+        if name == "get_window_state" && is_error(&res) && text_of(&res).contains("No windows found for pid") && no_window_list_enabled() {
+            let lw = self.tool(&mut inn, "list_windows", &json!({}), 20.0);
+            if !is_error(&lw) {
+                let rows = window_rows_for_agent(&text_of(&lw));
+                if !rows.is_empty() {
+                    inn.inc("no_window_lists");
+                    push_text(&mut res, format!("[gate] pid {} owns no window (a helper or background process). Windows you can read now (pass their pid and window_id):\n{}",
+                                                pid.map(|p| p.to_string()).unwrap_or_default(), rows));
+                }
+            }
+        }
         if shot_refused {
             push_text(&mut res, "[gate] text-only session: no screenshot is taken (the model cannot see images); use the tree rows and their element_tokens.".into());
         }
@@ -1379,6 +1416,24 @@ impl Gate {
             let t0 = Instant::now();
             let mut res = self.tool(inn, name, &args, 120.0);
             // (also inside a batch: a healed step lets the rest of the batch run instead of stopping it)
+            // m3 run: 66 token clicks refused because another control owns the element's point (stale frame, the
+            // item's menu closed, a toolbar/panel on top); the gate's pixel/menu heals fixed 1 of 8 and never ran for
+            // unnamed owners. The focus-free path acts on the element itself (AT-SPI action), no pointer involved.
+            if name == "click" && is_error(&res) && inn.cfg.policy == "gate" && args.get("element_token").is_some()
+                && occluded_any(&text_of(&res)) && occlusion_bg_enabled() {
+                let mut a2 = args.clone();
+                a2["delivery_mode"] = json!("background");
+                inn.inc("occlusion_bg_tried");
+                let r2 = self.tool(inn, name, &a2, 120.0);
+                if !is_error(&r2) {
+                    inn.inc("occlusion_bg");
+                    event["occlusion_heal"] = json!("background");
+                    res = r2;
+                    push_text(&mut res, "[gate] A pointer click was refused (another control owns that screen point; nothing was sent); the gate activated the element itself through its accessibility action instead. Check the result in the tree.".into());
+                } else {
+                    event["occlusion_bg"] = json!(false);
+                }
+            }
             if name == "click" && is_error(&res) && inn.cfg.policy == "gate" {
                 if let Some((r2, how)) = self.heal_occlusion(inn, &ctx, &args, &text_of(&res)) {
                     event["occlusion_heal"] = json!(how);
@@ -2103,6 +2158,15 @@ mod tests {
         assert!(streak_hint(2).is_none() && streak_hint(4).is_none());
         assert!(streak_hint(3).unwrap().contains("3 reads in a row"));
         assert!(streak_hint(6).is_some());
+    }
+
+    #[test]
+    fn occlusion_and_window_rows() {
+        assert!(occluded_any("click: element [15] (pid 96634) has a snapshot frame at (151, 114), but that screen point is owned by panel (unnamed) rather than the observed element"));
+        assert!(occlusion("click: element [15] (pid 96634) has a snapshot frame at (151, 114), but that screen point is owned by panel (unnamed) rather than the observed element").is_none());
+        assert!(!occluded_any("foreground_unavailable: window 0x1 did not become the active"));
+        let lw = "Found 3 windows:\n  window_id=1 pid=6982 \"Desktop\" 1440x900+0+0 app=Xfdesktop\n  window_id=2 pid=7 \"f.xlsx \u{2014} LibreOffice Calc\" 1440x849+0+51 app=libreoffice-calc\n  window_id=3 pid=6966 \"xfce4-panel\" 1440x27+0+0 app=Xfce4-panel";
+        assert_eq!(window_rows_for_agent(lw), "window_id=2 pid=7 \"f.xlsx \u{2014} LibreOffice Calc\" 1440x849+0+51 app=libreoffice-calc");
     }
 
     #[test]

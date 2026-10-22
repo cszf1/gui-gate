@@ -1,0 +1,8 @@
+m3 (transcripts)
+  direct no_window_read           21 in 13 runs
+  direct occluded_token_click     27 in 15 runs
+  gate8  no_window_read           10 in 7 runs
+  gate8  occluded_token_click     31 in 25 runs
+ds41 (pi logs)
+  direct occluded (any click)     60 in 16 runs
+  gate8  occluded (any click)     93 in 19 runs
