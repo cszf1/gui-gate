@@ -126,6 +126,14 @@ pub fn filter_apps(res: &mut Value, kthread: &dyn Fn(i64) -> bool) -> usize {
 
 re!(occluded_rx, r#"element \[(\d+)\] \(pid \d+\) has a snapshot frame at \((-?\d+), (-?\d+)\), but that screen point is owned by ([\w ]+?) "([^"]*)" rather than the observed element"#);
 
+const FOCUS_HEAL_TOOLS: &[&str] = &["click", "double_click", "right_click", "press_key", "hotkey", "type_text", "scroll", "set_value"];
+
+/// The driver could not focus the target window and says it sent nothing, so one retry cannot double an effect.
+pub fn focus_lost(txt: &str) -> bool {
+    let head: String = txt.chars().take(600).collect();
+    head.contains("foreground_unavailable") && head.contains("no input was sent")
+}
+
 /// A token click the driver refused because another control owns the element's point:
 /// (desktop x, desktop y, owner role, owner label).
 pub fn occlusion(txt: &str) -> Option<(i64, i64, String, String)> {
@@ -1178,10 +1186,31 @@ impl Gate {
         if opt == "direct" {
             let t0 = Instant::now();
             let mut res = self.tool(inn, name, &args, 120.0);
-            if name == "click" && is_error(&res) && !inn.in_batch && inn.cfg.policy == "gate" {
+            // (also inside a batch: a healed step lets the rest of the batch run instead of stopping it)
+            if name == "click" && is_error(&res) && inn.cfg.policy == "gate" {
                 if let Some((r2, how)) = self.heal_occlusion(inn, &ctx, &args, &text_of(&res)) {
                     event["occlusion_heal"] = json!(how);
                     res = r2;
+                }
+            }
+            if is_error(&res) && inn.cfg.policy == "gate" && FOCUS_HEAL_TOOLS.contains(&name) && focus_lost(&text_of(&res)) {
+                if let Some(p) = t.pid {
+                    let mut b = json!({"pid": p});
+                    if let Some(w) = t.window_id.filter(|w| *w != 0) {
+                        b["window_id"] = json!(w);
+                    }
+                    let _ = self.tool(inn, "bring_to_front", &b, 10.0);
+                    std::thread::sleep(Duration::from_millis(300));
+                    inn.inc("focus_heals_tried");
+                    let r2 = self.tool(inn, name, &args, 120.0);
+                    if !is_error(&r2) {
+                        inn.inc("focus_heals");
+                        event["focus_heal"] = json!(true);
+                        res = r2;
+                        push_text(&mut res, "[gate] The window did not take focus at first (nothing was sent); the gate brought it to the front and sent the step once more.".into());
+                    } else {
+                        event["focus_heal"] = json!(false);
+                    }
                 }
             }
             let ms = t0.elapsed().as_secs_f64() * 1000.0;

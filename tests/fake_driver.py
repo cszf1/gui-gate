@@ -27,7 +27,7 @@ state = {
 TOOLS = [{"name": n, "inputSchema": {"type": "object", "properties": {"pid": {"type": "integer"},
          **({"delivery_mode": {"type": "string"}} if n in ("click", "type_text", "press_key", "hotkey") else {})}}}
          for n in ["fake_state", "get_window_state", "click", "type_text", "press_key", "hotkey", "list_windows", "verify_state",
-                   "run_steps", "fake_mutate", "launch_app", "fake_crash"]]
+                   "run_steps", "fake_mutate", "launch_app", "fake_crash", "bring_to_front"]]
 
 
 def snap_id(n):
@@ -64,6 +64,12 @@ def text(t, err=False, sc=None, img=False):
 
 
 def call(name, a):
+    if state.get("fg_fail_next") and name in ("click", "press_key", "type_text"):
+        state["fg_fail_next"] -= 1
+        return text(f"foreground_unavailable: window 0x1 did not become the active, focused window within 800ms "
+                    f"(active=0x2, focus_within_target=true); no input was sent.", err=True)
+    if name == "bring_to_front":
+        state.setdefault("front", []).append(a.get("pid"))
     # FAKE_NO_BG=1: like a desktop without a focus-free input backend (no /dev/uinput)
     if (os.environ.get("FAKE_NO_BG") and name in ("type_text", "press_key", "hotkey")
             and a.get("delivery_mode") != "foreground"):
@@ -137,7 +143,7 @@ def call(name, a):
     if name == "press_key":
         state["keys"].append("+".join(list(a.get("modifiers") or []) + [a.get("key", "")]))
     if name == "fake_state":
-        return text(json.dumps({"keys": state["keys"], "clicked": state["clicked"]}))
+        return text(json.dumps({"keys": state["keys"], "clicked": state["clicked"], "front": state.get("front", [])}))
     if name == "fake_crash":
         os._exit(3)
     if name == "fake_mutate":
@@ -148,6 +154,8 @@ def call(name, a):
                                      "height": 100, "is_on_screen": True})
         if "fail_next" in a:
             state["fail_next"] = a["fail_next"]
+        if "fg_fail_next" in a:
+            state["fg_fail_next"] = a["fg_fail_next"]
         if "occlude_next" in a:
             state["occlude_next"] = a["occlude_next"]
         return text("mutated")
