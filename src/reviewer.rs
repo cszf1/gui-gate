@@ -42,7 +42,7 @@ fn parse_env_file(text: &str) -> Vec<(String, String)> {
         if v.len() >= 2 && ((v.starts_with('"') && v.ends_with('"')) || (v.starts_with('\'') && v.ends_with('\''))) {
             v = &v[1..v.len() - 1];
         }
-        k.starts_with("GUI_GATE_REVIEWER").then(|| (k.to_string(), v.to_string()))
+        (k.starts_with("GUI_GATE_REVIEWER") || k.starts_with("GUI_GATE_ROLE_")).then(|| (k.to_string(), v.to_string()))
     }).collect()
 }
 
@@ -221,6 +221,93 @@ impl Reviewer {
             max_tokens: get("GUI_GATE_REVIEWER_MAX_TOKENS").and_then(|t| t.trim().parse().ok()).unwrap_or(1024),
             allow_p: get("GUI_GATE_REVIEWER_ALLOW_P").and_then(|t| t.trim().parse().ok()).unwrap_or(0.5),
             last_error: Mutex::new(None),
+        }
+    }
+
+    /// An extra model role inside the gate (0.9.7: feasibility, planner, verifier, judge, search, compact, grounder),
+    /// configured like the reviewer under GUI_GATE_ROLE_<NAME>_URL / _MODEL / _KEY | _KEY_FILE / _PROTOCOL /
+    /// _TIMEOUT / _MAX_TOKENS, or GUI_GATE_ROLE_<NAME>=reviewer to reuse the reviewer's endpoint. None when the role is
+    /// not configured (roles are optional; the reviewer is not). The same HTTP client code as the reviewer.
+    pub fn for_role(name: &str) -> Option<Reviewer> {
+        let file = file_settings();
+        let up = name.to_uppercase();
+        let pre = format!("GUI_GATE_ROLE_{up}");
+        let get = |k: &str| setting(&format!("{pre}{k}"), &file);
+        if get("").map(|v| v.trim().eq_ignore_ascii_case("reviewer")).unwrap_or(false) {
+            let mut r = Reviewer::from_env();
+            r.http.as_ref()?;
+            if let Some(t) = get("_TIMEOUT").and_then(|t| t.trim().parse().ok()) { r.timeout = Some(t); }
+            if let Some(t) = get("_MAX_TOKENS").and_then(|t| t.trim().parse().ok()) { r.max_tokens = t; }
+            if r.http.as_ref().map(|h| h.protocol == "systemone").unwrap_or(true) {
+                return None; // a decision model answers typed yes/no questions only, not free text
+            }
+            return Some(r);
+        }
+        let url = get("_URL")?.trim().to_string();
+        let model = get("_MODEL").unwrap_or_default().trim().to_string();
+        let mut key = get("_KEY").unwrap_or_default();
+        if key.is_empty() {
+            if let Some(kf) = get("_KEY_FILE") {
+                key = std::fs::read_to_string(crate::sidefx::expanduser(kf.trim())).map(|s| s.trim().to_string()).unwrap_or_default();
+            }
+        }
+        let protocol = guess_protocol(get("_PROTOCOL").as_deref(), &url, &model);
+        if protocol == "systemone" {
+            return None;
+        }
+        Some(Reviewer {
+            http: Some(Http { url: endpoint(&url, &protocol, &model), key, model, user_agent: get("_USER_AGENT").filter(|u| !u.trim().is_empty()), protocol }),
+            timeout: Some(get("_TIMEOUT").and_then(|t| t.trim().parse().ok()).unwrap_or(60.0)),
+            max_tokens: get("_MAX_TOKENS").and_then(|t| t.trim().parse().ok()).unwrap_or(2048),
+            allow_p: 0.5,
+            last_error: Mutex::new(None),
+        })
+    }
+
+    /// One free-text answer (roles). `image_b64`: a PNG/JPEG passed natively to a vision model (grounder).
+    pub fn ask(&self, system: &str, prompt: &str, image_b64: Option<&str>) -> Option<String> {
+        match image_b64 {
+            None => self.call_http(system, prompt),
+            Some(img) => self.call_http_image(system, prompt, img),
+        }
+    }
+
+    fn call_http_image(&self, system: &str, prompt: &str, img: &str) -> Option<String> {
+        let h = self.http.as_ref()?;
+        let mt = self.max_tokens;
+        let mime = if img.starts_with("/9j/") { "image/jpeg" } else { "image/png" };
+        match h.protocol.as_str() {
+            "anthropic" => {
+                let mut hd = vec![("anthropic-version", "2023-06-01".to_string())];
+                if !h.key.is_empty() {
+                    hd.push(("x-api-key", h.key.clone()));
+                    hd.extend(self.bearer());
+                }
+                let d = self.post(&h.url, json!({"model": h.model, "max_tokens": mt, "temperature": 0, "system": system,
+                    "messages": [{"role": "user", "content": [{"type": "image", "source": {"type": "base64", "media_type": mime, "data": img}}, {"type": "text", "text": prompt}]}]}), &hd)?;
+                let t: Vec<String> = d.get("content")?.as_array()?.iter().filter_map(|c| c.get("text").and_then(|t| t.as_str()).map(String::from)).collect();
+                Some(t.join("\n")).filter(|t| !t.is_empty())
+            }
+            "gemini" => {
+                let hd = if h.key.is_empty() { vec![] } else { vec![("x-goog-api-key", h.key.clone())] };
+                let d = self.post(&h.url, json!({"systemInstruction": {"parts": [{"text": system}]},
+                    "contents": [{"role": "user", "parts": [{"inline_data": {"mime_type": mime, "data": img}}, {"text": prompt}]}],
+                    "generationConfig": {"temperature": 0, "maxOutputTokens": mt}}), &hd)?;
+                let t: Vec<String> = d.get("candidates")?.get(0)?.get("content")?.get("parts")?.as_array()?.iter()
+                    .filter_map(|p| p.get("text").and_then(|t| t.as_str()).map(String::from)).collect();
+                Some(t.join("\n")).filter(|t| !t.is_empty())
+            }
+            "responses" => {
+                let d = self.post(&h.url, json!({"model": h.model, "instructions": system, "max_output_tokens": mt,
+                    "input": [{"role": "user", "content": [{"type": "input_image", "image_url": format!("data:{mime};base64,{img}")}, {"type": "input_text", "text": prompt}]}]}), &self.bearer())?;
+                d.get("output_text").and_then(|t| t.as_str()).map(String::from)
+            }
+            _ => {
+                let d = self.post(&h.url, json!({"model": h.model, "temperature": 0, "max_tokens": mt,
+                    "messages": [{"role": "system", "content": system}, {"role": "user", "content": [
+                        {"type": "image_url", "image_url": {"url": format!("data:{mime};base64,{img}")}}, {"type": "text", "text": prompt}]}]}), &self.bearer())?;
+                Some(d.get("choices")?.get(0)?.get("message")?.get("content")?.as_str()?.to_string())
+            }
         }
     }
 

@@ -208,6 +208,16 @@ pub fn tool_schema() -> Value {
             "required": ["command"]}})
 }
 
+/// 0.9.7 GUI_GATE_JOBS: run_command gets mode start | poll | stop (detached long jobs) next to run.
+pub fn add_job_modes(schema: &mut Value) {
+    let props = &mut schema["inputSchema"]["properties"];
+    props["mode"] = json!({"type": "string", "enum": ["run", "start", "poll", "stop"], "description": "run (default): wait for the result. start: launch a long command (installs, downloads, slow scripts) in the background and get a job number at once. poll / stop {job}: its status and output so far / kill it."});
+    props["job"] = json!({"type": "integer", "description": "mode=poll / stop: the job number from mode=start"});
+    schema["inputSchema"]["required"] = json!([]);
+    let d = schema["description"].as_str().unwrap_or("").to_string();
+    schema["description"] = json!(format!("{d} Commands longer than a minute or two: mode=start, then mode=poll."));
+}
+
 pub struct Ran {
     pub code: Option<i32>,
     pub timed_out: bool,
