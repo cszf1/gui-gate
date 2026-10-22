@@ -46,7 +46,8 @@ APPS = ["soffice.bin", "soffice", "oosplash", "gimp", "gimp-2.10", "gimp-3.0", "
 TASK_HOME = "/home/user"
 # tool installs that may come after box_setup took the home baseline (reset must never delete them)
 KEEP_HOME = {".gui-gate", ".cache", ".pi", ".local", ".config", ".bashrc", ".profile", ".npm", ".cua-driver", ".ssh",
-             "xray", ".claude", ".codex", ".gnupg"}
+             "xray", ".claude", ".codex", ".gnupg",
+             ".EasyOCR"}  # easyocr model cache (evaluator compare_image_text), downloaded on first use
 
 
 def sh(cmd: str, timeout: float = 60) -> subprocess.CompletedProcess:
