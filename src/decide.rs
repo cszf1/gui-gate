@@ -77,6 +77,16 @@ pub fn after(f: &Feats, o: &str) -> Feats {
 }
 
 /// What a failed step costs, in seconds: noticing it and redoing it takes about two model turns plus clean-up,
+/// Signature "press_key|<pid>|<keys>" of a plain navigation key press (see is_nav_key).
+pub fn nav_signature(sig: &str) -> bool {
+    let parts: Vec<&str> = sig.split('|').collect();
+    if parts.len() < 3 || !(parts[0] == "press_key" || parts[0] == "hotkey") {
+        return false;
+    }
+    let ctx = ActionCtx { tool: parts[0].into(), args: serde_json::json!({}), signature: sig.into(), ..Default::default() };
+    is_nav_key(&ctx)
+}
+
 /// A plain navigation key (arrows, Tab, Page Up/Down, Home/End), optionally with Shift/Ctrl.
 pub fn is_nav_key(ctx: &ActionCtx) -> bool {
     if ctx.tool != "press_key" && ctx.tool != "hotkey" {
@@ -88,6 +98,12 @@ pub fn is_nav_key(ctx: &ActionCtx) -> bool {
     }
     if let Some(a) = ctx.args.get("keys").and_then(|k| k.as_array()) {
         keys.extend(a.iter().filter_map(|k| k.as_str()).map(|k| k.to_lowercase()));
+    }
+    if keys.is_empty() && ctx.args.get("modifiers").is_none() {
+        // replayed logs keep only the signature "press_key|pid|keys"
+        if let Some(last) = ctx.signature.rsplit('|').next() {
+            keys.extend(last.split('+').filter(|k| !k.is_empty()).map(|k| k.to_lowercase()));
+        }
     }
     let mods: Vec<String> = ctx.args.get("modifiers").and_then(|m| m.as_array())
         .map(|a| a.iter().filter_map(|k| k.as_str()).map(|k| k.to_lowercase()).collect()).unwrap_or_default();
@@ -480,5 +496,25 @@ mod tests {
         assert!(is_nav_key(&c));
         c.args = serde_json::json!({"key": "Tab", "modifiers": ["alt"]});
         assert!(!is_nav_key(&c));
+        assert!(nav_signature("press_key|123|Down"));
+        assert!(nav_signature("press_key|123|shift+down"));
+        assert!(!nav_signature("press_key|123|Return"));
+        assert!(!nav_signature("click|123|button|Down"));
+    }
+
+    #[test]
+    fn settled_menu_click_after_wait_and_check_goes_direct() {
+        // v094 ow11/ow12/ow14: menu click right after a popup, duplicate label, tree check passed
+        let mut f = feats();
+        for (k, v) in [("log_obs_age", 0.004), ("label_dup", 1.0), ("check_pass", 1.0), ("sess_fail", -1.609), ("role_menu", 1.0)] {
+            f[k] = v;
+        }
+        let cfg = GateConfig::default();
+        let c = ctx("click", "token", "Insert");
+        f["last_popup"] = 1.0;
+        let before = choose(&c, &f, &cfg, false, true);
+        f["last_popup"] = 0.0;
+        let after_wait = choose(&c, &f, &cfg, false, true);
+        assert_eq!(after_wait.option, "direct", "{} / before: {}", after_wait.reason, before.option);
     }
 }

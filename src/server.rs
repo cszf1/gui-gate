@@ -1059,7 +1059,8 @@ impl Gate {
                 break;
             }
             if dec.option == "wait" && waited {
-                dec = Decision::new("look_light", dec.p_direct, "UI still busy after waiting", "grey");
+                let why = if fget(&f, "loading_cue") > 0.5 { "UI still busy after waiting" } else { "the window had not settled after waiting" };
+                dec = Decision::new("look_light", dec.p_direct, why, "grey");
                 break;
             }
             match dec.option.as_str() {
@@ -1068,6 +1069,12 @@ impl Gate {
                     check_res = self.check(inn, &ctx, Some(&mut args));
                     ctx = build_ctx(name, &args, &inn.state);
                     f = features(&ctx, &inn.state, wc, wadd, check_res, None);
+                    if waited {
+                        // the wait already let the popup/loading settle; do not count it a second time
+                        // (v094: 5 menu clicks went wait -> check(pass) -> wait -> refused "UI still busy")
+                        f["last_popup"] = 0.0;
+                        f["loading_cue"] = 0.0;
+                    }
                     if inn.probe_disabled {
                         f["loading_cue"] = 1.0;
                     }
@@ -1230,7 +1237,9 @@ impl Gate {
             if rec.is_error {
                 inn.inc("exec_errors");
             }
-            let retro_aid = inn.state.last_action().filter(|prev| prev.key == rec.key && !prev.is_error && rec.t - prev.t < 60.0).map(|p| p.aid);
+            // (walking a list with the same arrow/Tab key is not a repeat of a step that did not work)
+            let retro_aid = inn.state.last_action().filter(|prev| prev.key == rec.key && !prev.is_error && rec.t - prev.t < 60.0)
+                .filter(|_| !crate::decide::is_nav_key(&ctx)).map(|p| p.aid);
             if let Some(aid) = retro_aid {
                 // the agent sent the same action again: the previous one most likely did not do what it wanted
                 self.log.write(json!({"ev": "retro_repeat", "aid": aid}));

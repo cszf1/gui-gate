@@ -109,7 +109,7 @@ fn load(paths: &[String]) -> Vec<Row> {
         let key = (s(&e, "session").to_string(), as_i64(e.get("aid")).unwrap_or(-1));
         let ok = match env.get(&key) {
             Some(v) => *v && !truthy(e.get("is_error")),
-            None => !truthy(e.get("is_error")) && !truthy(e.get("stale_error")) && !retro.contains(&key),
+            None => !truthy(e.get("is_error")) && !truthy(e.get("stale_error")) && !(retro.contains(&key) && !crate::decide::nav_signature(s(&e, "sig"))),
         };
         let mut f: HashMap<String, f64> = e.get("features").and_then(|f| f.as_object())
             .map(|o| o.iter().map(|(k, v)| (k.clone(), v.as_f64().unwrap_or(0.0))).collect()).unwrap_or_default();
@@ -301,7 +301,7 @@ pub fn compare_main(argv: &[String]) -> i32 {
                     add("executed", 1.0);
                     add("exec_ms", as_f64(e.get("exec_ms")).unwrap_or(0.0));
                     let key = (s(e, "session").to_string(), as_i64(e.get("aid")).unwrap_or(-1));
-                    let bad = truthy(e.get("is_error")) || truthy(e.get("stale_error")) || retro.contains(&key);
+                    let bad = truthy(e.get("is_error")) || truthy(e.get("stale_error")) || (retro.contains(&key) && !crate::decide::nav_signature(s(e, "sig")));
                     add("failed", if bad { 1.0 } else { 0.0 });
                 } else {
                     add("interventions", 1.0);
@@ -388,7 +388,8 @@ pub fn replay_main(argv: &[String]) -> i32 {
             let ca = matches!(ctx.target.kind.as_str(), "token" | "index" | "name");
             let d = crate::decide::hard_rules(&ctx, &feats, &cfg, true, true).unwrap_or_else(|| crate::decide::choose(&ctx, &feats, &cfg, ca, false));
             let aid = as_i64(e.get("aid")).unwrap_or(-1);
-            let failed = truthy(e.get("is_error")) || truthy(e.get("stale_error")) || retro.contains(&aid);
+            // pressing the same arrow/Tab key again is how lists are walked, not a sign the first press failed
+            let failed = truthy(e.get("is_error")) || truthy(e.get("stale_error")) || (retro.contains(&aid) && !crate::decide::nav_signature(&sig));
             n += 1.0;
             if failed { fails += 1.0; }
             let ent = by.entry(d.option.clone()).or_default();
