@@ -103,3 +103,30 @@ class ContextHygieneTests(unittest.TestCase):
         r = subprocess.run(["node", "--input-type=module", "-e", js], input=json.dumps(self.MSGS), capture_output=True, text=True)
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertEqual(json.loads(r.stdout), json.loads(json.dumps(ch.prune(self.MSGS))))
+
+
+class BenchOptionsTests(unittest.TestCase):
+    def test_app_hints_cover_the_tasks_and_name_no_tools(self):
+        import glob
+        import app_hints
+        for f in glob.glob(os.path.join(ROOT, "bench", "tasks", "*", "*.json")):
+            name = os.path.basename(f)[:-5]
+            h = app_hints.hint_for(name)
+            self.assertTrue(h, name)
+            self.assertLess(len(h), 900, name)
+            for tool in ("run_command", "check_done", "set_plan", "run_actions"):
+                self.assertNotIn(tool, h)  # the hints are the same with and without the 0.9.6 tools
+        self.assertNotIn("CMYK", app_hints.hint_for("ow17-gimp-045bf3ff"))  # no task-specific answers
+        self.assertEqual(app_hints.hint_for("unknown-task"), "")
+
+    def test_run_bench_options(self):
+        sh = open(os.path.join(ROOT, "bench", "run_bench.sh")).read()
+        self.assertEqual(subprocess.run(["bash", "-n", os.path.join(ROOT, "bench", "run_bench.sh")]).returncode, 0)
+        self.assertIn("MAXT=${MAXT_ARG:-${PI_MAX_TURNS:-30}}", sh)  # default stays 30 (comparability)
+        self.assertIn("official setting is 100", sh)
+        for t in ("run_command", "check_done", "set_plan"):
+            self.assertIn(f'"{t}":"direct"', sh)  # Pi declares the new tools
+        # the option loop: run it in isolation
+        loop = sh[sh.index("MAXT_ARG=\"\""):sh.index("OUT=${1:-")]
+        r = subprocess.run(["bash", "-c", loop + 'echo "$MAXT_ARG|$1"', "x", "--max-turns", "100", "/out"], capture_output=True, text=True)
+        self.assertEqual(r.stdout.strip(), "100|/out")
