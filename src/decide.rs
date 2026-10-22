@@ -95,7 +95,7 @@ pub fn fail_cost(ctx: &ActionCtx, f: &Feats, cfg: &GateConfig) -> f64 {
     } else {
         1.0
     };
-    base * sev * (1.0 + fget(f, "consec_fail")).powf(1.5)
+    base * sev * (1.0 + fget(f, "consec_fail")).powf(cfg.fail_exp)
 }
 
 #[derive(Clone, Debug)]
@@ -126,6 +126,8 @@ pub struct GateConfig {
     pub gains: IndexMap<String, f64>,
     pub calib: Option<(f64, f64)>,
     pub model_name: String,
+    /// exponent of the stuck factor (1+consec_fail)^e in the fail cost (0.9.5: 1.0, was 1.5)
+    pub fail_exp: f64,
 }
 
 impl Default for GateConfig {
@@ -135,7 +137,7 @@ impl Default for GateConfig {
             risk_mode: "auto".into(), decider: "formula".into(), reviewer: false, collect: false, human_channel: "auto".into(),
             human_timeout: 120.0, toolset: "core".into(), auto_observe: true, delivery: "auto".into(), task: String::new(),
             batch: "auto".into(), deny_consecutive: 3, deny_total: 8, costs: default_costs(), weights: prior_weights(),
-            gains: prior_gains(), calib: Some(PRIOR_CALIB), model_name: "osworld_v2".into(),
+            gains: prior_gains(), calib: Some(PRIOR_CALIB), model_name: "osworld_v2".into(), fail_exp: 1.0,
         }
     }
 }
@@ -168,6 +170,7 @@ impl GateConfig {
         }
         if let Some(v) = env("GUI_GATE_BATCH") { c.batch = v; }
         if let Some(v) = env("GUI_GATE_TURN_COST").and_then(|v| v.parse().ok()) { c.turn_cost = v; }
+        if let Some(v) = env("GUI_GATE_FAIL_EXP").and_then(|v| v.parse::<f64>().ok()).filter(|v| (0.0..=3.0).contains(v)) { c.fail_exp = v; }
         if let Some(w) = env("GUI_GATE_WEIGHTS") {
             if w == "prior_v1" {
                 c.weights = prior_v1_weights();
@@ -420,5 +423,19 @@ mod tests {
         f["acts_since_obs"] = 3.0;
         let cfg = GateConfig::default();
         assert!(p_direct(&after(&f, "look_light"), &cfg) > p_direct(&f, &cfg) + 0.1);
+    }
+
+    #[test]
+    fn one_failure_grows_the_fail_cost_linearly() {
+        let mut f = feats();
+        f["consec_fail"] = 1.0;
+        let mut cfg = GateConfig::default();
+        assert_eq!(cfg.fail_exp, 1.0);
+        let c0 = fail_cost(&ctx("click", "token", "Bold"), &feats(), &cfg);
+        let c1 = fail_cost(&ctx("click", "token", "Bold"), &f, &cfg);
+        assert!((c1 / c0 - 2.0).abs() < 1e-9);
+        cfg.fail_exp = 1.5;
+        let c15 = fail_cost(&ctx("click", "token", "Bold"), &f, &cfg);
+        assert!(c15 > c1 * 1.4);
     }
 }
