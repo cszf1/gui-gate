@@ -1,0 +1,2 @@
+The spreadsheet grid isn't exposed in the accessibility tree, so let me check the terminal available on the desktop to inspect the spreadsheet file.
+

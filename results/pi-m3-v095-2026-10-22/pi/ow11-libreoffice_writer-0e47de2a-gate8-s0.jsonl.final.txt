@@ -1,0 +1,2 @@
+I can see a LibreOffice Writer document is open (10 pages). Let me add page numbers in a footer at bottom left. First, let me explore the Insert menu.
+

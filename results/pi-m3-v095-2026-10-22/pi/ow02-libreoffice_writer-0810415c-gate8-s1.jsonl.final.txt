@@ -1,0 +1,4 @@
+I'll start by inspecting the LibreOffice Writer document. The document has several paragraphs — the first text paragraph is "Compared to a short story..." (element [25]) and the second is "A novel may have any number of climaxes..." (element [27]).
+
+Let me click into the document to give it focus.
+

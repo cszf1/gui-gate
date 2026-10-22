@@ -1,0 +1,2 @@
+Let me first dismiss the LibreOffice welcome dialog so it doesn't block the spreadsheet.
+

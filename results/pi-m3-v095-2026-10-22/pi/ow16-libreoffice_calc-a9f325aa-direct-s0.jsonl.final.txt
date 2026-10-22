@@ -1,0 +1,2 @@
+The spreadsheet cell grid isn't exposed via AT-SPI, and there's a first-run dialog that may be blocking. Let me close that dialog first.
+

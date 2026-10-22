@@ -1,0 +1,2 @@
+I'll start by examining the slide structure. The slide has a title ("GPT"), body text (PlaceHolder 2), and a table. Let me click on the body text to begin underlining it.
+

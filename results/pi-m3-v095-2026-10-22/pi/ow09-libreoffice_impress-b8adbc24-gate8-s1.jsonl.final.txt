@@ -1,0 +1,1 @@
+FAIL — I could not perform any input on LibreOffice Impress: all click/key actions were refused by the safety gate because no window is active in this XFCE/Xvnc session (_NET_ACTIVE_WINDOW unset), the offered human takeover was declined, and I could not navigate to slide 2 or edit its title ("Online Shopping") as a result.

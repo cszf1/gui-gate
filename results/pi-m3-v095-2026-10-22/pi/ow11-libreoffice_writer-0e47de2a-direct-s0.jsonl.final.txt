@@ -1,0 +1,2 @@
+There's a LibreOffice Writer document open with 10 pages. I need to add a footer with page numbers (bottom left) to every page. Let me open the Insert menu.
+

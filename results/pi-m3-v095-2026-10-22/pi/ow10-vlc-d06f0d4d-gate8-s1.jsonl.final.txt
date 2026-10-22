@@ -1,0 +1,1 @@
+DONE — Enabled VLC's "Use a dark palette" option (Tools → Preferences → Interface), which applies a dark/black theme to the player, including the volume slider, and saved it.

@@ -1,0 +1,2 @@
+The menu clicks aren't opening the File menu. Let me try the keyboard shortcut for Save As (Ctrl+Shift+S):
+

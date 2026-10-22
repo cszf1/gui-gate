@@ -1,0 +1,1 @@
+DONE — Navigated to slide 2 and replaced its title placeholder text with "Online Shopping", which uses the same placeholder (same position, color, and font size) as slide 1's title.

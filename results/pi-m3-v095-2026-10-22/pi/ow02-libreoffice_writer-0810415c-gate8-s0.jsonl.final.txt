@@ -1,0 +1,1 @@
+DONE — Applied double line spacing (Format → Spacing → Line Spacing: 2) to the first two content paragraphs of Novels_Intro_Packet.docx in LibreOffice Writer and saved the document.

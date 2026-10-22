@@ -1,0 +1,2 @@
+The home directory `/data/home` contains `file1` and folders `dir1`, `dir2`, `dir3`. Let me copy `file1` into each directory using the terminal.
+

@@ -1,0 +1,1 @@
+DONE — In LibreOffice Writer (GEOG2169_Course_Outline_2022-23.docx) I triple-clicked the last paragraph ("Each student will be responsible for one discussion leading…") to select it in full and applied the Strikethrough formatting, which now shows as active (pressed) on the toolbar.

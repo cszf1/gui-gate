@@ -1,0 +1,2 @@
+I'll use the open terminal to investigate and perform the copy. Let me first gather information about where the target files are.
+
