@@ -2368,11 +2368,14 @@ impl Gate {
                 kinds.push("unsaved_title");
             }
             if title.contains("LibreOffice") {
-                if let Ok(texts) = crate::atspi::status_bar_texts(*p, title, Duration::from_millis(800)) {
-                    if crate::done::status_says_modified(&texts) == Some(true) {
+                match crate::atspi::status_bar_texts(*p, title, Duration::from_millis(800)).ok().and_then(|t| crate::done::status_says_modified(&t)) {
+                    Some(true) => {
                         gaps.push(format!("LibreOffice reports unsaved changes in \"{}\" (save it if the task's result must be in the file)", trunc(title, 60)));
                         kinds.push("unsaved_doc");
                     }
+                    Some(false) => {}
+                    // LibreOffice 25.2 shows its modified flag only as an image: say that it is not known
+                    None => ev.push(format!("Unsaved changes in \"{}\": not visible to the gate (LibreOffice does not expose its modified flag); if you edited it after the last save and the result must be in the file, save it.", trunc(title, 60))),
                 }
                 if is_spreadsheet_app(*p) {
                     let key = format!("{p}:{w}");

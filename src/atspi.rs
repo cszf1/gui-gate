@@ -951,13 +951,21 @@ pub fn status_bar_texts(pid: i64, title: &str, budget: Duration) -> Result<Vec<S
         let r = a.bus.call_many(&[call(&b.0, &b.1, ACC, "GetChildren", vec![])]);
         let kids: Vec<Obj> = r.into_iter().next().and_then(|x| x.ok()).map(|v| v.first().map(|a| a.items().iter().filter_map(|x| x.obj()).collect()).unwrap_or_default()).unwrap_or_default();
         let mut calls = vec![];
+        // LibreOffice 25.2 (checked on gui-pi2 2026-10-22): the items are labels with empty Name/Description whose
+        // shown text ("Sheet 1 of 1", "English (USA)", "100%") is only in the Text interface; the "document modified"
+        // indicator is an image with no text at all, so a modified flag cannot be read here (status_says_modified ->
+        // None). Read all three so the evidence is what the bar shows.
         for k in kids.iter().take(40) {
             calls.push(Atspi::get_prop(k, ACC, "Name"));
             calls.push(Atspi::get_prop(k, ACC, "Description"));
+            calls.push(call(&k.0, &k.1, "org.a11y.atspi.Text", "GetText", vec![Arg::I(0), Arg::I(-1)]));
         }
         for r in a.bus.call_many(&calls) {
             if let Some(t) = r.ok().and_then(|v| v.first().and_then(|x| x.str()).map(String::from)).filter(|t| !t.trim().is_empty()) {
-                out.push(one_line(&t, 160));
+                let t = one_line(&t, 160);
+                if !out.contains(&t) {
+                    out.push(t);
+                }
             }
         }
     }
@@ -971,7 +979,9 @@ pub fn active_window(budget: Duration) -> Result<Option<String>, String> {
     let r = a.bus.call_many(&[call("org.a11y.atspi.Registry", "/org/a11y/atspi/accessible/root", ACC, "GetChildren", vec![])]);
     let apps: Vec<Obj> = r.into_iter().next().and_then(|x| x.ok()).and_then(|v| v.first().map(|a| a.items().iter().filter_map(|v| v.obj()).collect())).unwrap_or_default();
     for app in apps.iter().take(60) {
-        if let Some((_, name, _)) = a.windows(app).into_iter().find(|w| w.2) {
+        // xfwm4 exposes its own unnamed "window" with the ACTIVE state (checked on gui-pi2 2026-10-22: it came first
+        // and hid the real active frame), so an active window must have a name
+        if let Some((_, name, _)) = a.windows(app).into_iter().find(|w| w.2 && !w.1.trim().is_empty()) {
             return Ok(Some(name));
         }
     }
