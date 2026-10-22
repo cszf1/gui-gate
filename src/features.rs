@@ -303,7 +303,10 @@ pub fn assess_risk(tool: &str, args: &Value, t: &Target, steps: &[(String, Value
                     handoff = Some(format!("typing into a secret field \"{}\"", if label.is_empty() { role.clone() } else { trunc(&label, 40) }));
                 }
             }
-            if let Some(m) = shell_high().find(&text) {
+            // in a terminal, typing does not run anything (the Enter is checked against the disk); elsewhere
+            // (an editor, a SQL console, a chat box) dangerous text is still flagged
+            let term_line = tg.pid.map(sidefx::is_terminal).unwrap_or(false) && !text.contains('\n');
+            if let (Some(m), false) = (shell_high().find(&text), term_line) {
                 bump(&mut best, "medium", format!("typed a dangerous command ({})", trunc(m.as_str(), 30)));
             }
         }
@@ -319,7 +322,11 @@ pub fn assess_risk(tool: &str, args: &Value, t: &Target, steps: &[(String, Value
             if ENTER_KEYS.iter().any(|k| ks.contains(*k)) {
                 if let Some(pid) = tg.pid {
                     let typed = st.last_typed.get(&pid).cloned().unwrap_or_default();
-                    if !typed.is_empty() && shell_high().is_match(&typed) {
+                    // `rm -rf` in a terminal is judged by what it would delete (shell_check below: existing paths
+                    // that predate the session); other dangerous patterns (sudo, mkfs, curl|sh, ...) stay high
+                    let term = sidefx::is_terminal(pid);
+                    let hit = shell_high().find_iter(&typed).any(|m| !(term && m.as_str().trim_start().starts_with("rm")));
+                    if !typed.is_empty() && hit {
                         bump(&mut best, "high", format!("Enter would run: {}", trunc(&typed, 60)));
                     }
                     shell_check(&typed, pid, &mut |l, r| bump(&mut best, l, r));

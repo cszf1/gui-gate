@@ -47,7 +47,7 @@ Held-out quality (session split, so a model is never scored on a run it was trai
   a small residual gain for what the features cannot see. So the predictor itself says how much looking again helps.
 * `C_fail`: noticing and redoing a failed step takes about two turns plus clean-up (2·7 + 5 = 19 s), times how hard it
   is to undo (scroll / arrow keys ×0.5, typing ×1.5, Enter or OK / Save / Send / Delete ×2, risky ×3) and times
-  (1 + consecutive failures)^1.5 — the more stuck the run, the more a failure costs.
+  (1 + consecutive failures)^e, e = 1.0 since 0.9.5 (was 1.5; env GUI_GATE_FAIL_EXP) — the more stuck the run, the more a failure costs.
 * `ask_help` (a person does or explains the step) enters only when a person is reachable (not `--human deny`) and
   the run has failed twice in a row; with the escalation above it becomes the cheapest option once the run is
   clearly stuck. With a desktop / elicitation channel the gate asks directly ("please do this step, then Allow");

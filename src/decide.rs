@@ -77,6 +77,41 @@ pub fn after(f: &Feats, o: &str) -> Feats {
 }
 
 /// What a failed step costs, in seconds: noticing it and redoing it takes about two model turns plus clean-up,
+/// Signature "press_key|<pid>|<keys>" of a plain navigation key press (see is_nav_key).
+pub fn nav_signature(sig: &str) -> bool {
+    let parts: Vec<&str> = sig.split('|').collect();
+    if parts.len() < 3 || !(parts[0] == "press_key" || parts[0] == "hotkey") {
+        return false;
+    }
+    let ctx = ActionCtx { tool: parts[0].into(), args: serde_json::json!({}), signature: sig.into(), ..Default::default() };
+    is_nav_key(&ctx)
+}
+
+/// A plain navigation key (arrows, Tab, Page Up/Down, Home/End), optionally with Shift/Ctrl.
+pub fn is_nav_key(ctx: &ActionCtx) -> bool {
+    if ctx.tool != "press_key" && ctx.tool != "hotkey" {
+        return false;
+    }
+    let mut keys: Vec<String> = vec![];
+    if let Some(k) = ctx.args.get("key").and_then(|k| k.as_str()) {
+        keys.push(k.to_lowercase());
+    }
+    if let Some(a) = ctx.args.get("keys").and_then(|k| k.as_array()) {
+        keys.extend(a.iter().filter_map(|k| k.as_str()).map(|k| k.to_lowercase()));
+    }
+    if keys.is_empty() && ctx.args.get("modifiers").is_none() {
+        // replayed logs keep only the signature "press_key|pid|keys"
+        if let Some(last) = ctx.signature.rsplit('|').next() {
+            keys.extend(last.split('+').filter(|k| !k.is_empty()).map(|k| k.to_lowercase()));
+        }
+    }
+    let mods: Vec<String> = ctx.args.get("modifiers").and_then(|m| m.as_array())
+        .map(|a| a.iter().filter_map(|k| k.as_str()).map(|k| k.to_lowercase()).collect()).unwrap_or_default();
+    let nav = regex::Regex::new(r"^(up|down|left|right|tab|page_?up|page_?down|pgup|pgdn|home|end|arrow_?(up|down|left|right))$").unwrap();
+    let ok_mod = |k: &str| matches!(k, "shift" | "ctrl" | "control");
+    !keys.is_empty() && keys.iter().any(|k| nav.is_match(k)) && keys.iter().all(|k| nav.is_match(k) || ok_mod(k)) && mods.iter().all(|m| ok_mod(m))
+}
+
 /// scaled by how hard the step is to undo and by how stuck the run already is (consecutive known failures).
 pub fn fail_cost(ctx: &ActionCtx, f: &Feats, cfg: &GateConfig) -> f64 {
     let base = 2.0 * cfg.turn_cost + cfg.side_cost;
@@ -95,7 +130,7 @@ pub fn fail_cost(ctx: &ActionCtx, f: &Feats, cfg: &GateConfig) -> f64 {
     } else {
         1.0
     };
-    base * sev * (1.0 + fget(f, "consec_fail")).powf(1.5)
+    base * sev * (1.0 + fget(f, "consec_fail")).powf(cfg.fail_exp)
 }
 
 #[derive(Clone, Debug)]
@@ -126,6 +161,10 @@ pub struct GateConfig {
     pub gains: IndexMap<String, f64>,
     pub calib: Option<(f64, f64)>,
     pub model_name: String,
+    /// exponent of the stuck factor (1+consec_fail)^e in the fail cost (0.9.5: 1.0, was 1.5)
+    pub fail_exp: f64,
+    /// auto-observe sends only the rows of a window's tree the agent has not seen yet (GUI_GATE_TREE_DIFF=0 turns it off)
+    pub tree_diff: bool,
 }
 
 impl Default for GateConfig {
@@ -135,7 +174,7 @@ impl Default for GateConfig {
             risk_mode: "auto".into(), decider: "formula".into(), reviewer: false, collect: false, human_channel: "auto".into(),
             human_timeout: 120.0, toolset: "core".into(), auto_observe: true, delivery: "auto".into(), task: String::new(),
             batch: "auto".into(), deny_consecutive: 3, deny_total: 8, costs: default_costs(), weights: prior_weights(),
-            gains: prior_gains(), calib: Some(PRIOR_CALIB), model_name: "osworld_v2".into(),
+            gains: prior_gains(), calib: Some(PRIOR_CALIB), model_name: "osworld_v2".into(), fail_exp: 1.0, tree_diff: true,
         }
     }
 }
@@ -159,6 +198,7 @@ impl GateConfig {
         if let Some(v) = env("GUI_GATE_HUMAN") { c.human_channel = v; }
         if let Some(v) = env("GUI_GATE_TOOLSET") { c.toolset = v; }
         c.auto_observe = env_flag("GUI_GATE_AUTO_OBSERVE", true);
+        c.tree_diff = env_flag("GUI_GATE_TREE_DIFF", true);
         if let Some(v) = env("GUI_GATE_DELIVERY") { c.delivery = v; }
         if let Some(v) = env("GUI_GATE_TASK") { c.task = v; }
         if c.task.is_empty() {
@@ -168,6 +208,7 @@ impl GateConfig {
         }
         if let Some(v) = env("GUI_GATE_BATCH") { c.batch = v; }
         if let Some(v) = env("GUI_GATE_TURN_COST").and_then(|v| v.parse().ok()) { c.turn_cost = v; }
+        if let Some(v) = env("GUI_GATE_FAIL_EXP").and_then(|v| v.parse::<f64>().ok()).filter(|v| (0.0..=3.0).contains(v)) { c.fail_exp = v; }
         if let Some(w) = env("GUI_GATE_WEIGHTS") {
             if w == "prior_v1" {
                 c.weights = prior_v1_weights();
@@ -264,7 +305,9 @@ pub fn hard_rules(ctx: &ActionCtx, f: &Feats, cfg: &GateConfig, confirmed: bool,
     if fget(f, "last_err") != 0.0 && fget(f, "repeat") >= 1.0 {
         return Some(Decision::new("look_full", 0.0, "the identical action just failed; its effect is unknown, so it must not be re-sent blind", "rule"));
     }
-    if fget(f, "repeat") >= 2.0 && fget(f, "last_unverif") != 0.0 {
+    // moving through a list or text with arrow/Tab/Page keys repeats the same key by design: not a loop
+    // (all logs: 117 such presses executed, 0 errors; the 6 that went to the reviewer were denied and re-sent)
+    if fget(f, "repeat") >= 2.0 && fget(f, "last_unverif") != 0.0 && !is_nav_key(ctx) {
         return Some(Decision::new("review", 0.0, "same action sent repeatedly without a confirmed effect (possible loop)", "rule"));
     }
     if kind == "pixel" && (fget(f, "window_changed") != 0.0 || fget(f, "last_popup") != 0.0) && fget(f, "acts_since_obs") >= 1.0 {
@@ -420,5 +463,58 @@ mod tests {
         f["acts_since_obs"] = 3.0;
         let cfg = GateConfig::default();
         assert!(p_direct(&after(&f, "look_light"), &cfg) > p_direct(&f, &cfg) + 0.1);
+    }
+
+    #[test]
+    fn one_failure_grows_the_fail_cost_linearly() {
+        let mut f = feats();
+        f["consec_fail"] = 1.0;
+        let mut cfg = GateConfig::default();
+        assert_eq!(cfg.fail_exp, 1.0);
+        let c0 = fail_cost(&ctx("click", "token", "Bold"), &feats(), &cfg);
+        let c1 = fail_cost(&ctx("click", "token", "Bold"), &f, &cfg);
+        assert!((c1 / c0 - 2.0).abs() < 1e-9);
+        cfg.fail_exp = 1.5;
+        let c15 = fail_cost(&ctx("click", "token", "Bold"), &f, &cfg);
+        assert!(c15 > c1 * 1.4);
+    }
+
+    #[test]
+    fn repeated_arrow_keys_are_not_a_loop() {
+        let mut f = feats();
+        f["repeat"] = 2.0;
+        f["last_unverif"] = 1.0;
+        let mut c = ctx("press_key", "keyboard", "");
+        c.args = serde_json::json!({"key": "Down"});
+        assert!(is_nav_key(&c));
+        let cfg = GateConfig::default();
+        assert!(hard_rules(&c, &f, &cfg, false, false).map(|d| d.option != "review").unwrap_or(true));
+        c.args = serde_json::json!({"key": "Return"});
+        assert!(!is_nav_key(&c));
+        assert_eq!(hard_rules(&c, &f, &cfg, false, false).unwrap().option, "review");
+        c.args = serde_json::json!({"key": "down", "modifiers": ["shift"]});
+        assert!(is_nav_key(&c));
+        c.args = serde_json::json!({"key": "Tab", "modifiers": ["alt"]});
+        assert!(!is_nav_key(&c));
+        assert!(nav_signature("press_key|123|Down"));
+        assert!(nav_signature("press_key|123|shift+down"));
+        assert!(!nav_signature("press_key|123|Return"));
+        assert!(!nav_signature("click|123|button|Down"));
+    }
+
+    #[test]
+    fn settled_menu_click_after_wait_and_check_goes_direct() {
+        // v094 ow11/ow12/ow14: menu click right after a popup, duplicate label, tree check passed
+        let mut f = feats();
+        for (k, v) in [("log_obs_age", 0.004), ("label_dup", 1.0), ("check_pass", 1.0), ("sess_fail", -1.609), ("role_menu", 1.0)] {
+            f[k] = v;
+        }
+        let cfg = GateConfig::default();
+        let c = ctx("click", "token", "Insert");
+        f["last_popup"] = 1.0;
+        let before = choose(&c, &f, &cfg, false, true);
+        f["last_popup"] = 0.0;
+        let after_wait = choose(&c, &f, &cfg, false, true);
+        assert_eq!(after_wait.option, "direct", "{} / before: {}", after_wait.reason, before.option);
     }
 }
