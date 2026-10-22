@@ -4,6 +4,8 @@ endpoint here (no paid API is ever called by the tests)."""
 import http.server
 import json
 import os
+import sys
+import shutil
 import tempfile
 import threading
 import time
@@ -227,6 +229,47 @@ class JobTests(unittest.TestCase):
             self.assertIn("stopped", txt(r))
         finally:
             c.close()
+
+    def _job_procs(self, mark):
+        """pids of live processes whose command line carries `mark` (Linux /proc)."""
+        out = []
+        for d in os.listdir("/proc"):
+            if not d.isdigit():
+                continue
+            try:
+                cl = open(f"/proc/{d}/cmdline", "rb").read().replace(b"\0", b" ").decode(errors="replace")
+                st = open(f"/proc/{d}/stat").read().rsplit(")", 1)[1].split()[0]
+            except OSError:
+                continue
+            if mark in cl and st != "Z":
+                out.append(int(d))
+        return out
+
+    @unittest.skipUnless(sys.platform.startswith("linux"), "/proc")
+    def test_gate_exit_kills_jobs_and_leaves_no_temp(self):
+        """0.9.7 hygiene: background jobs (with grandchildren) die with the gate - on stdin EOF and on SIGTERM - and
+        no gui-gate temp file stays behind."""
+        import signal
+        for how in ("eof", "sigterm"):
+            tmp = tempfile.mkdtemp()
+            mark = f"9{os.getpid()}{len(how)}7"
+            c = Client("--human", "deny", env={"GUI_GATE_JOBS": "1", "TMPDIR": tmp})
+            try:
+                r = c.call("run_command", command=f"(sleep {mark}) & sleep {mark}", mode="start", cwd=tmp)
+                self.assertIn("started job", txt(r), txt(r))
+                time.sleep(0.5)
+                self.assertTrue(self._job_procs(f"sleep {mark}"), "job not running")
+                self.assertEqual([n for n in os.listdir(tmp) if n.startswith("gui-gate-job-")], [], "job log left on disk")
+            finally:
+                if how == "eof":
+                    c.close()
+                else:
+                    c.p.send_signal(signal.SIGTERM)
+                    c.p.wait(timeout=5)
+            time.sleep(0.5)
+            self.assertEqual(self._job_procs(f"sleep {mark}"), [], f"job survived the gate ({how})")
+            self.assertEqual([n for n in os.listdir(tmp) if n.startswith("gui-gate-")], [], f"temp left ({how})")
+            shutil.rmtree(tmp, ignore_errors=True)
 
     def test_start_is_risk_checked(self):
         d = tempfile.mkdtemp()

@@ -45,6 +45,16 @@ impl ChildMCP {
         let mut c = Command::new(&cmd[0]);
         c.args(&cmd[1..]).stdin(Stdio::piped()).stdout(Stdio::piped())
             .stderr(if debug_stderr { Stdio::inherit() } else { Stdio::null() });
+        if crate::install::is_gate_bundled(&cmd[0]) {
+            for (k, v) in crate::install::bundled_driver_env() {
+                c.env(k, v);
+            }
+        }
+        #[cfg(windows)]
+        {
+            use std::os::windows::process::CommandExt;
+            c.creation_flags(0x0800_0000); // CREATE_NO_WINDOW
+        }
         if cmd[0].contains("site-packages") || cmd[0].contains("dist-packages") {
             // same as the cua-driver package's own launcher: the binary came from the Python package
             if std::env::var("CUA_DRIVER_INSTALL_CHANNEL").is_err() {
@@ -52,6 +62,7 @@ impl ChildMCP {
             }
         }
         let mut child = c.spawn()?;
+        crate::proc::set_driver(child.id());
         let stdout = child.stdout.take().unwrap();
         let stdin = child.stdin.take();
         let pending: Arc<Mutex<HashMap<String, Sender<Value>>>> = Arc::new(Mutex::new(HashMap::new()));

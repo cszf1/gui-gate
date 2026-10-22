@@ -86,14 +86,8 @@ fn fmt_time(t: SystemTime) -> String {
     if age < 120 { format!("{age} s ago") } else if age < 7200 { format!("{} min ago", age / 60) } else { format!("{} h ago", age / 3600) }
 }
 
-/// Last change of a path: the newer of mtime and ctime (a rename or chmod changes only the ctime).
 fn changed_at(m: &std::fs::Metadata) -> Option<SystemTime> {
-    use std::os::unix::fs::MetadataExt;
-    let c = SystemTime::UNIX_EPOCH.checked_add(std::time::Duration::new(m.ctime().max(0) as u64, m.ctime_nsec().clamp(0, 999_999_999) as u32));
-    match (m.modified().ok(), c) {
-        (Some(a), Some(b)) => Some(a.max(b)),
-        (a, b) => a.or(b),
-    }
+    crate::proc::changed_at(m)
 }
 
 /// Newest change (mtime/ctime) inside a directory (depth 3, bounded).

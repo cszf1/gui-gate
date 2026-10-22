@@ -9,8 +9,11 @@
 #![allow(dead_code)]
 
 use std::collections::HashMap;
+#[cfg(unix)]
 use std::io::{Read, Write};
-use std::time::{Duration, Instant};
+use std::time::Duration;
+#[cfg(unix)]
+use std::time::Instant;
 
 #[cfg(unix)]
 use std::os::unix::net::UnixStream;

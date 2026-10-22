@@ -33,6 +33,7 @@ mod inspect;
 mod jobs;
 mod memory;
 mod plancheck;
+mod proc;
 
 use decide::GateConfig;
 use util::*;

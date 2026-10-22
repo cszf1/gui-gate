@@ -481,7 +481,13 @@ fn clean_configs(r: &mut Report, gone: &[PathBuf]) {
 }
 
 // ------------------------------------------------------------------ caches, temp, logs
-fn cache_dir() -> PathBuf {
+/// ~/.config/gui-gate (Windows: %USERPROFILE%\.config\gui-gate): reviewer.env, reviewer.key, role key files,
+/// memory.jsonl from `gui-gate memory add`.
+pub fn config_dir() -> PathBuf {
+    PathBuf::from(home()).join(".config").join("gui-gate")
+}
+
+pub fn cache_dir() -> PathBuf {
     PathBuf::from(env("XDG_CACHE_HOME").unwrap_or_else(|| format!("{}/.cache", home()))).join("gui-gate")
 }
 
@@ -498,14 +504,8 @@ fn clean_files(r: &mut Report) {
             }
         }
     }
-    if let Ok(rd) = std::fs::read_dir(std::env::temp_dir()) {
-        for e in rd.flatten() {
-            let n = e.file_name().to_string_lossy().to_string();
-            if (n.starts_with("gui-gate-review-") || n.starts_with("gui-gate-")) && older_than(&e.path(), 3600) && n != "gui-gate" {
-                let p = e.path();
-                r.act(format!("remove temp file {}", p.display()), || rm(&p));
-            }
-        }
+    for p in temp_files(3600) {
+        r.act(format!("remove temp file {}", p.display()), || rm(&p));
     }
     let days: u64 = env("GUI_GATE_LOG_KEEP_DAYS").and_then(|d| d.parse().ok()).unwrap_or(30);
     if days > 0 {
@@ -519,8 +519,69 @@ fn clean_files(r: &mut Report) {
     }
 }
 
-/// Quiet startup housekeeping (no subprocesses): the renamed exe a Windows update could not delete while it ran.
+/// Session logs (~/.gui-gate/logs/*.jsonl): drop those older than GUI_GATE_LOG_KEEP_DAYS (30; 0 = keep all) and,
+/// oldest first, whatever exceeds GUI_GATE_LOG_MAX_MB (200; 0 = no cap). Runs at every gate start.
+pub fn prune_logs() {
+    let Ok(rd) = std::fs::read_dir(log_dir()) else { return };
+    let mut files: Vec<(SystemTime, u64, PathBuf)> = rd.flatten().filter_map(|e| {
+        let p = e.path();
+        let m = e.metadata().ok()?;
+        (m.is_file() && p.extension().map(|x| x == "jsonl").unwrap_or(false)).then(|| (m.modified().unwrap_or(SystemTime::UNIX_EPOCH), m.len(), p))
+    }).collect();
+    let days: u64 = env("GUI_GATE_LOG_KEEP_DAYS").and_then(|d| d.parse().ok()).unwrap_or(30);
+    if days > 0 {
+        files.retain(|(_, _, p)| if older_than(p, days * 86400) { let _ = std::fs::remove_file(p); false } else { true });
+    }
+    let cap: u64 = env("GUI_GATE_LOG_MAX_MB").and_then(|d| d.parse().ok()).unwrap_or(200) * 1024 * 1024;
+    if cap > 0 {
+        files.sort();
+        let mut total: u64 = files.iter().map(|f| f.1).sum();
+        for (_, n, p) in &files {
+            if total <= cap {
+                break;
+            }
+            if std::fs::remove_file(p).is_ok() {
+                total -= n;
+            }
+        }
+    }
+}
+
+/// The pid a temp name of ours carries (gui-gate-job-<pid>-<n>.log, gui-gate-lo-<pid>).
+fn temp_owner(name: &str) -> Option<i32> {
+    let rest = name.strip_prefix("gui-gate-job-").or_else(|| name.strip_prefix("gui-gate-lo-"))?;
+    rest.split(['-', '.']).next()?.parse().ok()
+}
+
+/// gui-gate's own temp files and dirs (job logs, the throwaway LibreOffice profile, review / installer temp dirs)
+/// older than `min_age` seconds whose gate is not running any more.
+pub fn temp_files(min_age: u64) -> Vec<PathBuf> {
+    let mut out = vec![];
+    let me = std::process::id() as i32;
+    let Ok(rd) = std::fs::read_dir(std::env::temp_dir()) else { return out };
+    for e in rd.flatten() {
+        let n = e.file_name().to_string_lossy().to_string();
+        if !n.starts_with("gui-gate-") {
+            continue;
+        }
+        let old = min_age == 0 || older_than(&e.path(), min_age);
+        match temp_owner(&n) {
+            Some(pid) if pid == me => {}
+            // unix knows whether the owning gate still runs; elsewhere only age tells
+            Some(pid) if cfg!(unix) => if !crate::proc::alive(pid) { out.push(e.path()) },
+            _ => if old { out.push(e.path()) },
+        }
+    }
+    out
+}
+
+/// Quiet startup housekeeping (no subprocesses): the renamed exe a Windows update could not delete while it ran, and
+/// temp files of gates that are gone.
 pub fn startup() {
+    for p in temp_files(3600) {
+        let _ = rm(&p);
+    }
+    prune_logs();
     let me = current_exe();
     if let Some(d) = me.parent() {
         for n in ["gui-gate.exe.old", ".gui-gate.new"] {
@@ -558,18 +619,143 @@ pub fn cleanup_main(argv: &[String]) -> i32 {
     0
 }
 
-/// Remove gui-gate completely: the binary, its PATH entries, its MCP client entries, cache and logs.
-/// Cua Driver is a separate product and stays (its own uninstaller removes it).
+/// gui-gate processes other than this one (an MCP client still has the server open), for the uninstall report.
+fn running_gates() -> Vec<String> {
+    let me = std::process::id();
+    let mut out = vec![];
+    if cfg!(target_os = "linux") {
+        if let Ok(rd) = std::fs::read_dir("/proc") {
+            for e in rd.flatten() {
+                let Ok(pid) = e.file_name().to_string_lossy().parse::<u32>() else { continue };
+                if pid == me {
+                    continue;
+                }
+                let comm = std::fs::read_to_string(e.path().join("comm")).unwrap_or_default();
+                if comm.trim() == "gui-gate" {
+                    out.push(pid.to_string());
+                }
+            }
+        }
+    } else if cfg!(target_os = "macos") {
+        if let Ok(o) = Command::new("pgrep").args(["-x", "gui-gate"]).output() {
+            out.extend(String::from_utf8_lossy(&o.stdout).split_whitespace().filter(|p| *p != me.to_string()).map(String::from));
+        }
+    } else if let Ok(o) = Command::new("tasklist").args(["/FI", "IMAGENAME eq gui-gate.exe", "/FO", "CSV", "/NH"]).output() {
+        for l in String::from_utf8_lossy(&o.stdout).lines() {
+            if let Some(pid) = l.split(',').nth(1).map(|x| x.trim_matches('"').to_string()) {
+                if pid.chars().all(|c| c.is_ascii_digit()) && !pid.is_empty() && pid != me.to_string() {
+                    out.push(pid);
+                }
+            }
+        }
+    }
+    out
+}
+
+/// Remove `# Added by cua-driver-rs installer` + its PATH line from shell profiles when that dir no longer has a
+/// cua-driver (Cua's own uninstaller leaves the line).
+pub fn clean_cua_profile_text(text: &str) -> (String, usize) {
+    let lines: Vec<&str> = text.split('\n').collect();
+    let mut out: Vec<&str> = vec![];
+    let mut n = 0;
+    let mut i = 0;
+    while i < lines.len() {
+        if lines[i].trim_start().starts_with("# Added by cua-driver-rs installer") && i + 1 < lines.len() && lines[i + 1].trim_start().starts_with("export PATH=\"") {
+            let dir = lines[i + 1].trim().trim_start_matches("export PATH=\"").split(':').next().unwrap_or("").to_string();
+            if !Path::new(&dir).join("cua-driver").exists() {
+                n += 1;
+                if out.last().map(|l| l.trim().is_empty()).unwrap_or(false) {
+                    out.pop();
+                }
+                i += 2;
+                continue;
+            }
+        }
+        out.push(lines[i]);
+        i += 1;
+    }
+    (out.join("\n"), n)
+}
+
+/// `--with-driver`: an externally installed Cua Driver (Cua's own installer) is removed with Cua's own uninstaller
+/// (purging its telemetry id; macOS also revokes its permissions), then the PATH line / user Path entry Cua's
+/// installer added and its uninstaller leaves.
+fn remove_external_driver(r: &mut Report) {
+    let ok = if cfg!(windows) {
+        Command::new("powershell").args(["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", "irm https://cua.ai/driver/uninstall.ps1 | iex"])
+            .env("CUA_DRIVER_RS_UNINSTALL_FORCE", "1").env("CUA_DRIVER_RS_UNINSTALL_PURGE", "1").status().map(|s| s.success()).unwrap_or(false)
+    } else {
+        let mut args = vec!["-c".to_string(), "set -e; s=\"$(curl -fsSL https://cua.ai/driver/uninstall.sh)\"; bash -c \"$s\" cua-driver-uninstall \"$@\"".into(), "x".into(), "--purge".into()];
+        if cfg!(target_os = "macos") {
+            args.push("--reset-permissions".into());
+        }
+        Command::new("bash").args(&args).status().map(|s| s.success()).unwrap_or(false)
+    };
+    if ok { r.done.push("removed the externally installed Cua Driver with Cua's own uninstaller (--purge)".into()) } else { r.left.push("Cua's uninstaller did not finish (see its output above)".into()) }
+    for f in profile_files() {
+        let Some(t) = read_text(&f) else { continue };
+        let (new, n) = clean_cua_profile_text(&t);
+        if n > 0 {
+            r.act(format!("remove Cua Driver's PATH line from {}", f.display()), || std::fs::write(&f, &new).is_ok());
+        }
+    }
+    #[cfg(windows)]
+    if let Some(la) = env("LOCALAPPDATA") {
+        let d = format!("{la}\\Programs\\Cua\\cua-driver\\bin").to_lowercase();
+        if let Ok(o) = Command::new("powershell").args(["-NoProfile", "-Command", "[Environment]::GetEnvironmentVariable('Path','User')"]).output() {
+            let cur = String::from_utf8_lossy(&o.stdout).trim().to_string();
+            let keep: Vec<&str> = cur.split(';').filter(|e| !(e.trim().trim_end_matches('\\').to_lowercase() == d && !Path::new(e.trim()).exists())).collect();
+            if keep.len() != cur.split(';').count() {
+                let joined = keep.join(";").replace('\'', "''");
+                r.act("remove Cua Driver's dir from the user Path".into(), || Command::new("powershell").args(["-NoProfile", "-Command",
+                    &format!("[Environment]::SetEnvironmentVariable('Path','{joined}','User')")]).status().map(|s| s.success()).unwrap_or(false));
+            }
+        }
+    }
+}
+
+/// macOS: the CuaDriver.app gui-gate's installer placed (only that one): stop its daemon, unregister it from
+/// LaunchServices, delete it, and drop its Accessibility / Screen Recording rows.
+fn remove_bundled_app(r: &mut Report, app: &str) {
+    if !Path::new(app).exists() {
+        return;
+    }
+    if r.dry {
+        r.done.push(format!("would remove {app} (installed by gui-gate) and its permission entries"));
+        return;
+    }
+    let bin = format!("{app}/Contents/MacOS/cua-driver");
+    let _ = crate::proc::run_argv(&[&bin, "stop"], 10.0);
+    let ls = "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister";
+    let _ = crate::proc::run_argv(&[ls, "-u", app], 10.0);
+    r.act(format!("remove {app} (the Cua Driver app gui-gate installed)"), || rm(Path::new(app)));
+    for svc in ["Accessibility", "ScreenCapture"] {
+        let _ = crate::proc::run_argv(&["tccutil", "reset", svc, "com.trycua.driver"], 10.0);
+    }
+    r.done.push("reset the Accessibility / Screen Recording entries of com.trycua.driver".into());
+}
+
+/// Remove gui-gate completely: the binary, the bundled Cua Driver (and on macOS the CuaDriver.app only if gui-gate
+/// installed it), its PATH entries, its MCP client entries, settings, cache, logs, temp files, and the dirs its
+/// installer created. A Cua Driver installed with Cua's own installer stays unless --with-driver.
 pub fn uninstall_main(argv: &[String]) -> i32 {
     let dry = argv.iter().any(|a| a == "--dry-run");
     let keep_logs = argv.iter().any(|a| a == "--keep-logs");
+    let keep_config = argv.iter().any(|a| a == "--keep-config");
+    let with_driver = argv.iter().any(|a| a == "--with-driver");
     if argv.iter().any(|a| a == "-h" || a == "--help") {
-        println!("usage: gui-gate uninstall [--dry-run] [--keep-logs]\nremove gui-gate, its PATH entries, its MCP client entries, cache and logs (Cua Driver stays)");
+        println!("usage: gui-gate uninstall [--dry-run] [--keep-config] [--keep-logs] [--with-driver]
+remove gui-gate and everything it created: the binary, the bundled Cua Driver, PATH entries, MCP client entries,
+~/.config/gui-gate (reviewer settings and key, memory; --keep-config keeps it), ~/.gui-gate (logs; --keep-logs),
+~/.cache/gui-gate, temp files. A Cua Driver installed by Cua's own installer is left alone unless --with-driver
+(runs Cua's uninstaller with --purge).");
         return 0;
     }
     let mut r = run(dry);
     let me = current_exe();
     let dir = me.parent().map(|d| d.to_path_buf()).unwrap_or_default();
+    let manifest = crate::install::manifest();
+    let lib = crate::install::lib_dir();
     // MCP entries
     for f in client_configs() {
         let Some(t) = read_text(&f) else { continue };
@@ -586,61 +772,133 @@ pub fn uninstall_main(argv: &[String]) -> i32 {
             }
         }
     }
-    // PATH entries for our dir, unless other programs live there too (e.g. ~/.local/bin is shared)
-    let shared = std::fs::read_dir(&dir).map(|rd| rd.flatten().any(|e| {
-        let n = e.file_name().to_string_lossy().to_string();
-        n != exe_name() && n != "gui-gate.exe.old"
-    })).unwrap_or(true);
-    if !shared {
-        for f in profile_files() {
-            let Some(t) = read_text(&f) else { continue };
-            let (new, n) = clean_profile_text(&t, "\u{0}"); // keep nothing
-            if n > 0 {
-                r.act(format!("remove gui-gate PATH line(s) from {}", f.display()), || std::fs::write(&f, &new).is_ok());
-            }
+    // PATH lines: a `# gui-gate` block is ours whatever else lives in that dir (Cua's installer adds its own line)
+    for f in profile_files() {
+        let Some(t) = read_text(&f) else { continue };
+        let (new, n) = clean_profile_text(&t, "\u{0}"); // keep nothing
+        if n > 0 {
+            r.act(format!("remove gui-gate PATH line(s) from {}", f.display()), || std::fs::write(&f, &new).is_ok());
         }
     }
     #[cfg(windows)]
-    if !shared {
-        if let Ok(o) = Command::new("powershell").args(["-NoProfile", "-Command", "[Environment]::GetEnvironmentVariable('Path','User')"]).output() {
-            let cur = String::from_utf8_lossy(&o.stdout).trim().to_string();
-            let d = dir.to_string_lossy().to_lowercase();
-            let keep: Vec<&str> = cur.split(';').filter(|e| e.trim().trim_end_matches('\\').to_lowercase() != d.trim_end_matches('\\')).collect();
-            if keep.len() != cur.split(';').count() {
-                let joined = keep.join(";").replace('\'', "''");
-                r.act("remove gui-gate from the user Path (registry HKCU\\Environment)".into(), || {
-                    Command::new("powershell").args(["-NoProfile", "-Command", &format!("[Environment]::SetEnvironmentVariable('Path','{joined}','User')")])
-                        .status().map(|s| s.success()).unwrap_or(false)
-                });
+    {
+        let ours = dir.to_string_lossy().to_lowercase().contains("gui-gate");
+        let shared = std::fs::read_dir(&dir).map(|rd| rd.flatten().any(|e| {
+            let n = e.file_name().to_string_lossy().to_string();
+            n != exe_name() && n != "gui-gate.exe.old"
+        })).unwrap_or(true);
+        if ours || !shared {
+            if let Ok(o) = Command::new("powershell").args(["-NoProfile", "-Command", "[Environment]::GetEnvironmentVariable('Path','User')"]).output() {
+                let cur = String::from_utf8_lossy(&o.stdout).trim().to_string();
+                let d = dir.to_string_lossy().to_lowercase();
+                let keep: Vec<&str> = cur.split(';').filter(|e| e.trim().trim_end_matches('\\').to_lowercase() != d.trim_end_matches('\\')).collect();
+                if keep.len() != cur.split(';').count() {
+                    let joined = keep.join(";").replace('\'', "''");
+                    r.act("remove gui-gate from the user Path (registry HKCU\\Environment)".into(), || {
+                        Command::new("powershell").args(["-NoProfile", "-Command", &format!("[Environment]::SetEnvironmentVariable('Path','{joined}','User')")])
+                            .status().map(|s| s.success()).unwrap_or(false)
+                    });
+                }
             }
         }
+    }
+    // the bundled driver: macOS app (only the one gui-gate installed), then gui-gate's own lib dir
+    if let Some((_, app)) = manifest.iter().find(|(k, _)| k == "app") {
+        remove_bundled_app(&mut r, app);
+        // state the app gui-gate installed created (~/.cua-driver, its caches): recorded only when missing before
+        for (_, d) in manifest.iter().filter(|(k, _)| k == "owned_dir") {
+            let p = PathBuf::from(d);
+            if p.exists() {
+                r.act(format!("remove {} (created by the Cua Driver app gui-gate installed)", p.display()), || rm(&p));
+            }
+        }
+    }
+    if let Some(l) = lib.as_ref() {
+        if cfg!(windows) {
+            for n in ["cua-driver", "install-manifest"] {
+                let p = l.join(n);
+                if p.exists() {
+                    r.act(format!("remove {}", p.display()), || rm(&p));
+                }
+            }
+            if let Ok(rd) = std::fs::read_dir(l) {
+                for e in rd.flatten().filter(|e| e.file_name().to_string_lossy().starts_with("cua-driver.old")) {
+                    let p = e.path();
+                    r.act(format!("remove {}", p.display()), || rm(&p));
+                }
+            }
+        } else if l.exists() && l.file_name().map(|n| n == "gui-gate").unwrap_or(false) {
+            r.act(format!("remove {} (bundled Cua Driver)", l.display()), || rm(l));
+        }
+    }
+    if with_driver {
+        if dry { r.done.push("would run Cua's own uninstaller (--purge) for an externally installed Cua Driver".into()) } else { remove_external_driver(&mut r) }
     }
     let cd = cache_dir();
     if cd.exists() {
         r.act(format!("remove {}", cd.display()), || rm(&cd));
     }
-    let root = PathBuf::from(format!("{}/.gui-gate", home()));
+    let cfg = config_dir();
+    if !keep_config && cfg.exists() {
+        r.act(format!("remove {} (reviewer settings and key, role keys, memory)", cfg.display()), || rm(&cfg));
+    }
+    let root = PathBuf::from(home()).join(".gui-gate");
     if !keep_logs && root.exists() {
         r.act(format!("remove {} (logs)", root.display()), || rm(&root));
     }
-    // the binary last; on Windows a running exe cannot be deleted, so rename it and let the OS drop it later
+    for p in temp_files(0) {
+        r.act(format!("remove temp file {}", p.display()), || rm(&p));
+    }
+    let mut created: Vec<PathBuf> = manifest.iter().filter(|(k, _)| k == "created_dir").map(|(_, v)| PathBuf::from(v)).collect();
+    created.sort_by_key(|p| std::cmp::Reverse(p.components().count()));
+    // the binary last; on Windows a running exe cannot be deleted, so rename it and let a detached cmd delete it and
+    // gui-gate's (then empty) install dirs once this process has exited
     if cfg!(windows) {
         let old = dir.join("gui-gate.exe.old");
+        let parent = dir.parent().map(|p| p.to_path_buf()).unwrap_or_else(|| dir.clone());
         r.act(format!("remove {}", me.display()), || {
             let _ = std::fs::remove_file(&old);
             std::fs::rename(&me, &old).is_ok() && {
-                let _ = Command::new("cmd").args(["/C", "ping -n 3 127.0.0.1 >nul & del /f /q"]).arg(&old).spawn();
+                let mut script = format!("ping -n 3 127.0.0.1 >nul & del /f /q \"{}\" & rmdir \"{}\" 2>nul & rmdir \"{}\" 2>nul", old.display(), dir.display(), parent.display());
+                for d in &created {
+                    script.push_str(&format!(" & rmdir \"{}\" 2>nul", d.display()));
+                }
+                let mut c = Command::new("cmd");
+                c.args(["/C", &script]);
+                #[cfg(windows)]
+                {
+                    use std::os::windows::process::CommandExt;
+                    c.creation_flags(0x0800_0000 | 0x0000_0008); // CREATE_NO_WINDOW | DETACHED_PROCESS
+                }
+                let _ = c.spawn();
                 true
             }
         });
-        if !shared && std::fs::read_dir(&dir).map(|rd| rd.flatten().all(|e| e.file_name() == "gui-gate.exe.old")).unwrap_or(false) {
-            r.done.push(format!("{} is removed once the old exe is gone", dir.display()));
-        }
+        r.done.push(format!("{} and {} are removed (when empty) a few seconds after this exits", dir.display(), parent.display()));
     } else {
         r.act(format!("remove {}", me.display()), || rm(&me));
     }
-    println!("{}", serde_json::to_string_pretty(&json!({"removed": r.done, "not_removed": r.left,
-        "note": "Cua Driver is a separate product and was left installed."})).unwrap());
+    // dirs the installer created (recorded in its manifest), deepest first, only when empty now
+    for d in created {
+        let empty = std::fs::read_dir(&d).map(|mut rd| rd.next().is_none()).unwrap_or(false);
+        if empty {
+            r.act(format!("remove empty {} (created by the installer)", d.display()), || std::fs::remove_dir(&d).is_ok());
+        }
+    }
+    let running = running_gates();
+    let mut notes = vec![];
+    if !running.is_empty() {
+        notes.push(format!("gui-gate is still running as pid {} (an MCP client has it open); it ends when that client closes it", running.join(", ")));
+    }
+    if !with_driver {
+        if let Some(ext) = crate::install::official_driver_paths().into_iter().find(|p| Path::new(p).exists()) {
+            let ours = manifest.iter().any(|(k, v)| k == "app" && ext.starts_with(v.as_str()));
+            if !ours && !dry {
+                notes.push(format!("a Cua Driver installed with Cua's own installer is still at {ext}; it was left alone (to remove it too, use `gui-gate uninstall --with-driver`, or Cua's own uninstaller: {})", if cfg!(windows) { "irm https://cua.ai/driver/uninstall.ps1 | iex" } else { "bash -c \"$(curl -fsSL https://cua.ai/driver/uninstall.sh)\" -- --purge" }));
+            }
+        }
+    }
+    println!("{}", serde_json::to_string_pretty(&json!({"removed": r.done, "not_removed": r.left, "notes": notes})).unwrap());
     if r.left.is_empty() { 0 } else { 1 }
 }
 

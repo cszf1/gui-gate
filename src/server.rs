@@ -212,8 +212,7 @@ pub fn focus_lost(txt: &str) -> bool {
     head.contains("foreground_unavailable") && head.contains("no input was sent")
 }
 
-/// A token click the driver refused because another control owns the element's point:
-/// (desktop x, desktop y, owner role, owner label).
+// (a shell prompt at the end of terminal text)
 re!(prompt_rx, r"[$#%>]\s*$");
 
 /// the terminal text ends at a shell prompt (user@host:dir$, #, %, >)
@@ -841,6 +840,7 @@ impl Gate {
     }
 
     pub fn serve(self: &Arc<Self>) {
+        crate::proc::install_signal_handlers();
         let stdin = std::io::stdin();
         for line in stdin.lock().lines() {
             let Ok(line) = line else { break };
@@ -883,6 +883,19 @@ impl Gate {
                 let _ = self.child().forward(&msg);
             }
         }
+        self.shutdown();
+    }
+
+    /// The client closed stdin: leave nothing behind - background jobs and still-running commands are killed (whole
+    /// process groups), the throwaway LibreOffice profile run_command suggested is removed, the driver is closed.
+    pub fn shutdown(&self) {
+        let jobs = self.jobs.stop_all();
+        crate::proc::kill_all();
+        let lo = crate::command::lo_profile_dir();
+        if lo.exists() {
+            let _ = std::fs::remove_dir_all(&lo);
+        }
+        self.log.write(json!({"ev": "shutdown", "jobs_killed": jobs}));
         self.child().close();
     }
 

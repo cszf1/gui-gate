@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
-# gui-gate installer (macOS / Linux): the gate binary from this repo's GitHub release,
-# plus the latest Cua Driver through Cua's own official installer.
+# gui-gate installer (macOS / Linux): ONE archive from this repo's GitHub release holds the gate binary and the
+# Cua Driver build it was tested with (official, unmodified, MIT; verified against Cua's SHA256SUMS + Sigstore when
+# the release was made). Cua's own installer is never run.
+#   gui-gate      -> ~/.local/bin/gui-gate
+#   Cua Driver    -> ~/.local/lib/gui-gate/cua-driver/   (Linux)
+#                    /Applications/CuaDriver.app         (macOS; Cua's signed app, so its Accessibility / Screen
+#                    Recording permissions work as with Cua's installer; an existing CuaDriver.app is left alone)
+#   uninstall: gui-gate uninstall  (removes all of the above that this installer created)
 #
 #   curl -fsSL https://github.com/cszf1/gui-gate/releases/latest/download/install.sh | bash
 #   curl -fsSL .../install.sh | bash -s -- --client claude      # also add it to Claude Code
@@ -9,7 +15,8 @@
 #   --client NAME      claude|codex|cursor|pi (repeatable; GUI_GATE_CLIENT=claude,codex)
 #   --version X.Y.Z    pin a gui-gate release              (GUI_GATE_VERSION)
 #   --bin-dir PATH     where gui-gate goes, default ~/.local/bin (GUI_GATE_INSTALL_DIR)
-#   --skip-driver      do not install / update Cua Driver   (GUI_GATE_SKIP_DRIVER=1)
+#   --lib-dir PATH     where the bundled Cua Driver goes, default <bin-dir>/../lib/gui-gate (GUI_GATE_LIB_DIR)
+#   --skip-driver      do not install the bundled Cua Driver; use one installed separately (GUI_GATE_SKIP_DRIVER=1)
 #   --no-modify-path   do not add the bin dir to your shell profile
 #   GUI_GATE_BASE_URL  download gui-gate from this URL instead of GitHub (a mirror)
 # The gate needs a reviewer model (it refuses to start without one). Unless one is already configured the
@@ -20,11 +27,11 @@
 #                               or GUI_GATE_REVIEWER_KEY=..., saved to ~/.config/gui-gate/reviewer.key, mode 600)
 #   --reviewer-protocol P       auto|chat|responses|anthropic|gemini|systemone (GUI_GATE_REVIEWER_PROTOCOL, default auto)
 #   --no-prompt                 never ask on the terminal          (GUI_GATE_NO_PROMPT=1)
-# Cua Driver's own env vars (e.g. CUA_DRIVER_RS_VERSION=0.38.0) are passed through to its installer.
 set -euo pipefail
 
 REPO="cszf1/gui-gate"
 BIN_DIR="${GUI_GATE_INSTALL_DIR:-$HOME/.local/bin}"
+LIB_DIR="${GUI_GATE_LIB_DIR:-}"
 VERSION="${GUI_GATE_VERSION:-}"
 SKIP_DRIVER="${GUI_GATE_SKIP_DRIVER:-0}"
 NO_MODIFY_PATH=0
@@ -45,6 +52,8 @@ while [[ $# -gt 0 ]]; do
         --version=*) VERSION="${1#*=}"; shift ;;
         --bin-dir) BIN_DIR="$2"; shift 2 ;;
         --bin-dir=*) BIN_DIR="${1#*=}"; shift ;;
+        --lib-dir) LIB_DIR="$2"; shift 2 ;;
+        --lib-dir=*) LIB_DIR="${1#*=}"; shift ;;
         --skip-driver) SKIP_DRIVER=1; shift ;;
         --no-modify-path) NO_MODIFY_PATH=1; shift ;;
         --reviewer-url) R_URL="$2"; shift 2 ;;
@@ -56,7 +65,7 @@ while [[ $# -gt 0 ]]; do
         --reviewer-protocol) R_PROTOCOL="$2"; shift 2 ;;
         --reviewer-protocol=*) R_PROTOCOL="${1#*=}"; shift ;;
         --no-prompt) NO_PROMPT=1; shift ;;
-        -h|--help) sed -n '2,25p' "$0" 2>/dev/null || true; exit 0 ;;
+        -h|--help) sed -n '2,32p' "$0" 2>/dev/null || true; exit 0 ;;
         *) echo "gui-gate install: unknown argument $1" >&2; exit 2 ;;
     esac
 done
@@ -94,20 +103,98 @@ else got="$(shasum -a 256 "$tmp/$asset" | awk '{print $1}')"; fi
 [[ "$want" == "$got" ]] || die "checksum mismatch for $asset"
 
 tar -xzf "$tmp/$asset" -C "$tmp"
+[[ -z "$LIB_DIR" ]] && LIB_DIR="$(dirname "$BIN_DIR")/lib/gui-gate"
+MANIFEST="$LIB_DIR/install-manifest"
+# remember which dirs this installer creates (only under $HOME, only if missing now), so `gui-gate uninstall` can
+# remove exactly those once they are empty; an upgrade keeps what the first install recorded
+created=()
+if [[ -f "$MANIFEST" ]]; then while IFS= read -r l; do [[ "$l" == created_dir=* ]] && created+=("${l#created_dir=}"); done < "$MANIFEST"; fi
+note_dir() {
+    local d="$1"
+    while [[ -n "$d" && "$d" != "/" && "$d" != "$HOME" && "$d" == "$HOME"/* ]]; do
+        if [[ ! -e "$d" ]]; then created+=("$d"); fi
+        d="$(dirname "$d")"
+    done
+}
+note_dir "$BIN_DIR"; note_dir "$LIB_DIR"; note_dir "$HOME/.config/gui-gate"; note_dir "$HOME/.cache/gui-gate"
+app_line=""
+owned=()
+if [[ -f "$MANIFEST" ]]; then
+    app_line="$(grep '^app=' "$MANIFEST" | tail -n 1 || true)"
+    while IFS= read -r l; do [[ "$l" == owned_dir=* ]] && owned+=("${l#owned_dir=}"); done < "$MANIFEST"
+fi
+
 mkdir -p "$BIN_DIR"
 install -m 0755 "$tmp/gui-gate" "$BIN_DIR/.gui-gate.new"
 mv -f "$BIN_DIR/.gui-gate.new" "$BIN_DIR/gui-gate"   # atomic swap; a running gate keeps its old copy
 say "installed gui-gate $("$BIN_DIR/gui-gate" --version 2>/dev/null || true) -> $BIN_DIR/gui-gate"
 
-if [[ "$SKIP_DRIVER" != "1" ]]; then
-    say "installing the latest Cua Driver with Cua's official installer"
-    drv_args=()
-    [[ "$BIN_DIR" != "$HOME/.local/bin" ]] && drv_args+=(--bin-dir "$BIN_DIR")
-    [[ "$NO_MODIFY_PATH" == "1" ]] && drv_args+=(--no-modify-path)
-    drv_script="$(curl -fsSL --retry 3 https://cua.ai/driver/install.sh)" || die "could not download Cua Driver's installer"
-    bash -c "$drv_script" cua-driver-install ${drv_args[@]+"${drv_args[@]}"} </dev/null \
-        || die "Cua Driver's installer failed (see above). gui-gate itself is installed; re-run this command to retry."
+# ------------------------------------------------------------------ the bundled Cua Driver
+install_app() {  # macOS: Cua's signed CuaDriver.app, copied byte for byte (ditto) and verified, never re-signed
+    local src="$tmp/CuaDriver.app" dest="$1" ver have backup=""
+    ver="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$src/Contents/Info.plist" 2>/dev/null || echo "?")"
+    codesign --verify --deep --strict "$src" 2>/dev/null || die "the bundled CuaDriver.app failed its signature check; nothing was changed"
+    if [[ -e "$dest" ]]; then
+        have="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$dest/Contents/Info.plist" 2>/dev/null || echo "")"
+        if [[ "$have" == "$ver" ]] && codesign --verify --deep --strict "$dest" 2>/dev/null; then
+            say "Cua Driver $ver is already in place at $dest"; return 0
+        fi
+        "$dest/Contents/MacOS/cua-driver" stop >/dev/null 2>&1 || true
+        backup="$dest.gui-gate-backup.$$"; mv "$dest" "$backup"
+    fi
+    mkdir -p "$(dirname "$dest")"
+    if ditto "$src" "$dest" && codesign --verify --deep --strict "$dest" 2>/dev/null; then
+        if [[ -n "${backup:-}" ]]; then rm -rf "$backup"; fi
+    else
+        rm -rf "$dest"; if [[ -n "${backup:-}" ]]; then mv "$backup" "$dest"; fi
+        die "could not install CuaDriver.app at $dest (rolled back)"
+    fi
+    /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister -f "$dest" >/dev/null 2>&1 || true
+    say "installed Cua Driver $ver -> $dest"
+}
+if [[ "$SKIP_DRIVER" != "1" && -d "$tmp/cua-driver" ]]; then
+    mkdir -p "$LIB_DIR"
+    rm -rf "$LIB_DIR/.cua-driver.new" "$LIB_DIR/cua-driver.old"
+    cp -R "$tmp/cua-driver" "$LIB_DIR/.cua-driver.new"
+    if [[ -e "$LIB_DIR/cua-driver" ]]; then mv "$LIB_DIR/cua-driver" "$LIB_DIR/cua-driver.old"; fi
+    mv "$LIB_DIR/.cua-driver.new" "$LIB_DIR/cua-driver"
+    rm -rf "$LIB_DIR/cua-driver.old"
+    drv_ver="$(cat "$LIB_DIR/cua-driver/VERSION" 2>/dev/null || echo "?")"
+    if [[ "$os" == "Darwin" ]]; then
+        app_dest="/Applications/CuaDriver.app"
+        [[ -w /Applications ]] || app_dest="$HOME/Applications/CuaDriver.app"
+        if [[ -n "$app_line" && "${app_line#app=}" != "$app_dest" && -e "${app_line#app=}" ]]; then app_dest="${app_line#app=}"; fi
+        if [[ -e "$app_dest" && "$app_line" != "app=$app_dest" ]]; then
+            say "a Cua Driver app is already installed at $app_dest (not by gui-gate): left untouched and used as is"
+            app_line=""
+        else
+            if [[ "$app_dest" == "$HOME/Applications/CuaDriver.app" ]]; then note_dir "$HOME/Applications"; fi
+            # state the app creates on first use; removed by `gui-gate uninstall` only if it is not there yet
+            for d in "$HOME/.cua-driver" "$HOME/Library/Caches/cua-driver" "$HOME/Library/Application Support/Cua Driver"; do
+                [[ -e "$d" ]] || owned+=("$d")
+            done
+            install_app "$app_dest"
+            app_line="app=$app_dest"
+        fi
+    else
+        say "installed Cua Driver $drv_ver (bundled) -> $LIB_DIR/cua-driver"
+    fi
+    for c in "$HOME/.local/bin/cua-driver" "$HOME/.cua-driver/packages/current/cua-driver"; do
+        if [[ -e "$c" ]]; then say "note: a Cua Driver installed by Cua's own installer is at $c; it is left untouched (gui-gate uses its bundled one; GUI_GATE_DRIVER=external selects yours)"; break; fi
+    done
+elif [[ "$SKIP_DRIVER" == "1" ]]; then
+    say "--skip-driver: not installing the bundled Cua Driver; gui-gate looks for one installed separately"
 fi
+mkdir -p "$LIB_DIR"
+{
+    echo "# written by gui-gate's installer; read by \`gui-gate uninstall\`"
+    printf '%s\n' "${created[@]+"${created[@]}"}" | awk 'NF && !seen[$0]++ {print "created_dir=" $0}'
+    if [[ -n "$app_line" ]]; then
+        echo "$app_line"
+        printf '%s\n' "${owned[@]+"${owned[@]}"}" | awk 'NF && !seen[$0]++ {print "owned_dir=" $0}'
+    fi
+} > "$MANIFEST.tmp"
+mv -f "$MANIFEST.tmp" "$MANIFEST"
 
 case ":$PATH:" in
     *":$BIN_DIR:"*) ;;
@@ -210,3 +297,4 @@ fi
 if [[ "$os" == "Darwin" ]]; then
     echo "macOS: the first GUI action asks for Accessibility and Screen Recording permission for CuaDriver; allow both."
 fi
+echo "Remove everything this installed: gui-gate uninstall"

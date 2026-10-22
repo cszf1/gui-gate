@@ -1,6 +1,10 @@
-//! Cua Driver stays Cua's own program; gui-gate only finds it, notices new releases and updates on request.
-//!  * the release installer (scripts/install.sh / install.ps1) runs Cua's official installer, so a fresh
-//!    install always gets the latest Cua Driver;
+//! Cua Driver stays Cua's own program (MIT). Since 0.9.7 each gui-gate release archive carries the exact Cua Driver
+//! version it was tested with (BUNDLED_DRIVER_VERSION, verified against Cua's SHA256SUMS and Sigstore bundle at
+//! release time) and the installer puts it in gui-gate's own dir - Cua's installer is never run:
+//!  * with the bundled driver nothing here touches the network on its own: the driver changes only with a gui-gate
+//!    release (`gui-gate update` reports whether a newer gui-gate release exists; `gui-gate update --self` installs it);
+//!  * with an external driver (GUI_GATE_DRIVER=external or a path, or installed with --skip-driver) the old behaviour
+//!    stays:
 //!  * TESTED is the driver version this release was tested with; a newer one works but is flagged untested;
 //!  * the check reads the version Cua's official installer would install (one small HTTPS GET to cua.ai,
 //!    PyPI as fallback), at most once a day (cached), in the background, 3 s timeout;
@@ -11,7 +15,7 @@ use crate::util::*;
 use serde_json::{json, Value};
 use std::time::Duration;
 
-pub const TESTED: &str = "0.37.0";
+pub const TESTED: &str = crate::install::BUNDLED_DRIVER_VERSION;
 const CUA_INSTALLER_SH: &str = "https://cua.ai/driver/install.sh";
 const CUA_INSTALLER_RS: &str = "https://cua.ai/driver/_install-rust.sh";
 const CUA_INSTALLER_PS1: &str = "https://cua.ai/driver/install.ps1";
@@ -63,9 +67,16 @@ fn cache_path() -> String {
     format!("{base}/gui-gate/driver-latest.json")
 }
 
+fn bundled_in_use() -> bool {
+    crate::install::find_driver().map(|d| crate::install::is_gate_bundled(&d)).unwrap_or(false)
+}
+
 pub fn latest(use_cache: bool) -> Option<String> {
     if let Some(v) = env("GUI_GATE_LATEST_OVERRIDE") {
         return Some(v); // tests / offline mirrors
+    }
+    if bundled_in_use() {
+        return None; // the bundled driver changes only with a gui-gate release: no driver update check
     }
     if env("GUI_GATE_NO_UPDATE_CHECK").is_some() {
         return None;
@@ -147,6 +158,14 @@ fn install_driver(version: &str) -> bool {
     run_installer(CUA_INSTALLER_SH, CUA_INSTALLER_PS1, &[("CUA_DRIVER_RS_VERSION", version)])
 }
 
+/// The newest gui-gate release tag on GitHub (only when the user runs `gui-gate update`).
+fn gate_latest() -> Option<String> {
+    let agent = ureq::AgentBuilder::new().timeout(Duration::from_secs(5)).build();
+    let d: Value = agent.get("https://api.github.com/repos/cszf1/gui-gate/releases/latest").set("User-Agent", "gui-gate-update-check")
+        .call().ok()?.into_json().ok()?;
+    d.get("tag_name")?.as_str().map(|t| t.trim_start_matches('v').to_string())
+}
+
 pub fn update_main(argv: &[String]) -> i32 {
     let mut check = false;
     let mut yes = false;
@@ -165,6 +184,22 @@ pub fn update_main(argv: &[String]) -> i32 {
             other => { eprintln!("gui-gate update: unknown argument {other}"); return 2; }
         }
         i += 1;
+    }
+    if bundled_in_use() {
+        let me = crate::server::VERSION;
+        let lat = gate_latest();
+        println!("{}", serde_json::to_string_pretty(&json!({"gui_gate": me, "gui_gate_latest": lat, "driver": "bundled",
+            "driver_version": crate::install::BUNDLED_DRIVER_VERSION})).unwrap());
+        match lat {
+            Some(l) if newer(&l, me) => println!("gui-gate {l} is available (with the Cua Driver it was tested with). Install it: gui-gate update --self"),
+            Some(_) => println!("gui-gate {me} is the latest release; its bundled Cua Driver {} changes only with a gui-gate release.", crate::install::BUNDLED_DRIVER_VERSION),
+            None => println!("Could not reach GitHub to look for a newer gui-gate release."),
+        }
+        if to.is_some() {
+            println!("--to only applies to an externally installed Cua Driver (GUI_GATE_DRIVER=external); the bundled one is not updated separately.");
+            return 1;
+        }
+        return 0;
     }
     let st = status(false, None);
     println!("{}", serde_json::to_string_pretty(&st).unwrap());

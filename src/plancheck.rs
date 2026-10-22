@@ -34,12 +34,7 @@ fn resolve(p: &str, roots: &[String]) -> Option<String> {
 fn changed_since(path: &str, start: Option<SystemTime>) -> bool {
     let Some(st) = start else { return false };
     let Ok(md) = std::fs::metadata(path) else { return false };
-    let t = md.modified().ok();
-    let c = {
-        use std::os::unix::fs::MetadataExt;
-        SystemTime::UNIX_EPOCH.checked_add(std::time::Duration::from_secs(md.ctime().max(0) as u64))
-    };
-    t.map(|t| t >= st).unwrap_or(false) || c.map(|c| c >= st).unwrap_or(false)
+    crate::proc::changed_at(&md).map(|t| t >= st).unwrap_or(false)
 }
 
 fn proc_running(name: &str) -> bool {

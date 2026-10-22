@@ -44,7 +44,59 @@ fn env_python() -> Option<String> {
     None
 }
 
-/// The binary inside the cua-driver package installed next to gui-gate.
+// ------------------------------------------------------------------ the bundled Cua Driver (0.9.7)
+/// Cua Driver version shipped inside every gui-gate release archive (changes only with a gui-gate release).
+pub const BUNDLED_DRIVER_VERSION: &str = "0.37.0";
+
+/// gui-gate's own install root for everything besides the gate binary:
+/// unix `<bin>/../lib/gui-gate` (default ~/.local/lib/gui-gate), Windows `<bin>\..` (%LOCALAPPDATA%\Programs\gui-gate).
+pub fn lib_dir() -> Option<PathBuf> {
+    if let Some(d) = env("GUI_GATE_LIB_DIR") {
+        return Some(PathBuf::from(d));
+    }
+    let d = exe_dir()?;
+    let parent = d.parent()?.to_path_buf();
+    Some(if cfg!(windows) { parent } else { parent.join("lib").join("gui-gate") })
+}
+
+/// key=value lines the installer keeps in `<lib_dir>/install-manifest` (what it created, so uninstall removes
+/// exactly that): `created_dir=PATH` (repeatable), `app=PATH` (macOS CuaDriver.app installed by gui-gate).
+pub fn manifest() -> Vec<(String, String)> {
+    let Some(d) = lib_dir() else { return vec![] };
+    std::fs::read_to_string(d.join("install-manifest")).unwrap_or_default().lines()
+        .filter_map(|l| l.split_once('=').map(|(k, v)| (k.trim().to_string(), v.trim().to_string())))
+        .filter(|(k, v)| !k.is_empty() && !v.is_empty() && !k.starts_with('#')).collect()
+}
+
+/// The Cua Driver that came in gui-gate's own archive, when the installer put it in place.
+pub fn gate_bundled_driver() -> Option<String> {
+    if cfg!(target_os = "macos") {
+        // the signed CuaDriver.app the installer placed (TCC permissions belong to the app at its location)
+        let app = manifest().into_iter().find(|(k, _)| k == "app").map(|x| x.1)?;
+        let p = format!("{app}/Contents/MacOS/cua-driver");
+        return Path::new(&p).is_file().then_some(p);
+    }
+    let p = lib_dir()?.join("cua-driver").join(exe_name("cua-driver"));
+    p.is_file().then(|| p.to_string_lossy().to_string())
+}
+
+/// True when `path` is gui-gate's bundled driver (then the gate starts it with Cua's telemetry and update check off).
+pub fn is_gate_bundled(path: &str) -> bool {
+    gate_bundled_driver().map(|b| b == path).unwrap_or(false)
+}
+
+/// Environment for starting the bundled driver: Cua's content-free telemetry and its update check are off, so the
+/// driver writes nothing to ~/.cua-driver and makes no network calls of its own. GUI_GATE_DRIVER_TELEMETRY=1 keeps
+/// Cua's defaults.
+pub fn bundled_driver_env() -> Vec<(&'static str, &'static str)> {
+    if env("GUI_GATE_DRIVER_TELEMETRY").map(|v| v != "0").unwrap_or(false) {
+        return vec![("CUA_DRIVER_INSTALL_CHANNEL", "manual_binary")];
+    }
+    vec![("CUA_DRIVER_RS_TELEMETRY_ENABLED", "0"), ("CUA_TELEMETRY_ENABLED", "0"), ("DO_NOT_TRACK", "1"),
+         ("CUA_DRIVER_RS_UPDATE_CHECK", "0"), ("CUA_DRIVER_INSTALL_CHANNEL", "manual_binary")]
+}
+
+/// The binary inside the cua-driver Python package installed next to gui-gate (0.2-0.5 pip installs).
 pub fn bundled_driver() -> Option<String> {
     let d = exe_dir()?;
     let bin = exe_name("cua-driver");
@@ -90,11 +142,18 @@ pub fn official_driver_paths() -> Vec<String> {
     v
 }
 
-/// GUI_GATE_DRIVER, then a cua-driver next to this binary or on PATH (the official installer),
-/// then the official install locations, then the Python package's bundled binary.
+/// GUI_GATE_DRIVER=PATH, else the Cua Driver bundled with gui-gate, else (or with GUI_GATE_DRIVER=external) an
+/// externally installed one: the Python package's binary, a cua-driver next to this binary or on PATH, then Cua's
+/// official install locations.
 pub fn find_driver() -> Option<String> {
-    if let Some(e) = env("GUI_GATE_DRIVER") {
-        return Some(e);
+    match env("GUI_GATE_DRIVER") {
+        Some(e) if e.eq_ignore_ascii_case("external") => {}
+        Some(e) => return Some(e),
+        None => {
+            if let Some(b) = gate_bundled_driver() {
+                return Some(b);
+            }
+        }
     }
     if let Some(b) = bundled_driver() {
         return Some(b); // pip/pipx install: the binary inside the Python package, not its Python launcher
@@ -118,6 +177,11 @@ pub fn driver_is_pip(path: &str) -> bool {
 
 /// Version from the package metadata next to the bundled binary, else `cua-driver --version`.
 pub fn driver_version(path: &str) -> Option<String> {
+    if is_gate_bundled(path) {
+        let f = lib_dir().map(|d| d.join("cua-driver").join("VERSION"));
+        return Some(f.and_then(|f| std::fs::read_to_string(f).ok()).map(|v| v.trim().to_string()).filter(|v| !v.is_empty())
+            .unwrap_or_else(|| BUNDLED_DRIVER_VERSION.to_string()));
+    }
     let p = Path::new(path);
     if let Some(site) = p.parent().and_then(|b| b.parent()).and_then(|pkg| pkg.parent()) {
         if let Ok(rd) = std::fs::read_dir(site) {
@@ -211,8 +275,14 @@ pub fn configure(client: &str, name: &str, home_dir: Option<&str>) -> String {
 // ------------------------------------------------------------------ checks
 /// Real end-to-end check: start the driver's MCP server, initialize, list tools.
 pub fn doctor(cmd: Option<Vec<String>>) -> Value {
+    let src = match find_driver() {
+        Some(d) if is_gate_bundled(&d) => "bundled",
+        Some(d) if driver_is_pip(&d) => "pip",
+        Some(_) => "external",
+        None => "none",
+    };
     let mut rep = json!({"platform": format!("{} {}", std::env::consts::OS, std::env::consts::ARCH), "gui_gate": crate::server::VERSION,
-                         "driver_source": if find_driver().map(|d| driver_is_pip(&d)).unwrap_or(false) { "pip" } else { "official" }});
+                         "driver_source": src});
     let d = if cmd.is_some() { None } else { find_driver() };
     rep["driver"] = json!(d.clone().or_else(|| cmd.as_ref().map(|c| c.join(" "))));
     rep["driver_version"] = json!(d.as_ref().and_then(|p| driver_version(p)));

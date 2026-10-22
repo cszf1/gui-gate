@@ -1,6 +1,7 @@
-# On a version tag: test, build the gate for every platform Cua Driver ships for, publish a GitHub
-# release (binaries + SHA256SUMS + install.sh / install.ps1), then install it from that release on
-# Linux, macOS and Windows exactly the way a user would.
+# On a version tag: test, build the gate for every platform Cua Driver ships for, pack each with the pinned official
+# Cua Driver build (scripts/cua-driver.lock: sha256 + Cua's SHA256SUMS + Sigstore bundle verified), publish a GitHub
+# release (one archive per platform + SHA256SUMS + install.sh / install.ps1), then install it from that release on
+# Linux, macOS and Windows exactly the way a user would, and prove `gui-gate uninstall` leaves nothing behind.
 name: release
 on:
   push:
@@ -15,6 +16,11 @@ jobs:
       - run: cargo test --release && cargo build --release
       - run: GUI_GATE_BIN=target/release/gui-gate GUI_GATE_NO_UPDATE_CHECK=1 python3 -m unittest discover -s tests
       - run: bash -n scripts/install.sh
+      - name: cross-platform compile check (Windows / macOS cfg paths)
+        run: |
+          rustup target add x86_64-pc-windows-gnu
+          sudo apt-get install -y -q mingw-w64 >/dev/null
+          cargo check --target x86_64-pc-windows-gnu
 
   build:
     strategy:
@@ -31,35 +37,47 @@ jobs:
       - if: runner.os == 'Linux'
         run: sudo apt-get update -q && sudo apt-get install -y -q musl-tools
       - run: rustup target add ${{ matrix.target }}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - uses: sigstore/cosign-installer@v3
+      - name: fetch + verify the bundled Cua Driver
+        shell: bash
+        run: python scripts/fetch_driver.py ${{ matrix.name }} out --require-signature
       - if: runner.os == 'macOS'
         run: rustup target add x86_64-apple-darwin
       - name: build (Linux, static musl)
         if: runner.os == 'Linux'
         run: |
           cargo build --release --target ${{ matrix.target }}
-          mkdir out && cp target/${{ matrix.target }}/release/gui-gate out/
+          cp target/${{ matrix.target }}/release/gui-gate out/
           file out/gui-gate && out/gui-gate --version
-          tar -C out -czf gui-gate-${{ matrix.name }}.tar.gz gui-gate
+          file out/cua-driver/cua-driver && cat out/cua-driver/VERSION
+          tar -C out -czf gui-gate-${{ matrix.name }}.tar.gz gui-gate cua-driver
+          tar -tzvf gui-gate-${{ matrix.name }}.tar.gz
       - name: build (macOS universal)
         if: runner.os == 'macOS'
         run: |
           cargo build --release --target aarch64-apple-darwin
           cargo build --release --target x86_64-apple-darwin
-          mkdir out
           lipo -create -output out/gui-gate target/aarch64-apple-darwin/release/gui-gate target/x86_64-apple-darwin/release/gui-gate
           codesign --force -s - out/gui-gate
           lipo -info out/gui-gate && out/gui-gate --version
-          tar -C out -czf gui-gate-${{ matrix.name }}.tar.gz gui-gate
+          # Cua's app stays exactly as Cua signed it (its TCC identity); verify, never re-sign
+          codesign --verify --deep --strict --verbose=2 out/CuaDriver.app
+          COPYFILE_DISABLE=1 tar --no-mac-metadata -C out -czf gui-gate-${{ matrix.name }}.tar.gz gui-gate CuaDriver.app cua-driver
+          mkdir chk && tar -xzf gui-gate-${{ matrix.name }}.tar.gz -C chk && codesign --verify --deep --strict chk/CuaDriver.app
+          tar -tzf gui-gate-${{ matrix.name }}.tar.gz | grep -v "CuaDriver.app/Contents/Resources/" | head -40
       - name: build (Windows, static CRT)
         if: runner.os == 'Windows'
         shell: pwsh
         env: {RUSTFLAGS: "-C target-feature=+crt-static"}
         run: |
           cargo build --release --target ${{ matrix.target }}
-          New-Item -ItemType Directory out | Out-Null
           Copy-Item target/${{ matrix.target }}/release/gui-gate.exe out/
           ./out/gui-gate.exe --version
-          Compress-Archive -Path out/gui-gate.exe -DestinationPath gui-gate-${{ matrix.name }}.zip
+          Get-Content out/cua-driver/VERSION
+          Compress-Archive -Path out/gui-gate.exe, out/cua-driver -DestinationPath gui-gate-${{ matrix.name }}.zip
+          (Get-Item gui-gate-${{ matrix.name }}.zip).Length
       - uses: actions/upload-artifact@v4
         with: {name: "bin-${{ matrix.name }}", path: "gui-gate-${{ matrix.name }}.*"}
 
@@ -77,11 +95,13 @@ jobs:
       - env: {GH_TOKEN: "${{ github.token }}"}
         run: |
           cat > notes.md <<NOTES
-          Install (gui-gate + the latest Cua Driver):
+          Install (one download: gui-gate + the Cua Driver build it was tested with, official and unmodified, MIT - see NOTICE):
 
           macOS / Linux: \`curl -fsSL https://github.com/${{ github.repository }}/releases/latest/download/install.sh | bash\`
 
           Windows (PowerShell): \`irm https://github.com/${{ github.repository }}/releases/latest/download/install.ps1 | iex\`
+
+          Remove everything it installed: \`gui-gate uninstall\` (see README "What gui-gate puts on your machine").
           NOTES
           gh release create "${{ github.ref_name }}" dist/* --title "gui-gate ${{ github.ref_name }}" --notes-file notes.md --latest
 
@@ -113,7 +133,12 @@ jobs:
           test "$(stat -c %a "$HOME/.config/gui-gate/reviewer.key" 2>/dev/null || stat -f %Lp "$HOME/.config/gui-gate/reviewer.key")" = 600
           ! grep -q dummy-key "$HOME/.config/gui-gate/reviewer.env"
           gui-gate doctor | tee doctor.json || true
-          python3 -c "import json; d=json.load(open('doctor.json')); print('driver', d['driver_version'], 'tools', d['driver_tools']); assert (d['driver_tools'] or 0) > 0"
+          python3 -c "import json; d=json.load(open('doctor.json')); print('driver', d['driver_source'], d['driver_version'], 'tools', d['driver_tools']); assert (d['driver_tools'] or 0) > 0 and d['driver_source'] == 'bundled' and d['driver_version'] == '0.37.0'"
+          # one download, Cua's installer never ran: no Cua PATH line, no ~/.cua-driver (bundled driver runs with telemetry off)
+          ! grep -qs "cua-driver-rs installer" "$HOME/.bashrc" "$HOME/.zshrc" "$HOME/.bash_profile" "$HOME/.profile"
+          if [ "$(uname -s)" = Linux ]; then test ! -e "$HOME/.cua-driver"; test -x "$HOME/.local/lib/gui-gate/cua-driver/cua-driver"; fi
+          if [ "$(uname -s)" = Darwin ]; then codesign --verify --deep --strict /Applications/CuaDriver.app; grep -q "^app=/Applications/CuaDriver.app" "$HOME/.local/lib/gui-gate/install-manifest"; fi
+          test -f "$HOME/.local/lib/gui-gate/cua-driver/LICENSE"
       - name: upgrade from an older release leaves no residue (unix)
         if: runner.os != 'Windows'
         run: |
@@ -121,6 +146,12 @@ jobs:
           export PATH="$HOME/.local/bin:$PATH"
           gui-gate uninstall
           test ! -e "$HOME/.local/bin/gui-gate"
+          test ! -e "$HOME/.local/lib/gui-gate"
+          test ! -e "$HOME/.config/gui-gate"
+          test ! -e "$HOME/.gui-gate"
+          test ! -e "$HOME/.cache/gui-gate"
+          test ! -e /Applications/CuaDriver.app
+          ! grep -qs "^# gui-gate" "$HOME/.bashrc" "$HOME/.zshrc" "$HOME/.bash_profile" "$HOME/.profile"
           # old release + the junk old versions left
           curl -fsSL https://github.com/${{ github.repository }}/releases/download/v0.8.3/install.sh | bash -s -- --skip-driver
           printf '\n# gui-gate\nexport PATH="%s:$PATH"\n\n# gui-gate\nexport PATH="/gone/bin:$PATH"\n' "$HOME/.local/bin" >> "$HOME/.bashrc"
@@ -168,8 +199,11 @@ jobs:
           $out = & $exe doctor
           $out | Out-File doctor.json
           $d = Get-Content doctor.json -Raw | ConvertFrom-Json
-          Write-Host "driver $($d.driver_version) tools $($d.driver_tools)"
+          Write-Host "driver $($d.driver_source) $($d.driver_version) tools $($d.driver_tools)"
           if (-not $d.driver_tools) { exit 1 }
+          if ($d.driver_source -ne 'bundled' -or $d.driver_version -ne '0.37.0') { throw "not the bundled driver: $($d.driver_source) $($d.driver_version)" }
+          if (Get-ScheduledTask -TaskName 'cua-driver-serve' -ErrorAction SilentlyContinue) { throw "a cua-driver scheduled task exists" }
+          if (Test-Path (Join-Path $env:USERPROFILE '.cua-driver')) { throw "~\.cua-driver was created" }
       - name: upgrade from an older release leaves no residue (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
@@ -178,8 +212,11 @@ jobs:
           $bin = Join-Path $env:LOCALAPPDATA 'Programs\gui-gate\bin'
           $exe = Join-Path $bin 'gui-gate.exe'
           & $exe uninstall
-          Start-Sleep -Seconds 5
+          Start-Sleep -Seconds 6
           if (Test-Path $exe) { throw "uninstall left $exe" }
+          if (Test-Path (Split-Path $bin)) { throw "uninstall left $(Split-Path $bin)" }
+          $uh = if ($env:HOME) { $env:HOME } else { $env:USERPROFILE }
+          foreach ($x in @('.config\gui-gate', '.gui-gate', '.cache\gui-gate')) { if (Test-Path (Join-Path $uh $x)) { throw "uninstall left ~\$x" } }
           if ((([Environment]::GetEnvironmentVariable('Path','User')) -split ';') -contains $bin) { throw "uninstall left the Path entry" }
           $env:GUI_GATE_SKIP_DRIVER = '1'
           $env:GUI_GATE_VERSION = '0.8.3'
@@ -205,3 +242,60 @@ jobs:
           if ($e.args -contains '--decider') { throw "removed flag left: $($e.args)" }
           $left = & $exe cleanup --quiet
           if ($left) { throw "second cleanup still found: $left" }
+      - name: zero residue after uninstall (unix, throwaway HOME)
+        if: runner.os != 'Windows'
+        env: {GUI_GATE_VERSION: "${{ github.ref_name }}"}
+        run: |
+          set -eux
+          export PATH="$HOME/.local/bin:$PATH"
+          gui-gate uninstall || true
+          test ! -e /Applications/CuaDriver.app
+          curl -fsSL -o smoke_session.py https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/scripts/smoke_session.py
+          FH="$(mktemp -d)"; printf 'alias ll="ls -l"\n' > "$FH/.bashrc"; cp "$FH/.bashrc" rc.orig
+          (cd "$FH" && find . | sort) > before.txt
+          ls "${TMPDIR:-/tmp}" | grep '^gui-gate-' > tmp_before.txt || true
+          curl -fsSL https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/install.sh -o install.sh
+          HOME="$FH" SHELL=/bin/bash GUI_GATE_REVIEWER_KEY=dummy-key bash install.sh --no-prompt --reviewer-url http://127.0.0.1:9/v1 --reviewer-model dummy
+          HOME="$FH" "$FH/.local/bin/gui-gate" doctor
+          HOME="$FH" python3 smoke_session.py "$FH/.local/bin/gui-gate"
+          HOME="$FH" "$FH/.local/bin/gui-gate" uninstall
+          (cd "$FH" && find . | sort) > after.txt
+          diff before.txt after.txt
+          cmp "$FH/.bashrc" rc.orig
+          test ! -e /Applications/CuaDriver.app
+          ls "${TMPDIR:-/tmp}" | grep '^gui-gate-' > tmp_after.txt || true
+          diff tmp_before.txt tmp_after.txt
+          ! pgrep -lx gui-gate
+          ! pgrep -lx cua-driver
+          ! pgrep -lf 'CuaDriver.app/Contents/MacOS'
+          echo "zero residue"
+      - name: zero residue after uninstall (Windows, throwaway profile)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $real = Join-Path $env:LOCALAPPDATA 'Programs\gui-gate\bin\gui-gate.exe'
+          if (Test-Path $real) { & $real uninstall; Start-Sleep -Seconds 6 }
+          Invoke-WebRequest -UseBasicParsing -Uri "https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/scripts/smoke_session.py" -OutFile smoke_session.py
+          $fh = Join-Path ([IO.Path]::GetTempPath()) ("gg-home-" + [guid]::NewGuid().ToString('N').Substring(0, 8))
+          New-Item -ItemType Directory -Force (Join-Path $fh 'AppData\Local') | Out-Null
+          $before = Get-ChildItem -Recurse -Force $fh | ForEach-Object { $_.FullName.Substring($fh.Length) } | Sort-Object
+          $tmpBefore = @(Get-ChildItem ([IO.Path]::GetTempPath()) -Filter 'gui-gate-*' -ErrorAction SilentlyContinue | ForEach-Object Name)
+          $env:USERPROFILE = $fh; $env:HOME = $fh; $env:LOCALAPPDATA = Join-Path $fh 'AppData\Local'
+          $env:GUI_GATE_VERSION = '${{ github.ref_name }}'
+          $env:GUI_GATE_REVIEWER_URL = 'http://127.0.0.1:9/v1'; $env:GUI_GATE_REVIEWER_MODEL = 'dummy'; $env:GUI_GATE_REVIEWER_KEY = 'dummy-key'
+          irm https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/install.ps1 | iex
+          $exe = Join-Path $env:LOCALAPPDATA 'Programs\gui-gate\bin\gui-gate.exe'
+          & $exe doctor
+          python smoke_session.py $exe
+          if ($LASTEXITCODE -ne 0) { throw "session left processes" }
+          & $exe uninstall
+          Start-Sleep -Seconds 8
+          $after = Get-ChildItem -Recurse -Force $fh | ForEach-Object { $_.FullName.Substring($fh.Length) } | Sort-Object
+          if ((@($before) -join '|') -ne (@($after) -join '|')) { Write-Host "before: $($before -join ', ')"; Write-Host "after: $($after -join ', ')"; throw "residue in the profile" }
+          $up = ([Environment]::GetEnvironmentVariable('Path','User')) -split ';'
+          if ($up | Where-Object { $_ -like '*gui-gate*' }) { throw "user Path still has gui-gate: $up" }
+          $tmpAfter = @(Get-ChildItem ([IO.Path]::GetTempPath()) -Filter 'gui-gate-*' -ErrorAction SilentlyContinue | ForEach-Object Name)
+          if (($tmpBefore -join '|') -ne ($tmpAfter -join '|')) { throw "gui-gate temp files left: $($tmpAfter -join ', ')" }
+          if (Get-Process -Name 'gui-gate','cua-driver' -ErrorAction SilentlyContinue) { throw "gui-gate / cua-driver still running" }
+          Write-Host "zero residue"
