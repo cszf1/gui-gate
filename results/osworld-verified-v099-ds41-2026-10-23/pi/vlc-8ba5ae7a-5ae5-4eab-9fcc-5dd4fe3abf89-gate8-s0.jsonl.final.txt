@@ -1,0 +1,1 @@
+DONE — In VLC (Tools > Preferences > Show settings: All > Input / Codecs > Advanced) I set "Record directory" to /data/home/Desktop, saved it (now `input-record-path=/data/home/Desktop` in ~/.config/vlc/vlcrc), then restarted VLC and confirmed the setting persisted.

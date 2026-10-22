@@ -1,0 +1,1 @@
+DONE — Recursively searched `~/Desktop/photos` and copied all 4 `.jpg` files (emnlp2023.jpg, hk_group_photo.jpg, hong-kong-china.jpg, monk…arun…scaled….jpg) into `~/Desktop/cpjpg`, excluding the one .png and verifying MD5 matches.

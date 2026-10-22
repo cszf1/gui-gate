@@ -1,0 +1,1 @@
+DONE — In VLC I opened Tools ▸ Preferences ▸ All ▸ Interface ▸ Main interfaces ▸ Qt, unchecked "Display background cone or art", clicked Save (writes `qt-bgcone=0` in `~/.config/vlc/vlcrc`), then restarted VLC — the main window now shows a plain black background with no cone icon.

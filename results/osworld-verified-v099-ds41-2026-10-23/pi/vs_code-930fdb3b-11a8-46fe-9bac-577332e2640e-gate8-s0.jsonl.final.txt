@@ -1,0 +1,1 @@
+DONE — Added a `ctrl+j` binding (with `when: terminalFocus`) to VS Code's user `keybindings.json` (`/data/home/.config/Code/User/keybindings.json`) mapping to `workbench.action.focusActiveEditorGroup`, and verified it live: pressing ctrl+j in the integrated terminal moved focus to the editor while the panel stayed open.

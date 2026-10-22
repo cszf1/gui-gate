@@ -1,0 +1,1 @@
+DONE — Concatenated all five .txt files from the VS Code project `/data/home/Desktop/doc_proc` (1.txt–5.txt, in order, no separator) into a new Writer document, applied font size 10 pt to all text, and saved it as `/data/home/Desktop/concat.docx` (Word 2010–365 .docx); verified the file contains all 2249 characters at 10 pt.

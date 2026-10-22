@@ -1,0 +1,1 @@
+DONE — Created `Sheet2` in `/data/home/EntireSummerSales.xlsx` with a real Calc Pivot Table (DataPilot1) sourced from Sheet1.$A$1:$G$2001, Promotion as the column field and Revenue summed in the data field, giving column headers Fall Kite Event 46190.74, Festival of Flight 49433.40, None 82215.01 (Total 177839.15), then saved the file.

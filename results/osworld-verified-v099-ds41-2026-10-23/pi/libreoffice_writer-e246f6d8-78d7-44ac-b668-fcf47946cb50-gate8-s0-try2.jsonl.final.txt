@@ -1,0 +1,1 @@
+DONE — In LibreOffice Writer I ran a Basic macro over the open `Y22-2119-assign4.docx` that set every italic run to 14 pt (21 italic runs, remaining text left at 12 pt), then saved the file back in Word format; unzipping it confirms italic runs carry `w:sz val="28"` while all other runs stay `24`.
