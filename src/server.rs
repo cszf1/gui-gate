@@ -193,6 +193,35 @@ pub fn tree_delta(seen: &HashSet<String>, cur: &[&str], thr: f64) -> Option<Vec<
     Some(keep.into_iter().collect())
 }
 
+/// GUI_GATE_STALL_HINTS=0 turns off the read-stall hints.
+pub fn stall_hints_enabled() -> bool {
+    std::env::var("GUI_GATE_STALL_HINTS").map(|v| v != "0").unwrap_or(true)
+}
+
+pub const HINT_GRID: &str = "[gate] Spreadsheet cells are not in the accessibility tree (the grid is too big to list), so no read or query will show cell contents. Work by keyboard instead: ctrl+Home goes to A1, arrows / Tab / Enter move, the action result names the focused cell (\"focus: cell B3\"); type values or formulas straight into the focused cell. Use column headers you already know from the task.";
+pub const HINT_TERMINAL: &str = "[gate] This terminal does not expose its text: no read shows the command output, so re-reading will not help. Enter runs the typed line. Check a command's effect in another window whose tree shows it (for example a file manager listing a folder), or, when the command you ran is clearly right, finish.";
+
+/// One-time, cause-specific notes for a read whose content is not in the tree (per window and cause).
+pub fn read_hints(txt: &str, terminal: bool, key: &str, hinted: &mut HashSet<String>) -> Vec<&'static str> {
+    let mut out = vec![];
+    if txt.contains("cell grid") && hinted.insert(format!("grid:{key}")) {
+        out.push(HINT_GRID);
+    }
+    if terminal && hinted.insert(format!("term:{key}")) {
+        out.push(HINT_TERMINAL);
+    }
+    out
+}
+
+/// Every 3rd read in a row without an action in between.
+pub fn streak_hint(streak: u32) -> Option<String> {
+    if streak >= 3 && streak % 3 == 0 {
+        Some(format!("[gate] {streak} reads in a row without an action: the tree only changes after an action. What is not in it now is not exposed to the tree; act on what is there (or reply FAIL if the task cannot be done this way)."))
+    } else {
+        None
+    }
+}
+
 pub fn short(text: &str, limit: usize) -> String {
     if text.chars().count() <= limit {
         return text.to_string();
@@ -288,7 +317,11 @@ pub struct Inner {
     pub pixel_pids: HashSet<i64>,
     pub probe_disabled: bool,
     pub denied_effects: HashMap<String, String>,
-    pub step_doubted: HashSet<String>, // signatures the step reviewer doubted (look_light) and the agent has not re-sent yet
+    pub step_doubted: HashSet<String>,
+    pub acted: bool,
+    pub read_streak: u32,             // reads since the last GUI action (stall hint)
+    pub hinted: HashSet<String>,      // one-time read hints already given (cause:window)
+ // signatures the step reviewer doubted (look_light) and the agent has not re-sent yet
     pub denials_consec: u32,
     pub denials_total: u32,
     pub task_locked: bool,
@@ -493,7 +526,7 @@ impl Gate {
             inner: Mutex::new(Inner {
                 cfg, state: GateState::default(), stats: new_stats(), aid: 0, confirm_codes: HashMap::new(),
                 want_shot: HashSet::new(), seen_pids: HashSet::new(), fg_sticky: false, pixel_pids: HashSet::new(),
-                probe_disabled: false, denied_effects: HashMap::new(), step_doubted: HashSet::new(), denials_consec: 0, denials_total: 0,
+                probe_disabled: false, denied_effects: HashMap::new(), step_doubted: HashSet::new(), acted: false, read_streak: 0, hinted: HashSet::new(), denials_consec: 0, denials_total: 0,
                 task_locked, task_source, in_batch: false, batch_ctx: Value::Null, pix_age: HashMap::new(),
                 last_auto: HashMap::new(), seen_rows: HashMap::new(), recent: vec![], risk_info: Value::Null, cur_ack: false,
             }),
@@ -666,6 +699,23 @@ impl Gate {
             }
         };
         let mut result = result;
+        {
+            let mut inn = self.inner.lock().unwrap_or_else(|e| e.into_inner());
+            if inn.cfg.policy == "gate" {
+                if name == "get_window_state" && inn.acted {
+                    // reads before the first action are orientation, not a stall
+                    inn.read_streak += 1;
+                    if let Some(h) = streak_hint(inn.read_streak).filter(|_| stall_hints_enabled()) {
+                        inn.inc("streak_hints");
+                        self.log.write(json!({"ev": "streak_hint", "n": inn.read_streak}));
+                        push_text(&mut result, h);
+                    }
+                } else if is_gated(&name) || name == "run_actions" {
+                    inn.read_streak = 0;
+                    inn.acted = true;
+                }
+            }
+        }
         // v0.9.4: screenshots go back to the agent as full-size JPEG (all policies, so bench conditions match)
         if let Some(mut ev) = crate::shot::reencode_result(&mut result, &self.shot) {
             {
@@ -752,6 +802,21 @@ impl Gate {
                 inn.seen_pids.insert(p);
                 if args.get("include_screenshot").map(|v| truthy(Some(v))).unwrap_or(true) {
                     inn.want_shot.remove(&p);
+                }
+            }
+        }
+        if name == "get_window_state" && inn.cfg.policy == "gate" && inn.cfg.text_only && stall_hints_enabled() && !is_error(&res) {
+            let scv = sc(&res);
+            if let Some(p) = as_i64(scv.get("pid")).or(pid) {
+                let key = format!("{p}:{}", as_i64(scv.get("window_id")).or(as_i64(args.get("window_id"))).unwrap_or(0));
+                let txt = text_of(&res);
+                let mut hinted = std::mem::take(&mut inn.hinted);
+                let hs = read_hints(&txt, crate::sidefx::is_terminal(p), &key, &mut hinted);
+                inn.hinted = hinted;
+                for h in hs {
+                    inn.inc("read_hints");
+                    self.log.write(json!({"ev": "read_hint", "pid": p, "hint": if h == HINT_GRID { "grid" } else { "terminal" }}));
+                    push_text(&mut res, h.to_string());
                 }
             }
         }
@@ -1861,6 +1926,20 @@ mod tests {
         assert_eq!(parent_menu(tree, 4).as_deref(), Some("Export As"));
         assert_eq!(parent_menu(tree, 1), None);
         assert_eq!(parent_menu(tree, 99), None);
+    }
+
+    #[test]
+    fn stall_hints() {
+        let mut h = HashSet::new();
+        let grid = "PARTIAL TREE: a container with more children than can be enumerated (e.g. a spreadsheet's cell grid) was not expanded";
+        assert_eq!(read_hints(grid, false, "1:2", &mut h), vec![HINT_GRID]);
+        assert!(read_hints(grid, false, "1:2", &mut h).is_empty()); // once per window
+        assert_eq!(read_hints(grid, false, "1:3", &mut h), vec![HINT_GRID]);
+        assert_eq!(read_hints("- [0] menu \"File\"", true, "7:8", &mut h), vec![HINT_TERMINAL]);
+        assert!(read_hints("- [0] menu \"File\"", false, "9:9", &mut h).is_empty());
+        assert!(streak_hint(2).is_none() && streak_hint(4).is_none());
+        assert!(streak_hint(3).unwrap().contains("3 reads in a row"));
+        assert!(streak_hint(6).is_some());
     }
 
     #[test]

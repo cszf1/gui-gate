@@ -1,0 +1,4 @@
+pi-m3-v095-202 direct: runs 68, fires {'streak': 45, 'runs_with_fire': 49, 'grid': 50, 'term': 11}, first fire call# median 3, runs fired that succeeded 0, {'grid_reads_after_hint': 147, 'term_reads_after_hint': 20}
+pi-m3-v095-202 gate8: runs 68, fires {'streak': 40, 'runs_with_fire': 48, 'grid': 33, 'term': 13}, first fire call# median 3, runs fired that succeeded 2, {'grid_reads_after_hint': 107, 'term_reads_after_hint': 15}
+pi-ds41-v094-2 direct: runs 36, fires {'grid': 24, 'runs_with_fire': 23, 'term': 7, 'streak': 7}, first fire call# median 3, runs fired that succeeded 9, {'grid_reads_after_hint': 11, 'term_reads_after_hint': 28}
+pi-ds41-v094-2 gate8: runs 34, fires {'streak': 4, 'runs_with_fire': 21, 'grid': 20, 'term': 6}, first fire call# median 3, runs fired that succeeded 9, {'term_reads_after_hint': 23, 'grid_reads_after_hint': 2}

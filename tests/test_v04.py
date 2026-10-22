@@ -82,6 +82,24 @@ class V04GateTests(unittest.TestCase):
         self.assertEqual(shots, [True, True, False, False])
 
 
+class StallHintTests(unittest.TestCase):
+    def test_third_read_in_a_row_gets_a_stall_hint_and_an_action_resets(self):
+        c = Client("--human", "deny")
+        try:
+            s = c.read(fresh=True)
+            c.call("click", element_token=f"{s}:2")           # reads before the first action are orientation
+            rs = [c.call("get_window_state", pid=4242, window_id=777, fresh=True) for _ in range(3)]
+            self.assertNotIn("reads in a row", txt(rs[1]))
+            self.assertIn("3 reads in a row", txt(rs[2]))
+            s = c.read(fresh=True)                         # 4th
+            c.call("click", element_token=f"{s}:2")
+            rs = [c.call("get_window_state", pid=4242, window_id=777, fresh=True) for _ in range(2)]
+            self.assertNotIn("reads in a row", txt(rs[-1]))
+            self.assertEqual(len([e for e in c.events() if e.get("ev") == "streak_hint"]), 1)
+        finally:
+            c.close()
+
+
 class _Rev:
     """A local OpenAI-compatible endpoint that answers with a fixed decision and records what it was shown."""
     def __init__(self, decision):
