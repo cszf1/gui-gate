@@ -75,7 +75,9 @@ alone); model roles need `GUI_GATE_ROLE_<NAME>_URL/_MODEL/_KEY|_KEY_FILE[/_PROTO
 | 19 | Evaluator saves open documents (OSWorld postconfig Ctrl+S) / grader checks real state | Pointer knowledge bank, II env notes | partial (R11 note) | in the built-in skills' environment notes |
 | 20 | Task attachments / PDF facts | OpenAPA | no | `inspect kind=file` |
 
-What will not be absorbed (and why) is listed at the end after the rounds.
+Status after rounds 18-22: every row is implemented as planned (commits 57b2470, 8142adc, 1a33b46, 583a465 and the
+round-22 commit), each with Rust and/or fake-driver Python tests; what was left out is listed at the end
+("Not absorbed"). No live run was made; no success-rate gain is claimed.
 
 ## Round notes
 (appended per round)
@@ -251,3 +253,30 @@ Per item: model version / model-free fallback / recommended config
   browser state graders check is produced).
 - **App-internal scripting consoles / macros, installing packages for the agent**: out of the gate's scope (installs go
   through run_command and its risk check).
+
+### Round 22 - review fixes
+- The gate's own secrets are never read out: `inspect kind=file` and the probing roles' `read` probe refuse
+  `~/.config/gui-gate/*.key|*.env` and any `GUI_GATE_*_KEY_FILE` target (test: role key file not leaked).
+- Grounder role test (the screenshot goes to the vision endpoint as a native image part; answer reported with the
+  element under the point when the read has frames).
+- `file_contains` checks the file content only (the header line with the path made "43" match a temp path containing
+  43 - a flaky test found in the full parallel run).
+Final counts: cargo 89 passed + 7 ignored (2 new ignored offline replays), python 152 (118 before this pass).
+
+## How to run the live comparison later (NOT run in this pass)
+On a free box (not gui-pi2 while its 0.9.6 run is going), same tasks/seeds as the 0.9.6 baseline:
+```
+# baseline (0.9.6 behaviour; the 0.9.7 binary with no 0.9.7 flag behaves like 0.9.6)
+bash bench/run_bench.sh OUT_096 "direct gate8" bench/tasks/order.txt "0"
+# 0.9.7 model-free features, gate skills instead of bench hints
+PI_TOOLS_097=1 PI_APP_HINTS=0 bash bench/run_bench.sh OUT_097 "direct gate8" bench/tasks/order.txt "0"
+# 0.9.7 + model roles (reuse the reviewer endpoint; needs a free-text model, not a systemone decision model):
+#   in ~/.config/gui-gate/reviewer.env add e.g.
+#   GUI_GATE_ROLE_FEASIBILITY=reviewer  GUI_GATE_ROLE_VERIFIER=reviewer  GUI_GATE_ROLE_JUDGE=reviewer
+#   (or GUI_GATE_ROLE_<R>_URL / _MODEL / _KEY_FILE for a separate model)
+PI_TOOLS_097=1 PI_APP_HINTS=0 bash bench/run_bench.sh OUT_097R "direct gate8" bench/tasks/order.txt "0"
+```
+Compare with `bench/score.py` / `bench/compare_runs.py`; gate_report / the gate logs carry features_097, roles, events
+`briefing`, `verdict_required`, `loop_breaker` (reason), `snap`, `pick`, `phantom`, `inspect`, `role`, `job`.
+Note: with PI_TOOLS_097=1 the gate env applies to every cond (direct too), as PI_TOOLS_096 did, so direct vs gate8
+stays a gate comparison; 0.9.6 vs 0.9.7 is the OUT_096 vs OUT_097 comparison.

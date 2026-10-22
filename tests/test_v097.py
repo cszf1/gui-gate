@@ -571,3 +571,33 @@ class VerifyPlusTests(unittest.TestCase):
         finally:
             c.close()
             llm.close()
+
+
+class GrounderRoleTests(unittest.TestCase):
+    def test_grounder_role_locates_on_a_screenshot(self):
+        llm = FakeLLM(lambda sys, user: json.dumps({"final": {"found": True, "x": 60, "y": 70, "why": "label Delete file"}}))
+        c = Client("--human", "deny", env={"GUI_GATE_INSPECT": "1", **llm.env("grounder")})
+        try:
+            c.read()
+            r = c.call("inspect", kind="locate", pid=4242, window_id=777, describe="the Delete file button")
+            t = txt(r)
+            self.assertIn("grounder (api:chat:fake-grounder): x=60 y=70", t)
+            self.assertIn('[1] button "Delete file"', t)
+            body = llm.seen[0]["messages"][1]["content"]
+            self.assertEqual(body[0]["type"], "image_url")  # the screenshot goes to the vision model natively
+            self.assertTrue(body[0]["image_url"]["url"].startswith("data:image/"))
+        finally:
+            c.close()
+            llm.close()
+
+    def test_roles_never_read_the_gates_key_files(self):
+        d = tempfile.mkdtemp()
+        key = os.path.join(d, "role.key")
+        open(key, "w").write("sk-should-not-leak")
+        c = Client("--human", "deny", env={"GUI_GATE_INSPECT": "1", "GUI_GATE_ROLE_SEARCH_KEY_FILE": key})
+        try:
+            r = c.call("inspect", kind="file", path=key)
+            self.assertNotIn("sk-should-not-leak", txt(r))
+            self.assertIn("refused", txt(r))
+        finally:
+            c.close()

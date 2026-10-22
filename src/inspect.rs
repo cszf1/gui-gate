@@ -80,10 +80,26 @@ for n in parts:
 print('\n'.join(out))
 "#;
 
+/// The gate's own secrets (reviewer / role key files, reviewer.env) are never read out through inspect or a probe.
+pub fn secret_path(path: &str) -> bool {
+    let real = std::fs::canonicalize(path).map(|p| p.to_string_lossy().to_string()).unwrap_or_else(|_| path.to_string());
+    let cfg = format!("{}/.config/gui-gate/", home());
+    if real.starts_with(&cfg) && (real.ends_with(".key") || real.ends_with(".env")) {
+        return true;
+    }
+    std::env::vars().filter(|(k, _)| k.starts_with("GUI_GATE_") && k.ends_with("_KEY_FILE")).any(|(_, v)| {
+        let e = crate::sidefx::expanduser(v.trim());
+        std::fs::canonicalize(&e).map(|p| p.to_string_lossy().to_string()).unwrap_or(e) == real
+    })
+}
+
 /// Text of a file for the agent / the probing roles: text as is, PDF via pdftotext, office documents via the saved
 /// file's XML (python3), images described (size); capped to `cap` characters.
 pub fn read_file_text(path: &str, cap: usize) -> String {
     let p = std::path::Path::new(path);
+    if secret_path(path) {
+        return format!("{path}: refused (the gate's own key / settings file)");
+    }
     let Ok(md) = std::fs::metadata(p) else { return format!("{path}: does not exist") };
     if md.is_dir() {
         let mut names: Vec<String> = std::fs::read_dir(p).map(|rd| rd.flatten().map(|e| {
@@ -542,6 +558,11 @@ mod tests {
         assert!(read_file_text(t.to_str().unwrap(), 3).contains("more characters"));
         assert!(read_file_text("/no/such/file", 10).contains("does not exist"));
         assert!(read_file_text(d.to_str().unwrap(), 100).contains("a.txt"));
+        let k = d.join("rev.key");
+        std::fs::write(&k, "sk-secret").unwrap();
+        std::env::set_var("GUI_GATE_ROLE_TESTX_KEY_FILE", k.to_str().unwrap());
+        assert!(read_file_text(k.to_str().unwrap(), 100).contains("refused") && !read_file_text(k.to_str().unwrap(), 100).contains("sk-secret"));
+        std::env::remove_var("GUI_GATE_ROLE_TESTX_KEY_FILE");
         let f = env_facts("Open \"a.txt\" and the missing \"zz_nope.docx\" in LibreOffice Writer", "");
         assert!(f.contains("zz_nope.docx\": NOT found") && f.contains("hardware:"), "{f}");
     }
