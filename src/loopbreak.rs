@@ -279,6 +279,50 @@ mod tests {
         }
     }
 
+    /// 0.9.7 offline replay with two strikes: GG_LOOP_LOGS=<list> GG_LOOP_OUT=<tsv> cargo test -- --ignored loop_replay_097.
+    /// Same rows as loop_replay plus the reason (window / two_strikes); the window-state rule needs live fingerprints
+    /// that old logs do not have, so it is not replayed.
+    #[test]
+    #[ignore]
+    fn loop_replay_097() {
+        let (Ok(inp), Ok(outp)) = (std::env::var("GG_LOOP_LOGS"), std::env::var("GG_LOOP_OUT")) else { return };
+        let mut out = String::new();
+        for path in std::fs::read_to_string(inp).unwrap().lines() {
+            let Ok(txt) = std::fs::read_to_string(path) else { continue };
+            let mut t = LoopTrack::default();
+            let mut n_act = 0;
+            for line in txt.lines() {
+                let Ok(e) = serde_json::from_str::<serde_json::Value>(line) else { continue };
+                if e["ev"] != "action" {
+                    continue;
+                }
+                let dec = e["decision"].as_str().unwrap_or("");
+                let refused = e["executed"] != true && ["look_light", "look_full", "stop_loop", "ask_help", "review"].contains(&dec);
+                if e["executed"] != true && !refused {
+                    continue;
+                }
+                n_act += 1;
+                let tool = e["tool"].as_str().unwrap_or("");
+                let sig = e["sig"].as_str().unwrap_or("");
+                let kind = e["target"]["kind"].as_str().unwrap_or("");
+                let keys = sig.rsplit('|').next().unwrap_or("").to_lowercase();
+                if (tool == "press_key" || tool == "hotkey") && ["up", "down", "left", "right", "tab", "page_down", "page_up", "pagedown", "pageup"].contains(&keys.as_str()) {
+                    continue;
+                }
+                let aid = e["aid"].as_i64().unwrap_or(0);
+                let label = e["target"]["label"].as_str().unwrap_or("");
+                let mode = mode_of(tool, kind);
+                let tgt = if !label.is_empty() { label.chars().take(40).collect::<String>() } else if kind == "pixel" { "pixels".into() } else { "window".into() };
+                let failed = refused || e["is_error"] == true || e["effect"] == "none";
+                if let Some(l) = t.push_ext(sig, mode, &format!("{mode}|{tgt}"), failed, e["effect"] == "confirmed", None) {
+                    out.push_str(&format!("{path}\t{aid}\tnote\t{l}\t{}\t{}\t{n_act}\n", t.dominant_mode(), t.last_reason));
+                }
+            }
+            out.push_str(&format!("{path}\t{n_act}\tactions\t0\t-\t-\t{n_act}\n"));
+        }
+        std::fs::write(outp, out).unwrap();
+    }
+
     /// Offline replay: GG_LOOP_LOGS=<file with one gate log path per line> GG_LOOP_OUT=<tsv>
     /// cargo test -- --ignored loop_replay. One row per would-be event: log, aid, kind (note/block), level.
     #[test]

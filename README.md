@@ -77,6 +77,44 @@ JPEG q60 原尺寸的准确率与 PNG 相同（配对 18 好 / 17 差，p = 1.0�
 日志里每个带图的结果记一行 `{"ev": "img", "format", "images", "converted", "bytes_in", "bytes_out", "ms"}`，
 `gate_report` 里有累计字节数和编码耗时。
 
+## v0.9.7 新功能（opt-0.9.7 分支，默认全部关闭；详见 docs/sota-absorb-2026-10-22.md）
+
+吸收 OSWorld-Verified 榜上 Pointer、Intelligence-Indeed、OpenAPA、VLAA-GUI、HIPPO、Agent S3、OS-Symphony、UiPath、
+GTA1、CoACT-1 的做法，全部放在**同一个 gui-gate MCP 服务**里（Rust，单个二进制），不加任何额外服务或客户端插件。
+不设开关时行为与 0.9.6 完全相同。`GUI_GATE_097=1` 一次打开所有不需要模型的新功能，每项也可单开（`GUI_GATE_<名字>=1`）
+或在总开关下单关（`=0`）：
+
+| 开关 | 做什么（来源） |
+|---|---|
+| `INSPECT` | 新工具 `inspect`（唯一新增工具，只读）：kind=file 直接读文件（文本 / PDF / 办公文档存盘内容 / 图片原图）、env 可行性事实表、page 读 Chrome 标签页和网页文字（DevTools 端口）、region 截图局部放大、locate 按描述找元素、howto 怎么操作、memory 以往成功经验（Pointer、OpenAPA、VLAA、UiPath） |
+| `JOBS` | `run_command` 加 `mode: run/start/poll/stop`：长任务后台跑、轮询、停止；start 照样过风险检查（Pointer） |
+| `PHANTOM` | 模型编出来的工具名（triple_click、run_bash、type、key…）映射到真工具，否则给出最接近的工具名（Pointer） |
+| `TWO_STRIKES` | 同一机制连续失败两次就要求换方法；同一界面状态反复出现 3 次要求换策略（Pointer、VLAA、OS-Symphony） |
+| `FEASIBILITY_FIRST` | 任务简报 + 第一次 GUI 动作前必须先用 set_plan 给出能否完成的判断（只拦一次）（Pointer、II、HIPPO） |
+| `STATE_PLAN` | set_plan 里程碑写「最终状态」并可带可检查条件（文件存在/改过/含某文本、窗口标题、单元格…），可中途修改；`facts` 工作记忆（Pointer、VLAA、HIPPO、UiPath） |
+| `VERIFY_PLUS` | check_done 评估里程碑条件、读回已保存文件内容（VLAA、Pointer verifier） |
+| `MICRO_VERIFY` | 保存后检查是否弹出格式/另存为对话框或标题仍有未保存标记；输入后检查文字是否出现（VLAA） |
+| `SKILLS` | 内置分应用技能（原 bench 提示移入门内），随任务简报给出（Intelligence-Indeed） |
+| `SNAP` | 像素点击落在所有元素之外但离某元素 10 px 内时，改点该元素（UiPath crop-and-refine 的无模型版） |
+| `PICK` | `run_actions {pick_one:true}`：多个候选动作里按预测器挑最可能成功且安全的一个执行（GTA1、Agent S3 bBoN 的单步版） |
+| `DIGEST` | 每 8 步附一份进度摘要（计划、事实、最近步骤）（Pointer 压缩、OpenAPA、HIPPO） |
+| `GUI_GATE_MEMORY=文件` | 经验记忆：`gui-gate memory add --task-file T --log 门日志` 从成功运行生成；简报和 inspect memory 里给出相似任务的做法（HIPPO / muscle-mem）。评测时只能用不相交的任务集生成 |
+
+**可选模型角色**（全部默认关闭，审核模型仍是风险步骤的唯一裁决者，干活的主模型从不批准自己的步骤）：
+`feasibility`（可行性判断，只读探测）、`planner`（最终状态里程碑）、`verifier`（终态核验，只读探测，每会话最多 2 次）、
+`judge`（循环第 3 级 KEEP/SWITCH；pick_one 选择）、`search`（howto 教程）、`compact`（进度摘要）、`grounder`（视觉定位）。
+配置同审核模型：`GUI_GATE_ROLE_<NAME>_URL / _MODEL / _KEY 或 _KEY_FILE / _PROTOCOL / _TIMEOUT / _MAX_TOKENS / _MAX_STEPS`，
+或 `GUI_GATE_ROLE_<NAME>=reviewer` 直接复用审核模型的接口；也可写进 `reviewer.env`。探测型角色只能执行白名单里的只读命令
+（ls、cat、find（不带 -delete/-exec）、dpkg -l、gsettings get、python3 -c 只读代码……，不能重定向、不能后台、不能命令替换），
+还要再过门自己的风险检查。角色没配或调用失败时，功能退回无模型版本。
+
+**工具清单**（core 工具集）：驱动工具 `list_apps list_windows get_window_state launch_app bring_to_front click double_click
+right_click type_text press_key hotkey scroll set_value drag invoke_menu`；门工具 `request_human gate_task gate_report
+run_actions run_command check_done set_plan`；0.9.7 开 `INSPECT` 时多一个 `inspect`。关掉的功能不出现在 tools/list 里；
+`tests/test_v097.py` 固定了默认和全开两种情况下的工具列表。
+
+基准：`PI_TOOLS_097=1 PI_APP_HINTS=0 bash bench/run_bench.sh ...`（门内技能取代 bench 提示）。
+
 ## v0.4 新增（借鉴 Claude Code auto mode / Codex auto-review，见 docs/）
 
 - **看用户原话授权**：`--task` / `--task-file` / 环境变量 `GUI_GATE_TASK`，或 Agent 开头调用一次 `gate_task`

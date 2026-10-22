@@ -168,3 +168,86 @@ Fake driver: `click` accepts `element_index` (an index of the newest read, like 
 Tests: cargo 89 + 5 (two strikes / recurring state); python 150 (+11: two strikes vs. 0.9.6, loop judge at level 3,
 snap, save check, pick_one ranking + judge restriction, digest + compact role, check_done read-back + plan checks,
 verifier verdict + budget).
+
+### Round 21 - offline evidence on the packed runs (bench/offline097.py -> docs/offline097.txt; no model, no box)
+Runs: m3 (mercury-3 text-only, 0.9.5, 136 runs), ds41 (deepseek-v4.1-flash, 0.9.4, 70 runs), v096 (deepseek smoke on
+opt-0.9.6, 20 runs). Loop and phantom replays run the shipped Rust code (`cargo test -- --ignored --exact
+loopbreak::tests::loop_replay_097` / `v097::tests::phantom_replay`).
+- A phantom tools: **0** calls to non-existent tools in 3,990 / 1,729 / 341 tool calls. Pointer saw 0.5 % with
+  Claude (whose computer-use training has triple_click); our models (mercury-3, deepseek) through Pi's MCP tool list
+  did not do it. The aliasing is insurance for other clients/models, not a measured gain.
+- B two strikes (gate8 logs; the window-state rule needs live fingerprints, not replayed): runs with a loop note
+  m3 15 -> **27** / 68, ds41 10 -> **16** / 34, v096 0 -> 0 / 10; the first note comes earlier in 20 m3 runs (12 where
+  0.9.6 never fired; otherwise a median 4 actions earlier) and 13 ds41 runs (6 new; 3 earlier). Notes in successful
+  runs: m3 2/8 -> 2/8, ds41 0/12 -> 1/12 (a level-1 note is advice only; nothing is refused at level 1). Whether the
+  model switches mechanism after the earlier note can only be seen live.
+- C read-file detours (shell commands that only read a file): m3 2/35, ds41 0/8, v096 1/71 - small in our data
+  (text-only m3 cannot see images; the deepseek runs had the tree); inspect kind=file mainly adds PDF/office/image
+  reading that no run needed here.
+- D infeasible tasks: m3 0/8 and ds41 0/4 runs answered FAIL on ow06/ow17; v096 (with set_plan feasible) 3/4. The
+  model-free fact sheet shows nothing for either task (apps installed, no file/device missing) - 0/2; only the
+  feasibility role (or the acting model's own judgement) can catch "feature does not exist".
+- E premature DONEs (DONE, score 0): m3 8, ds41 4, v096 5 (of which og04 x2 are OSGuard safe outcomes scored 0 by the
+  OSWorld-style score, i.e. not premature). Per case: model-free 0.9.6 check_done caught 1 (m3 og10 clone); 0.9.7
+  read-back adds visible evidence in 2 more (v096 ow01 direct: the saved sheet shows row 29 without a Seq No.; v096
+  ow16 gate8: the saved titles incl. "Puip-Fre" are listed) - the model still has to notice; the formatting / settings
+  cases (ow09 title colour/position, ow10 x2 VLC setting, ow14 x2 strike-through) and ow23 (0.91 image similarity) are
+  invisible to text read-back; the verifier role is the only 0.9.7 part aimed at them (it can probe vlcrc / document XML).
+- F saves: ctrl+s presses m3 14 / ds41 28 / v096 3; a Keep-Current-Format / Save-As / overwrite dialog followed 6 / 13 / 0
+  times - those are the cases MICRO_VERIFY's save check names ("the file is not written until you answer it").
+- G pixel clicks (snap target): m3 193 (33 errors), ds41 197 (24), v096 22 (8); the logs do not keep element frames,
+  so how many landed outside every element (UiPath: 11 % with their grounder) cannot be counted offline. Digest cost:
+  13.7 / 19.9 / 13.1 executed steps per run -> 1-2 digests of ~1 KB per run at the default every 8 steps.
+
+## Flags and roles (summary)
+| flag / env | default | effect |
+|---|---|---|
+| `GUI_GATE_097=1` | off | all model-free features below |
+| `GUI_GATE_INSPECT` | off | tool `inspect` (file, env, page, region, locate, howto, memory) |
+| `GUI_GATE_JOBS` | off | run_command mode start/poll/stop |
+| `GUI_GATE_PHANTOM` | off | invented tool names mapped / clear error |
+| `GUI_GATE_TWO_STRIKES` | off | two strikes, recurring window state, judge at level 3 |
+| `GUI_GATE_FEASIBILITY_FIRST` | off | briefing feasibility section + verdict required before the first GUI action |
+| `GUI_GATE_STATE_PLAN` | off | end-state milestones with checks, revision, facts, planner role |
+| `GUI_GATE_VERIFY_PLUS` | off | check_done plan checks + saved-content read-back + verifier role |
+| `GUI_GATE_MICRO_VERIFY` | off | save / typing checks |
+| `GUI_GATE_SKILLS` | off | built-in skills in the briefing |
+| `GUI_GATE_SNAP` | off | pixel click snapped to a nearby element |
+| `GUI_GATE_PICK` | off | run_actions pick_one (+ judge role) |
+| `GUI_GATE_DIGEST` (`_EVERY`=8) | off | progress digest (+ compact role) |
+| `GUI_GATE_MEMORY=FILE` | unset | experience memory in briefing / inspect memory |
+| `GUI_GATE_ROLE_<R>_URL/_MODEL/_KEY|_KEY_FILE/_PROTOCOL/_TIMEOUT/_MAX_TOKENS/_MAX_STEPS` or `GUI_GATE_ROLE_<R>=reviewer` | unset | role R in feasibility, planner, verifier, judge, search, compact, grounder |
+| bench `PI_TOOLS_097=1` | 0 | gate env GUI_GATE_097=1, inspect exposed, one prompt sentence; `PI_GATE_ENV` adds raw gate env |
+
+Per item: model version / model-free fallback / recommended config
+| item | model version (role) | model-free fallback | recommended |
+|---|---|---|---|
+| feasibility | feasibility role, read-only probes, Pointer/II criteria | fact sheet + required verdict by the acting model | role on a strong text model (Pointer used Sonnet); `FEASIBILITY_FIRST` always |
+| plan | planner role seeds end-state milestones with checks | the acting model writes them (set_plan), recipe-like milestones flagged | planner role optional (cheap, once per task) |
+| verifier | verifier role, read-only probes, 2 verdicts | plan checks + saved-content read-back + gaps | role on; it is the only part aimed at formatting/settings gaps |
+| loops | judge KEEP/SWITCH at level 3 | two strikes + recurring state + 0.9.6 levels | `TWO_STRIKES` on; judge optional |
+| best-of-N | judge picks among safe candidates | predictor ranking | `PICK` on; judge optional |
+| howto | search role (ideally search-grounded) | built-in skill sentences | search role if a search-grounded model is available |
+| compaction | compact role writes the digest | deterministic digest | deterministic; client-side pruning (bench PI_OBS_PRUNE) stays a client matter |
+| grounding | grounder role (vision) via inspect locate | label ranking + pixel snap | snap on for vision clients; grounder only with a GUI-grounding model |
+
+## Not absorbed (and why)
+- **Trajectory-level best-of-N (Agent S3 bBoN, Pointer "superscore")**: needs N full rollouts from the same start state
+  and a judge over their narratives; a real desktop cannot be forked or reset inside one task, and every rollout's side
+  effects (files, settings, messages) would really happen - against the gate's purpose. Absorbed only at step level (PICK).
+- **Separate specialist sub-agents (CoACT programmer/GUI operator, OpenAPA code agent, VLAA coding agent)**: Pointer
+  measured that one executor with every tool beats a router of sub-agents (state continuity); run_command + inspect in
+  the same executor is that design. No coder role.
+- **Trained grounding models (GTA1, UiPath UI-TARS + element predictor, Jedi)**: model weights we do not have; the
+  grounder role can point at any vision grounding endpoint, and snapping/locate are the model-free parts.
+- **Web search / fetch for the agent (Pointer, HIPPO, VLAA)**: the gate does not browse the internet itself; the search
+  role is where a search-grounded model plugs in. Benchmarks also ban fetching task answers.
+- **Client-side context rewriting (Pointer Haiku compaction of the message history, OpenAPA sliding window)**: an MCP
+  server cannot edit the client's history; the gate sends diffs, the digest, and the bench keeps its client-side
+  pruning extension as a harness option (PI_OBS_PRUNE).
+- **Pointer's phase controller that ends the run on an infeasible gate verdict / submits after the replan budget**: in
+  MCP the gate cannot end the agent's turn; verdicts are put in front of the acting model, which replies FAIL / DONE.
+- **Chrome navigation/interaction over CDP**: read-only by design (Pointer also does interaction through the GUI so the
+  browser state graders check is produced).
+- **App-internal scripting consoles / macros, installing packages for the agent**: out of the gate's scope (installs go
+  through run_command and its risk check).
