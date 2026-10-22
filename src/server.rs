@@ -285,6 +285,8 @@ pub struct Inner {
     pub last_auto: HashMap<i64, Value>,
     /// tree rows the agent has already been shown, per "pid:window_id" (for auto-observe diffs): (snapshot, rows)
     pub seen_rows: HashMap<String, (String, HashSet<String>)>,
+    /// the last few executed actions, summarised for the reviewer
+    pub recent: Vec<Value>,
     pub risk_info: Value,
     pub cur_ack: bool,
 }
@@ -479,7 +481,7 @@ impl Gate {
                 want_shot: HashSet::new(), seen_pids: HashSet::new(), fg_sticky: false, pixel_pids: HashSet::new(),
                 probe_disabled: false, denied_effects: HashMap::new(), denials_consec: 0, denials_total: 0,
                 task_locked, task_source, in_batch: false, batch_ctx: Value::Null, pix_age: HashMap::new(),
-                last_auto: HashMap::new(), seen_rows: HashMap::new(), risk_info: Value::Null, cur_ack: false,
+                last_auto: HashMap::new(), seen_rows: HashMap::new(), recent: vec![], risk_info: Value::Null, cur_ack: false,
             }),
             shared, out, log: Arc::new(EventLog::new(log_path)), child: Mutex::new(child), child_cmd,
             init_params: Mutex::new(None), client_elicit, client_pending, restarts: AtomicU64::new(0), human,
@@ -952,6 +954,14 @@ impl Gate {
         }
     }
 
+    /// What the reviewer gets besides the action: the last 3 executed actions and, in a terminal, the command
+    /// line Enter would submit.
+    fn review_context(&self, inn: &Inner, ctx: &ActionCtx) -> (Value, Option<String>) {
+        let line = ctx.target.pid.filter(|p| crate::sidefx::is_terminal(*p))
+            .map(|p| inn.state.last_typed.get(&p).cloned().unwrap_or_default());
+        (json!(inn.recent.clone()), line)
+    }
+
     fn closed_menu_note(&self, err_txt: &str, label: &str, parent: Option<&str>) -> Value {
         let p = parent.map(|p| format!("open the menu \"{p}\" again and then click \"{label}\" in the same run_actions call, or use its keyboard shortcut"))
             .unwrap_or_else(|| format!("open its menu again, then click \"{label}\" in the same run_actions call"));
@@ -1201,6 +1211,14 @@ impl Gate {
             }
             let popup = rec.popup;
             inn.state.record_action(rec);
+            let keys_v = if truthy(args.get("keys")) { args.get("keys").cloned() } else { args.get("key").cloned() };
+            let typed_v = if truthy(args.get("text")) { pystr(args.get("text")) } else { pystr(args.get("value")) };
+            inn.recent.push(json!({"tool": name, "target": format!("{} \"{}\"", t.the_role(), trunc(t.the_label(), 60)),
+                "typed_text": trunc(&typed_v, 120), "keys": keys_v, "modifiers": args.get("modifiers"),
+                "failed": err, "result": trunc(&txt.lines().next().unwrap_or("").to_string(), 140)}));
+            if inn.recent.len() > 3 {
+                inn.recent.remove(0);
+            }
             inn.denials_consec = 0;
             let has_xy = args.get("x").is_some() && args.get("y").is_some();
             if let Some(p) = t.pid {
@@ -1507,10 +1525,17 @@ impl Gate {
             let keys = if truthy(ctx.args.get("keys")) { ctx.args.get("keys").cloned() } else { ctx.args.get("key").cloned() };
             let action = json!({"tool": ctx.tool, "target_kind": t.kind, "target_role": t.the_role(), "target_label": t.the_label(),
                 "x": t.x, "y": t.y, "typed_text": trunc(&pystr(ctx.args.get("text")), 300), "keys": keys, "why_doubted": dec.reason});
+            let mut action = action;
+            let (recent, line) = self.review_context(inn, ctx);
+            action["recent_actions"] = recent;
+            if let Some(l) = line {
+                action["terminal_input_line"] = json!(trunc(&l, 300));
+            }
             let window = t.pid.and_then(|p| inn.state.latest_for(Some(p), t.window_id)).map(|o| inn.state.get(o).text.clone()).unwrap_or_default();
             inn.inc("reviews");
             let r = rv.check_step(&inn.cfg.task, &action, &window);
             *judge = r.clone().unwrap_or(json!({"error": "reviewer did not answer"}));
+            judge["sent"] = json!({"action": action, "window_tail": tail(&window, 4000)});
             if let Some(r) = r {
                 if s(&r, "decision") == "allow" {
                     inn.inc("review_allowed");
@@ -1566,8 +1591,15 @@ impl Gate {
             let action = json!({"tool": ctx.tool, "target_role": t.the_role(), "target_label": label, "rule_that_fired": risk,
                 "risk_level": ctx.risk_level, "typed_text": trunc(&pystr(ctx.args.get("text")), 300), "keys": keys,
                 "window_titles": titles.iter().take(4).collect::<Vec<_>>(), "dialog_text": tail(&dialog, 1500)});
+            let mut action = action;
+            let (recent, line) = self.review_context(inn, ctx);
+            action["recent_actions"] = recent;
+            if let Some(l) = line {
+                action["terminal_input_line"] = json!(trunc(&l, 300));
+            }
             let r = rv.review(&inn.cfg.task, &action);
             inn.risk_info["reviewer"] = r.clone().unwrap_or(Value::Null);
+            inn.risk_info["reviewer_sent"] = action.clone();
             inn.inc("reviews");
             if let Some(r) = r {
                 if s(&r, "decision") == "allow" {
