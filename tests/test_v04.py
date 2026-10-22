@@ -494,5 +494,36 @@ class OcclusionHealTests(unittest.TestCase):
         self.assertEqual(self.state()["clicked"], [])
 
 
+class TreeDiffTests(unittest.TestCase):
+    """0.9.5: auto-observe sends only the rows of the window the agent has not seen yet."""
+
+    def tearDown(self):
+        self.c.close()
+
+    def test_auto_observe_sends_changed_rows_only(self):
+        self.c = Client("--human", "deny")
+        s = self.c.read()
+        r = self.c.call("click", element_token=f"{s}:0")  # Increment: only the count row changes
+        t = txt(r)
+        self.assertIn("Only rows that changed", t)
+        self.assertIn('count=1', t)
+        self.assertNotIn('"Delete file"', t)
+        obs = [e for e in self.c.events() if e.get("ev") == "obs" and e.get("auto")][-1]
+        self.assertTrue(obs["diff"])
+        self.assertLess(obs["rows_sent"], obs["rows"])
+        # the unchanged row's index is valid with the new snapshot id
+        newsnap = t.split("(snapshot ")[1].split(";")[0]
+        r2 = self.c.call("click", element_token=f"{newsnap}:0")
+        self.assertFalse(r2.get("isError"), txt(r2))
+        self.assertIn("count=2", txt(r2))
+
+    def test_diff_off_by_env(self):
+        self.c = Client("--human", "deny", env={"GUI_GATE_TREE_DIFF": "0"})
+        s = self.c.read()
+        t = txt(self.c.call("click", element_token=f"{s}:0"))
+        self.assertNotIn("Only rows that changed", t)
+        self.assertIn('"Delete file"', t)
+
+
 if __name__ == "__main__":
     unittest.main()
