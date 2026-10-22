@@ -18,7 +18,7 @@ use crate::updates;
 use crate::util::*;
 use regex::Regex;
 use serde_json::{json, Value};
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeSet, HashMap, HashSet};
 use std::io::BufRead;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::mpsc::{channel, Sender};
@@ -151,6 +151,35 @@ pub fn parent_menu(tree: &str, idx: i64) -> Option<String> {
     None
 }
 
+/// Which rows of a fresh tree to send when the agent already saw `seen` for this window: the rows it has not seen
+/// (new or changed, compared verbatim incl. their [N] index, so tokens of unchanged rows stay valid with the new
+/// snapshot id) plus their ancestors for context. None = send the whole tree (nothing seen yet, or >= thr changed).
+pub fn tree_delta(seen: &HashSet<String>, cur: &[&str], thr: f64) -> Option<Vec<usize>> {
+    if seen.is_empty() || cur.is_empty() {
+        return None;
+    }
+    let changed: Vec<usize> = (0..cur.len()).filter(|&i| !cur[i].trim().is_empty() && !seen.contains(cur[i])).collect();
+    if changed.len() as f64 >= thr * cur.len() as f64 {
+        return None;
+    }
+    let indent = |l: &str| l.len() - l.trim_start().len();
+    let mut keep: BTreeSet<usize> = changed.iter().copied().collect();
+    for &i in &changed {
+        let mut ind = indent(cur[i]);
+        for j in (0..i).rev() {
+            if ind == 0 {
+                break;
+            }
+            let d = indent(cur[j]);
+            if d < ind && !cur[j].trim().is_empty() {
+                keep.insert(j);
+                ind = d;
+            }
+        }
+    }
+    Some(keep.into_iter().collect())
+}
+
 pub fn short(text: &str, limit: usize) -> String {
     if text.chars().count() <= limit {
         return text.to_string();
@@ -254,6 +283,8 @@ pub struct Inner {
     pub batch_ctx: Value,
     pub pix_age: HashMap<i64, i64>,
     pub last_auto: HashMap<i64, Value>,
+    /// tree rows the agent has already been shown, per "pid:window_id" (for auto-observe diffs): (snapshot, rows)
+    pub seen_rows: HashMap<String, (String, HashSet<String>)>,
     pub risk_info: Value,
     pub cur_ack: bool,
 }
@@ -448,7 +479,7 @@ impl Gate {
                 want_shot: HashSet::new(), seen_pids: HashSet::new(), fg_sticky: false, pixel_pids: HashSet::new(),
                 probe_disabled: false, denied_effects: HashMap::new(), denials_consec: 0, denials_total: 0,
                 task_locked, task_source, in_batch: false, batch_ctx: Value::Null, pix_age: HashMap::new(),
-                last_auto: HashMap::new(), risk_info: Value::Null, cur_ack: false,
+                last_auto: HashMap::new(), seen_rows: HashMap::new(), risk_info: Value::Null, cur_ack: false,
             }),
             shared, out, log: Arc::new(EventLog::new(log_path)), child: Mutex::new(child), child_cmd,
             init_params: Mutex::new(None), client_elicit, client_pending, restarts: AtomicU64::new(0), human,
@@ -689,6 +720,15 @@ impl Gate {
             } else {
                 inn.inc("screenshots_skipped");
                 push_text(&mut res, "[gate] screenshot omitted (the element tree is enough here); call again with include_screenshot:true if you need pixels.".into());
+            }
+        }
+        if name == "get_window_state" && inn.cfg.tree_diff && !is_error(&res) {
+            let scv = sc(&res);
+            if let (Some(p), Some(md)) = (as_i64(scv.get("pid")).or(pid), scv.get("tree_markdown").and_then(|v| v.as_str())) {
+                let k = format!("{p}:{}", as_i64(scv.get("window_id")).or(as_i64(args.get("window_id"))).unwrap_or(0));
+                if args.get("query").is_none() && args.get("since").is_none() && !md.trim().is_empty() {
+                    inn.seen_rows.insert(k, (pystr(scv.get("snapshot_id")), md.lines().map(String::from).collect()));
+                }
             }
         }
         if name == "get_window_state" {
@@ -1393,18 +1433,46 @@ impl Gate {
             md = body.trim().lines().filter(|x| !x.starts_with("window_id=") && !x.starts_with("element_token for row"))
                 .collect::<Vec<_>>().join("\n");
         }
-        let mut lines: Vec<&str> = md.lines().collect();
+        let all_lines: Vec<&str> = md.lines().collect();
+        let snap0 = pystr(scv.get("snapshot_id"));
+        let wkey_s = format!("{pid}:{}", as_i64(scv.get("window_id")).or(as_i64(a.get("window_id"))).unwrap_or(0));
+        // changes only: rows the agent already saw for this window (same text, same [N]) are left out
+        let mut delta_note = String::new();
+        let mut lines: Vec<&str> = all_lines.clone();
+        if inn.cfg.tree_diff && note.is_empty() {
+            if let Some((prev_snap, seen)) = inn.seen_rows.get(&wkey_s) {
+                if let Some(idx) = tree_delta(seen, &all_lines, 0.5) {
+                    let shown: Vec<&str> = idx.iter().map(|&i| all_lines[i]).collect();
+                    delta_note = format!(" Only rows that changed since snapshot {prev_snap} are shown ({} of {} rows, with their parents); every other row is unchanged and keeps its [N], so {snap0}:N tokens work for those too.",
+                                         shown.len(), all_lines.len());
+                    if shown.is_empty() {
+                        delta_note = format!(" Nothing in the tree changed since snapshot {prev_snap} ({} rows); its [N] are valid as {snap0}:N.", all_lines.len());
+                    }
+                    lines = shown;
+                    inn.inc("tree_diffs");
+                }
+            }
+        }
         let mut more = String::new();
         if lines.len() > MAX_TREE_LINES {
             more = format!("\n... ({} more rows; call get_window_state for the full tree)", lines.len() - MAX_TREE_LINES);
             lines.truncate(MAX_TREE_LINES);
         }
+        if inn.cfg.tree_diff {
+            // what the agent has now seen of this window: shown rows + earlier rows that are still identical
+            let prev: HashSet<String> = inn.seen_rows.get(&wkey_s).filter(|_| note.is_empty()).map(|x| x.1.clone()).unwrap_or_default();
+            let shown: HashSet<&str> = lines.iter().copied().collect();
+            let seen: HashSet<String> = all_lines.iter().filter(|l| shown.contains(*l) || prev.contains(**l)).map(|l| l.to_string()).collect();
+            inn.seen_rows.insert(wkey_s.clone(), (snap0.clone(), seen));
+        }
+        inn.add("auto_obs_chars", lines.iter().map(|l| l.len() + 1).sum::<usize>() as f64);
+        inn.add("auto_obs_chars_full", all_lines.iter().take(MAX_TREE_LINES).map(|l| l.len() + 1).sum::<usize>() as f64);
         let mut busy = if loading_rx().is_match(&md) { " The UI still looks busy.".to_string() } else { String::new() };
         if partial && !shot {
             busy.push_str(" The tree is partial here (grid/canvas); read with include_screenshot:true before aiming by x/y.");
         }
         let snap = pystr(scv.get("snapshot_id"));
-        push_text(res, format!("[gate] Window right after the action (snapshot {snap}; tokens are {snap}:N, older tokens are stale).{busy}\n{note}{}{more}", lines.join("\n")));
+        push_text(res, format!("[gate] Window right after the action (snapshot {snap}; tokens are {snap}:N, older tokens are stale).{busy}{delta_note}\n{note}{}{more}", lines.join("\n")));
         if shot {
             if let Some(imgs) = r.get("content").and_then(|c| c.as_array()) {
                 let imgs: Vec<Value> = imgs.iter().filter(|c| s(c, "type") == "image").cloned().collect();
@@ -1417,7 +1485,8 @@ impl Gate {
         let aid = inn.aid;
         inn.last_auto.insert(pid, json!({"aid": aid, "t": now(), "wid": a.get("window_id"), "shot": shot, "snap": snap, "truncated": !more.is_empty()}));
         self.log.write(json!({"ev": "obs", "tool": "get_window_state", "auto": true, "ms": round_to(t0.elapsed().as_secs_f64() * 1000.0, 1),
-                              "screenshot": shot, "px": 0, "snapshot": snap, "pid": pid, "trimmed": !shot, "new_window": !note.is_empty()}));
+                              "screenshot": shot, "px": 0, "snapshot": snap, "pid": pid, "trimmed": !shot, "new_window": !note.is_empty(),
+                              "rows": all_lines.len(), "rows_sent": lines.len(), "diff": !delta_note.is_empty()}));
     }
 
     // ------------------------------------------------------------------ risk
@@ -1567,7 +1636,7 @@ impl Gate {
         inn.inc("dup_reads_saved");
         let snap = pystr(c.get("snap"));
         self.log.write(json!({"ev": "obs", "tool": "get_window_state", "cached": true, "snapshot": snap, "pid": pid, "screenshot": false, "ms": 0}));
-        Some(json!({"content": [{"type": "text", "text": format!("[gate] Nothing has been done since snapshot {snap}, which came back with your last action (same window, its tokens {snap}:N are current). Use that tree. Call again with fresh:true only if you really need a new read.")}],
+        Some(json!({"content": [{"type": "text", "text": format!("[gate] Nothing has been done since snapshot {snap}, which came back with your last action (same window, its tokens {snap}:N are current). Use that tree (when it listed only changed rows, the other rows are as in your earlier reads, same [N]). Call again with fresh:true only if you really need a new read.")}],
                     "structuredContent": {"snapshot_id": snap, "pid": pid, "window_id": c.get("wid"), "cached": true}}))
     }
 
@@ -1707,6 +1776,23 @@ mod tests {
         assert_eq!(parent_menu(tree, 4).as_deref(), Some("Export As"));
         assert_eq!(parent_menu(tree, 1), None);
         assert_eq!(parent_menu(tree, 99), None);
+    }
+
+    #[test]
+    fn tree_delta_rows() {
+        let prev = "- frame \"A\"\n  - [0] button \"OK\"\n  - [1] text \"count=0\"\n  - [2] button \"Cancel\"\n  - [3] list \"L\"\n    - [4] item \"x\"";
+        let seen: HashSet<String> = prev.lines().map(String::from).collect();
+        let cur_s = prev.replace("count=0", "count=1").replace("item \"x\"", "item \"y\"");
+        let cur: Vec<&str> = cur_s.lines().collect();
+        let idx = tree_delta(&seen, &cur, 0.5).unwrap();
+        let rows: Vec<&str> = idx.iter().map(|&i| cur[i]).collect();
+        assert_eq!(rows, vec!["- frame \"A\"", "  - [1] text \"count=1\"", "  - [3] list \"L\"", "    - [4] item \"y\""]);
+        // a shifted index counts as changed (its token would point elsewhere)
+        let shifted: Vec<&str> = vec!["- frame \"A\"", "  - [1] button \"OK\"", "  - [2] text \"count=0\"", "  - [3] button \"Cancel\"", "  - [4] list \"L\"", "    - [5] item \"x\""];
+        assert!(tree_delta(&seen, &shifted, 0.5).is_none());
+        assert!(tree_delta(&HashSet::new(), &cur, 0.5).is_none());
+        let same: Vec<&str> = prev.lines().collect();
+        assert_eq!(tree_delta(&seen, &same, 0.5), Some(vec![]));
     }
 
     #[test]

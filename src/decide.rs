@@ -128,6 +128,8 @@ pub struct GateConfig {
     pub model_name: String,
     /// exponent of the stuck factor (1+consec_fail)^e in the fail cost (0.9.5: 1.0, was 1.5)
     pub fail_exp: f64,
+    /// auto-observe sends only the rows of a window's tree the agent has not seen yet (GUI_GATE_TREE_DIFF=0 turns it off)
+    pub tree_diff: bool,
 }
 
 impl Default for GateConfig {
@@ -137,7 +139,7 @@ impl Default for GateConfig {
             risk_mode: "auto".into(), decider: "formula".into(), reviewer: false, collect: false, human_channel: "auto".into(),
             human_timeout: 120.0, toolset: "core".into(), auto_observe: true, delivery: "auto".into(), task: String::new(),
             batch: "auto".into(), deny_consecutive: 3, deny_total: 8, costs: default_costs(), weights: prior_weights(),
-            gains: prior_gains(), calib: Some(PRIOR_CALIB), model_name: "osworld_v2".into(), fail_exp: 1.0,
+            gains: prior_gains(), calib: Some(PRIOR_CALIB), model_name: "osworld_v2".into(), fail_exp: 1.0, tree_diff: true,
         }
     }
 }
@@ -161,6 +163,7 @@ impl GateConfig {
         if let Some(v) = env("GUI_GATE_HUMAN") { c.human_channel = v; }
         if let Some(v) = env("GUI_GATE_TOOLSET") { c.toolset = v; }
         c.auto_observe = env_flag("GUI_GATE_AUTO_OBSERVE", true);
+        c.tree_diff = env_flag("GUI_GATE_TREE_DIFF", true);
         if let Some(v) = env("GUI_GATE_DELIVERY") { c.delivery = v; }
         if let Some(v) = env("GUI_GATE_TASK") { c.task = v; }
         if c.task.is_empty() {
