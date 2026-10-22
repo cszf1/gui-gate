@@ -1,0 +1,1 @@
+DONE — In Thunderbird's "Set Up Your Existing Email Address" account setup tab I filled Name `anonym-x2024`, Email `anonym-x2024@outlook.com` and Password (8 masked characters), then left the form untouched on that page for your manual check (Continue not clicked).
