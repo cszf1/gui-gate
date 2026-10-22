@@ -1,0 +1,2 @@
+I can see a LibreOffice Writer document "Sample_Statutory_Declaration.docx" is open (currently on page 1 of 7). I'll insert a blank page right after the current page. Let me first focus the document and navigate to confirm page boundaries.
+

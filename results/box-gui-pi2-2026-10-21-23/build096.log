@@ -1,0 +1,15 @@
+   Compiling gui-gate v0.9.5 (/data/workspace/gui-gate)
+warning: unused doc comment
+   --> src/server.rs:175:1
+    |
+175 | / /// A token click the driver refused because another control owns the element's point:
+176 | | /// (desktop x, desktop y, owner role, owner label).
+    | |_---------------------------------------------------^
+    |   |
+    |   rustdoc does not generate documentation for macro invocations
+    |
+    = help: to document an item produced by a macro, the macro must produce the documentation as part of its expansion
+    = note: `#[warn(unused_doc_comments)]` (part of `#[warn(unused)]`) on by default
+
+warning: `gui-gate` (bin "gui-gate") generated 1 warning
+    Finished `release` profile [optimized] target(s) in 42.48s

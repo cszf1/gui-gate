@@ -1,0 +1,1 @@
+Last used cell is E29 — so data rows are 2..29 (28 rows). Now I'll fill B2:B29 with "No. n" text via a formula, then convert to values.
