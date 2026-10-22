@@ -133,7 +133,7 @@ jobs:
           test "$(stat -c %a "$HOME/.config/gui-gate/reviewer.key" 2>/dev/null || stat -f %Lp "$HOME/.config/gui-gate/reviewer.key")" = 600
           ! grep -q dummy-key "$HOME/.config/gui-gate/reviewer.env"
           gui-gate doctor | tee doctor.json || true
-          python3 -c "import json; d=json.load(open('doctor.json')); print('driver', d['driver_source'], d['driver_version'], 'tools', d['driver_tools']); assert (d['driver_tools'] or 0) > 0 and d['driver_source'] == 'bundled' and d['driver_version'] == '0.37.0'"
+          python3 -c "import json; d=json.load(open('doctor.json')); print('driver', d['driver_source'], d['driver_version'], 'tools', d['driver_tools']); assert (d['driver_tools'] or 0) > 0 and d['driver_source'] == 'bundled' and d['driver_version'] == '0.38.0'"
           # one download, Cua's installer never ran: no Cua PATH line, no ~/.cua-driver (bundled driver runs with telemetry off)
           ! grep -qs "cua-driver-rs installer" "$HOME/.bashrc" "$HOME/.zshrc" "$HOME/.bash_profile" "$HOME/.profile"
           if [ "$(uname -s)" = Linux ]; then test ! -e "$HOME/.cua-driver"; test -x "$HOME/.local/lib/gui-gate/cua-driver/cua-driver"; fi
@@ -201,7 +201,7 @@ jobs:
           $d = Get-Content doctor.json -Raw | ConvertFrom-Json
           Write-Host "driver $($d.driver_source) $($d.driver_version) tools $($d.driver_tools)"
           if (-not $d.driver_tools) { exit 1 }
-          if ($d.driver_source -ne 'bundled' -or $d.driver_version -ne '0.37.0') { throw "not the bundled driver: $($d.driver_source) $($d.driver_version)" }
+          if ($d.driver_source -ne 'bundled' -or $d.driver_version -ne '0.38.0') { throw "not the bundled driver: $($d.driver_source) $($d.driver_version)" }
           if (Get-ScheduledTask -TaskName 'cua-driver-serve' -ErrorAction SilentlyContinue) { throw "a cua-driver scheduled task exists" }
           if (Test-Path (Join-Path $env:USERPROFILE '.cua-driver')) { throw "~\.cua-driver was created" }
       - name: upgrade from an older release leaves no residue (Windows)
@@ -309,7 +309,11 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "session left processes" }
           & $exe uninstall
           Start-Sleep -Seconds 8
-          $after = Get-ChildItem -Recurse -Force $fh | ForEach-Object { $_.FullName.Substring($fh.Length) } | Sort-Object
+          # Windows' own per-profile caches that appear because this test fakes the profile (PowerShell startup data under
+          # AppData\Local\Microsoft, an empty AppData\Roaming) are not gui-gate's; everything else must be gone
+          $after = Get-ChildItem -Recurse -Force $fh | ForEach-Object { $_.FullName.Substring($fh.Length) } |
+            Where-Object { $_ -notlike '\AppData\Local\Microsoft*' -and $_ -notlike '\AppData\Roaming*' } | Sort-Object
+          Get-ChildItem -Recurse -Force (Join-Path $fh 'AppData\Roaming') -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "roaming: $($_.FullName)" }
           if ((@($before) -join '|') -ne (@($after) -join '|')) { Write-Host "before: $($before -join ', ')"; Write-Host "after: $($after -join ', ')"; throw "residue in the profile" }
           $up = ([Environment]::GetEnvironmentVariable('Path','User')) -split ';'
           if ($up | Where-Object { $_ -like '*gui-gate*' }) { throw "user Path still has gui-gate: $up" }

@@ -65,7 +65,7 @@ def main():
         if not [x for x in ours(mark) if f"sleep {mark}" in x[1]]:
             raise SystemExit("the background job did not start")
     p.stdin.close()
-    p.wait(timeout=20)
+    p.wait(timeout=30)
     time.sleep(3)
     left = ours(mark)
     if left:

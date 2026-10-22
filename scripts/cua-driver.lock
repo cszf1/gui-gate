@@ -1,8 +1,8 @@
 # The Cua Driver build every gui-gate release archive carries (scripts/fetch_driver.py checks these hashes, the
 # release's SHA256SUMS and its Sigstore bundle). Change only together with install.rs BUNDLED_DRIVER_VERSION.
-version=0.37.0
-tag=cua-driver-rs-v0.37.0
-linux-x86_64=cua-driver-rs-0.37.0-linux-x86_64.tar.gz d9421e143df6da3c695f5007f4db25fa619473d62965927e880c1dbfeeab1bf2
-linux-aarch64=cua-driver-rs-0.37.0-linux-arm64.tar.gz b20393b9b0c317daa05934cd6ee131b4250e34abb5967c596494634f3114fa89
-macos-universal=cua-driver-rs-0.37.0-darwin-universal.tar.gz 313847b3abd53658fcc8bb4d1f89c3540eed7cafc760685d7b522ba1127878b1
-windows-x86_64=cua-driver-rs-0.37.0-windows-x86_64.zip 109ab57e5c0a6e13a73e2ce2daf01b338027366eb1a20c6e0b413a10610bc8e2
+version=0.38.0
+tag=cua-driver-rs-v0.38.0
+linux-x86_64=cua-driver-rs-0.38.0-linux-x86_64.tar.gz a305cbd531f94d6413c5db300c33df68e3adbe8b92b9604cf8e645c5f6cb1fa3
+linux-aarch64=cua-driver-rs-0.38.0-linux-arm64.tar.gz ed8a51125ade8807c7717c3dde13d62bd31e6275e6b5e2446cf018d0b01d93b3
+macos-universal=cua-driver-rs-0.38.0-darwin-universal.tar.gz 121cf20cafd2cfa69dd720e8967350c6406b22e558be6889de7a1ae3343b6d4b
+windows-x86_64=cua-driver-rs-0.38.0-windows-x86_64.zip 997f20114ad3db227a854e1e5a886234f76405b155f4af70605d4b7ca4a436a1

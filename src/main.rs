@@ -115,6 +115,7 @@ fn main() {
         }
     }
     cleanup::startup();
+    proc::note_mac_daemon(); // before the driver starts: was CuaDriver.app's daemon already running?
     sidefx::mark_session_start();
     let mut cfg = GateConfig::from_env();
     let (mut mode, mut task_file, mut weights, mut log, mut driver, mut child) = (None, None, None, None, None, None);

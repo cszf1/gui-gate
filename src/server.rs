@@ -897,6 +897,9 @@ impl Gate {
         }
         self.log.write(json!({"ev": "shutdown", "jobs_killed": jobs}));
         self.child().close();
+        if let Some(d) = self.child_cmd.first() {
+            crate::proc::stop_mac_daemon_if_ours(d);
+        }
     }
 
     fn handle_call(self: &Arc<Self>, msg: Value) {

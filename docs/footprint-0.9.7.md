@@ -1,4 +1,4 @@
-# gui-gate 0.9.7 footprint: everything it writes, starts, changes or downloads, and how it is cleaned
+# gui-gate 0.9.7 / 0.9.8 footprint: everything it writes, starts, changes or downloads, and how it is cleaned
 
 Audit of 2026-10-22, file by file, for installing on a real personal machine. Every file in `src/` (all `.rs` and
 `skills.md`), `scripts/install.sh`, `scripts/install.ps1`, the new `scripts/fetch_driver.py` / `scripts/smoke_session.py`,
@@ -14,7 +14,7 @@ cross-checked mechanically (every `fs::write/create/remove/rename/copy`, `OpenOp
 | What | Where (default) | Created by | Removed by `gui-gate uninstall` |
 |---|---|---|---|
 | gate binary | `~/.local/bin/gui-gate` · Win `%LOCALAPPDATA%\Programs\gui-gate\bin\gui-gate.exe` | installer | yes (Windows: renamed to `gui-gate.exe.old`, a detached hidden `cmd` deletes it and the empty dirs ~3 s later) |
-| bundled Cua Driver 0.37.0 (official, unmodified, MIT) | Linux `~/.local/lib/gui-gate/cua-driver/` (cua-driver, cua-cursor-theme, wayland-helper/, LICENSE, THIRD_PARTY_NOTICES.md, VERSION) · Win `%LOCALAPPDATA%\Programs\gui-gate\cua-driver\` (cua-driver.exe, cua-driver-uia.exe, cua-cursor-theme.exe, LICENSE, ...) · macOS `~/.local/lib/gui-gate/cua-driver/` (LICENSE, VERSION only) | installer | yes |
+| bundled Cua Driver 0.38.0 (official, unmodified, MIT) | Linux `~/.local/lib/gui-gate/cua-driver/` (cua-driver, cua-cursor-theme, wayland-helper/, LICENSE, THIRD_PARTY_NOTICES.md, VERSION) · Win `%LOCALAPPDATA%\Programs\gui-gate\cua-driver\` (cua-driver.exe, cua-driver-uia.exe, cua-cursor-theme.exe, LICENSE, ...) · macOS `~/.local/lib/gui-gate/cua-driver/` (LICENSE, VERSION only) | installer | yes |
 | macOS: `CuaDriver.app` (Cua's signed app, byte-for-byte, so Accessibility / Screen Recording work as with Cua's installer) | `/Applications/CuaDriver.app` (`~/Applications/` when /Applications is not writable) | installer, **only if no CuaDriver.app is there yet** | yes, only when the manifest says gui-gate installed it: `cua-driver stop`, `lsregister -u`, delete, `tccutil reset Accessibility/ScreenCapture com.trycua.driver`; plus `~/.cua-driver`, `~/Library/Caches/cua-driver`, `~/Library/Application Support/Cua Driver` if they did not exist before the install |
 | install manifest | `<lib>/install-manifest` (`created_dir=`, `app=`, `owned_dir=` lines) | installer | yes (it is what uninstall reads) |
 | shell PATH line | `# gui-gate` + `export PATH="<bin>:$PATH"` in `~/.bashrc` (Linux bash) / `~/.bash_profile` (macOS bash) / `~/.zshrc` / `~/.profile`; only if `<bin>` was not on PATH; `--no-modify-path` skips it | install.sh | yes, every `# gui-gate` block (the blank line before it too) |
@@ -26,7 +26,7 @@ cross-checked mechanically (every `fs::write/create/remove/rename/copy`, `OpenOp
 | MCP client entries | `~/.claude.json` (via `claude mcp add`), `~/.pi/agent/mcp.json` (via `pi mcp add`), `~/.cursor/mcp.json`, `~/.codex/config.toml` — only for clients you name (`--client`, `gui-gate setup --client`) | `gui-gate setup` | yes: only entries whose command is gui-gate; other entries untouched. No `.bak` is written (atomic temp + rename); an old gui-gate-made `.bak` that differs only by our entry is deleted by `cleanup` |
 | dirs the installer had to create | e.g. `~/.local/bin`, `~/.local/lib`, `~/.local`, `~/.config`, `~/.cache` (fresh accounts only) | installer (recorded in the manifest only if missing before) | yes, if empty afterwards |
 | temp files | `$TMPDIR/gui-gate-job-<pid>-<n>.log` (unix: unlinked right after the job starts, only the open handle remains), `$TMPDIR/gui-gate-lo-<pid>/` (throwaway LibreOffice profile run_command suggests), Windows installer `%TEMP%\gui-gate-<guid>` (deleted in `finally`), install.sh `mktemp -d` (trap `rm -rf`) | gate / installer | gate exit deletes its own; next gate start and `cleanup` delete those of dead gates; `uninstall` deletes all |
-| processes | `gui-gate` (started by your MCP client), its child `cua-driver mcp`, agent commands (`run_command`, jobs) in their own process groups, desktop dialogs (zenity/kdialog/python3 GTK) while asking a person | MCP client / gate | stdin EOF or SIGTERM/SIGINT/SIGHUP: jobs and still-running commands killed (whole groups), driver closed (it exits on EOF itself). macOS: `cua-driver mcp` proxies to the CuaDriver.app daemon, which can stay running after the gate exits (Cua's design for TCC); `cua-driver stop` or uninstall stops it |
+| processes | `gui-gate` (started by your MCP client), its child `cua-driver mcp`, agent commands (`run_command`, jobs) in their own process groups, desktop dialogs (zenity/kdialog/python3 GTK) while asking a person | MCP client / gate | stdin EOF or SIGTERM/SIGINT/SIGHUP: jobs and still-running commands killed (whole groups), driver closed (it exits on EOF itself). macOS: `cua-driver mcp` proxies to the CuaDriver.app daemon (Cua's design for TCC); since 0.9.8 the gate (and `doctor`) stop that daemon at exit when it was not already running before and no other gui-gate uses it; uninstall stops it too |
 
 Nothing else: no services, scheduled tasks, LaunchAgents, systemd units, registry keys besides the user Path,
 browser profile changes, or files outside the paths above. Cua's own installer is **not** run any more, so its
@@ -96,9 +96,9 @@ side effects (Windows scheduled task `cua-driver-serve` running elevated at logo
 
 ## 4. The bundled Cua Driver (since 0.9.7)
 
-* `scripts/cua-driver.lock` pins Cua Driver 0.37.0 (`cua-driver-rs-v0.37.0`) and the sha256 of each platform asset.
+* `scripts/cua-driver.lock` pins Cua Driver 0.38.0 (`cua-driver-rs-v0.38.0`; 0.9.7 shipped 0.37.0) and the sha256 of each platform asset.
   At release time `fetch_driver.py` checks the pin, Cua's SHA256SUMS and the Sigstore bundle issued to
-  `trycua/cua/.github/workflows/cd-rust-cua-driver.yml@refs/tags/cua-driver-rs-v0.37.0`, then packs it into the
+  `trycua/cua/.github/workflows/cd-rust-cua-driver.yml@refs/tags/cua-driver-rs-v0.38.0`, then packs it into the
   gui-gate archive; on macOS CI also runs `codesign --verify --deep --strict` on the packed app.
 * Not embedded in the gate binary and never extracted at runtime: installed once, next to the gate, by the installer.
 * `find_driver`: `GUI_GATE_DRIVER=PATH` > bundled > (or `GUI_GATE_DRIVER=external`) pip / PATH / Cua's locations.
@@ -134,3 +134,18 @@ Path entry Cua's installer added (its uninstaller leaves them). Manually:
   extension into `~/.local/share/gnome-shell/extensions/winrects@cua` and changes a gsettings key, which uninstall
   does not undo).
 * Processes your MCP client keeps alive: uninstall reports a still-running gui-gate; it ends when the client closes it.
+
+## 7. 0.9.8: Cua Driver 0.38.0
+
+* `scripts/cua-driver.lock` moved to `cua-driver-rs-v0.38.0` (GitHub release of 2026-10-21; cua.ai's installer and
+  PyPI still served 0.37.0 that day). All four platform assets exist with Sigstore bundles; the Linux arm64 asset was
+  verified here (sha256 pin + SHA256SUMS + cosign), the others are verified by CI before packing.
+* Tool-list diff 0.37.0 → 0.38.0 (Linux arm64 binaries, `cua-driver mcp` → `tools/list`): 66 → 66 tools, none added or
+  removed, every input schema identical; only `get_accessibility_tree`'s description text changed. All 32 driver tools
+  the gate refers to (incl. REQUIRED_DRIVER_TOOLS get_window_state, list_windows, click, type_text, press_key) are
+  unchanged. With telemetry and update check off, 0.38.0 also writes nothing to `$HOME`.
+* Release notes: 1 feature (cua-sdk / proto contract) and 25 fixes, no breaking change listed; behaviour changes the
+  gate may notice: Windows list_windows omits the driver's own overlay windows, Windows tree completeness reported,
+  foreground Document text insertion verified, DOM click effects classified with readback, native Wayland windows in
+  desktop snapshots, unknown tools reported accurately. Output formats were not re-checked against a live desktop.
+* macOS: the CuaDriver.app daemon a session (or `doctor`) started is stopped at gate exit.
