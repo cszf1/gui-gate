@@ -326,3 +326,24 @@ class PlanTests(unittest.TestCase):
     def test_off_switch(self):
         self.c = Client("--human", "deny", env={"GUI_GATE_PLAN": "0"})
         self.assertNotIn("set_plan", [t["name"] for t in self.c.rpc("tools/list", {})["tools"]])
+
+
+class BatchCommandTests(unittest.TestCase):
+    def test_batch_stops_at_the_first_refused_step(self):
+        d = fixture()
+        c = Client("--human", "deny")
+        try:
+            r = c.call("run_actions", pid=4242, window_id=777, steps=[
+                {"tool": "run_command", "args": {"command": "echo one > a1.txt; echo out-$((40+2))", "cwd": d}},
+                {"tool": "press_key", "args": {"key": "f2"}},
+                {"tool": "run_command", "args": {"command": "cp file1 dir2", "cwd": d}},
+                {"tool": "run_command", "args": {"command": "echo three > a3.txt", "cwd": d}}])
+            t = txt(r)
+            self.assertIn("STOPPED: step 3 (run_command) was refused", t)
+            self.assertIn("out-42", t)  # a command step's output is kept in the batch result
+            self.assertTrue(os.path.exists(os.path.join(d, "a1.txt")))
+            self.assertFalse(os.path.exists(os.path.join(d, "a3.txt")))
+            self.assertEqual(open(os.path.join(d, "dir2/file1")).read(), "sentinel keep\n")
+        finally:
+            c.close()
+            shutil.rmtree(d, ignore_errors=True)

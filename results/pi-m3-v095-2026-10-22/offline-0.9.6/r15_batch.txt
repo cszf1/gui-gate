@@ -1,0 +1,6 @@
+== m3
+direct: run_actions calls 82 (1.21/run), steps 133, GUI actions executed in them 70, stopped early 15 (refused 0); batchable sequences of single calls 115 (321 calls) -> 206 model turns saveable (3.0/run)
+gate8: run_actions calls 86 (1.26/run), steps 203, GUI actions executed in them 124, stopped early 39 (refused 3); batchable sequences of single calls 117 (355 calls) -> 238 model turns saveable (3.5/run)
+== ds41
+direct: run_actions calls 71 (2.09/run), steps 417, GUI actions executed in them 370, stopped early 18 (refused 0); batchable sequences of single calls 47 (109 calls) -> 62 model turns saveable (1.8/run)
+gate8: run_actions calls 87 (2.56/run), steps 316, GUI actions executed in them 210, stopped early 28 (refused 9); batchable sequences of single calls 57 (139 calls) -> 82 model turns saveable (2.4/run)
