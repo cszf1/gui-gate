@@ -1,0 +1,11 @@
+I enlarged the text system-wide through XFCE's own Appearance settings.
+
+**What changed:**
+- **Default font:** Sans 14 → **Sans 20** (set in Settings Manager → Appearance → Fonts, applied live)
+- **Monospace font:** Monospace 13 → **Monospace 16** (terminals/editors)
+- **Custom DPI:** 120 → **144** (scales all GTK/XFCE text and widgets proportionally)
+- **Panel height:** 26 → 46 px, so the clock and window buttons on the top panel aren't clipped by the bigger text
+
+All values are saved in `~/.config/xfce4/xfconf/xfce-perchannel-xml/xsettings.xml` and take effect immediately — no restart needed. The Appearance → Fonts tab is left open, so if you want it even bigger (or want to come back down a step), just change **Default Font** size or **Custom DPI** there and it applies instantly.
+
+DONE — Enlarged screen text via XFCE Appearance → Fonts: default font Sans 14→20, monospace 13→16, custom DPI 120→144, and grew the top panel to 46px so its text isn't clipped.

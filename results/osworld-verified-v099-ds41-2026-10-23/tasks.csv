@@ -96,3 +96,20 @@ os-e0df059f-28a6-4169-924f-b9623e7184cc,os,1,,1.0,True,False,agent,5,90.2,6,0,50
 vlc-bba3381f-b5eb-4439-bd9e-80c22218d5a7,vlc,1,,0.0,False,False,agent,16,236.0,18,1,14749,161792,2199,0,,,"DONE — Opened the Apple HLS URL in the already-running VLC via Media > Open Network Stream (Ctrl+N), pasted the m3u8 link and pressed Play; the window is now titled ""master.m3u8 - VLC media player"" an",12,1,0
 thunderbird-5203d847-2572-4150-912a-03f062254390,thunderbird,2,,1.0,True,False,agent,45,1014.5,45,18,56561,1688704,6521,0,,,"DONE — In Thunderbird I created the Local Folder ""Promotions"" and added an enabled message filter ""Discount to Promotions"" on the outlook.com account (Subject contains ""discount"" → Move Message to Pro",30,0,0
 gimp-045bf3ff-9077-4b86-b483-a1040a949cff,gimp,1,,1.0,True,True,agent,11,63.5,13,0,17084,107392,1820,0,,,"FAIL — GIMP 3.0.4 has no CMYK image mode: its Image ▸ Mode menu (checked in the open window) lists only RGB, Grayscale and Indexed, and the ""Separate+"" plugin that would add CMYK is not installed (no ",7,0,0
+chrome-47543840-672a-467d-80df-8f7c3b9788c9,chrome,1,,0.0,False,False,timeout,55,3601.0,56,29,85382,3103488,13805,1,,,"The site shows a ""slide to verify"" bot check that I can't clear automatically. I'll ask for help.",32,0,0
+multi_apps-47f7c0ce-a5fb-4100-a5e6-65cd0e7429e5,multi_apps,1,,0.0,False,False,timeout,65,3600.9,68,28,51700,1784704,14451,0,,,I'll start by planning and surveying the environment.,42,0,0
+multi_apps-185f29bd-5da0-40a6-b69c-ba7f4e0324ef,multi_apps,1,setup_failed,,,,,,,,,,,,,,"Exception(""Setup step 4 failed: _open_setup - Failed to open file '/home/user/Desktop/review_template.pdf'. An error occurred while trying to send the request or the server responded with an error: 500 Server Error: INTERNAL SERVER ERROR for url: http://127.0.0.1:5000/setup/open_file"")",,,,0
+multi_apps-7ff48d5b-2df2-49da-b500-a5150ffc7f18,multi_apps,1,,0.0,False,False,agent,32,748.3,36,2,99039,766976,13375,0,,,"Content is saved in the file and matches the open window.
+
+DONE — Researched real 24-hour (7×24) self-service 港澳通行证签注机 points in 福田区 (cross-checked 深圳本地宝 2026 listing against 深圳之窗) and typed 5 address",44,1,0
+multi_apps-5990457f-2adb-467b-a4af-5c857c92d762,multi_apps,1,setup_failed,,,,,,,,,,,,,,Exception('Setup step 4 failed: _launch_setup - Failed to launch application: HTTP 500'),,,,0
+libreoffice_writer-0a0faba3-5580-44df-965d-f562a99b291c,libreoffice_writer,1,,0.0,False,False,agent,50,1548.2,54,14,95350,1675392,11536,0,,,"DONE — In the open Writer document I set a right-aligned tab stop at the right text margin (6.5 in / 9360 twips, the full text width of the page) on all paragraphs, inserted a Tab right after the thir",82,1,1
+os-3ce045a0-877b-42aa-8d2c-b4a863336ab8,os,3,relay_error,0.0,False,False,agent,54,987.1,53,12,49685,1576192,18504,0,"502 <html>
+<head><title>502 Bad Gateway</title></head>
+<body>
+<center><h1>502 Bad Gateway</h1></center>
+<hr><center>nginx/1.30.3</center>
+</body>
+</html>
+",,"DONE — Using Settings → Appearance → Fonts, the desktop font is set to a large size (Sans 20, Monospace 16) with Custom DPI 150% (144), and I also enlarged the window title font (Sans Bold 13) and the",36,0,0
+libreoffice_calc-4172ea6e-6b77-4edb-a9cc-c0014bd1603b,libreoffice_calc,1,,1.0,True,False,agent,15,332.9,15,1,22575,209408,2233,0,,,"DONE — Added a ""Maturity Date"" column (C) in `/data/home/MaturityDate.xlsx`, filling C2:C10 with `=A+B` (issue date + loan length in days), formatted as dates, and saved in xlsx format.",18,1,0

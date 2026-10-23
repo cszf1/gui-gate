@@ -1,0 +1,1 @@
+DONE — In the open Writer document I set a right-aligned tab stop at the right text margin (6.5 in / 9360 twips, the full text width of the page) on all paragraphs, inserted a Tab right after the third word of each of the 10 sentences so the rest aligns to the right margin with empty space in the middle, and saved the .docx.

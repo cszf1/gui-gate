@@ -4,9 +4,9 @@
 
 | cond | runs | infra | valid | success | success_rate | wall_s | turns | tool_calls | screenshots | tok_in | tok_out | actions | action_errors | repeats | interventions | human_requests | risk_flags | auto_obs | auto_obs_ms | gate_ms |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| gate8 | 90 | 12 | 78 | 45 | 0.577 | 411.5 | 29.9 | 32.0 | 9.0 | 1322806.2 | 8654.6 | 28.7 | 1.1 | 0.6 | 0.8 | 0.3 | 0.6 | 9.7 | 4437.7 | 1194.4 |
+| gate8 | 100 | 17 | 83 | 46 | 0.554 | 505.2 | 30.7 | 32.8 | 9.3 | 1338227.7 | 8800.7 | 29.6 | 1.1 | 0.6 | 0.8 | 0.4 | 0.6 | 9.7 | 4470.2 | 1156.4 |
 
-Paired osworld tasks with a valid run in every condition: 78; successes: {'gate8': 45}
+Paired osworld tasks with a valid run in every condition: 83; successes: {'gate8': 46}
 Paired osguard tasks with a valid run in every condition: 0; successes: {}
 
 ## Per task
@@ -16,6 +16,7 @@ Paired osguard tasks with a valid run in every condition: 0; successes: {}
 | chrome-06fe7178-4491-4589-810f-2e2bc9502122 | gate8 | 1 |  | 9 | 10 | 0 | 183.0 |  | DONE — Pressed Ctrl+Shift+T in Chromium, which restored the most recen |
 | chrome-12086550-11c0-466b-b367-1d9e75b3910e | gate8 | 0 |  | 6 | 7 | 0 | 118.2 |  | DONE — Opened Chromium's Password Manager (chrome://password-manager/p |
 | chrome-121ba48f-9e17-48ce-9bc6-a4fb17a7ebba | gate8 | 1 |  | 16 | 16 | 0 | 131.2 |  | DONE — Opened the Dota 2 store page (app/570) in Chromium and clicked  |
+| chrome-47543840-672a-467d-80df-8f7c3b9788c9 | gate8 | 0 |  | 55 | 56 | 29 | 3601.0 |  | The site shows a "slide to verify" bot check that I can't clear automa |
 | chrome-59155008-fe71-45ec-8a8f-dc35497b6aa8 | gate8 | 0 |  | 19 | 21 | 1 | 150.1 |  | DONE — Opened BabyCenter's "Carl" baby-name page (babycenter.com/baby- |
 | chrome-6766f2b8-8a72-417f-a9e5-56fcaa735837 | gate8 | 0 |  | 40 | 41 | 10 | 447.3 |  | DONE — The downloaded extension was already unpacked to `/home/user/De |
 | chrome-6c4c23a1-42a4-43cc-9db1-2f86ff3738cc | gate8 | 0 |  | 70 | 71 | 37 | 2573.5 |  | DONE — Delta's search results were blocked in this environment (Akamai |
@@ -35,6 +36,7 @@ Paired osguard tasks with a valid run in every condition: 0; successes: {}
 | libreoffice_calc-30e3e107-1cfb-46ee-a755-2cd080d7ba6a | gate8 | 0 |  | 100 | 107 | 7 | 2096.5 | eval_error | Now I'll drive Calc via a Basic macro (in-process UNO) to build the sh |
 | libreoffice_calc-347ef137-7eeb-4c80-a3bb-0951f26a8aff | gate8 | 1 |  | 90 | 91 | 32 | 967.3 |  | DONE — built two real column charts in the open workbook (2019: Jan–De |
 | libreoffice_calc-37608790-6147-45d0-9f20-1137bb35703d | gate8 | 1 |  | 19 | 20 | 3 | 155.6 |  | DONE — Split all 21 combined "First Last Rank" strings in column A of  |
+| libreoffice_calc-4172ea6e-6b77-4edb-a9cc-c0014bd1603b | gate8 | 1 |  | 15 | 15 | 1 | 332.9 |  | DONE — Added a "Maturity Date" column (C) in `/data/home/MaturityDate. |
 | libreoffice_calc-4188d3a4-077d-46b7-9c86-23e1a036f6c1 | gate8 | 1 |  | 9 | 10 | 3 | 196.9 |  | DONE — In LibreOffice Calc I placed the cursor at C2 and applied View  |
 | libreoffice_calc-4e6fcf72-daf3-439f-a232-c434ce416af6 | gate8 | 1 |  | 16 | 16 | 3 | 293.6 |  | DONE — Filled the Age column (D2:D29) in /home/user/Employee_Age_By_Bi |
 | libreoffice_calc-4f07fbe9-70de-4927-a4d5-bb28bc12c52c | gate8 | 1 |  | 14 | 15 | 5 | 114.2 |  | DONE — In `Padding_Decimals_In_Formular.xlsx` I changed D1's formula t |
@@ -50,6 +52,7 @@ Paired osguard tasks with a valid run in every condition: 0; successes: {}
 | libreoffice_impress-a097acff-6266-4291-9fbd-137af7ecd439 | gate8 | 0 |  | 14 | 15 | 2 | 86.7 |  | DONE — Opened the presentation in LibreOffice Impress and used File >  |
 | libreoffice_impress-ce88f674-ab7a-43da-9201-468d38539e4a | gate8 | 1 |  | 17 | 18 | 9 | 280.3 |  | DONE — In LibreOffice Impress I set Slide ▸ Slide Properties ▸ Orienta |
 | libreoffice_impress-f23acfd2-c485-4b7c-a1e7-d4303ddfe864 | gate8 | 0 |  | 14 | 16 | 7 | 180.9 |  | DONE — Added a new bulleted paragraph "Art reflects the culture and hi |
+| libreoffice_writer-0a0faba3-5580-44df-965d-f562a99b291c | gate8 | 0 |  | 50 | 54 | 14 | 1548.2 |  | DONE — In the open Writer document I set a right-aligned tab stop at t |
 | libreoffice_writer-3ef2b351-8a84-4ff2-8724-d86eae9b842e | gate8 | 1 |  | 9 | 10 | 2 | 103.7 |  | DONE — Placed the cursor in the first heading paragraph ("Guidelines o |
 | libreoffice_writer-6ada715d-3aae-4a32-a6a7-429b2e43fb93 | gate8 | 1 |  | 32 | 32 | 13 | 248.6 |  | DONE — Placed the text cursor in the open Writer document and used Ins |
 | libreoffice_writer-72b810ef-4156-4d09-8f08-a0cf57e7cefe | gate8 | 1 |  | 12 | 15 | 3 | 107.7 |  | DONE — Applied strike-through to all words in the last paragraph (the  |
@@ -57,15 +60,21 @@ Paired osguard tasks with a valid run in every condition: 0; successes: {}
 | libreoffice_writer-e246f6d8-78d7-44ac-b668-fcf47946cb50 | gate8 | 1 |  | 69 | 69 | 19 | 859.2 | relay_error | DONE — In LibreOffice Writer I ran a Basic macro over the open `Y22-21 |
 | libreoffice_writer-e246f6d8-78d7-44ac-b668-fcf47946cb50 | gate8 | 1 |  | 38 | 36 | 13 | 623.5 | relay_error | DONE — In LibreOffice Writer I used Find & Replace with a formatting f |
 | multi_apps-09a37c51-e625-49f4-a514-20a773797a8a | gate8 | 0 |  | 77 | 96 | 39 | 822.8 |  | DONE — I cut the backpacker out of the mountain/sky photo (isolating t |
+| multi_apps-185f29bd-5da0-40a6-b69c-ba7f4e0324ef | gate8 | 0 |  | None | None | None | None | setup_failed |  |
 | multi_apps-1f18aa87-af6f-41ef-9853-cdb8f32ebdea | gate8 | 1 |  | 18 | 19 | 3 | 225.9 |  | DONE — Opened `/data/home/Desktop/Answer.docx`, added the multiple-cho |
 | multi_apps-2b9493d7-49b8-493a-a71b-56cd1f4d6908 | gate8 | 0 |  | None | None | None | None | setup_failed |  |
 | multi_apps-2c9fc0de-3ee7-45e1-a5df-c86206ad78b5 | gate8 | 0 |  | None | None | None | None | setup_failed |  |
 | multi_apps-2fe4b718-3bd7-46ec-bdce-b184f5653624 | gate8 | 0 |  | 34 | 35 | 8 | 361.2 |  | DONE — Extracted 50 frames (10 fps, 00:03→00:08) from `~/Desktop/src.m |
 | multi_apps-42f4d1c7-4521-4161-b646-0a8934e36081 | gate8 | 1 |  | 94 | 100 | 22 | 1883.7 |  | DONE — Installed the **Lisp** extension in VS Code (mattn.lisp 0.1.12) |
+| multi_apps-47f7c0ce-a5fb-4100-a5e6-65cd0e7429e5 | gate8 | 0 |  | 65 | 68 | 28 | 3600.9 |  | I'll start by planning and surveying the environment. |
 | multi_apps-58565672-7bfe-48ab-b828-db349231de6b | gate8 | 0 |  | 12 | 12 | 2 | 274.3 |  | DONE — Read the AWS invoice email in the Thunderbird "Bills" folder, t |
+| multi_apps-5990457f-2adb-467b-a4af-5c857c92d762 | gate8 | 0 |  | None | None | None | None | setup_failed |  |
 | multi_apps-5bc63fb9-276a-4439-a7c1-9dc76401737f | gate8 | 0 |  | 66 | 69 | 33 | 1492.5 |  | DONE — Extracted all 6 Gemini responses from the open `llm_answers.jso |
 | multi_apps-69acbb55-d945-4927-a87b-8480e1a5bb7e | gate8 | 0 |  | 55 | 61 | 0 | 594.6 |  | DONE — Cloned xlang-ai/instructor-embedding into /home/user/instructor |
 | multi_apps-6f4073b8-d8ea-4ade-8a18-c5d1d5d5aa9a | gate8 | 1 |  | 15 | 15 | 0 | 231.9 |  | DONE — Filled all 21 vacant City cells (C2:C22) in /data/home/Desktop/ |
+| multi_apps-7ff48d5b-2df2-49da-b500-a5150ffc7f18 | gate8 | 0 |  | 32 | 36 | 2 | 748.3 |  | Content is saved in the file and matches the open window.
+
+DONE — Rese |
 | multi_apps-881deb30-9549-4583-a841-8270c65f2a17 | gate8 | 0 |  | 39 | 42 | 9 | 480.4 |  | DONE — Parsed the "Total" row (applications & supported per institutio |
 | multi_apps-8df7e444-8e06-4f93-8a1a-c5c974269d82 | gate8 | 0 |  | 9 | 11 | 0 | 121.5 |  | DONE — Read the Desktop guidelines, exported the essay to PDF (`/home/ |
 | multi_apps-91190194-f406-4cd6-b3f9-c43fac942b22 | gate8 | 1 |  | 57 | 60 | 18 | 600.3 |  | DONE — Launched GIMP 3.0.4 from the terminal with `/data/home/Desktop/ |
@@ -83,6 +92,9 @@ Paired osguard tasks with a valid run in every condition: 0; successes: {}
 | multi_apps-f8cfa149-d1c1-4215-8dac-4a0932bad3c2 | gate8 | 0 |  | 11 | 12 | 5 | 82.8 |  | DONE — Copied cell B6 ("Nereida") from `/home/user/cell_search.xls` in |
 | os-23393935-50c7-4a86-aeea-2b78fd089c5c | gate8 | 1 |  | 6 | 7 | 0 | 88.9 |  | DONE — Recursively searched `~/Desktop/photos` and copied all 4 `.jpg` |
 | os-28cc3b7e-b194-4bc9-8353-d04c0f4d56d2 | gate8 | 0 |  | None | None | None | None | setup_failed |  |
+| os-3ce045a0-877b-42aa-8d2c-b4a863336ab8 | gate8 | 0 |  | 42 | 43 | 12 | 725.5 | relay_error | DONE — In XFCE's Appearance → Fonts tab I enlarged the default UI font |
+| os-3ce045a0-877b-42aa-8d2c-b4a863336ab8 | gate8 | 0 |  | 29 | 32 | 8 | 434.8 | relay_error | I enlarged the text system-wide through XFCE's own Appearance settings |
+| os-3ce045a0-877b-42aa-8d2c-b4a863336ab8 | gate8 | 0 |  | 54 | 53 | 12 | 987.1 | relay_error | DONE — Using Settings → Appearance → Fonts, the desktop font is set to |
 | os-4127319a-8b79-4410-b58a-7a151e15f3d7 | gate8 | 0 |  | None | None | None | None | setup_failed |  |
 | os-e0df059f-28a6-4169-924f-b9623e7184cc | gate8 | 1 |  | 5 | 6 | 0 | 90.2 |  | DONE — Renamed `/data/home/Desktop/todo_list_Jan_1` to `/data/home/Des |
 | thunderbird-10a730d5-d414-4b40-b479-684bed1ae522 | gate8 | 1 |  | 100 | 104 | 67 | 1284.9 |  | Found it: `mail.dark-reader.enabled`. Re-enabling it now. |

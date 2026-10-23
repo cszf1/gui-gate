@@ -96,3 +96,30 @@ vlc-bba3381f-b5eb-4439-bd9e-80c22218d5a7-gate8-s0,vlc-bba3381f-b5eb-4439-bd9e-80
 thunderbird-5203d847-2572-4150-912a-03f062254390-gate8-s0,thunderbird-5203d847-2572-4150-912a-03f062254390,gate8,0,1,osworld,relay_error,971.1,agent,1.0,True,False,60,61,20,3045102,9673,"503: {""code"":""LITELLM_UNAVAILABLE"",""message"":""模型服务暂时不可用，请稍后重试"",""traceId"":""trace_5cb1c312-00b3-4d7f-8040-b95c6c5f6320""}","DONE — In Thunderbird I created a local folder ""Promotions"" under Local Folders and a filter for anonym-x2024@outlook.com (Tools > Message Filters > New) named ",39.0,6849.7,40.0,22.0,6874.8,3.0,,,,,
 thunderbird-5203d847-2572-4150-912a-03f062254390-gate8-s0-try2,thunderbird-5203d847-2572-4150-912a-03f062254390,gate8,0,2,osworld,,1014.5,agent,1.0,True,False,45,45,18,1745265,6521,,"DONE — In Thunderbird I created the Local Folder ""Promotions"" and added an enabled message filter ""Discount to Promotions"" on the outlook.com account (Subject c",30.0,6640.0,32.0,17.0,5379.9,,,,2.0,,
 gimp-045bf3ff-9077-4b86-b483-a1040a949cff-gate8-s0,gimp-045bf3ff-9077-4b86-b483-a1040a949cff,gate8,0,1,osworld,,63.5,agent,1.0,True,True,11,13,0,124476,1820,,"FAIL — GIMP 3.0.4 has no CMYK image mode: its Image ▸ Mode menu (checked in the open window) lists only RGB, Grayscale and Indexed, and the ""Separate+"" plugin t",7.0,2224.6,6.0,2.0,730.7,,,,,,
+chrome-47543840-672a-467d-80df-8f7c3b9788c9-gate8-s0,chrome-47543840-672a-467d-80df-8f7c3b9788c9,gate8,0,1,osworld,,3601.0,timeout,0.0,False,False,55,56,29,3188870,13805,,"The site shows a ""slide to verify"" bot check that I can't clear automatically. I'll ask for help.",32.0,105.5,22.0,11.0,5531.7,1.0,,,,1.0,
+multi_apps-47f7c0ce-a5fb-4100-a5e6-65cd0e7429e5-gate8-s0,multi_apps-47f7c0ce-a5fb-4100-a5e6-65cd0e7429e5,gate8,0,1,osworld,,3600.9,timeout,0.0,False,False,65,68,28,1836404,14451,,I'll start by planning and surveying the environment.,42.0,72.8,14.0,7.0,9509.7,1.0,,,,,
+multi_apps-185f29bd-5da0-40a6-b69c-ba7f4e0324ef-gate8-s0,multi_apps-185f29bd-5da0-40a6-b69c-ba7f4e0324ef,gate8,0,1,osworld,setup_failed,,,,,,,,,,,,,,,,,,,,,,,
+multi_apps-7ff48d5b-2df2-49da-b500-a5150ffc7f18-gate8-s0,multi_apps-7ff48d5b-2df2-49da-b500-a5150ffc7f18,gate8,0,1,osworld,,748.3,agent,0.0,False,False,32,36,2,866015,13375,,"Content is saved in the file and matches the open window.
+
+DONE — Researched real 24-hour (7×24) self-service 港澳通行证签注机 points in 福田区 (cross-checked 深圳本地宝 2026 l",44.0,74.1,5.0,2.0,561.2,3.0,1.0,1.0,,1.0,
+multi_apps-5990457f-2adb-467b-a4af-5c857c92d762-gate8-s0,multi_apps-5990457f-2adb-467b-a4af-5c857c92d762,gate8,0,1,osworld,setup_failed,,,,,,,,,,,,,,,,,,,,,,,
+libreoffice_writer-0a0faba3-5580-44df-965d-f562a99b291c-gate8-s0,libreoffice_writer-0a0faba3-5580-44df-965d-f562a99b291c,gate8,0,1,osworld,,1548.2,agent,0.0,False,False,50,54,14,1770742,11536,,"DONE — In the open Writer document I set a right-aligned tab stop at the right text margin (6.5 in / 9360 twips, the full text width of the page) on all paragra",82.0,2522.8,35.0,24.0,8377.5,1.0,1.0,1.0,,,
+os-3ce045a0-877b-42aa-8d2c-b4a863336ab8-gate8-s0,os-3ce045a0-877b-42aa-8d2c-b4a863336ab8,gate8,0,1,osworld,relay_error,725.5,agent,0.0,False,False,42,43,12,1028101,9745,"502 <html>
+<head><title>502 Bad Gateway</title></head>
+<body bgcolor=""white"">
+<center><h1>502 Bad Gateway</h1></center>
+<hr><center>alb</center>
+</body>
+<","DONE — In XFCE's Appearance → Fonts tab I enlarged the default UI font from Sans 10 to Sans 14 (monospace 10 → 13) and raised the custom DPI from 96 to 120, whi",29.0,105.1,28.0,10.0,2373.6,4.0,,,,,
+os-3ce045a0-877b-42aa-8d2c-b4a863336ab8-gate8-s0-try2,os-3ce045a0-877b-42aa-8d2c-b4a863336ab8,gate8,0,2,osworld,relay_error,434.8,agent,0.0,False,False,29,32,8,555654,6209,"503: {""code"":""SERVICE_BUSY"",""message"":""API Key 鉴权服务暂时不可用，请稍后重试"",""traceId"":""trace_ca3fc16d-f4ef-40a8-a050-57c725bb6f90""}","I enlarged the text system-wide through XFCE's own Appearance settings.
+
+**What changed:**
+- **Default font:** Sans 14 → **Sans 20** (set in Settings Manager → ",20.0,3356.3,18.0,8.0,1851.2,1.0,1.0,,,,
+os-3ce045a0-877b-42aa-8d2c-b4a863336ab8-gate8-s0-try3,os-3ce045a0-877b-42aa-8d2c-b4a863336ab8,gate8,0,3,osworld,relay_error,987.1,agent,0.0,False,False,54,53,12,1625877,18504,"502 <html>
+<head><title>502 Bad Gateway</title></head>
+<body>
+<center><h1>502 Bad Gateway</h1></center>
+<hr><center>nginx/1.30.3</center>
+</body>
+</html>","DONE — Using Settings → Appearance → Fonts, the desktop font is set to a large size (Sans 20, Monospace 16) with Custom DPI 150% (144), and I also enlarged the ",36.0,79.9,27.0,7.0,1723.4,5.0,,,,,
+libreoffice_calc-4172ea6e-6b77-4edb-a9cc-c0014bd1603b-gate8-s0,libreoffice_calc-4172ea6e-6b77-4edb-a9cc-c0014bd1603b,gate8,0,1,osworld,,332.9,agent,1.0,True,False,15,15,1,231983,2233,,"DONE — Added a ""Maturity Date"" column (C) in `/data/home/MaturityDate.xlsx`, filling C2:C10 with `=A+B` (issue date + loan length in days), formatted as dates, ",18.0,43.7,6.0,3.0,904.5,,1.0,1.0,,1.0,

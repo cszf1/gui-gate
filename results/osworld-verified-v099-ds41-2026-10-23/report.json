@@ -1,16 +1,16 @@
 {
  "summary": {
   "expected": 361,
-  "rows": 86,
-  "valid": 78,
-  "infra": 8,
-  "success": 45,
-  "score_sum": 46.75,
-  "rate_official": 12.47,
-  "rate_valid": 57.69,
+  "rows": 94,
+  "valid": 83,
+  "infra": 11,
+  "success": 46,
+  "score_sum": 47.75,
+  "rate_official": 12.74,
+  "rate_valid": 55.42,
   "infra_kinds": {
-   "relay_error": 1,
-   "setup_failed": 6,
+   "relay_error": 2,
+   "setup_failed": 8,
    "eval_error": 1
   },
   "domains": {
@@ -22,22 +22,22 @@
     "infra": 0
    },
    "os": {
-    "tasks": 4,
+    "tasks": 5,
     "valid": 2,
     "success": 2,
     "score_sum": 2.0,
-    "infra": 2
+    "infra": 3
    },
    "multi_apps": {
-    "tasks": 24,
-    "valid": 20,
+    "tasks": 28,
+    "valid": 22,
     "success": 8,
     "score_sum": 9.751459159339895,
-    "infra": 4
+    "infra": 6
    },
    "libreoffice_writer": {
-    "tasks": 4,
-    "valid": 3,
+    "tasks": 5,
+    "valid": 4,
     "success": 3,
     "score_sum": 3.0,
     "infra": 1
@@ -50,10 +50,10 @@
     "infra": 0
    },
    "libreoffice_calc": {
-    "tasks": 14,
-    "valid": 13,
-    "success": 13,
-    "score_sum": 13.0,
+    "tasks": 15,
+    "valid": 14,
+    "success": 14,
+    "score_sum": 14.0,
     "infra": 1
    },
    "vlc": {
@@ -64,8 +64,8 @@
     "infra": 0
    },
    "chrome": {
-    "tasks": 9,
-    "valid": 9,
+    "tasks": 10,
+    "valid": 10,
     "success": 2,
     "score_sum": 2.0,
     "infra": 0
@@ -86,73 +86,74 @@
    }
   },
   "stops": {
-   "agent": 77,
-   "max_turns": 1
+   "agent": 80,
+   "max_turns": 1,
+   "timeout": 2
   },
-  "turns_mean": 29.9,
-  "turns_median": 22.0,
-  "wall_mean_s": 411.5,
-  "wall_median_s": 262.4,
-  "wall_total_h": 9.67,
-  "tok_in": 3922049,
-  "tok_cache": 99256832,
-  "tok_out": 675059,
-  "screenshots": 700,
-  "tool_calls": 2495,
+  "turns_mean": 30.7,
+  "turns_median": 24,
+  "wall_mean_s": 505.2,
+  "wall_median_s": 280.3,
+  "wall_total_h": 12.68,
+  "tok_in": 4276095,
+  "tok_cache": 106796800,
+  "tok_out": 730459,
+  "screenshots": 774,
+  "tool_calls": 2724,
   "tools": {
-   "run_command": 692,
-   "run_actions": 450,
-   "get_window_state": 372,
-   "click": 302,
-   "set_plan": 180,
-   "list_windows": 142,
-   "press_key": 105,
-   "inspect": 103,
-   "check_done": 82,
-   "type_text": 24,
+   "run_command": 781,
+   "run_actions": 470,
+   "get_window_state": 402,
+   "click": 328,
+   "set_plan": 189,
+   "list_windows": 147,
+   "inspect": 132,
+   "press_key": 112,
+   "check_done": 85,
+   "type_text": 31,
+   "list_apps": 20,
    "scroll": 20,
-   "list_apps": 17,
-   "request_human": 5,
+   "request_human": 6,
    "update_plan": 1
   },
-  "request_human_calls": 5,
+  "request_human_calls": 6,
   "final_fail_answers": 6,
   "reviewer": {
-   "calls": 35,
+   "calls": 36,
    "decisions": {
-    "deny": 17,
+    "deny": 18,
     "allow": 18
    },
-   "ms_mean": 880.3,
-   "ms_median": 693.0
+   "ms_mean": 876.6,
+   "ms_median": 693.9
   },
   "roles": {
    "feasibility": {
-    "invocations": 78,
-    "http_calls": 465,
+    "invocations": 83,
+    "http_calls": 495,
     "errors": 2,
-    "ms_mean": 63759.2,
-    "ms_median": 49540.3,
-    "timed": 78,
-    "runs_using": 78
+    "ms_mean": 65766.9,
+    "ms_median": 51031.4,
+    "timed": 83,
+    "runs_using": 83
    },
    "planner": {
-    "invocations": 78,
-    "http_calls": 285,
+    "invocations": 83,
+    "http_calls": 299,
     "errors": 3,
     "ms_mean": null,
     "ms_median": null,
     "timed": 0,
-    "runs_using": 78
+    "runs_using": 83
    },
    "verifier": {
-    "invocations": 82,
-    "http_calls": 577,
+    "invocations": 85,
+    "http_calls": 602,
     "errors": 4,
-    "ms_mean": 59919.7,
-    "ms_median": 51166.9,
-    "timed": 82,
-    "runs_using": 77
+    "ms_mean": 63067.4,
+    "ms_median": 52137.3,
+    "timed": 85,
+    "runs_using": 80
    },
    "judge": {
     "invocations": 0,
@@ -173,13 +174,13 @@
     "runs_using": 1
    },
    "compact": {
-    "invocations": 214,
-    "http_calls": 214,
+    "invocations": 235,
+    "http_calls": 235,
     "errors": 0,
-    "ms_mean": 8693.9,
-    "ms_median": 7864.5,
-    "timed": 214,
-    "runs_using": 62
+    "ms_mean": 9092.6,
+    "ms_median": 8048.0,
+    "timed": 235,
+    "runs_using": 67
    },
    "grounder": {
     "invocations": 4,
@@ -192,11 +193,11 @@
    }
   },
   "gate": {
-   "actions": 2237,
-   "executed": 2172,
-   "interventions": 65,
-   "human_events": 27,
-   "loop_notes": 0,
+   "actions": 2455,
+   "executed": 2387,
+   "interventions": 68,
+   "human_events": 30,
+   "loop_notes": 2,
    "loop_refused": 1
   }
  },
@@ -9310,6 +9311,713 @@
      "plan": 2,
      "obs": 6,
      "delivery_fallback": 1,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "chrome-47543840-672a-467d-80df-8f7c3b9788c9",
+   "domain": "chrome",
+   "tag": "chrome-47543840-672a-467d-80df-8f7c3b9788c9-gate8-s0",
+   "attempts": 1,
+   "infra": null,
+   "stop": "timeout",
+   "wall_s": 3601.0,
+   "turns_monitor": 55,
+   "score": 0.0,
+   "success": false,
+   "final_fail": false,
+   "turns": 55,
+   "tool_calls": 56,
+   "screenshots": 29,
+   "tok_in": 85382,
+   "tok_cache": 3103488,
+   "tok_out": 13805,
+   "pi_error": null,
+   "final": "The site shows a \"slide to verify\" bot check that I can't clear automatically. I'll ask for help.",
+   "request_human": 1,
+   "tools": {
+    "set_plan": 1,
+    "list_windows": 1,
+    "inspect": 13,
+    "get_window_state": 10,
+    "run_actions": 2,
+    "click": 8,
+    "run_command": 20,
+    "request_human": 1
+   },
+   "gate": {
+    "actions": 32,
+    "executed": 32,
+    "interventions": 0,
+    "decisions": {
+     "direct": 32
+    },
+    "reviewer": [],
+    "reviewer_decisions": {},
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 7,
+      "errors": 0,
+      "ms": [
+       128104.6
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 1,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 4,
+      "http_calls": 4,
+      "errors": 0,
+      "ms": [
+       4912.0,
+       7914.0,
+       13174.0,
+       21113.0
+      ]
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 1,
+    "loop_notes": 1,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "plan": 1,
+     "briefing": 1,
+     "obs": 22,
+     "inspect": 13,
+     "img": 28,
+     "delivery_fallback": 1,
+     "action": 32,
+     "batch": 2,
+     "role": 4,
+     "loop_breaker": 1,
+     "command": 20,
+     "request_human": 1,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "multi_apps-47f7c0ce-a5fb-4100-a5e6-65cd0e7429e5",
+   "domain": "multi_apps",
+   "tag": "multi_apps-47f7c0ce-a5fb-4100-a5e6-65cd0e7429e5-gate8-s0",
+   "attempts": 1,
+   "infra": null,
+   "stop": "timeout",
+   "wall_s": 3600.9,
+   "turns_monitor": 65,
+   "score": 0.0,
+   "success": false,
+   "final_fail": false,
+   "turns": 65,
+   "tool_calls": 68,
+   "screenshots": 28,
+   "tok_in": 51700,
+   "tok_cache": 1784704,
+   "tok_out": 14451,
+   "pi_error": null,
+   "final": "I'll start by planning and surveying the environment.",
+   "request_human": 0,
+   "tools": {
+    "set_plan": 2,
+    "list_apps": 1,
+    "run_command": 31,
+    "list_windows": 1,
+    "inspect": 16,
+    "get_window_state": 6,
+    "click": 4,
+    "type_text": 3,
+    "press_key": 1,
+    "run_actions": 3
+   },
+   "gate": {
+    "actions": 42,
+    "executed": 42,
+    "interventions": 0,
+    "decisions": {
+     "direct": 42
+    },
+    "reviewer": [],
+    "reviewer_decisions": {},
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 5,
+      "errors": 0,
+      "ms": [
+       56872.2
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 2,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 5,
+      "http_calls": 5,
+      "errors": 0,
+      "ms": [
+       9835.0,
+       9703.0,
+       12817.0,
+       12651.0,
+       17503.0
+      ]
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 0,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "plan": 2,
+     "briefing": 1,
+     "obs": 14,
+     "command": 31,
+     "action": 42,
+     "inspect": 16,
+     "img": 28,
+     "delivery_fallback": 1,
+     "batch": 3,
+     "role": 5,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "multi_apps-185f29bd-5da0-40a6-b69c-ba7f4e0324ef",
+   "domain": "multi_apps",
+   "tag": "multi_apps-185f29bd-5da0-40a6-b69c-ba7f4e0324ef-gate8-s0",
+   "attempts": 1,
+   "infra": "setup_failed",
+   "stop": null,
+   "wall_s": null,
+   "turns_monitor": null,
+   "error": "Exception(\"Setup step 4 failed: _open_setup - Failed to open file '/home/user/Desktop/review_template.pdf'. An error occurred while trying to send the request or the server responded with an error: 500 Server Error: INTERNAL SERVER ERROR for url: http://127.0.0.1:5000/setup/open_file\")"
+  },
+  {
+   "task": "multi_apps-7ff48d5b-2df2-49da-b500-a5150ffc7f18",
+   "domain": "multi_apps",
+   "tag": "multi_apps-7ff48d5b-2df2-49da-b500-a5150ffc7f18-gate8-s0",
+   "attempts": 1,
+   "infra": null,
+   "stop": "agent",
+   "wall_s": 748.3,
+   "turns_monitor": 32,
+   "score": 0.0,
+   "success": false,
+   "final_fail": false,
+   "turns": 32,
+   "tool_calls": 36,
+   "screenshots": 2,
+   "tok_in": 99039,
+   "tok_cache": 766976,
+   "tok_out": 13375,
+   "pi_error": null,
+   "final": "Content is saved in the file and matches the open window.\n\nDONE \u2014 Researched real 24-hour (7\u00d724) self-service \u6e2f\u6fb3\u901a\u884c\u8bc1\u7b7e\u6ce8\u673a points in \u798f\u7530\u533a (cross-checked \u6df1\u5733\u672c\u5730\u5b9d 2026 listing against \u6df1\u5733\u4e4b\u7a97) and typed 5 address",
+   "request_human": 0,
+   "tools": {
+    "set_plan": 2,
+    "list_windows": 1,
+    "get_window_state": 2,
+    "run_command": 28,
+    "run_actions": 2,
+    "check_done": 1
+   },
+   "gate": {
+    "actions": 44,
+    "executed": 43,
+    "interventions": 1,
+    "decisions": {
+     "direct": 43,
+     "ask_human": 1
+    },
+    "reviewer": [],
+    "reviewer_decisions": {},
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 9,
+      "errors": 0,
+      "ms": [
+       160704.8
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 4,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 1,
+      "http_calls": 9,
+      "errors": 0,
+      "ms": [
+       69059.0
+      ]
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 5,
+      "http_calls": 5,
+      "errors": 0,
+      "ms": [
+       5037.0,
+       12629.0,
+       14052.0,
+       11376.0,
+       7732.0
+      ]
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 1,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "plan": 2,
+     "briefing": 1,
+     "obs": 5,
+     "command": 27,
+     "action": 44,
+     "img": 2,
+     "role": 6,
+     "delivery_fallback": 1,
+     "batch": 2,
+     "tree_extra": 1,
+     "check_done": 1,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "multi_apps-5990457f-2adb-467b-a4af-5c857c92d762",
+   "domain": "multi_apps",
+   "tag": "multi_apps-5990457f-2adb-467b-a4af-5c857c92d762-gate8-s0",
+   "attempts": 1,
+   "infra": "setup_failed",
+   "stop": null,
+   "wall_s": null,
+   "turns_monitor": null,
+   "error": "Exception('Setup step 4 failed: _launch_setup - Failed to launch application: HTTP 500')"
+  },
+  {
+   "task": "libreoffice_writer-0a0faba3-5580-44df-965d-f562a99b291c",
+   "domain": "libreoffice_writer",
+   "tag": "libreoffice_writer-0a0faba3-5580-44df-965d-f562a99b291c-gate8-s0",
+   "attempts": 1,
+   "infra": null,
+   "stop": "agent",
+   "wall_s": 1548.2,
+   "turns_monitor": 50,
+   "score": 0.0,
+   "success": false,
+   "final_fail": false,
+   "turns": 50,
+   "tool_calls": 54,
+   "screenshots": 14,
+   "tok_in": 95350,
+   "tok_cache": 1675392,
+   "tok_out": 11536,
+   "pi_error": null,
+   "final": "DONE \u2014 In the open Writer document I set a right-aligned tab stop at the right text margin (6.5 in / 9360 twips, the full text width of the page) on all paragraphs, inserted a Tab right after the thir",
+   "request_human": 0,
+   "tools": {
+    "list_apps": 1,
+    "run_command": 5,
+    "set_plan": 2,
+    "get_window_state": 11,
+    "run_actions": 10,
+    "click": 14,
+    "press_key": 6,
+    "type_text": 4,
+    "check_done": 1
+   },
+   "gate": {
+    "actions": 82,
+    "executed": 81,
+    "interventions": 1,
+    "decisions": {
+     "direct": 81,
+     "deny": 1
+    },
+    "reviewer": [
+     747.2
+    ],
+    "reviewer_decisions": {
+     "deny": 1
+    },
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 4,
+      "errors": 0,
+      "ms": [
+       84910.4
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 5,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 1,
+      "http_calls": 9,
+      "errors": 0,
+      "ms": [
+       262923.0
+      ]
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 6,
+      "http_calls": 6,
+      "errors": 0,
+      "ms": [
+       4178.0,
+       7985.0,
+       19588.0,
+       28836.0,
+       29080.0,
+       22030.0
+      ]
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 0,
+    "loop_notes": 1,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "briefing": 1,
+     "command": 5,
+     "action": 82,
+     "plan": 2,
+     "obs": 35,
+     "img": 13,
+     "batch": 6,
+     "delivery_fallback": 1,
+     "role": 7,
+     "loop_breaker": 1,
+     "tree_extra": 1,
+     "check_done": 1,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "os-3ce045a0-877b-42aa-8d2c-b4a863336ab8",
+   "domain": "os",
+   "tag": "os-3ce045a0-877b-42aa-8d2c-b4a863336ab8-gate8-s0-try3",
+   "attempts": 3,
+   "infra": "relay_error",
+   "stop": "agent",
+   "wall_s": 987.1,
+   "turns_monitor": 54,
+   "score": 0.0,
+   "success": false,
+   "final_fail": false,
+   "turns": 54,
+   "tool_calls": 53,
+   "screenshots": 12,
+   "tok_in": 49685,
+   "tok_cache": 1576192,
+   "tok_out": 18504,
+   "pi_error": "502 <html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.30.3</center>\r\n</body>\r\n</html>\r\n",
+   "final": "DONE \u2014 Using Settings \u2192 Appearance \u2192 Fonts, the desktop font is set to a large size (Sans 20, Monospace 16) with Custom DPI 150% (144), and I also enlarged the window title font (Sans Bold 13) and the",
+   "request_human": 0,
+   "tools": {
+    "set_plan": 3,
+    "list_windows": 5,
+    "run_command": 17,
+    "get_window_state": 15,
+    "run_actions": 7,
+    "click": 3,
+    "press_key": 1,
+    "inspect": 1,
+    "check_done": 1
+   },
+   "gate": {
+    "actions": 36,
+    "executed": 36,
+    "interventions": 0,
+    "decisions": {
+     "direct": 36
+    },
+    "reviewer": [],
+    "reviewer_decisions": {},
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 7,
+      "errors": 0,
+      "ms": [
+       62663.3
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 1,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 1,
+      "http_calls": 5,
+      "errors": 0,
+      "ms": [
+       55578.5
+      ]
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 4,
+      "http_calls": 4,
+      "errors": 0,
+      "ms": [
+       14008.0,
+       8386.0,
+       18026.0,
+       12373.0
+      ]
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 0,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "plan": 3,
+     "briefing": 1,
+     "obs": 27,
+     "command": 19,
+     "action": 36,
+     "img": 12,
+     "batch": 7,
+     "delivery_fallback": 1,
+     "role": 5,
+     "streak_hint": 1,
+     "inspect": 1,
+     "check_done": 1,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "libreoffice_calc-4172ea6e-6b77-4edb-a9cc-c0014bd1603b",
+   "domain": "libreoffice_calc",
+   "tag": "libreoffice_calc-4172ea6e-6b77-4edb-a9cc-c0014bd1603b-gate8-s0",
+   "attempts": 1,
+   "infra": null,
+   "stop": "agent",
+   "wall_s": 332.9,
+   "turns_monitor": 15,
+   "score": 1.0,
+   "success": true,
+   "final_fail": false,
+   "turns": 15,
+   "tool_calls": 15,
+   "screenshots": 1,
+   "tok_in": 22575,
+   "tok_cache": 209408,
+   "tok_out": 2233,
+   "pi_error": null,
+   "final": "DONE \u2014 Added a \"Maturity Date\" column (C) in `/data/home/MaturityDate.xlsx`, filling C2:C10 with `=A+B` (issue date + loan length in days), formatted as dates, and saved in xlsx format.",
+   "request_human": 0,
+   "tools": {
+    "set_plan": 2,
+    "list_apps": 1,
+    "list_windows": 2,
+    "get_window_state": 1,
+    "run_actions": 3,
+    "run_command": 5,
+    "check_done": 1
+   },
+   "gate": {
+    "actions": 18,
+    "executed": 17,
+    "interventions": 1,
+    "decisions": {
+     "direct": 17,
+     "ask_human": 1
+    },
+    "reviewer": [],
+    "reviewer_decisions": {},
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 5,
+      "errors": 0,
+      "ms": [
+       54842.6
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 2,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 1,
+      "http_calls": 7,
+      "errors": 0,
+      "ms": [
+       115334.0
+      ]
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 1,
+      "http_calls": 1,
+      "errors": 0,
+      "ms": [
+       4123.0
+      ]
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 1,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "plan": 2,
+     "briefing": 1,
+     "obs": 6,
+     "tree_extra": 7,
+     "img": 1,
+     "action": 18,
+     "delivery_fallback": 1,
+     "batch": 3,
+     "role": 2,
+     "command": 4,
+     "check_done": 1,
      "shutdown": 1
     }
    }

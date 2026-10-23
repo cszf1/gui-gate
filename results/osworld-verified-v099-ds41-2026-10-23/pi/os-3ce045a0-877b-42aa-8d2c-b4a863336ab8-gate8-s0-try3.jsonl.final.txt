@@ -1,0 +1,1 @@
+DONE — Using Settings → Appearance → Fonts, the desktop font is set to a large size (Sans 20, Monospace 16) with Custom DPI 150% (144), and I also enlarged the window title font (Sans Bold 13) and the panel row size (56 px) so labels like "Applications" are no longer cut off and all UI text on screen is clearly readable.
