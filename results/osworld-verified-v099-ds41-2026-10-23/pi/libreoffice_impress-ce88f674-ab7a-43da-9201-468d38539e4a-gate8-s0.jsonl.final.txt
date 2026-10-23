@@ -1,0 +1,1 @@
+DONE — In LibreOffice Impress I set Slide ▸ Slide Properties ▸ Orientation to **Portrait** (width 7.5″ × height 10″, replacing landscape 10.88″ × 8.13″) and saved the deck back to `/data/home/Desktop/AM_Last_Page_Template.pptx`, which now has a portrait slide size (`cx=7434263, cy=9948863`), so the slide is upright.

@@ -1,0 +1,1 @@
+DONE — In Thunderbird I created a local folder "Promotions" under Local Folders and a filter for anonym-x2024@outlook.com (Tools > Message Filters > New) named "Discount to Promotions" that matches Subject → contains → "discount" and performs Move Message to Promotions, enabled for incoming mail and saved.

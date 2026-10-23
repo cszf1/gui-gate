@@ -1,0 +1,1 @@
+DONE — Opened the Apple HLS URL in the already-running VLC via Media > Open Network Stream (Ctrl+N), pasted the m3u8 link and pressed Play; the window is now titled "master.m3u8 - VLC media player" and streaming with the position counter advancing (00:20 / 10:00).

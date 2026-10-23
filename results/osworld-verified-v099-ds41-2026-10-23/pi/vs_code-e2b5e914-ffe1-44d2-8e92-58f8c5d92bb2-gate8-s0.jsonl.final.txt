@@ -1,0 +1,1 @@
+DONE — In VS Code I searched Settings for `python.analysis.diagnosticSeverityOverrides`, used "Edit in settings.json", and set `{"reportMissingImports": "none"}`, then saved `/data/home/.config/Code/User/settings.json` (verified valid JSON and shown as a modified user setting in the Settings UI).

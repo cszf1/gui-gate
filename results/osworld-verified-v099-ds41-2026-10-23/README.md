@@ -39,43 +39,43 @@ pi/ (Pi event streams, base64 screenshots stripped, streaming deltas dropped; .t
 .final.txt = final answer, .err = Pi stderr), task/ (task text given to the gate), setup/ (versions, configs, launcher,
 task list, role check, reviewer check).
 
-## Results (state: partial 70/361)
+## Results (state: partial 90/361)
 
 
-- tasks expected 361, finished rows 67, valid 60, infra 7 {'relay_error': 1, 'setup_failed': 6}
-- **success 37/361 = 10.25 %** (official-style: every expected task counts, infra/missing = 0); 37/60 = 61.67 % of valid runs; score sum 38.75
-- stops {'agent': 59, 'max_turns': 1}; turns mean 30.5 / median 25.0; wall mean 382.7 s / median 262.2 s; total 6.55 h
-- tokens: input 2,962,189 + cache read 78,835,968, output 554,072; screenshots returned 556; tool calls 1963
-- request_human calls 4 (human=deny); FAIL answers 4
-- gate: {'actions': 1794, 'executed': 1738, 'interventions': 56, 'human_events': 22, 'loop_notes': 0, 'loop_refused': 1}
-- reviewer (System One): {'calls': 33, 'decisions': {'deny': 17, 'allow': 16}, 'ms_mean': 880.1, 'ms_median': 687.8}
+- tasks expected 361, finished rows 86, valid 78, infra 8 {'relay_error': 1, 'setup_failed': 6, 'eval_error': 1}
+- **success 45/361 = 12.47 %** (official-style: every expected task counts, infra/missing = 0); 45/78 = 57.69 % of valid runs; score sum 46.75
+- stops {'agent': 77, 'max_turns': 1}; turns mean 29.9 / median 22.0; wall mean 411.5 s / median 262.4 s; total 9.67 h
+- tokens: input 3,922,049 + cache read 99,256,832, output 675,059; screenshots returned 700; tool calls 2495
+- request_human calls 5 (human=deny); FAIL answers 6
+- gate: {'actions': 2237, 'executed': 2172, 'interventions': 65, 'human_events': 27, 'loop_notes': 0, 'loop_refused': 1}
+- reviewer (System One): {'calls': 35, 'decisions': {'deny': 17, 'allow': 18}, 'ms_mean': 880.3, 'ms_median': 693.0}
 
 | role | runs using | invocations | HTTP calls | errors | mean ms | median ms |
 |---|---|---|---|---|---|---|
-| feasibility | 60 | 60 | 366 | 2 | 63568.0 | 48773.7 |
-| planner | 60 | 60 | 217 | 2 | None | None |
-| verifier | 60 | 65 | 451 | 3 | 57617.5 | 46986.2 |
+| feasibility | 78 | 78 | 465 | 2 | 63759.2 | 49540.3 |
+| planner | 78 | 78 | 285 | 3 | None | None |
+| verifier | 77 | 82 | 577 | 4 | 59919.7 | 51166.9 |
 | judge | 0 | 0 | 0 | 0 | None | None |
 | search | 1 | 1 | 1 | 0 | 18235.6 | 18235.6 |
-| compact | 49 | 172 | 172 | 0 | 8594.0 | 7887.5 |
-| grounder | 2 | 2 | 2 | 0 | 3597.9 | 3597.9 |
+| compact | 62 | 214 | 214 | 0 | 8693.9 | 7864.5 |
+| grounder | 3 | 4 | 4 | 0 | 7050.5 | 3728.6 |
 
 (feasibility ms = the whole briefing incl. planner; compact/judge ms = gap to the previous gate event, approximate)
 
 | domain | tasks | valid | success | rate (of tasks) | score sum | infra |
 |---|---|---|---|---|---|---|
-| libreoffice_impress | 7 | 7 | 1 | 14.3 % | 1.0 | 0 |
-| os | 3 | 1 | 1 | 33.3 % | 1.0 | 2 |
-| multi_apps | 17 | 13 | 6 | 35.3 % | 7.75 | 4 |
+| libreoffice_impress | 8 | 8 | 2 | 25.0 % | 2.0 | 0 |
+| os | 4 | 2 | 2 | 50.0 % | 2.0 | 2 |
+| multi_apps | 24 | 20 | 8 | 33.3 % | 9.75 | 4 |
 | libreoffice_writer | 4 | 3 | 3 | 75.0 % | 3.0 | 1 |
-| vs_code | 6 | 6 | 5 | 83.3 % | 5.0 | 0 |
-| libreoffice_calc | 13 | 13 | 13 | 100.0 % | 13.0 | 0 |
-| vlc | 4 | 4 | 3 | 75.0 % | 3.0 | 0 |
-| chrome | 5 | 5 | 2 | 40.0 % | 2.0 | 0 |
-| gimp | 5 | 5 | 2 | 40.0 % | 2.0 | 0 |
-| thunderbird | 3 | 3 | 1 | 33.3 % | 1.0 | 0 |
+| vs_code | 7 | 7 | 6 | 85.7 % | 6.0 | 0 |
+| libreoffice_calc | 14 | 13 | 13 | 92.9 % | 13.0 | 1 |
+| vlc | 6 | 6 | 4 | 66.7 % | 4.0 | 0 |
+| chrome | 9 | 9 | 2 | 22.2 % | 2.0 | 0 |
+| gimp | 6 | 6 | 3 | 50.0 % | 3.0 | 0 |
+| thunderbird | 4 | 4 | 2 | 50.0 % | 2.0 | 0 |
 
-tools: {'run_command': 542, 'run_actions': 354, 'get_window_state': 297, 'click': 229, 'set_plan': 138, 'list_windows': 110, 'press_key': 91, 'inspect': 86, 'check_done': 65, 'type_text': 17, 'scroll': 17, 'list_apps': 12, 'request_human': 4, 'update_plan': 1}
+tools: {'run_command': 692, 'run_actions': 450, 'get_window_state': 372, 'click': 302, 'set_plan': 180, 'list_windows': 142, 'press_key': 105, 'inspect': 103, 'check_done': 82, 'type_text': 24, 'scroll': 20, 'list_apps': 17, 'request_human': 5, 'update_plan': 1}
 
 ## infra rows
 
@@ -86,3 +86,4 @@ tools: {'run_command': 542, 'run_actions': 354, 'get_window_state': 297, 'click'
 - multi_apps-2b9493d7-49b8-493a-a71b-56cd1f4d6908: setup_failed (attempts 1) Exception('Setup step 4 failed: _execute_setup - Setup command request failed: HTTP 500')
 - multi_apps-2c9fc0de-3ee7-45e1-a5df-c86206ad78b5: setup_failed (attempts 1) Exception('Setup step 4 failed: _execute_setup - Setup command request failed: HTTP 500')
 - multi_apps-f5c13cdd-205c-4719-a562-348ae5cd1d91: setup_failed (attempts 1) Exception('Setup step 5 failed: _launch_setup - Failed to launch application: HTTP 500')
+- libreoffice_calc-30e3e107-1cfb-46ee-a755-2cd080d7ba6a: eval_error (attempts 1) TypeError("'NoneType' object is not subscriptable")

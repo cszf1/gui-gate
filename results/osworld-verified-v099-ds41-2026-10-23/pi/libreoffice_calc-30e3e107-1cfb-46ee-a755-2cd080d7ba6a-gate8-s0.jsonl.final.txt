@@ -1,0 +1,1 @@
+Now I'll drive Calc via a Basic macro (in-process UNO) to build the sheet, formatting and pivots.

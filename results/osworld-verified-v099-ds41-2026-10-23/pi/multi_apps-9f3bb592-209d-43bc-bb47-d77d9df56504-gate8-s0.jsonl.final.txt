@@ -1,0 +1,1 @@
+DONE — Extracted the embedded subtitle track (mov_text, stream 2) from `/data/home/video.mp4` with ffmpeg into a valid 50-cue SubRip file at `/data/home/subtitles.srt`, in the same directory as the video.

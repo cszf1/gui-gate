@@ -1,0 +1,1 @@
+DONE — Opened Chromium's Password Manager (chrome://password-manager/passwords) in a new tab; no passwords were revealed. Note: the saved-passwords list is empty (no Etsy login stored on this profile), so there's no Etsy entry to inspect.

@@ -1,0 +1,1 @@
+DONE — In Thunderbird I created the Local Folder "Promotions" and added an enabled message filter "Discount to Promotions" on the outlook.com account (Subject contains "discount" → Move Message to Promotions on Local Folders), so matching inbox mail is auto-moved.
