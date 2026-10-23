@@ -1,24 +1,24 @@
 {
  "summary": {
   "expected": 361,
-  "rows": 94,
-  "valid": 83,
-  "infra": 11,
-  "success": 46,
-  "score_sum": 47.75,
-  "rate_official": 12.74,
-  "rate_valid": 55.42,
+  "rows": 100,
+  "valid": 88,
+  "infra": 12,
+  "success": 47,
+  "score_sum": 49.49,
+  "rate_official": 13.02,
+  "rate_valid": 53.41,
   "infra_kinds": {
    "relay_error": 2,
-   "setup_failed": 8,
+   "setup_failed": 9,
    "eval_error": 1
   },
   "domains": {
    "libreoffice_impress": {
-    "tasks": 8,
-    "valid": 8,
-    "success": 2,
-    "score_sum": 2.0,
+    "tasks": 10,
+    "valid": 10,
+    "success": 3,
+    "score_sum": 3.0,
     "infra": 0
    },
    "os": {
@@ -29,11 +29,11 @@
     "infra": 3
    },
    "multi_apps": {
-    "tasks": 28,
-    "valid": 22,
+    "tasks": 31,
+    "valid": 24,
     "success": 8,
-    "score_sum": 9.751459159339895,
-    "infra": 6
+    "score_sum": 10.492715783109766,
+    "infra": 7
    },
    "libreoffice_writer": {
     "tasks": 5,
@@ -71,8 +71,8 @@
     "infra": 0
    },
    "gimp": {
-    "tasks": 6,
-    "valid": 6,
+    "tasks": 7,
+    "valid": 7,
     "success": 3,
     "score_sum": 3.0,
     "infra": 0
@@ -86,74 +86,74 @@
    }
   },
   "stops": {
-   "agent": 80,
+   "agent": 83,
    "max_turns": 1,
-   "timeout": 2
+   "timeout": 4
   },
-  "turns_mean": 30.7,
-  "turns_median": 24,
-  "wall_mean_s": 505.2,
-  "wall_median_s": 280.3,
-  "wall_total_h": 12.68,
-  "tok_in": 4276095,
-  "tok_cache": 106796800,
-  "tok_out": 730459,
-  "screenshots": 774,
-  "tool_calls": 2724,
+  "turns_mean": 32.5,
+  "turns_median": 25.0,
+  "wall_mean_s": 606.5,
+  "wall_median_s": 289.3,
+  "wall_total_h": 15.86,
+  "tok_in": 4690852,
+  "tok_cache": 122897792,
+  "tok_out": 834845,
+  "screenshots": 848,
+  "tool_calls": 3049,
   "tools": {
-   "run_command": 781,
-   "run_actions": 470,
-   "get_window_state": 402,
-   "click": 328,
-   "set_plan": 189,
-   "list_windows": 147,
-   "inspect": 132,
-   "press_key": 112,
-   "check_done": 85,
-   "type_text": 31,
-   "list_apps": 20,
-   "scroll": 20,
+   "run_command": 859,
+   "run_actions": 526,
+   "get_window_state": 459,
+   "click": 376,
+   "set_plan": 198,
+   "list_windows": 174,
+   "inspect": 148,
+   "press_key": 139,
+   "check_done": 88,
+   "type_text": 32,
+   "scroll": 22,
+   "list_apps": 21,
    "request_human": 6,
    "update_plan": 1
   },
   "request_human_calls": 6,
   "final_fail_answers": 6,
   "reviewer": {
-   "calls": 36,
+   "calls": 41,
    "decisions": {
-    "deny": 18,
+    "deny": 23,
     "allow": 18
    },
-   "ms_mean": 876.6,
-   "ms_median": 693.9
+   "ms_mean": 893.5,
+   "ms_median": 695.8
   },
   "roles": {
    "feasibility": {
-    "invocations": 83,
-    "http_calls": 495,
+    "invocations": 88,
+    "http_calls": 524,
     "errors": 2,
-    "ms_mean": 65766.9,
-    "ms_median": 51031.4,
-    "timed": 83,
-    "runs_using": 83
+    "ms_mean": 65386.9,
+    "ms_median": 50437.9,
+    "timed": 88,
+    "runs_using": 88
    },
    "planner": {
-    "invocations": 83,
-    "http_calls": 299,
+    "invocations": 88,
+    "http_calls": 307,
     "errors": 3,
     "ms_mean": null,
     "ms_median": null,
     "timed": 0,
-    "runs_using": 83
+    "runs_using": 88
    },
    "verifier": {
-    "invocations": 85,
-    "http_calls": 602,
+    "invocations": 88,
+    "http_calls": 617,
     "errors": 4,
-    "ms_mean": 63067.4,
-    "ms_median": 52137.3,
-    "timed": 85,
-    "runs_using": 80
+    "ms_mean": 61801.6,
+    "ms_median": 51166.9,
+    "timed": 88,
+    "runs_using": 83
    },
    "judge": {
     "invocations": 0,
@@ -165,39 +165,39 @@
     "runs_using": 0
    },
    "search": {
-    "invocations": 1,
-    "http_calls": 1,
+    "invocations": 2,
+    "http_calls": 2,
     "errors": 0,
-    "ms_mean": 18235.6,
-    "ms_median": 18235.6,
-    "timed": 1,
-    "runs_using": 1
+    "ms_mean": 14358.5,
+    "ms_median": 14358.5,
+    "timed": 2,
+    "runs_using": 2
    },
    "compact": {
-    "invocations": 235,
-    "http_calls": 235,
+    "invocations": 268,
+    "http_calls": 268,
     "errors": 0,
-    "ms_mean": 9092.6,
-    "ms_median": 8048.0,
-    "timed": 235,
-    "runs_using": 67
+    "ms_mean": 9385.9,
+    "ms_median": 8395.0,
+    "timed": 268,
+    "runs_using": 72
    },
    "grounder": {
-    "invocations": 4,
-    "http_calls": 4,
+    "invocations": 5,
+    "http_calls": 5,
     "errors": 0,
-    "ms_mean": 7050.5,
-    "ms_median": 3728.6,
-    "timed": 4,
-    "runs_using": 3
+    "ms_mean": 6964.5,
+    "ms_median": 3799.0,
+    "timed": 5,
+    "runs_using": 4
    }
   },
   "gate": {
-   "actions": 2455,
-   "executed": 2387,
-   "interventions": 68,
-   "human_events": 30,
-   "loop_notes": 2,
+   "actions": 2776,
+   "executed": 2697,
+   "interventions": 79,
+   "human_events": 32,
+   "loop_notes": 3,
    "loop_refused": 1
   }
  },
@@ -10018,6 +10018,624 @@
      "role": 2,
      "command": 4,
      "check_done": 1,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "multi_apps-a74b607e-6bb5-4ea8-8a7c-5d97c7bbcd2a",
+   "domain": "multi_apps",
+   "tag": "multi_apps-a74b607e-6bb5-4ea8-8a7c-5d97c7bbcd2a-gate8-s0-try2",
+   "attempts": 2,
+   "infra": null,
+   "stop": "agent",
+   "wall_s": 1762.7,
+   "turns_monitor": 69,
+   "score": 0.0,
+   "success": false,
+   "final_fail": false,
+   "turns": 69,
+   "tool_calls": 70,
+   "screenshots": 25,
+   "tok_in": 70049,
+   "tok_cache": 2865664,
+   "tok_out": 15018,
+   "pi_error": null,
+   "final": "DONE \u2014 Enabled Developer mode on Chrome's `chrome://extensions` page and used \"Load unpacked\" to install `/home/user/Desktop/helloExtension`; it now appears as \"Hello Extensions 1.0\" (ID dbkoegkkphnio",
+   "request_human": 0,
+   "tools": {
+    "set_plan": 3,
+    "run_command": 21,
+    "list_windows": 3,
+    "run_actions": 6,
+    "press_key": 4,
+    "click": 11,
+    "get_window_state": 10,
+    "inspect": 10,
+    "type_text": 1,
+    "check_done": 1
+   },
+   "gate": {
+    "actions": 50,
+    "executed": 49,
+    "interventions": 1,
+    "decisions": {
+     "direct": 49,
+     "look_full": 1
+    },
+    "reviewer": [],
+    "reviewer_decisions": {},
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 4,
+      "errors": 0,
+      "ms": [
+       45881.4
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 2,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 1,
+      "http_calls": 2,
+      "errors": 0,
+      "ms": [
+       5340.4
+      ]
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 6,
+      "http_calls": 6,
+      "errors": 0,
+      "ms": [
+       6792.0,
+       6389.0,
+       4483.0,
+       22698.0,
+       9616.0,
+       6459.0
+      ]
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 0,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "command": 21,
+     "action": 50,
+     "briefing": 1,
+     "plan": 3,
+     "obs": 33,
+     "delivery_fallback": 1,
+     "batch": 6,
+     "img": 23,
+     "role": 7,
+     "inspect": 10,
+     "check_done": 1,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "multi_apps-aad10cd7-9337-4b62-b704-a857848cedf2",
+   "domain": "multi_apps",
+   "tag": "multi_apps-aad10cd7-9337-4b62-b704-a857848cedf2-gate8-s0",
+   "attempts": 1,
+   "infra": null,
+   "stop": "agent",
+   "wall_s": 341.5,
+   "turns_monitor": 26,
+   "score": 0.7412566237698713,
+   "success": false,
+   "final_fail": false,
+   "turns": 26,
+   "tool_calls": 27,
+   "screenshots": 4,
+   "tok_in": 23517,
+   "tok_cache": 380544,
+   "tok_out": 5327,
+   "pi_error": null,
+   "final": "DONE \u2014 Fetched the Apple HIG \"Searching\" page (via its official markdown source), trimmed it from the \"Searching\" heading up to just before \"Resources\", converted it to DOCX with LibreOffice, and save",
+   "request_human": 0,
+   "tools": {
+    "set_plan": 2,
+    "run_command": 16,
+    "list_windows": 1,
+    "get_window_state": 4,
+    "press_key": 1,
+    "run_actions": 1,
+    "click": 1,
+    "check_done": 1
+   },
+   "gate": {
+    "actions": 18,
+    "executed": 16,
+    "interventions": 2,
+    "decisions": {
+     "direct": 16,
+     "deny": 1,
+     "ask_human": 1
+    },
+    "reviewer": [
+     1529.8
+    ],
+    "reviewer_decisions": {
+     "deny": 1
+    },
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 6,
+      "errors": 0,
+      "ms": [
+       89540.4
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 1,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 1,
+      "http_calls": 7,
+      "errors": 0,
+      "ms": [
+       45912.9
+      ]
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 2,
+      "http_calls": 2,
+      "errors": 0,
+      "ms": [
+       14440.0,
+       4111.0
+      ]
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 1,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "command": 14,
+     "action": 18,
+     "briefing": 1,
+     "plan": 2,
+     "role": 3,
+     "obs": 6,
+     "img": 4,
+     "delivery_fallback": 1,
+     "batch": 1,
+     "tree_extra": 1,
+     "check_done": 1,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "libreoffice_impress-8979838c-54a5-4454-a2b8-3d135a1a5c8f",
+   "domain": "libreoffice_impress",
+   "tag": "libreoffice_impress-8979838c-54a5-4454-a2b8-3d135a1a5c8f-gate8-s0",
+   "attempts": 1,
+   "infra": null,
+   "stop": "agent",
+   "wall_s": 2139.3,
+   "turns_monitor": 62,
+   "score": 1.0,
+   "success": true,
+   "final_fail": false,
+   "turns": 62,
+   "tool_calls": 62,
+   "screenshots": 15,
+   "tok_in": 86353,
+   "tok_cache": 2834560,
+   "tok_out": 17780,
+   "pi_error": null,
+   "final": "DONE \u2014 In LibreOffice Impress I set slide 1's background to the Purple color (Slide \u25b8 Slide Properties \u25b8 Background \u25b8 Color) and put the slide title \"Should You Consider Studying Abroad?\" into the sli",
+   "request_human": 0,
+   "tools": {
+    "list_windows": 3,
+    "list_apps": 1,
+    "set_plan": 2,
+    "get_window_state": 12,
+    "click": 10,
+    "press_key": 6,
+    "inspect": 5,
+    "run_actions": 10,
+    "run_command": 12,
+    "check_done": 1
+   },
+   "gate": {
+    "actions": 70,
+    "executed": 70,
+    "interventions": 0,
+    "decisions": {
+     "direct": 70
+    },
+    "reviewer": [],
+    "reviewer_decisions": {},
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 7,
+      "errors": 0,
+      "ms": [
+       36118.6
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 1,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 1,
+      "http_calls": 6,
+      "errors": 0,
+      "ms": [
+       26556.8
+      ]
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 6,
+      "http_calls": 6,
+      "errors": 0,
+      "ms": [
+       7030.0,
+       8777.0,
+       11648.0,
+       10622.0,
+       13915.0,
+       5885.0
+      ]
+     },
+     "grounder": {
+      "invocations": 1,
+      "http_calls": 1,
+      "errors": 0,
+      "ms": [
+       6620.7
+      ]
+     }
+    },
+    "human_events": 0,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "briefing": 1,
+     "obs": 37,
+     "plan": 2,
+     "img": 15,
+     "action": 70,
+     "delivery_fallback": 1,
+     "role": 8,
+     "inspect": 5,
+     "batch": 10,
+     "streak_hint": 1,
+     "command": 12,
+     "tree_extra": 1,
+     "check_done": 1,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "multi_apps-415ef462-bed3-493a-ac36-ca8c6d23bf1b",
+   "domain": "multi_apps",
+   "tag": "multi_apps-415ef462-bed3-493a-ac36-ca8c6d23bf1b-gate8-s0",
+   "attempts": 1,
+   "infra": "setup_failed",
+   "stop": null,
+   "wall_s": null,
+   "turns_monitor": null,
+   "error": "Exception('Setup step 6 failed: _launch_setup - Failed to launch application: HTTP 500')"
+  },
+  {
+   "task": "gimp-8ea73f6f-9689-42ad-8c60-195bbf06a7ba",
+   "domain": "gimp",
+   "tag": "gimp-8ea73f6f-9689-42ad-8c60-195bbf06a7ba-gate8-s0",
+   "attempts": 1,
+   "infra": null,
+   "stop": "timeout",
+   "wall_s": 3601.2,
+   "turns_monitor": 85,
+   "score": 0.0,
+   "success": false,
+   "final_fail": false,
+   "turns": 85,
+   "tool_calls": 95,
+   "screenshots": 11,
+   "tok_in": 123891,
+   "tok_cache": 5228672,
+   "tok_out": 28565,
+   "pi_error": "Request timed out.",
+   "final": "",
+   "request_human": 0,
+   "tools": {
+    "run_command": 22,
+    "list_windows": 12,
+    "set_plan": 1,
+    "get_window_state": 13,
+    "run_actions": 23,
+    "click": 16,
+    "press_key": 8
+   },
+   "gate": {
+    "actions": 114,
+    "executed": 111,
+    "interventions": 3,
+    "decisions": {
+     "direct": 111,
+     "look_light": 1,
+     "look_full": 2
+    },
+    "reviewer": [
+     989.5
+    ],
+    "reviewer_decisions": {
+     "deny": 1
+    },
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 3,
+      "errors": 0,
+      "ms": [
+       77667.6
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 2,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 12,
+      "http_calls": 12,
+      "errors": 0,
+      "ms": [
+       8953.0,
+       13501.0,
+       11088.0,
+       24306.0,
+       11860.0,
+       11750.0,
+       11907.0,
+       17044.0,
+       17265.0,
+       32637.0,
+       23045.0,
+       15832.0
+      ]
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 0,
+    "loop_notes": 1,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "command": 22,
+     "action": 114,
+     "briefing": 1,
+     "obs": 63,
+     "plan": 1,
+     "batch": 23,
+     "delivery_fallback": 1,
+     "role": 12,
+     "img": 10,
+     "retro_repeat": 2,
+     "loop_breaker": 1,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "libreoffice_impress-7ae48c60-f143-4119-b659-15b8f485eb9a",
+   "domain": "libreoffice_impress",
+   "tag": "libreoffice_impress-7ae48c60-f143-4119-b659-15b8f485eb9a-gate8-s0",
+   "attempts": 1,
+   "infra": null,
+   "stop": "timeout",
+   "wall_s": 3601.3,
+   "turns_monitor": 70,
+   "score": 0.0,
+   "success": false,
+   "final_fail": false,
+   "turns": 70,
+   "tool_calls": 71,
+   "screenshots": 19,
+   "tok_in": 110947,
+   "tok_cache": 4791552,
+   "tok_out": 37696,
+   "pi_error": null,
+   "final": "I'll start by planning and inspecting the environment.",
+   "request_human": 0,
+   "tools": {
+    "set_plan": 1,
+    "list_windows": 8,
+    "get_window_state": 18,
+    "run_actions": 16,
+    "run_command": 7,
+    "click": 10,
+    "press_key": 8,
+    "scroll": 2,
+    "inspect": 1
+   },
+   "gate": {
+    "actions": 69,
+    "executed": 64,
+    "interventions": 5,
+    "decisions": {
+     "direct": 64,
+     "ask_human": 1,
+     "look_light": 2,
+     "deny": 1,
+     "look_full": 1
+    },
+    "reviewer": [
+     902.4,
+     941.7,
+     714.4
+    ],
+    "reviewer_decisions": {
+     "deny": 3
+    },
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 9,
+      "errors": 0,
+      "ms": [
+       46189.4
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 2,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 1,
+      "http_calls": 1,
+      "errors": 0,
+      "ms": [
+       10481.4
+      ]
+     },
+     "compact": {
+      "invocations": 7,
+      "http_calls": 7,
+      "errors": 0,
+      "ms": [
+       4262.0,
+       5610.0,
+       8381.0,
+       5158.0,
+       3253.0,
+       12625.0,
+       7300.0
+      ]
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 1,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "plan": 1,
+     "briefing": 1,
+     "obs": 56,
+     "img": 19,
+     "delivery_fallback": 1,
+     "action": 69,
+     "batch": 16,
+     "command": 5,
+     "role": 8,
+     "retro_repeat": 3,
+     "inspect": 1,
      "shutdown": 1
     }
    }

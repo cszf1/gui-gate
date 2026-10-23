@@ -1,0 +1,1 @@
+DONE — Fetched the Apple HIG "Searching" page (via its official markdown source), trimmed it from the "Searching" heading up to just before "Resources", converted it to DOCX with LibreOffice, and saved it as `/home/user/Desktop/notes.docx` (currently open in LibreOffice Writer).

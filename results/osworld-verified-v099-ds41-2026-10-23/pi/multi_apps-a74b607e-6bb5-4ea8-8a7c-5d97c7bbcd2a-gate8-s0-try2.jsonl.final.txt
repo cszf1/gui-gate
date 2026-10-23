@@ -1,0 +1,1 @@
+DONE — Enabled Developer mode on Chrome's `chrome://extensions` page and used "Load unpacked" to install `/home/user/Desktop/helloExtension`; it now appears as "Hello Extensions 1.0" (ID dbkoegkkphniomijanofeipefimcepbi) with its enable toggle set to On, and the path is recorded in Chrome's Preferences.
