@@ -1,0 +1,1 @@
+DONE — In LibreOffice Impress I set slide 1's background to the Purple color (Slide ▸ Slide Properties ▸ Background ▸ Color) and put the slide title "Should You Consider Studying Abroad?" into the slide's speaker notes, then saved the file as /data/home/Desktop/186_3.pptx (verified on disk: `p:bg` = 800080 and notesSlide1.xml contains the title).

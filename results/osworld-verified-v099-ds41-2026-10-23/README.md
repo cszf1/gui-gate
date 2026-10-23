@@ -39,43 +39,43 @@ pi/ (Pi event streams, base64 screenshots stripped, streaming deltas dropped; .t
 .final.txt = final answer, .err = Pi stderr), task/ (task text given to the gate), setup/ (versions, configs, launcher,
 task list, role check, reviewer check).
 
-## Results (state: partial 100/361)
+## Results (state: partial 108/361)
 
 
-- tasks expected 361, finished rows 94, valid 83, infra 11 {'relay_error': 2, 'setup_failed': 8, 'eval_error': 1}
-- **success 46/361 = 12.74 %** (official-style: every expected task counts, infra/missing = 0); 46/83 = 55.42 % of valid runs; score sum 47.75
-- stops {'agent': 80, 'max_turns': 1, 'timeout': 2}; turns mean 30.7 / median 24; wall mean 505.2 s / median 280.3 s; total 12.68 h
-- tokens: input 4,276,095 + cache read 106,796,800, output 730,459; screenshots returned 774; tool calls 2724
+- tasks expected 361, finished rows 100, valid 88, infra 12 {'relay_error': 2, 'setup_failed': 9, 'eval_error': 1}
+- **success 47/361 = 13.02 %** (official-style: every expected task counts, infra/missing = 0); 47/88 = 53.41 % of valid runs; score sum 49.49
+- stops {'agent': 83, 'max_turns': 1, 'timeout': 4}; turns mean 32.5 / median 25.0; wall mean 606.5 s / median 289.3 s; total 15.86 h
+- tokens: input 4,690,852 + cache read 122,897,792, output 834,845; screenshots returned 848; tool calls 3049
 - request_human calls 6 (human=deny); FAIL answers 6
-- gate: {'actions': 2455, 'executed': 2387, 'interventions': 68, 'human_events': 30, 'loop_notes': 2, 'loop_refused': 1}
-- reviewer (System One): {'calls': 36, 'decisions': {'deny': 18, 'allow': 18}, 'ms_mean': 876.6, 'ms_median': 693.9}
+- gate: {'actions': 2776, 'executed': 2697, 'interventions': 79, 'human_events': 32, 'loop_notes': 3, 'loop_refused': 1}
+- reviewer (System One): {'calls': 41, 'decisions': {'deny': 23, 'allow': 18}, 'ms_mean': 893.5, 'ms_median': 695.8}
 
 | role | runs using | invocations | HTTP calls | errors | mean ms | median ms |
 |---|---|---|---|---|---|---|
-| feasibility | 83 | 83 | 495 | 2 | 65766.9 | 51031.4 |
-| planner | 83 | 83 | 299 | 3 | None | None |
-| verifier | 80 | 85 | 602 | 4 | 63067.4 | 52137.3 |
+| feasibility | 88 | 88 | 524 | 2 | 65386.9 | 50437.9 |
+| planner | 88 | 88 | 307 | 3 | None | None |
+| verifier | 83 | 88 | 617 | 4 | 61801.6 | 51166.9 |
 | judge | 0 | 0 | 0 | 0 | None | None |
-| search | 1 | 1 | 1 | 0 | 18235.6 | 18235.6 |
-| compact | 67 | 235 | 235 | 0 | 9092.6 | 8048.0 |
-| grounder | 3 | 4 | 4 | 0 | 7050.5 | 3728.6 |
+| search | 2 | 2 | 2 | 0 | 14358.5 | 14358.5 |
+| compact | 72 | 268 | 268 | 0 | 9385.9 | 8395.0 |
+| grounder | 4 | 5 | 5 | 0 | 6964.5 | 3799.0 |
 
 (feasibility ms = the whole briefing incl. planner; compact/judge ms = gap to the previous gate event, approximate)
 
 | domain | tasks | valid | success | rate (of tasks) | score sum | infra |
 |---|---|---|---|---|---|---|
-| libreoffice_impress | 8 | 8 | 2 | 25.0 % | 2.0 | 0 |
+| libreoffice_impress | 10 | 10 | 3 | 30.0 % | 3.0 | 0 |
 | os | 5 | 2 | 2 | 40.0 % | 2.0 | 3 |
-| multi_apps | 28 | 22 | 8 | 28.6 % | 9.75 | 6 |
+| multi_apps | 31 | 24 | 8 | 25.8 % | 10.49 | 7 |
 | libreoffice_writer | 5 | 4 | 3 | 60.0 % | 3.0 | 1 |
 | vs_code | 7 | 7 | 6 | 85.7 % | 6.0 | 0 |
 | libreoffice_calc | 15 | 14 | 14 | 93.3 % | 14.0 | 1 |
 | vlc | 6 | 6 | 4 | 66.7 % | 4.0 | 0 |
 | chrome | 10 | 10 | 2 | 20.0 % | 2.0 | 0 |
-| gimp | 6 | 6 | 3 | 50.0 % | 3.0 | 0 |
+| gimp | 7 | 7 | 3 | 42.9 % | 3.0 | 0 |
 | thunderbird | 4 | 4 | 2 | 50.0 % | 2.0 | 0 |
 
-tools: {'run_command': 781, 'run_actions': 470, 'get_window_state': 402, 'click': 328, 'set_plan': 189, 'list_windows': 147, 'inspect': 132, 'press_key': 112, 'check_done': 85, 'type_text': 31, 'list_apps': 20, 'scroll': 20, 'request_human': 6, 'update_plan': 1}
+tools: {'run_command': 859, 'run_actions': 526, 'get_window_state': 459, 'click': 376, 'set_plan': 198, 'list_windows': 174, 'inspect': 148, 'press_key': 139, 'check_done': 88, 'type_text': 32, 'scroll': 22, 'list_apps': 21, 'request_human': 6, 'update_plan': 1}
 
 ## infra rows
 
@@ -97,3 +97,4 @@ tools: {'run_command': 781, 'run_actions': 470, 'get_window_state': 402, 'click'
 </body>
 </html>
 
+- multi_apps-415ef462-bed3-493a-ac36-ca8c6d23bf1b: setup_failed (attempts 1) Exception('Setup step 6 failed: _launch_setup - Failed to launch application: HTTP 500')

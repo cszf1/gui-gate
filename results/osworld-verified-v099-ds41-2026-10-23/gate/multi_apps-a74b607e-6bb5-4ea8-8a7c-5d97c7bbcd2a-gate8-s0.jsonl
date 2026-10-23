@@ -76,3 +76,5 @@
 {"ts":1792746713.747,"session":"6674b4de","ev":"role","role":"verifier","calls":9,"probes":8,"error":null,"decision":"done"}
 {"ts":1792746713.747,"session":"6674b4de","ev":"check_done","gaps":2,"kinds":["plan_check","plan_open"],"named":1,"ms":88708.7}
 {"ts":1792746713.751,"session":"6674b4de","ev":"plan","feasible":true,"milestones":4,"done":4,"checks":2,"facts":2,"notes":0}
+{"ts":1792746753.209,"session":"6674b4de","ev":"plan","feasible":true,"milestones":4,"done":4,"checks":2,"facts":2,"notes":0}
+{"ts":1792746805.507,"session":"6674b4de","ev":"shutdown","jobs_killed":0}

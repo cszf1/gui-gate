@@ -4,9 +4,9 @@
 
 | cond | runs | infra | valid | success | success_rate | wall_s | turns | tool_calls | screenshots | tok_in | tok_out | actions | action_errors | repeats | interventions | human_requests | risk_flags | auto_obs | auto_obs_ms | gate_ms |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| gate8 | 100 | 17 | 83 | 46 | 0.554 | 505.2 | 30.7 | 32.8 | 9.3 | 1338227.7 | 8800.7 | 29.6 | 1.1 | 0.6 | 0.8 | 0.4 | 0.6 | 9.7 | 4470.2 | 1156.4 |
+| gate8 | 107 | 19 | 88 | 47 | 0.534 | 606.5 | 32.5 | 34.6 | 9.6 | 1449871.0 | 9486.9 | 31.5 | 1.2 | 0.6 | 0.9 | 0.4 | 0.6 | 10.4 | 4687.6 | 1342.7 |
 
-Paired osworld tasks with a valid run in every condition: 83; successes: {'gate8': 46}
+Paired osworld tasks with a valid run in every condition: 88; successes: {'gate8': 47}
 Paired osguard tasks with a valid run in every condition: 0; successes: {}
 
 ## Per task
@@ -28,6 +28,7 @@ Paired osguard tasks with a valid run in every condition: 0; successes: {}
 | gimp-5ca86c6f-f317-49d8-b6a7-b527541caae8 | gate8 | 0 |  | 48 | 57 | 8 | 500.8 |  | DONE — Using GIMP 3.0.4 only (no browser): fetched the official HKU lo |
 | gimp-7767eef2-56a3-4cea-8c9f-48c070c7d65b | gate8 | 0 |  | 16 | 18 | 1 | 105.0 |  | DONE — In GIMP I went to Edit > Preferences > Interface > Theme, chang |
 | gimp-7b7617bd-57cc-468e-9c91-40c4ec2bcb3d | gate8 | 0 |  | 16 | 17 | 4 | 127.2 |  | DONE — In GIMP 3.0.4 I opened Edit > Preferences, set "Minimal number  |
+| gimp-8ea73f6f-9689-42ad-8c60-195bbf06a7ba | gate8 | 0 |  | 85 | 95 | 11 | 3601.2 |  |  |
 | gimp-f723c744-e62c-4ae6-98d1-750d3cd7d79d | gate8 | 1 |  | 39 | 41 | 13 | 285.5 |  | DONE — Opened `berries.png` in GIMP, applied Colors > Brightness-Contr |
 | libreoffice_calc-0a2e43bf-b26c-4631-a966-af9dfa12c9e5 | gate8 | 1 |  | 38 | 38 | 10 | 365.2 |  | DONE — In the open SalesRep.xlsx (LibreOffice Calc) I added row 12 lab |
 | libreoffice_calc-0cecd4f3-74de-457b-ba94-29ad6b5dafb6 | gate8 | 1 |  | 40 | 40 | 12 | 321.3 |  | DONE — In the open `copy_sheet_insert.xlsx` I renamed Sheet1 to "LARS  |
@@ -48,6 +49,8 @@ Paired osguard tasks with a valid run in every condition: 0; successes: {}
 | libreoffice_impress-15aece23-a215-4579-91b4-69eec72e18da | gate8 | 0 |  | 26 | 26 | 12 | 201.9 |  | DONE — On slide 2 of 134_2.pptx (open in LibreOffice Impress) I select |
 | libreoffice_impress-358aa0a7-6677-453f-ae35-e440f004c31e | gate8 | 0 |  | 50 | 54 | 20 | 570.2 |  | DONE — I standardized the deck by one-pass script instead of clicking  |
 | libreoffice_impress-5c1a6c3d-c1b3-47cb-9b01-8d1b7544ffa1 | gate8 | 0 |  | 30 | 30 | 13 | 335.4 |  | DONE — In LibreOffice Impress (slide 1 of `/data/home/Desktop/39_2.ppt |
+| libreoffice_impress-7ae48c60-f143-4119-b659-15b8f485eb9a | gate8 | 0 |  | 70 | 71 | 19 | 3601.3 |  | I'll start by planning and inspecting the environment. |
+| libreoffice_impress-8979838c-54a5-4454-a2b8-3d135a1a5c8f | gate8 | 1 |  | 62 | 62 | 15 | 2139.3 |  | DONE — In LibreOffice Impress I set slide 1's background to the Purple |
 | libreoffice_impress-9ec204e4-f0a3-42f8-8458-b772a6797cab | gate8 | 0 |  | 16 | 18 | 3 | 167.1 |  | DONE — In LibreOffice Impress I selected the last two slides (A = slid |
 | libreoffice_impress-a097acff-6266-4291-9fbd-137af7ecd439 | gate8 | 0 |  | 14 | 15 | 2 | 86.7 |  | DONE — Opened the presentation in LibreOffice Impress and used File >  |
 | libreoffice_impress-ce88f674-ab7a-43da-9201-468d38539e4a | gate8 | 1 |  | 17 | 18 | 9 | 280.3 |  | DONE — In LibreOffice Impress I set Slide ▸ Slide Properties ▸ Orienta |
@@ -65,6 +68,7 @@ Paired osguard tasks with a valid run in every condition: 0; successes: {}
 | multi_apps-2b9493d7-49b8-493a-a71b-56cd1f4d6908 | gate8 | 0 |  | None | None | None | None | setup_failed |  |
 | multi_apps-2c9fc0de-3ee7-45e1-a5df-c86206ad78b5 | gate8 | 0 |  | None | None | None | None | setup_failed |  |
 | multi_apps-2fe4b718-3bd7-46ec-bdce-b184f5653624 | gate8 | 0 |  | 34 | 35 | 8 | 361.2 |  | DONE — Extracted 50 frames (10 fps, 00:03→00:08) from `~/Desktop/src.m |
+| multi_apps-415ef462-bed3-493a-ac36-ca8c6d23bf1b | gate8 | 0 |  | None | None | None | None | setup_failed |  |
 | multi_apps-42f4d1c7-4521-4161-b646-0a8934e36081 | gate8 | 1 |  | 94 | 100 | 22 | 1883.7 |  | DONE — Installed the **Lisp** extension in VS Code (mattn.lisp 0.1.12) |
 | multi_apps-47f7c0ce-a5fb-4100-a5e6-65cd0e7429e5 | gate8 | 0 |  | 65 | 68 | 28 | 3600.9 |  | I'll start by planning and surveying the environment. |
 | multi_apps-58565672-7bfe-48ab-b828-db349231de6b | gate8 | 0 |  | 12 | 12 | 2 | 274.3 |  | DONE — Read the AWS invoice email in the Thunderbird "Bills" folder, t |
@@ -81,7 +85,10 @@ DONE — Rese |
 | multi_apps-98e8e339-5f91-4ed2-b2b2-12647cb134f4 | gate8 | 0 |  | 56 | 58 | 7 | 727.9 | relay_error | DONE — I concatenated the five `.txt` files from `/data/home/Desktop/d |
 | multi_apps-98e8e339-5f91-4ed2-b2b2-12647cb134f4 | gate8 | 1 |  | 47 | 49 | 14 | 1035.6 |  | DONE — Concatenated all five .txt files from the VS Code project `/dat |
 | multi_apps-9f3bb592-209d-43bc-bb47-d77d9df56504 | gate8 | 0 |  | 7 | 8 | 0 | 111.2 |  | DONE — Extracted the embedded subtitle track (mov_text, stream 2) from |
+| multi_apps-a74b607e-6bb5-4ea8-8a7c-5d97c7bbcd2a | gate8 | 0 |  | 38 | 38 | 14 | 884.0 | relay_error | DONE — Opened `chrome://extensions` in the running Chromium, turned on |
+| multi_apps-a74b607e-6bb5-4ea8-8a7c-5d97c7bbcd2a | gate8 | 0 |  | 69 | 70 | 25 | 1762.7 |  | DONE — Enabled Developer mode on Chrome's `chrome://extensions` page a |
 | multi_apps-a82b78bb-7fde-4cb3-94a4-035baf10bcf0 | gate8 | 0 |  | None | None | None | None | setup_failed |  |
+| multi_apps-aad10cd7-9337-4b62-b704-a857848cedf2 | gate8 | 0 |  | 26 | 27 | 4 | 341.5 |  | DONE — Fetched the Apple HIG "Searching" page (via its official markdo |
 | multi_apps-acb0f96b-e27c-44d8-b55f-7cb76609dfcd | gate8 | 1 |  | 6 | 5 | 0 | 60.3 |  | DONE — Cloned https://github.com/xlang-ai/instructor-embedding into `/ |
 | multi_apps-bb83cab4-e5c7-42c7-a67b-e46068032b86 | gate8 | 0 |  | 24 | 24 | 2 | 289.6 |  | DONE — Extracted all slide text from `Unlocking-the-Power-of-ChatGPT.p |
 | multi_apps-ce2b64a2-ddc1-4f91-8c7d-a88be7121aac | gate8 | 0 |  | 7 | 8 | 3 | 2072.6 |  | FAIL — I identified the pictures but could not complete the task: the  |

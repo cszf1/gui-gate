@@ -1,0 +1,1 @@
+DONE — Opened `chrome://extensions` in the running Chromium, turned on Developer mode, clicked "Load unpacked" and selected `/home/user/Desktop/helloExtension` (not the `__MACOSX` copy); the "Hello Extensions" 1.0 extension (ID `dbkoegkkphniomijanofeipfimcepbi`) is now listed and enabled, and it persists in the profile (`Preferences` records the unpacked path).
