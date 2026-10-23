@@ -1,0 +1,3 @@
+Content is saved in the file and matches the open window.
+
+DONE — Researched real 24-hour (7×24) self-service 港澳通行证签注机 points in 福田区 (cross-checked 深圳本地宝 2026 listing against 深圳之窗) and typed 5 addresses in Chinese, plus a source/reminder note, into the open `/data/home/Desktop/AllLocations.docx`, then saved it in place (Ctrl+S, Word format).

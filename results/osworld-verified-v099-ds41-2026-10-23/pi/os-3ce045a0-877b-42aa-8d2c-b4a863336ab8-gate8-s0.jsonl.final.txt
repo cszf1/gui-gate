@@ -1,0 +1,1 @@
+DONE — In XFCE's Appearance → Fonts tab I enlarged the default UI font from Sans 10 to Sans 14 (monospace 10 → 13) and raised the custom DPI from 96 to 120, which enlarged all on-screen text; the values are applied live and saved in the xsettings channel (verified by closing/reopening the dialog and reading xfconf).
