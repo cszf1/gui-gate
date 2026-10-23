@@ -1,0 +1,1 @@
+DONE — Opened the Dota 2 store page (app/570) in Chromium and clicked its "Add all DLC to Cart" button; the cart (now open, 1 item) contains The Dota 2 Official Soundtrack ($9.99), the only purchasable DLC — the second DLC, The Dota 2 Remixes EP, is free and has no cart option.

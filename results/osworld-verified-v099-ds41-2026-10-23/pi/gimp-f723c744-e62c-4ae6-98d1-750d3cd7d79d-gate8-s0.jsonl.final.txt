@@ -1,0 +1,1 @@
+DONE — Opened `berries.png` in GIMP, applied Colors > Brightness-Contrast with Contrast 50, overwrote the original and also exported the result as `/data/home/Desktop/berries_contrast.png`, so the berries subject now stands out with much stronger contrast.

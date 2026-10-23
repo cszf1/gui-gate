@@ -1,0 +1,1 @@
+DONE — In the open SalesRep.xlsx (LibreOffice Calc) I added row 12 labelled "Total" with monthly column sums (B12:G12 = 4852, 4587, 3943, 3857, 4677, 4243 via =SUM), then inserted a real line chart of the Total row with Jan–Jun as the x-axis categories (categories = Sheet1!$B$1:$G$1), titled "Monthly Total Sales" with x-axis title "Months", and saved the file in place as xlsx.

@@ -1,0 +1,29 @@
+DONE — I standardized the deck by one-pass script instead of clicking each box.
+
+**What I did (in the open deck `/data/home/Desktop/note-taking-strategies.pptx`, 28 slides):**
+- Tools ▸ Macros ▸ Edit Macros, wrote a small Basic macro and ran it: it walks every page and every shape, and for each text-bearing shape sets a text cursor over the whole text plus the shape/paragraph defaults to `Liberation Sans Narrow`. ~370 runs that were Arial / Libre Franklin Medium all switched in one shot.
+- Ctrl+S to save back to the .pptx (format kept), verified in the package: **494 × `Liberation Sans Narrow`, 0 Arial / other run fonts**; the only other face left is `Noto Sans Symbols`, which is the *bullet glyph* font (buFont) — deliberately untouched so the ▪ bullets still render. File is a valid 28-slide zip and the slides still render correctly in Impress.
+
+**Suggestions for doing this yourself next time:**
+1. **Macro (what I used, best for a whole deck)** — Tools ▸ Macros ▸ Basic Macros… ▸ Standard/Module1 ▸ Edit, then e.g.:
+   ```basic
+   Sub FixFonts2
+     n="Liberation Sans Narrow" : d=ThisComponent
+     For i=0 To d.DrawPages.Count-1
+       p=d.DrawPages.getByIndex(i)
+       For j=0 To p.Count-1
+         s=p.getByIndex(j)
+         If s.supportsService("com.sun.star.drawing.Text") Then
+           s.CharFontName=n
+           c=s.Text.createTextCursor() : c.gotoEnd(True) : c.CharFontName=n
+         End If
+       Next j
+     Next i
+   End Sub
+   ```
+   F5 runs it; then Ctrl+S.
+2. **Per slide, no macro** — `Ctrl+A` on a slide selects all its objects, then Format ▸ Character (or the font box in the Formatting toolbar) applies the font to every selected text box at once; Page Down and repeat.
+3. **Presentation styles** — View ▸ Master Slide and change the title/outline text styles there so *placeholder* text inherits the new font.
+4. **Find & Replace (Ctrl+H) can't do it** — Impress, unlike Writer, has no "replace formatting" attribute replacement, so a macro or multi-selection is the practical route.
+
+Note: slide text is fully converted; the master/layout *defaults* still say Arial, which only matters for text you type into empty placeholders later — say the word and I'll convert those too.

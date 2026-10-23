@@ -1,0 +1,1 @@
+DONE — Copied cell B6 ("Nereida") from `/home/user/cell_search.xls` in LibreOffice Calc (Ctrl+C) and pasted it into Chrome's address bar (Ctrl+L, Ctrl+V, Enter), which loaded a DuckDuckGo search results page for "Nereida".

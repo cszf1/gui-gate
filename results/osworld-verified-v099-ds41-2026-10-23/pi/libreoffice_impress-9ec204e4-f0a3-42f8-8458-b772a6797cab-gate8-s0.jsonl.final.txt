@@ -1,0 +1,1 @@
+DONE — In LibreOffice Impress I selected the last two slides (A = slide 23 "Now you…", B = slide 24 "Works Cited"), copied them, and pasted the copies after slide 24, giving the order A, B, A′ (25), B′ (26); then saved the file in place as `/home/user/Desktop/MLA_Workshop_061X_Works_Cited.pptx` (26 slides, verified on disk).

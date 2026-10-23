@@ -1,0 +1,1 @@
+DONE — Extracted 50 frames (10 fps, 00:03→00:08) from `~/Desktop/src.mp4` with VLC's scene filter, opened them as 50 layers in GIMP, and exported `~/Desktop/src_clip.gif` (animated, loop forever, 100 ms/frame = 5 s), verified as a 50-frame animated GIF.

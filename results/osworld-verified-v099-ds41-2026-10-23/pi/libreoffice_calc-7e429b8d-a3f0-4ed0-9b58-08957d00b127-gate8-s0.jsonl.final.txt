@@ -1,0 +1,1 @@
+DONE — Filled the Officer Name column (F2:F12) in `/data/home/VLOOKUP_Fill_the_form.xlsx` with `=VLOOKUP(E<row>,$A$2:$B$7,2,0)` so each HeadOffice/branch resolves to its officer from the lookup table (Surat→A. B. Bose, Jamnagar→G. H. Harris, Ahmedabad→C. D. Dey, Bhavnagar→K. L. Lathiya, Vadodara→E. F. Frank, Porbandar→I. J. Jain), then saved in xlsx format.

@@ -1,0 +1,1 @@
+DONE — I cut the backpacker out of the mountain/sky photo (isolating the figure, removing sky, clouds, snow and the rock ledge) and placed him on a pure white background, then saved the result as `/data/home/Desktop/pic.jpg` (320×510, ~73% of pixels pure white, subject centered at x 65–238, y 111–498).

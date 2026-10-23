@@ -1,0 +1,1 @@
+DONE — In GIMP 3.0.4 I opened Edit > Preferences, set "Minimal number of undo levels" on the System Resources page to 100, clicked OK, and verified `~/.config/GIMP/3.0/gimprc` now contains `(undo-levels 100)`.

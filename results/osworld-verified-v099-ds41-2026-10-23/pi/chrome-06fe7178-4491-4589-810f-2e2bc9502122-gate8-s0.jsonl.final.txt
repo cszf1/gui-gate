@@ -1,0 +1,1 @@
+DONE — Pressed Ctrl+Shift+T in Chromium, which restored the most recently closed tab (tripadvisor.com); it's now open alongside the Airbnb and Lonely Planet tabs.

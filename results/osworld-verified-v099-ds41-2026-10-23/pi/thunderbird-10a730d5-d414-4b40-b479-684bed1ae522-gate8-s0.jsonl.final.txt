@@ -1,0 +1,1 @@
+Found it: `mail.dark-reader.enabled`. Re-enabling it now.

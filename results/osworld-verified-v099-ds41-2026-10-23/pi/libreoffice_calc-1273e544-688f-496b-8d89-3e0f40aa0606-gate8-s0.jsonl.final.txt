@@ -1,0 +1,1 @@
+DONE — Created "Sheet2" in NetIncome.xlsx (name box-select A1:A20 on Sheet1, copied, Insert Sheet → Sheet2 after current sheet, pasted), and saved in xlsx format; the saved file's Sheet2 holds "Revenue" in A1 with all 19 values in A2:A20.

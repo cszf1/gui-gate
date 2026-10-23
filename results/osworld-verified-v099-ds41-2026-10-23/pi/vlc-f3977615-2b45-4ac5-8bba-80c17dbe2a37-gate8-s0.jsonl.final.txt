@@ -1,0 +1,9 @@
+Fixed — the cause was VLC's "Use only one instance when started from file manager" option (default ON), which forwarded new launches to the already-running window.
+
+What I did:
+1. **Tools → Preferences (Ctrl+P) → Interface → "Playlist and Instances"**: unchecked *Use only one instance when started from file manager* (Allow only one instance was already off) and clicked **Save**. This persists in `~/.config/vlc/vlcrc` as `one-instance-when-started-from-file=0`.
+2. Verified it works: launched two independent instances with `vlc --no-one-instance --no-one-instance-when-started-from-file …` on `/home/user/Videos/video_a.mp4` (pid 53396) and `video_b.mp4` (pid 53451) — both play simultaneously, side by side, in their own windows.
+
+For launch from a terminal/file manager you can simply use: `vlc --no-one-instance --no-one-instance-when-started-from-file <file>` (the setting now makes plain launches behave the same).
+
+DONE — Disabled VLC's single-instance-from-file-manager option in Preferences and verified two independent VLC instances playing different videos at the same time.

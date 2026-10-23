@@ -491,3 +491,10 @@
 {"t": 400.487, "type": "message_start", "role": "assistant", "tool": null}
 {"t": 400.918, "type": "message_end", "role": "assistant", "tool": null}
 {"t": 400.918, "type": "tool_execution_start", "role": null, "tool": "mcp__gui__check_done"}
+{"t": 509.514, "type": "tool_execution_end", "role": null, "tool": "mcp__gui__check_done"}
+{"t": 509.538, "type": "message_start", "role": "toolResult", "tool": null}
+{"t": 509.547, "type": "message_end", "role": "toolResult", "tool": null}
+{"t": 509.674, "type": "turn_start", "role": null, "tool": null}
+{"t": 512.468, "type": "message_start", "role": "assistant", "tool": null}
+{"t": 513.484, "type": "message_end", "role": "assistant", "tool": null}
+{"t": 513.551, "type": "agent_end", "role": null, "tool": null}
