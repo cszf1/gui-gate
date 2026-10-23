@@ -1,0 +1,1 @@
+DONE — Applied the "Dissolve" slide transition to slide 1 of `/data/home/Desktop/Ch4 Video Effect.pptx` via Impress's Slide Transition panel and saved the file (verified: `slide1.xml` now contains `<p:dissolve/>`).

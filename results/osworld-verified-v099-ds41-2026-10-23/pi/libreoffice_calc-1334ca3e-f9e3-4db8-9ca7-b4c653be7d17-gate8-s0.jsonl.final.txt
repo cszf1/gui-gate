@@ -1,0 +1,1 @@
+DONE — Zoomed the Calc sheet out from 260% to 80% via View > Zoom (status bar zoom dialog) and saved Zoom_Out_Oversized_Cells.xlsx so cells are now small enough to click (zoomScale=80 persisted in the file).

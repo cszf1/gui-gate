@@ -1,0 +1,1 @@
+FAIL — this machine has no battery: `/sys/class/power_supply/` is empty (no BAT0/AC nodes), and neither `upower` nor `acpi` exists, so there is no battery percentage to read or display on the desktop.

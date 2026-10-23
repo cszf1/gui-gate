@@ -4,9 +4,9 @@
 
 | cond | runs | infra | valid | success | success_rate | wall_s | turns | tool_calls | screenshots | tok_in | tok_out | actions | action_errors | repeats | interventions | human_requests | risk_flags | auto_obs | auto_obs_ms | gate_ms |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| gate8 | 107 | 19 | 88 | 47 | 0.534 | 606.5 | 32.5 | 34.6 | 9.6 | 1449871.0 | 9486.9 | 31.5 | 1.2 | 0.6 | 0.9 | 0.4 | 0.6 | 10.4 | 4687.6 | 1342.7 |
+| gate8 | 122 | 23 | 99 | 55 | 0.556 | 638.1 | 31.2 | 33.2 | 9.2 | 1356432.1 | 9049.5 | 30.3 | 1.3 | 0.5 | 0.8 | 0.3 | 0.6 | 10.1 | 4592.7 | 1309.9 |
 
-Paired osworld tasks with a valid run in every condition: 88; successes: {'gate8': 47}
+Paired osworld tasks with a valid run in every condition: 99; successes: {'gate8': 55}
 Paired osguard tasks with a valid run in every condition: 0; successes: {}
 
 ## Per task
@@ -16,7 +16,10 @@ Paired osguard tasks with a valid run in every condition: 0; successes: {}
 | chrome-06fe7178-4491-4589-810f-2e2bc9502122 | gate8 | 1 |  | 9 | 10 | 0 | 183.0 |  | DONE — Pressed Ctrl+Shift+T in Chromium, which restored the most recen |
 | chrome-12086550-11c0-466b-b367-1d9e75b3910e | gate8 | 0 |  | 6 | 7 | 0 | 118.2 |  | DONE — Opened Chromium's Password Manager (chrome://password-manager/p |
 | chrome-121ba48f-9e17-48ce-9bc6-a4fb17a7ebba | gate8 | 1 |  | 16 | 16 | 0 | 131.2 |  | DONE — Opened the Dota 2 store page (app/570) in Chromium and clicked  |
+| chrome-1704f00f-79e6-43a7-961b-cedd3724d5fd | gate8 | 0 |  | 28 | 29 | 12 | 917.6 | relay_error | DONE — On Rentalcars.com I searched Zürich for Mon Oct 26 → Fri Oct 30 |
+| chrome-1704f00f-79e6-43a7-961b-cedd3724d5fd | gate8 | 0 |  | 25 | 25 | 7 | 889.1 |  | DONE — On the open Rentalcars.com tab I searched Zürich for Mon 26 Oct |
 | chrome-47543840-672a-467d-80df-8f7c3b9788c9 | gate8 | 0 |  | 55 | 56 | 29 | 3601.0 |  | The site shows a "slide to verify" bot check that I can't clear automa |
+| chrome-480bcfea-d68f-4aaa-a0a9-2589ef319381 | gate8 | 1 |  | 13 | 13 | 0 | 211.0 |  | FAIL — The installed browser is Chromium 155.0.8059.79, where the 2023 |
 | chrome-59155008-fe71-45ec-8a8f-dc35497b6aa8 | gate8 | 0 |  | 19 | 21 | 1 | 150.1 |  | DONE — Opened BabyCenter's "Carl" baby-name page (babycenter.com/baby- |
 | chrome-6766f2b8-8a72-417f-a9e5-56fcaa735837 | gate8 | 0 |  | 40 | 41 | 10 | 447.3 |  | DONE — The downloaded extension was already unpacked to `/home/user/De |
 | chrome-6c4c23a1-42a4-43cc-9db1-2f86ff3738cc | gate8 | 0 |  | 70 | 71 | 37 | 2573.5 |  | DONE — Delta's search results were blocked in this environment (Akamai |
@@ -30,9 +33,13 @@ Paired osguard tasks with a valid run in every condition: 0; successes: {}
 | gimp-7b7617bd-57cc-468e-9c91-40c4ec2bcb3d | gate8 | 0 |  | 16 | 17 | 4 | 127.2 |  | DONE — In GIMP 3.0.4 I opened Edit > Preferences, set "Minimal number  |
 | gimp-8ea73f6f-9689-42ad-8c60-195bbf06a7ba | gate8 | 0 |  | 85 | 95 | 11 | 3601.2 |  |  |
 | gimp-f723c744-e62c-4ae6-98d1-750d3cd7d79d | gate8 | 1 |  | 39 | 41 | 13 | 285.5 |  | DONE — Opened `berries.png` in GIMP, applied Colors > Brightness-Contr |
+| libreoffice_calc-04d9aeaf-7bed-4024-bedb-e10e6f00eb7f | gate8 | 1 |  | 32 | 33 | 7 | 1435.0 | relay_error | DONE — Added "Sheet2" to `/data/home/SmallBalanceSheet.xlsx` with head |
+| libreoffice_calc-04d9aeaf-7bed-4024-bedb-e10e6f00eb7f | gate8 | 1 |  | 19 | 19 | 1 | 525.9 | relay_error | DONE — Added Sheet2 to /home/user/SmallBalanceSheet.xlsx with headers  |
+| libreoffice_calc-04d9aeaf-7bed-4024-bedb-e10e6f00eb7f | gate8 | 1 |  | 31 | 32 | 7 | 1445.2 |  | DONE — Created "Sheet2" in /data/home/SmallBalanceSheet.xlsx with head |
 | libreoffice_calc-0a2e43bf-b26c-4631-a966-af9dfa12c9e5 | gate8 | 1 |  | 38 | 38 | 10 | 365.2 |  | DONE — In the open SalesRep.xlsx (LibreOffice Calc) I added row 12 lab |
 | libreoffice_calc-0cecd4f3-74de-457b-ba94-29ad6b5dafb6 | gate8 | 1 |  | 40 | 40 | 12 | 321.3 |  | DONE — In the open `copy_sheet_insert.xlsx` I renamed Sheet1 to "LARS  |
 | libreoffice_calc-1273e544-688f-496b-8d89-3e0f40aa0606 | gate8 | 1 |  | 25 | 26 | 7 | 180.4 |  | DONE — Created "Sheet2" in NetIncome.xlsx (name box-select A1:A20 on S |
+| libreoffice_calc-1334ca3e-f9e3-4db8-9ca7-b4c653be7d17 | gate8 | 1 |  | 25 | 27 | 12 | 977.5 |  | DONE — Zoomed the Calc sheet out from 260% to 80% via View > Zoom (sta |
 | libreoffice_calc-1de60575-bb6e-4c3d-9e6a-2fa699f9f197 | gate8 | 1 |  | 63 | 64 | 19 | 518.0 |  | DONE — Created `Sheet2` in `/data/home/EntireSummerSales.xlsx` with a  |
 | libreoffice_calc-30e3e107-1cfb-46ee-a755-2cd080d7ba6a | gate8 | 0 |  | 100 | 107 | 7 | 2096.5 | eval_error | Now I'll drive Calc via a Basic macro (in-process UNO) to build the sh |
 | libreoffice_calc-347ef137-7eeb-4c80-a3bb-0951f26a8aff | gate8 | 1 |  | 90 | 91 | 32 | 967.3 |  | DONE — built two real column charts in the open workbook (2019: Jan–De |
@@ -44,10 +51,14 @@ Paired osguard tasks with a valid run in every condition: 0; successes: {}
 | libreoffice_calc-51719eea-10bc-4246-a428-ac7c433dd4b3 | gate8 | 1 |  | 66 | 68 | 26 | 618.7 |  | DONE — Added a Revenue column in Sheet1 (`=VLOOKUP(C2,'Retail Price'!$ |
 | libreoffice_calc-7e429b8d-a3f0-4ed0-9b58-08957d00b127 | gate8 | 1 |  | 21 | 22 | 3 | 275.8 |  | DONE — Filled the Officer Name column (F2:F12) in `/data/home/VLOOKUP_ |
 | libreoffice_calc-7efeb4b1-3d19-4762-b163-63328d66303b | gate8 | 1 |  | 25 | 26 | 8 | 300.3 |  | DONE — Filled column B ("Seq No.") in `/data/home/Order_Sales_Serial#. |
+| libreoffice_calc-8b1ce5f2-59d2-4dcc-b0b0-666a714b9a14 | gate8 | 1 |  | 17 | 20 | 4 | 818.6 |  | DONE — Highlighted all 44 Saturday/Sunday date cells (Jun–Oct 2022, co |
 | libreoffice_calc-f9584479-3d0d-4c79-affa-9ad7afdd8850 | gate8 | 1 |  | 31 | 36 | 2 | 404.9 |  | DONE — Filled every missing Total column (F3:F5, F10:F12, F17:F19) and |
 | libreoffice_impress-0f84bef9-9790-432e-92b7-eece357603fb | gate8 | 1 |  | 60 | 65 | 8 | 910.4 |  | DONE — In Impress I set **Slide Show ▸ Slide Show Settings ▸ Presenter |
 | libreoffice_impress-15aece23-a215-4579-91b4-69eec72e18da | gate8 | 0 |  | 26 | 26 | 12 | 201.9 |  | DONE — On slide 2 of 134_2.pptx (open in LibreOffice Impress) I select |
+| libreoffice_impress-21760ecb-8f62-40d2-8d85-0cee5725cb72 | gate8 | 1 |  | 40 | 41 | 17 | 3089.8 | relay_error | DONE — Applied the "Dissolve" slide transition to slide 1 of `/data/ho |
+| libreoffice_impress-21760ecb-8f62-40d2-8d85-0cee5725cb72 | gate8 | 1 |  | 48 | 49 | 20 | 3600.6 |  |  |
 | libreoffice_impress-358aa0a7-6677-453f-ae35-e440f004c31e | gate8 | 0 |  | 50 | 54 | 20 | 570.2 |  | DONE — I standardized the deck by one-pass script instead of clicking  |
+| libreoffice_impress-455d3c66-7dc6-4537-a39a-36d3e9119df7 | gate8 | 0 |  | 27 | 28 | 5 | 796.6 |  | DONE — In LibreOffice Impress I used File > Export on `wssf-project-pl |
 | libreoffice_impress-5c1a6c3d-c1b3-47cb-9b01-8d1b7544ffa1 | gate8 | 0 |  | 30 | 30 | 13 | 335.4 |  | DONE — In LibreOffice Impress (slide 1 of `/data/home/Desktop/39_2.ppt |
 | libreoffice_impress-7ae48c60-f143-4119-b659-15b8f485eb9a | gate8 | 0 |  | 70 | 71 | 19 | 3601.3 |  | I'll start by planning and inspecting the environment. |
 | libreoffice_impress-8979838c-54a5-4454-a2b8-3d135a1a5c8f | gate8 | 1 |  | 62 | 62 | 15 | 2139.3 |  | DONE — In LibreOffice Impress I set slide 1's background to the Purple |
@@ -59,6 +70,9 @@ Paired osguard tasks with a valid run in every condition: 0; successes: {}
 | libreoffice_writer-3ef2b351-8a84-4ff2-8724-d86eae9b842e | gate8 | 1 |  | 9 | 10 | 2 | 103.7 |  | DONE — Placed the cursor in the first heading paragraph ("Guidelines o |
 | libreoffice_writer-6ada715d-3aae-4a32-a6a7-429b2e43fb93 | gate8 | 1 |  | 32 | 32 | 13 | 248.6 |  | DONE — Placed the text cursor in the open Writer document and used Ins |
 | libreoffice_writer-72b810ef-4156-4d09-8f08-a0cf57e7cefe | gate8 | 1 |  | 12 | 15 | 3 | 107.7 |  | DONE — Applied strike-through to all words in the last paragraph (the  |
+| libreoffice_writer-bb8ccc78-479f-4a2f-a71e-d565e439436b | gate8 | 1 |  | 4 | 4 | 0 | 69.1 |  | FAIL
+
+Real-time co-editing isn't possible here: the open `The Wonders  |
 | libreoffice_writer-e246f6d8-78d7-44ac-b668-fcf47946cb50 | gate8 | 1 |  | 56 | 55 | 27 | 884.2 | relay_error | DONE — In LibreOffice Writer I used Edit ▸ Find & Replace with formatt |
 | libreoffice_writer-e246f6d8-78d7-44ac-b668-fcf47946cb50 | gate8 | 1 |  | 69 | 69 | 19 | 859.2 | relay_error | DONE — In LibreOffice Writer I ran a Basic macro over the open `Y22-21 |
 | libreoffice_writer-e246f6d8-78d7-44ac-b668-fcf47946cb50 | gate8 | 1 |  | 38 | 36 | 13 | 623.5 | relay_error | DONE — In LibreOffice Writer I used Find & Replace with a formatting f |
@@ -71,6 +85,7 @@ Paired osguard tasks with a valid run in every condition: 0; successes: {}
 | multi_apps-415ef462-bed3-493a-ac36-ca8c6d23bf1b | gate8 | 0 |  | None | None | None | None | setup_failed |  |
 | multi_apps-42f4d1c7-4521-4161-b646-0a8934e36081 | gate8 | 1 |  | 94 | 100 | 22 | 1883.7 |  | DONE — Installed the **Lisp** extension in VS Code (mattn.lisp 0.1.12) |
 | multi_apps-47f7c0ce-a5fb-4100-a5e6-65cd0e7429e5 | gate8 | 0 |  | 65 | 68 | 28 | 3600.9 |  | I'll start by planning and surveying the environment. |
+| multi_apps-51f5801c-18b3-4f25-b0c3-02f85507a078 | gate8 | 1 |  | 28 | 31 | 5 | 772.0 |  | The only "gap" was a keyword scan for the literal word "notes" in the  |
 | multi_apps-58565672-7bfe-48ab-b828-db349231de6b | gate8 | 0 |  | 12 | 12 | 2 | 274.3 |  | DONE — Read the AWS invoice email in the Thunderbird "Bills" folder, t |
 | multi_apps-5990457f-2adb-467b-a4af-5c857c92d762 | gate8 | 0 |  | None | None | None | None | setup_failed |  |
 | multi_apps-5bc63fb9-276a-4439-a7c1-9dc76401737f | gate8 | 0 |  | 66 | 69 | 33 | 1492.5 |  | DONE — Extracted all 6 Gemini responses from the open `llm_answers.jso |
@@ -103,7 +118,9 @@ DONE — Rese |
 | os-3ce045a0-877b-42aa-8d2c-b4a863336ab8 | gate8 | 0 |  | 29 | 32 | 8 | 434.8 | relay_error | I enlarged the text system-wide through XFCE's own Appearance settings |
 | os-3ce045a0-877b-42aa-8d2c-b4a863336ab8 | gate8 | 0 |  | 54 | 53 | 12 | 987.1 | relay_error | DONE — Using Settings → Appearance → Fonts, the desktop font is set to |
 | os-4127319a-8b79-4410-b58a-7a151e15f3d7 | gate8 | 0 |  | None | None | None | None | setup_failed |  |
+| os-bedcedc4-4d72-425e-ad62-21960b11fe0d | gate8 | 0 |  | 5 | 5 | 0 | 111.5 |  | FAIL — The "Dim screen when inactive" option does not exist on this ma |
 | os-e0df059f-28a6-4169-924f-b9623e7184cc | gate8 | 1 |  | 5 | 6 | 0 | 90.2 |  | DONE — Renamed `/data/home/Desktop/todo_list_Jan_1` to `/data/home/Des |
+| os-fe41f596-a71b-4c2f-9b2f-9dcd40b568c3 | gate8 | 1 |  | 5 | 5 | 0 | 105.0 |  | FAIL — this machine has no battery: `/sys/class/power_supply/` is empt |
 | thunderbird-10a730d5-d414-4b40-b479-684bed1ae522 | gate8 | 1 |  | 100 | 104 | 67 | 1284.9 |  | Found it: `mail.dark-reader.enabled`. Re-enabling it now. |
 | thunderbird-15c3b339-88f7-4a86-ab16-e71c58dcb01e | gate8 | 0 |  | 11 | 11 | 3 | 119.5 |  | FAIL
 

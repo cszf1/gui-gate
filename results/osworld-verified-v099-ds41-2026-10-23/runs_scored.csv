@@ -136,3 +136,40 @@ libreoffice_impress-8979838c-54a5-4454-a2b8-3d135a1a5c8f-gate8-s0,libreoffice_im
 multi_apps-415ef462-bed3-493a-ac36-ca8c6d23bf1b-gate8-s0,multi_apps-415ef462-bed3-493a-ac36-ca8c6d23bf1b,gate8,0,1,osworld,setup_failed,,,,,,,,,,,,,,,,,,,,,,,
 gimp-8ea73f6f-9689-42ad-8c60-195bbf06a7ba-gate8-s0,gimp-8ea73f6f-9689-42ad-8c60-195bbf06a7ba,gate8,0,1,osworld,,3601.2,timeout,0.0,False,False,85,95,11,5352563,28565,Request timed out.,,114.0,10454.2,63.0,38.0,15859.3,8.0,3.0,,2.0,,
 libreoffice_impress-7ae48c60-f143-4119-b659-15b8f485eb9a-gate8-s0,libreoffice_impress-7ae48c60-f143-4119-b659-15b8f485eb9a,gate8,0,1,osworld,,3601.3,timeout,0.0,False,False,70,71,19,4902499,37696,,I'll start by planning and inspecting the environment.,69.0,3796.5,56.0,30.0,10396.2,3.0,5.0,2.0,3.0,1.0,
+libreoffice_impress-21760ecb-8f62-40d2-8d85-0cee5725cb72-gate8-s0,libreoffice_impress-21760ecb-8f62-40d2-8d85-0cee5725cb72,gate8,0,1,osworld,relay_error,3089.8,agent,1.0,True,False,40,41,17,1610291,14684,Request timed out.,"DONE — Applied the ""Dissolve"" slide transition to slide 1 of `/data/home/Desktop/Ch4 Video Effect.pptx` via Impress's Slide Transition panel and saved the file ",38.0,3884.7,34.0,17.0,9343.9,1.0,1.0,,1.0,,
+libreoffice_impress-21760ecb-8f62-40d2-8d85-0cee5725cb72-gate8-s0-try2,libreoffice_impress-21760ecb-8f62-40d2-8d85-0cee5725cb72,gate8,0,2,osworld,,3600.6,timeout,1.0,True,False,48,49,20,2287050,21329,,,40.0,1398.0,35.0,23.0,10622.0,7.0,,1.0,1.0,,
+multi_apps-51f5801c-18b3-4f25-b0c3-02f85507a078-gate8-s0,multi_apps-51f5801c-18b3-4f25-b0c3-02f85507a078,gate8,0,1,osworld,,772.0,agent,1.0,True,False,28,31,5,608803,6278,,"The only ""gap"" was a keyword scan for the literal word ""notes"" in the body — not required.
+
+DONE — Extracted all 8 presenter notes from Dickinson_Slides.pptx an",42.0,2203.6,17.0,9.0,4247.5,2.0,1.0,,,,
+libreoffice_writer-bb8ccc78-479f-4a2f-a71e-d565e439436b-gate8-s0,libreoffice_writer-bb8ccc78-479f-4a2f-a71e-d565e439436b,gate8,0,1,osworld,,69.1,agent,1.0,True,True,4,4,0,30150,1024,,"FAIL
+
+Real-time co-editing isn't possible here: the open `The Wonders of Our Solar System.docx` is in desktop LibreOffice Writer, which has no real-time sharing",1.0,0.5,1.0,,,,,,,,
+chrome-480bcfea-d68f-4aaa-a0a9-2589ef319381-gate8-s0,chrome-480bcfea-d68f-4aaa-a0a9-2589ef319381,gate8,0,1,osworld,,211.0,agent,1.0,True,True,13,13,0,202423,3135,,"FAIL — The installed browser is Chromium 155.0.8059.79, where the 2023 refresh UI is the permanent default: there is no `chrome://flags` entry (searching ""2023""",13.0,33.7,5.0,4.0,1219.7,1.0,,,,,
+os-fe41f596-a71b-4c2f-9b2f-9dcd40b568c3-gate8-s0,os-fe41f596-a71b-4c2f-9b2f-9dcd40b568c3,gate8,0,1,osworld,,105.0,agent,1.0,True,True,5,5,0,39445,758,,"FAIL — this machine has no battery: `/sys/class/power_supply/` is empty (no BAT0/AC nodes), and neither `upower` nor `acpi` exists, so there is no battery perce",2.0,1.8,,,,,,,,,
+chrome-1704f00f-79e6-43a7-961b-cedd3724d5fd-gate8-s0,chrome-1704f00f-79e6-43a7-961b-cedd3724d5fd,gate8,0,1,osworld,relay_error,917.6,agent,0.0,False,False,28,29,12,1003710,4330,"502 <html>
+<head><title>502 Bad Gateway</title></head>
+<body>
+<center><h1>502 Bad Gateway</h1></center>
+<hr><center>nginx/1.30.3</center>
+</body>
+</html>","DONE — On Rentalcars.com I searched Zürich for Mon Oct 26 → Fri Oct 30, 2026, applied the ""Large car"" category filter (339 cars) and sorted by ""Price (lowest fi",19.0,667.6,21.0,14.0,10152.2,1.0,,,,,
+chrome-1704f00f-79e6-43a7-961b-cedd3724d5fd-gate8-s0-try2,chrome-1704f00f-79e6-43a7-961b-cedd3724d5fd,gate8,0,2,osworld,,889.1,agent,0.0,False,False,25,25,7,1030520,4097,,"DONE — On the open Rentalcars.com tab I searched Zürich for Mon 26 Oct → Fri 30 Oct 2026, applied the ""Large car"" category filter (339 cars) and set the sort to",14.0,287.6,15.0,10.0,10030.7,,,,,,
+os-bedcedc4-4d72-425e-ad62-21960b11fe0d-gate8-s0,os-bedcedc4-4d72-425e-ad62-21960b11fe0d,gate8,0,1,osworld,,111.5,agent,0.0,False,True,5,5,0,38997,1077,,"FAIL — The ""Dim screen when inactive"" option does not exist on this machine: Xfce Power Manager (and xfce4-screensaver) are not installed (no binary, no .deskto",2.0,0.9,1.0,,,1.0,,,,,
+libreoffice_impress-455d3c66-7dc6-4537-a39a-36d3e9119df7-gate8-s0,libreoffice_impress-455d3c66-7dc6-4537-a39a-36d3e9119df7,gate8,0,1,osworld,,796.6,agent,0.9253187050168875,False,False,27,28,5,473358,3502,,"DONE — In LibreOffice Impress I used File > Export on `wssf-project-plan-on-a-page.pptx`, chose PNG with default options, and saved it as `/home/user/Desktop/re",20.0,2059.5,17.0,10.0,2795.7,2.0,,,1.0,,
+libreoffice_calc-04d9aeaf-7bed-4024-bedb-e10e6f00eb7f-gate8-s0,libreoffice_calc-04d9aeaf-7bed-4024-bedb-e10e6f00eb7f,gate8,0,1,osworld,relay_error,1435.0,agent,1.0,True,False,32,33,7,695849,5444,"502 <html>
+<head><title>502 Bad Gateway</title></head>
+<body>
+<center><h1>502 Bad Gateway</h1></center>
+<hr><center>nginx/1.30.3</center>
+</body>
+</html>","DONE — Added ""Sheet2"" to `/data/home/SmallBalanceSheet.xlsx` with headers Year / CA changes / FA changes / OA changes, rows for 2015–2019 holding percentage-cha",20.0,1592.3,17.0,10.0,4025.5,2.0,,,,,
+libreoffice_calc-04d9aeaf-7bed-4024-bedb-e10e6f00eb7f-gate8-s0-try2,libreoffice_calc-04d9aeaf-7bed-4024-bedb-e10e6f00eb7f,gate8,0,2,osworld,relay_error,525.9,agent,1.0,True,False,19,19,1,361793,5829,"502 <html>
+<head><title>502 Bad Gateway</title></head>
+<body>
+<center><h1>502 Bad Gateway</h1></center>
+<hr><center>nginx/1.30.3</center>
+</body>
+</html>","DONE — Added Sheet2 to /home/user/SmallBalanceSheet.xlsx with headers Year, CA changes, FA changes, OA changes and formulas computing 2015–2019 year-over-year p",70.0,963.6,11.0,8.0,2787.6,,1.0,1.0,,1.0,
+libreoffice_calc-04d9aeaf-7bed-4024-bedb-e10e6f00eb7f-gate8-s0-try3,libreoffice_calc-04d9aeaf-7bed-4024-bedb-e10e6f00eb7f,gate8,0,3,osworld,,1445.2,agent,1.0,True,False,31,32,7,1054509,7967,,"DONE — Created ""Sheet2"" in /data/home/SmallBalanceSheet.xlsx with headers Year/CA changes/FA changes/OA changes, years 2015–2019, and prior-year percentage-chan",57.0,132.1,22.0,12.0,4672.2,,,,,,
+libreoffice_calc-8b1ce5f2-59d2-4dcc-b0b0-666a714b9a14-gate8-s0,libreoffice_calc-8b1ce5f2-59d2-4dcc-b0b0-666a714b9a14,gate8,0,1,osworld,,818.6,agent,1.0,True,False,17,20,4,415690,7796,,"DONE — Highlighted all 44 Saturday/Sunday date cells (Jun–Oct 2022, columns B–F) in `/data/home/Calendar_Highlight_Weekend_Days.xlsx` with a solid `#ff0000` cel",12.0,2972.0,9.0,4.0,2028.1,1.0,1.0,3.0,,1.0,
+libreoffice_calc-1334ca3e-f9e3-4db8-9ca7-b4c653be7d17-gate8-s0,libreoffice_calc-1334ca3e-f9e3-4db8-9ca7-b4c653be7d17,gate8,0,1,osworld,,977.5,agent,1.0,True,False,25,27,12,517184,4088,,DONE — Zoomed the Calc sheet out from 260% to 80% via View > Zoom (status bar zoom dialog) and saved Zoom_Out_Oversized_Cells.xlsx so cells are now small enough,23.0,2427.8,16.0,11.0,6556.7,1.0,3.0,,,,
