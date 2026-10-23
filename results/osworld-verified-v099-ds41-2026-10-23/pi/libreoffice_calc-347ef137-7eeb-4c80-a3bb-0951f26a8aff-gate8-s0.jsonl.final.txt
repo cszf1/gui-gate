@@ -1,0 +1,1 @@
+DONE — built two real column charts in the open workbook (2019: Jan–Dec vs the per-month totals I3:I14; 2020: Jan–Dec vs I20:I31), titled "Personal Costs - 2019" / "Personal Costs - 2020", legend removed, placed side by side under the tables, and saved the xlsx in place (xl/charts/chart1.xml + chart2.xml, verified in the saved file).

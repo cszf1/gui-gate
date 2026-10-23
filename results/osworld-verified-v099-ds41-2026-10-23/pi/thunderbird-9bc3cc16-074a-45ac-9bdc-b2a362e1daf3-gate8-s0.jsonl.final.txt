@@ -1,0 +1,1 @@
+DONE — Created ~/emails.bak and backed up all 6 messages from the Thunderbird inbox (`anonym-x2024@outlook.com` IMAP INBOX) as 6 separate, complete .eml files (headers + body), leaving the mailbox itself untouched.

@@ -1,0 +1,1 @@
+DONE — Placed the text cursor in the open Writer document and used Insert > Image to bring Desktop/1.png in at the cursor (anchored "As Character" in its own paragraph above the Figure 1 caption), then saved the .docx, whose embedded image is byte-identical to 1.png.

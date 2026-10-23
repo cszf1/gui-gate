@@ -1,0 +1,1 @@
+DONE — Installed the **Lisp** extension in VS Code (mattn.lisp 0.1.12) and mapped `files.associations` `*.scm → lisp` (status bar shows "Lisp" for script-fu files); wrote `~/Desktop/resize-character.scm` in VS Code and ran it with GIMP 3.0 script-fu batch (`gimp-file-save` API), which produced `~/Desktop/resized.png` verified at 128×128.

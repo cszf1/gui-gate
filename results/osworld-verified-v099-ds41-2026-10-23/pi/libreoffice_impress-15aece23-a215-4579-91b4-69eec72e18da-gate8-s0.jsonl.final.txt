@@ -1,0 +1,1 @@
+DONE — On slide 2 of 134_2.pptx (open in LibreOffice Impress) I selected the "Product Comparison" title placeholder and set its position to Y = 6.10″ (bottom edge at 7.35″ on the 7.5″-tall slide) via the sidebar Position and Size panel, then saved with Ctrl+S; the file on disk now stores the title shape at the bottom of the slide.

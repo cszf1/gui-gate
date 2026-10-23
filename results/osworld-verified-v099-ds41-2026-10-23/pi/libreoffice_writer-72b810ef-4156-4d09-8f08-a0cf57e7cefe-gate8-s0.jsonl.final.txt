@@ -1,0 +1,1 @@
+DONE — Applied strike-through to all words in the last paragraph (the grading/discussion-leading paragraph) of GEOG2169_Course_Outline_2022-23.docx in LibreOffice Writer, then saved the file (Ctrl+S); the .docx on disk now carries the `w:strike` formatting only on that paragraph.

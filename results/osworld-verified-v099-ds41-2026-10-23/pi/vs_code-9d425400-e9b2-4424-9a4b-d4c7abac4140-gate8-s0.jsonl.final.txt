@@ -1,0 +1,1 @@
+DONE — Opened VS Code's Settings (Ctrl+,), searched "wrap tabs", ticked "Workbench › Editor: Wrap Tabs", which persisted `"workbench.editor.wrapTabs": true` to `/home/user/.config/Code/User/settings.json` (verified valid JSON on disk).

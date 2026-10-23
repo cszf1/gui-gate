@@ -1,0 +1,1 @@
+DONE — Cloned https://github.com/xlang-ai/instructor-embedding into `/home/user/instructor-embedding` (a valid git working tree on branch `main` at commit 9a9742c, with `origin` set correctly).

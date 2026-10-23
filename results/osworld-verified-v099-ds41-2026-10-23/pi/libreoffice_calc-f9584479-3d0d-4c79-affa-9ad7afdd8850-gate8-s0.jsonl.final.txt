@@ -1,0 +1,1 @@
+DONE — Filled every missing Total column (F3:F5, F10:F12, F17:F19) and Total row (B6:F6, B13:F13, B20:F20) with SUM formulas in Quarterly_Product_Sales_by_Zone.xlsx, restored the Zone 3 header, and saved the workbook from Calc.

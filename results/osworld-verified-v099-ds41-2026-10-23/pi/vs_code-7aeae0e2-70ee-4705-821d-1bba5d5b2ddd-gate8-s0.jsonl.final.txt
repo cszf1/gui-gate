@@ -1,0 +1,6 @@
+DONE — Visualized all numpy arrays in the current file inside VS Code.
+
+What I did:
+- Set up the missing pieces (VS Code had only the grammar extension, numpy was absent): installed `ms-python.python` + `ms-toolsai.jupyter` + debugpy extensions, created `/data/home/.venv` with numpy/matplotlib/ipykernel, trusted the workspace, and selected `.venv` as the interpreter.
+- Fixed `main.py` so it can actually produce arrays (`np.random.randint(0, X.size, size=(N, X.size))`, `.mean(axis=1)`), and added `# %%` cell markers with printing + plotting.
+- Ran **Jupyter: Run All Cells** into the Interactive Window: `X`, `idx`, `means`, `confint` now show shapes/dtypes/samples plus a 2×2 figure (X histogram, idx heatmap, means histogram, means with 95% CI), and the **Jupyter Variables** panel lists every array with type/size/value. File saved (`Ctrl+S`).

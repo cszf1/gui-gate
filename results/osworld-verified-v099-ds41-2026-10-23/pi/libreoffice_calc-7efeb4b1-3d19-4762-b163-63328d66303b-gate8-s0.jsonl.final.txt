@@ -1,0 +1,1 @@
+DONE — Filled column B ("Seq No.") in `/data/home/Order_Sales_Serial#.xlsx` with "No. 1" … "No. 28" for rows 2–29 using Calc's fill-series (AutoFill), leaving all other columns, row 31, and formatting untouched, then saved in xlsx format.

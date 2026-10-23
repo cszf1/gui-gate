@@ -39,43 +39,43 @@ pi/ (Pi event streams, base64 screenshots stripped, streaming deltas dropped; .t
 .final.txt = final answer, .err = Pi stderr), task/ (task text given to the gate), setup/ (versions, configs, launcher,
 task list, role check, reviewer check).
 
-## Results (state: partial 31/361)
+## Results (state: partial 70/361)
 
 
-- tasks expected 361, finished rows 28, valid 23, infra 5 {'relay_error': 1, 'setup_failed': 4}
-- **success 16/361 = 4.43 %** (official-style: every expected task counts, infra/missing = 0); 16/23 = 69.57 % of valid runs; score sum 16.0
-- stops {'agent': 23}; turns mean 29.4 / median 23; wall mean 421.8 s / median 292.7 s; total 2.87 h
-- tokens: input 1,014,608 + cache read 25,214,336, output 187,330; screenshots returned 187; tool calls 723
-- request_human calls 4 (human=deny); FAIL answers 3
-- gate: {'actions': 567, 'executed': 551, 'interventions': 16, 'human_events': 10, 'loop_notes': 0, 'loop_refused': 0}
-- reviewer (System One): {'calls': 6, 'decisions': {'deny': 4, 'allow': 2}, 'ms_mean': 818.4, 'ms_median': 710.8}
+- tasks expected 361, finished rows 67, valid 60, infra 7 {'relay_error': 1, 'setup_failed': 6}
+- **success 37/361 = 10.25 %** (official-style: every expected task counts, infra/missing = 0); 37/60 = 61.67 % of valid runs; score sum 38.75
+- stops {'agent': 59, 'max_turns': 1}; turns mean 30.5 / median 25.0; wall mean 382.7 s / median 262.2 s; total 6.55 h
+- tokens: input 2,962,189 + cache read 78,835,968, output 554,072; screenshots returned 556; tool calls 1963
+- request_human calls 4 (human=deny); FAIL answers 4
+- gate: {'actions': 1794, 'executed': 1738, 'interventions': 56, 'human_events': 22, 'loop_notes': 0, 'loop_refused': 1}
+- reviewer (System One): {'calls': 33, 'decisions': {'deny': 17, 'allow': 16}, 'ms_mean': 880.1, 'ms_median': 687.8}
 
 | role | runs using | invocations | HTTP calls | errors | mean ms | median ms |
 |---|---|---|---|---|---|---|
-| feasibility | 23 | 23 | 153 | 1 | 75544.7 | 51031.4 |
-| planner | 23 | 23 | 77 | 0 | None | None |
-| verifier | 23 | 24 | 161 | 2 | 47362.0 | 43232.8 |
+| feasibility | 60 | 60 | 366 | 2 | 63568.0 | 48773.7 |
+| planner | 60 | 60 | 217 | 2 | None | None |
+| verifier | 60 | 65 | 451 | 3 | 57617.5 | 46986.2 |
 | judge | 0 | 0 | 0 | 0 | None | None |
-| search | 0 | 0 | 0 | 0 | None | None |
-| compact | 17 | 55 | 55 | 0 | 8812.1 | 7821.0 |
-| grounder | 1 | 1 | 1 | 0 | 3396.8 | 3396.8 |
+| search | 1 | 1 | 1 | 0 | 18235.6 | 18235.6 |
+| compact | 49 | 172 | 172 | 0 | 8594.0 | 7887.5 |
+| grounder | 2 | 2 | 2 | 0 | 3597.9 | 3597.9 |
 
 (feasibility ms = the whole briefing incl. planner; compact/judge ms = gap to the previous gate event, approximate)
 
 | domain | tasks | valid | success | rate (of tasks) | score sum | infra |
 |---|---|---|---|---|---|---|
-| libreoffice_impress | 1 | 1 | 1 | 100.0 % | 1.0 | 0 |
+| libreoffice_impress | 7 | 7 | 1 | 14.3 % | 1.0 | 0 |
 | os | 3 | 1 | 1 | 33.3 % | 1.0 | 2 |
-| multi_apps | 7 | 5 | 2 | 28.6 % | 2.0 | 2 |
-| libreoffice_writer | 2 | 1 | 1 | 50.0 % | 1.0 | 1 |
-| vs_code | 3 | 3 | 3 | 100.0 % | 3.0 | 0 |
-| libreoffice_calc | 6 | 6 | 6 | 100.0 % | 6.0 | 0 |
-| vlc | 2 | 2 | 1 | 50.0 % | 1.0 | 0 |
-| chrome | 1 | 1 | 0 | 0.0 % | 0.0 | 0 |
-| gimp | 2 | 2 | 1 | 50.0 % | 1.0 | 0 |
-| thunderbird | 1 | 1 | 0 | 0.0 % | 0.0 | 0 |
+| multi_apps | 17 | 13 | 6 | 35.3 % | 7.75 | 4 |
+| libreoffice_writer | 4 | 3 | 3 | 75.0 % | 3.0 | 1 |
+| vs_code | 6 | 6 | 5 | 83.3 % | 5.0 | 0 |
+| libreoffice_calc | 13 | 13 | 13 | 100.0 % | 13.0 | 0 |
+| vlc | 4 | 4 | 3 | 75.0 % | 3.0 | 0 |
+| chrome | 5 | 5 | 2 | 40.0 % | 2.0 | 0 |
+| gimp | 5 | 5 | 2 | 40.0 % | 2.0 | 0 |
+| thunderbird | 3 | 3 | 1 | 33.3 % | 1.0 | 0 |
 
-tools: {'run_command': 187, 'get_window_state': 128, 'run_actions': 111, 'click': 88, 'set_plan': 53, 'press_key': 45, 'list_windows': 43, 'check_done': 24, 'inspect': 24, 'list_apps': 5, 'type_text': 5, 'scroll': 5, 'request_human': 4, 'update_plan': 1}
+tools: {'run_command': 542, 'run_actions': 354, 'get_window_state': 297, 'click': 229, 'set_plan': 138, 'list_windows': 110, 'press_key': 91, 'inspect': 86, 'check_done': 65, 'type_text': 17, 'scroll': 17, 'list_apps': 12, 'request_human': 4, 'update_plan': 1}
 
 ## infra rows
 
@@ -84,3 +84,5 @@ tools: {'run_command': 187, 'get_window_state': 128, 'run_actions': 111, 'click'
 - multi_apps-a82b78bb-7fde-4cb3-94a4-035baf10bcf0: setup_failed (attempts 1) Exception("Setup step 5 failed: _open_setup - Failed to open file '/home/user/Desktop/2206.08853.pdf'. An error occurred while trying to send the request or the server responded with an error: 500 Server Error: INTERNAL SERVER ERROR for url: http://127.0.0.1:5000/setup/open_file")
 - os-4127319a-8b79-4410-b58a-7a151e15f3d7: setup_failed (attempts 1) Exception('Setup step 4 failed: _execute_setup - Setup command request failed: HTTP 500')
 - multi_apps-2b9493d7-49b8-493a-a71b-56cd1f4d6908: setup_failed (attempts 1) Exception('Setup step 4 failed: _execute_setup - Setup command request failed: HTTP 500')
+- multi_apps-2c9fc0de-3ee7-45e1-a5df-c86206ad78b5: setup_failed (attempts 1) Exception('Setup step 4 failed: _execute_setup - Setup command request failed: HTTP 500')
+- multi_apps-f5c13cdd-205c-4719-a562-348ae5cd1d91: setup_failed (attempts 1) Exception('Setup step 5 failed: _launch_setup - Failed to launch application: HTTP 500')

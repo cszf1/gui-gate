@@ -1,0 +1,1 @@
+DONE — Opened the presentation in LibreOffice Impress and used File > Save As to write it to the Desktop as `pre.pptx` in PowerPoint 2007–365 (.pptx) format; verified the file exists (`/data/home/Desktop/pre.pptx`, 2.5 MB, valid PowerPoint 2007+) and the window now shows "pre.pptx — LibreOffice Impress".

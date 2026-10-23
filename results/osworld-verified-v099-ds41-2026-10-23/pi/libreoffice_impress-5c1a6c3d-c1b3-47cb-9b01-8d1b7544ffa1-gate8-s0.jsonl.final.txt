@@ -1,0 +1,1 @@
+DONE — In LibreOffice Impress (slide 1 of `/data/home/Desktop/39_2.pptx`), I selected "BUSINESS AND CORPORATE" and set it to Bold, 44 pt and single underline, bolded "Business Infographic Template" too, then saved the file in PowerPoint format (verified: `sz="4400"`, `u="sng"`, `b="1"` on slide 1 runs).

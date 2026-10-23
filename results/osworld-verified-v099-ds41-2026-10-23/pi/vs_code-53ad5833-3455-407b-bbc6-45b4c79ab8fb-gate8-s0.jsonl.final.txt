@@ -1,0 +1,1 @@
+DONE — Opened VS Code and loaded the folder `/home/user/project` as the workspace (via File > Open Folder / `code /home/user/project`), trusted the workspace, and the Explorer now shows `.vscode`, `main.py`, and `README.md`.

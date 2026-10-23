@@ -1,0 +1,1 @@
+DONE — In GIMP I went to Edit > Preferences > Interface > Theme, changed the "Color scheme variant" from Dark Colors to Light Colors, clicked OK; the UI is now light and the setting persisted (`gimprc`: `theme-color-scheme light`, `theme.css` imports `gimp-light.css`).

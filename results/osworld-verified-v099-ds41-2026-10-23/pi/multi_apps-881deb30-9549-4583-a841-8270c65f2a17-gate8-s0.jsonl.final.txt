@@ -1,0 +1,1 @@
+DONE — Parsed the "Total" row (applications & supported per institution) from each `ecs15.pdf`–`ecs23.pdf`, computed supported/applications per university per year, entered all 72 values as decimals into B2:I10 of Sheet1 in `/home/user/Documents/Fundings/supported_rate.xlsx`, and saved the file.

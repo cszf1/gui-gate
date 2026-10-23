@@ -1,0 +1,1 @@
+DONE — In LibreOffice Calc I placed the cursor at C2 and applied View ▸ Freeze Rows and Columns, so the header range A1:B1 (row 1 + column A) stays pinned while scrolling, then saved the workbook in its original .xlsx format (verified in the file: `<pane xSplit="2" ySplit="1" topLeftCell="C2" state="frozen"/>`).
