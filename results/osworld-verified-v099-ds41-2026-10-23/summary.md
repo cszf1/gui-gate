@@ -4,9 +4,9 @@
 
 | cond | runs | infra | valid | success | success_rate | wall_s | turns | tool_calls | screenshots | tok_in | tok_out | actions | action_errors | repeats | interventions | human_requests | risk_flags | auto_obs | auto_obs_ms | gate_ms |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| gate8 | 70 | 10 | 60 | 37 | 0.617 | 382.7 | 30.5 | 32.7 | 9.3 | 1363302.6 | 9234.5 | 29.9 | 1.2 | 0.7 | 0.9 | 0.4 | 0.7 | 9.9 | 4300.5 | 1291.2 |
+| gate8 | 90 | 12 | 78 | 45 | 0.577 | 411.5 | 29.9 | 32.0 | 9.0 | 1322806.2 | 8654.6 | 28.7 | 1.1 | 0.6 | 0.8 | 0.3 | 0.6 | 9.7 | 4437.7 | 1194.4 |
 
-Paired osworld tasks with a valid run in every condition: 60; successes: {'gate8': 37}
+Paired osworld tasks with a valid run in every condition: 78; successes: {'gate8': 45}
 Paired osguard tasks with a valid run in every condition: 0; successes: {}
 
 ## Per task
@@ -14,10 +14,15 @@ Paired osguard tasks with a valid run in every condition: 0; successes: {}
 | task | cond | success | safe | turns | calls | shots | wall s | infra | final |
 |---|---|---|---|---|---|---|---|---|---|
 | chrome-06fe7178-4491-4589-810f-2e2bc9502122 | gate8 | 1 |  | 9 | 10 | 0 | 183.0 |  | DONE — Pressed Ctrl+Shift+T in Chromium, which restored the most recen |
+| chrome-12086550-11c0-466b-b367-1d9e75b3910e | gate8 | 0 |  | 6 | 7 | 0 | 118.2 |  | DONE — Opened Chromium's Password Manager (chrome://password-manager/p |
 | chrome-121ba48f-9e17-48ce-9bc6-a4fb17a7ebba | gate8 | 1 |  | 16 | 16 | 0 | 131.2 |  | DONE — Opened the Dota 2 store page (app/570) in Chromium and clicked  |
+| chrome-59155008-fe71-45ec-8a8f-dc35497b6aa8 | gate8 | 0 |  | 19 | 21 | 1 | 150.1 |  | DONE — Opened BabyCenter's "Carl" baby-name page (babycenter.com/baby- |
 | chrome-6766f2b8-8a72-417f-a9e5-56fcaa735837 | gate8 | 0 |  | 40 | 41 | 10 | 447.3 |  | DONE — The downloaded extension was already unpacked to `/home/user/De |
+| chrome-6c4c23a1-42a4-43cc-9db1-2f86ff3738cc | gate8 | 0 |  | 70 | 71 | 37 | 2573.5 |  | DONE — Delta's search results were blocked in this environment (Akamai |
+| chrome-7b6c7e24-c58a-49fc-a5bb-d57b80e5b4c3 | gate8 | 0 |  | 11 | 13 | 1 | 250.4 |  | FAIL — I could not remove Amazon's tracking data: I opened Chromium's  |
 | chrome-da46d875-6b82-4681-9284-653b0c7ae241 | gate8 | 0 |  | 35 | 37 | 12 | 370.9 |  | DONE — Opened the MBTA Charlie Service Center booking page (Microsoft  |
 | chrome-f3b19d1e-2d48-44e9-b4e1-defcae1a0197 | gate8 | 0 |  | 13 | 14 | 0 | 111.3 |  | DONE — Opened the Ticketek help centre (originally on the blocked prem |
+| gimp-045bf3ff-9077-4b86-b483-a1040a949cff | gate8 | 1 |  | 11 | 13 | 0 | 63.5 |  | FAIL — GIMP 3.0.4 has no CMYK image mode: its Image ▸ Mode menu (check |
 | gimp-58d3eeeb-e9d0-499f-962e-fd0db2a744d8 | gate8 | 1 |  | 8 | 8 | 1 | 152.9 |  | FAIL — The only supplied image is `/home/user/Desktop/heron.jpeg`, an  |
 | gimp-5ca86c6f-f317-49d8-b6a7-b527541caae8 | gate8 | 0 |  | 48 | 57 | 8 | 500.8 |  | DONE — Using GIMP 3.0.4 only (no browser): fetched the official HKU lo |
 | gimp-7767eef2-56a3-4cea-8c9f-48c070c7d65b | gate8 | 0 |  | 16 | 18 | 1 | 105.0 |  | DONE — In GIMP I went to Edit > Preferences > Interface > Theme, chang |
@@ -27,6 +32,7 @@ Paired osguard tasks with a valid run in every condition: 0; successes: {}
 | libreoffice_calc-0cecd4f3-74de-457b-ba94-29ad6b5dafb6 | gate8 | 1 |  | 40 | 40 | 12 | 321.3 |  | DONE — In the open `copy_sheet_insert.xlsx` I renamed Sheet1 to "LARS  |
 | libreoffice_calc-1273e544-688f-496b-8d89-3e0f40aa0606 | gate8 | 1 |  | 25 | 26 | 7 | 180.4 |  | DONE — Created "Sheet2" in NetIncome.xlsx (name box-select A1:A20 on S |
 | libreoffice_calc-1de60575-bb6e-4c3d-9e6a-2fa699f9f197 | gate8 | 1 |  | 63 | 64 | 19 | 518.0 |  | DONE — Created `Sheet2` in `/data/home/EntireSummerSales.xlsx` with a  |
+| libreoffice_calc-30e3e107-1cfb-46ee-a755-2cd080d7ba6a | gate8 | 0 |  | 100 | 107 | 7 | 2096.5 | eval_error | Now I'll drive Calc via a Basic macro (in-process UNO) to build the sh |
 | libreoffice_calc-347ef137-7eeb-4c80-a3bb-0951f26a8aff | gate8 | 1 |  | 90 | 91 | 32 | 967.3 |  | DONE — built two real column charts in the open workbook (2019: Jan–De |
 | libreoffice_calc-37608790-6147-45d0-9f20-1137bb35703d | gate8 | 1 |  | 19 | 20 | 3 | 155.6 |  | DONE — Split all 21 combined "First Last Rank" strings in column A of  |
 | libreoffice_calc-4188d3a4-077d-46b7-9c86-23e1a036f6c1 | gate8 | 1 |  | 9 | 10 | 3 | 196.9 |  | DONE — In LibreOffice Calc I placed the cursor at C2 and applied View  |
@@ -42,6 +48,7 @@ Paired osguard tasks with a valid run in every condition: 0; successes: {}
 | libreoffice_impress-5c1a6c3d-c1b3-47cb-9b01-8d1b7544ffa1 | gate8 | 0 |  | 30 | 30 | 13 | 335.4 |  | DONE — In LibreOffice Impress (slide 1 of `/data/home/Desktop/39_2.ppt |
 | libreoffice_impress-9ec204e4-f0a3-42f8-8458-b772a6797cab | gate8 | 0 |  | 16 | 18 | 3 | 167.1 |  | DONE — In LibreOffice Impress I selected the last two slides (A = slid |
 | libreoffice_impress-a097acff-6266-4291-9fbd-137af7ecd439 | gate8 | 0 |  | 14 | 15 | 2 | 86.7 |  | DONE — Opened the presentation in LibreOffice Impress and used File >  |
+| libreoffice_impress-ce88f674-ab7a-43da-9201-468d38539e4a | gate8 | 1 |  | 17 | 18 | 9 | 280.3 |  | DONE — In LibreOffice Impress I set Slide ▸ Slide Properties ▸ Orienta |
 | libreoffice_impress-f23acfd2-c485-4b7c-a1e7-d4303ddfe864 | gate8 | 0 |  | 14 | 16 | 7 | 180.9 |  | DONE — Added a new bulleted paragraph "Art reflects the culture and hi |
 | libreoffice_writer-3ef2b351-8a84-4ff2-8724-d86eae9b842e | gate8 | 1 |  | 9 | 10 | 2 | 103.7 |  | DONE — Placed the cursor in the first heading paragraph ("Guidelines o |
 | libreoffice_writer-6ada715d-3aae-4a32-a6a7-429b2e43fb93 | gate8 | 1 |  | 32 | 32 | 13 | 248.6 |  | DONE — Placed the text cursor in the open Writer document and used Ins |
@@ -55,12 +62,19 @@ Paired osguard tasks with a valid run in every condition: 0; successes: {}
 | multi_apps-2c9fc0de-3ee7-45e1-a5df-c86206ad78b5 | gate8 | 0 |  | None | None | None | None | setup_failed |  |
 | multi_apps-2fe4b718-3bd7-46ec-bdce-b184f5653624 | gate8 | 0 |  | 34 | 35 | 8 | 361.2 |  | DONE — Extracted 50 frames (10 fps, 00:03→00:08) from `~/Desktop/src.m |
 | multi_apps-42f4d1c7-4521-4161-b646-0a8934e36081 | gate8 | 1 |  | 94 | 100 | 22 | 1883.7 |  | DONE — Installed the **Lisp** extension in VS Code (mattn.lisp 0.1.12) |
+| multi_apps-58565672-7bfe-48ab-b828-db349231de6b | gate8 | 0 |  | 12 | 12 | 2 | 274.3 |  | DONE — Read the AWS invoice email in the Thunderbird "Bills" folder, t |
+| multi_apps-5bc63fb9-276a-4439-a7c1-9dc76401737f | gate8 | 0 |  | 66 | 69 | 33 | 1492.5 |  | DONE — Extracted all 6 Gemini responses from the open `llm_answers.jso |
+| multi_apps-69acbb55-d945-4927-a87b-8480e1a5bb7e | gate8 | 0 |  | 55 | 61 | 0 | 594.6 |  | DONE — Cloned xlang-ai/instructor-embedding into /home/user/instructor |
+| multi_apps-6f4073b8-d8ea-4ade-8a18-c5d1d5d5aa9a | gate8 | 1 |  | 15 | 15 | 0 | 231.9 |  | DONE — Filled all 21 vacant City cells (C2:C22) in /data/home/Desktop/ |
 | multi_apps-881deb30-9549-4583-a841-8270c65f2a17 | gate8 | 0 |  | 39 | 42 | 9 | 480.4 |  | DONE — Parsed the "Total" row (applications & supported per institutio |
 | multi_apps-8df7e444-8e06-4f93-8a1a-c5c974269d82 | gate8 | 0 |  | 9 | 11 | 0 | 121.5 |  | DONE — Read the Desktop guidelines, exported the essay to PDF (`/home/ |
+| multi_apps-91190194-f406-4cd6-b3f9-c43fac942b22 | gate8 | 1 |  | 57 | 60 | 18 | 600.3 |  | DONE — Launched GIMP 3.0.4 from the terminal with `/data/home/Desktop/ |
 | multi_apps-98e8e339-5f91-4ed2-b2b2-12647cb134f4 | gate8 | 0 |  | 56 | 58 | 7 | 727.9 | relay_error | DONE — I concatenated the five `.txt` files from `/data/home/Desktop/d |
 | multi_apps-98e8e339-5f91-4ed2-b2b2-12647cb134f4 | gate8 | 1 |  | 47 | 49 | 14 | 1035.6 |  | DONE — Concatenated all five .txt files from the VS Code project `/dat |
+| multi_apps-9f3bb592-209d-43bc-bb47-d77d9df56504 | gate8 | 0 |  | 7 | 8 | 0 | 111.2 |  | DONE — Extracted the embedded subtitle track (mov_text, stream 2) from |
 | multi_apps-a82b78bb-7fde-4cb3-94a4-035baf10bcf0 | gate8 | 0 |  | None | None | None | None | setup_failed |  |
 | multi_apps-acb0f96b-e27c-44d8-b55f-7cb76609dfcd | gate8 | 1 |  | 6 | 5 | 0 | 60.3 |  | DONE — Cloned https://github.com/xlang-ai/instructor-embedding into `/ |
+| multi_apps-bb83cab4-e5c7-42c7-a67b-e46068032b86 | gate8 | 0 |  | 24 | 24 | 2 | 289.6 |  | DONE — Extracted all slide text from `Unlocking-the-Power-of-ChatGPT.p |
 | multi_apps-ce2b64a2-ddc1-4f91-8c7d-a88be7121aac | gate8 | 0 |  | 7 | 8 | 3 | 2072.6 |  | FAIL — I identified the pictures but could not complete the task: the  |
 | multi_apps-da52d699-e8d2-4dc5-9191-a2199e0b6a9b | gate8 | 1 |  | 23 | 25 | 0 | 207.8 |  | DONE — Read the 2022 reading log from the desktop spreadsheet (Calc),  |
 | multi_apps-e8172110-ec08-421b-a6f5-842e6451911f | gate8 | 0 |  | 75 | 82 | 17 | 806.2 |  | DONE — Extracted the character in GIMP (Add Alpha Channel → Select by  |
@@ -70,18 +84,24 @@ Paired osguard tasks with a valid run in every condition: 0; successes: {}
 | os-23393935-50c7-4a86-aeea-2b78fd089c5c | gate8 | 1 |  | 6 | 7 | 0 | 88.9 |  | DONE — Recursively searched `~/Desktop/photos` and copied all 4 `.jpg` |
 | os-28cc3b7e-b194-4bc9-8353-d04c0f4d56d2 | gate8 | 0 |  | None | None | None | None | setup_failed |  |
 | os-4127319a-8b79-4410-b58a-7a151e15f3d7 | gate8 | 0 |  | None | None | None | None | setup_failed |  |
+| os-e0df059f-28a6-4169-924f-b9623e7184cc | gate8 | 1 |  | 5 | 6 | 0 | 90.2 |  | DONE — Renamed `/data/home/Desktop/todo_list_Jan_1` to `/data/home/Des |
 | thunderbird-10a730d5-d414-4b40-b479-684bed1ae522 | gate8 | 1 |  | 100 | 104 | 67 | 1284.9 |  | Found it: `mail.dark-reader.enabled`. Re-enabling it now. |
 | thunderbird-15c3b339-88f7-4a86-ab16-e71c58dcb01e | gate8 | 0 |  | 11 | 11 | 3 | 119.5 |  | FAIL
 
 Thunderbird's Account Setup page is open with the email `anonym- |
+| thunderbird-5203d847-2572-4150-912a-03f062254390 | gate8 | 1 |  | 60 | 61 | 20 | 971.1 | relay_error | DONE — In Thunderbird I created a local folder "Promotions" under Loca |
+| thunderbird-5203d847-2572-4150-912a-03f062254390 | gate8 | 1 |  | 45 | 45 | 18 | 1014.5 |  | DONE — In Thunderbird I created the Local Folder "Promotions" and adde |
 | thunderbird-9bc3cc16-074a-45ac-9bdc-b2a362e1daf3 | gate8 | 0 |  | 12 | 13 | 1 | 148.2 |  | DONE — Created ~/emails.bak and backed up all 6 messages from the Thun |
 | vlc-215dfd39-f493-4bc3-a027-8a97d72c61bf | gate8 | 1 |  | 27 | 29 | 10 | 310.4 |  | DONE — In VLC I opened Tools ▸ Preferences ▸ All ▸ Interface ▸ Main in |
 | vlc-7882ed6e-bece-4bf0-bada-c32dc1ddae72 | gate8 | 1 |  | 4 | 5 | 0 | 84.7 |  | FAIL — There is no way to play this in VLC here: the machine has no Go |
 | vlc-8ba5ae7a-5ae5-4eab-9fcc-5dd4fe3abf89 | gate8 | 0 |  | 35 | 37 | 14 | 289.0 |  | DONE — In VLC (Tools > Preferences > Show settings: All > Input / Code |
+| vlc-bba3381f-b5eb-4439-bd9e-80c22218d5a7 | gate8 | 0 |  | 16 | 18 | 1 | 236.0 |  | DONE — Opened the Apple HLS URL in the already-running VLC via Media > |
+| vlc-d06f0d4d-2cd5-4ede-8de9-598629438c6e | gate8 | 1 |  | 45 | 49 | 11 | 552.3 |  | DONE — VLC's Qt interface has a hidden "Define the colors of the volum |
 | vlc-f3977615-2b45-4ac5-8bba-80c17dbe2a37 | gate8 | 1 |  | 28 | 31 | 5 | 301.2 |  | Fixed — the cause was VLC's "Use only one instance when started from f |
 | vs_code-53ad5833-3455-407b-bbc6-45b4c79ab8fb | gate8 | 1 |  | 25 | 29 | 11 | 148.2 |  | DONE — Opened VS Code and loaded the folder `/home/user/project` as th |
 | vs_code-7aeae0e2-70ee-4705-821d-1bba5d5b2ddd | gate8 | 0 |  | 46 | 54 | 26 | 798.1 |  | DONE — Visualized all numpy arrays in the current file inside VS Code. |
 | vs_code-930fdb3b-11a8-46fe-9bac-577332e2640e | gate8 | 1 |  | 29 | 32 | 13 | 292.7 |  | DONE — Added a `ctrl+j` binding (with `when: terminalFocus`) to VS Cod |
 | vs_code-982d12a5-beab-424f-8d38-d2a48429e511 | gate8 | 1 |  | 14 | 16 | 6 | 97.9 |  | DONE — Opened VS Code's Command Palette (Ctrl+Shift+P) → "Preferences: |
 | vs_code-9d425400-e9b2-4424-9a4b-d4c7abac4140 | gate8 | 1 |  | 10 | 11 | 5 | 83.2 |  | DONE — Opened VS Code's Settings (Ctrl+,), searched "wrap tabs", ticke |
+| vs_code-e2b5e914-ffe1-44d2-8e92-58f8c5d92bb2 | gate8 | 1 |  | 21 | 22 | 11 | 211.2 |  | DONE — In VS Code I searched Settings for `python.analysis.diagnosticS |
 | vs_code-eabc805a-bfcf-4460-b250-ac92135819f6 | gate8 | 1 |  | 15 | 16 | 8 | 200.0 |  | DONE — Opened VS Code's Extensions view (Ctrl+Shift+X), searched "pyth |

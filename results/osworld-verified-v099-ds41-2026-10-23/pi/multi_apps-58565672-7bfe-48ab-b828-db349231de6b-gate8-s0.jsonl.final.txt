@@ -1,0 +1,1 @@
+DONE — Read the AWS invoice email in the Thunderbird "Bills" folder, took its first link (`https://www.amazon.com/`), and opened it in a new Chrome tab, leaving the existing tabs (Apple, scholar.google.com) untouched.

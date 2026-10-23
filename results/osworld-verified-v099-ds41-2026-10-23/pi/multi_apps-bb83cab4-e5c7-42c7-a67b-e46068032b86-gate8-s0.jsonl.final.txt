@@ -1,0 +1,1 @@
+DONE — Extracted all slide text from `Unlocking-the-Power-of-ChatGPT.pptx` (28 slides) and saved it as editable paragraphs in `/home/user/Desktop/script.docx`, opened in LibreOffice Writer (3 pages, 47 text paragraphs).

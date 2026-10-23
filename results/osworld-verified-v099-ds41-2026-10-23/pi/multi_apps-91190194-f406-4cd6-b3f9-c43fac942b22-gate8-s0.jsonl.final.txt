@@ -1,0 +1,1 @@
+DONE — Launched GIMP 3.0.4 from the terminal with `/data/home/Desktop/cola.png`, cropped the top 20% (256 px off 1280 → 1233x1024) in GIMP, and exported the result via File > Export As to `/data/home/Desktop/cropped.png` (verified on disk at 1233x1024, next to the source file).

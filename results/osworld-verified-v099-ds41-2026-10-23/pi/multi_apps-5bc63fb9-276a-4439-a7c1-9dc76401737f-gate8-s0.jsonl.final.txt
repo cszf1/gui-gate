@@ -1,0 +1,1 @@
+DONE — Extracted all 6 Gemini responses from the open `llm_answers.json` (every recursively-keyed `GEMINI` value), inserted them into a new Writer document with each response as its own paragraph separated by a blank line, applied yellow character highlighting to all 33 occurrences of "Iliad", and saved it as `/data/home/Desktop/gemini_results.docx` (source JSON left untouched).
