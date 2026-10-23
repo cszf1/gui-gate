@@ -1,0 +1,1 @@
+FAIL — The "Dim screen when inactive" option does not exist on this machine: Xfce Power Manager (and xfce4-screensaver) are not installed (no binary, no .desktop launcher, no xfce4-power-manager xfconf channel), so there is no settings panel containing that toggle and no supported way to turn it off without installing unrequested packages.

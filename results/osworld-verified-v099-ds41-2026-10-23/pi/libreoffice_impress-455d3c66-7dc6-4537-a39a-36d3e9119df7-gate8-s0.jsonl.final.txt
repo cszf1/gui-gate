@@ -1,0 +1,1 @@
+DONE — In LibreOffice Impress I used File > Export on `wssf-project-plan-on-a-page.pptx`, chose PNG with default options, and saved it as `/home/user/Desktop/res.png` (2688×1512 PNG of the slide).

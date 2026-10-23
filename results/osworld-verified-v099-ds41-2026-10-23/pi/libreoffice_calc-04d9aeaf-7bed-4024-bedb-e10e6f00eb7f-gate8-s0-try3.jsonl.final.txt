@@ -1,0 +1,1 @@
+DONE — Created "Sheet2" in /data/home/SmallBalanceSheet.xlsx with headers Year/CA changes/FA changes/OA changes, years 2015–2019, and prior-year percentage-change formulas (e.g. `=(Sheet1.B3-Sheet1.B2)/Sheet1.B2`) for Current, Fixed and Other Assets in percent format, then saved the file.

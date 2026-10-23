@@ -1,0 +1,1 @@
+FAIL — The installed browser is Chromium 155.0.8059.79, where the 2023 refresh UI is the permanent default: there is no `chrome://flags` entry (searching "2023" gives "No matching experiments"; the binary contains no `chrome-refresh-2023`/`ChromeRefresh2023`/`temporary-unexpired-flags` strings) and no setting or policy exists to restore the pre-2023 design.

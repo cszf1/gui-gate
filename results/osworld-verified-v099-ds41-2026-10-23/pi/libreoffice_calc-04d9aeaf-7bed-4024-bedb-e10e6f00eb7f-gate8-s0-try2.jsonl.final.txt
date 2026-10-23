@@ -1,0 +1,1 @@
+DONE — Added Sheet2 to /home/user/SmallBalanceSheet.xlsx with headers Year, CA changes, FA changes, OA changes and formulas computing 2015–2019 year-over-year percentage changes for Current, Fixed and Other Assets (shown in % format), then saved the workbook.

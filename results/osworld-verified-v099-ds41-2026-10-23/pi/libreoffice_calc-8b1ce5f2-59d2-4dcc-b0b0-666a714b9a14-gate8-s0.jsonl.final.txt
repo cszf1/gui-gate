@@ -1,0 +1,1 @@
+DONE — Highlighted all 44 Saturday/Sunday date cells (Jun–Oct 2022, columns B–F) in `/data/home/Calendar_Highlight_Weekend_Days.xlsx` with a solid `#ff0000` cell background, left headers/weekday/blank cells untouched, and reloaded the file in LibreOffice Calc so the window shows the saved result.

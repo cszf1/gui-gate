@@ -1,0 +1,1 @@
+DONE — On the open Rentalcars.com tab I searched Zürich for Mon 26 Oct → Fri 30 Oct 2026, applied the "Large car" category filter (339 cars) and set the sort to "Price (lowest first)"; the results now list the cheapest large car first (Renault Rafale or similar, 4 days, $175, Zurich Airport/Alamo).

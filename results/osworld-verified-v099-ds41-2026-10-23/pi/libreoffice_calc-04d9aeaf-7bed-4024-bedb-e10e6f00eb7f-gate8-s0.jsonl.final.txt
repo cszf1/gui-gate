@@ -1,0 +1,1 @@
+DONE — Added "Sheet2" to `/data/home/SmallBalanceSheet.xlsx` with headers Year / CA changes / FA changes / OA changes, rows for 2015–2019 holding percentage-change formulas (=Sheet1.B3/Sheet1.B2-1 etc.) formatted as percent, and saved the workbook.

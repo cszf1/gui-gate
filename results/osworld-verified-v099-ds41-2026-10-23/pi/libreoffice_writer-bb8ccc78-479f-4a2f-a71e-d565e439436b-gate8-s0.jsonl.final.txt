@@ -1,0 +1,3 @@
+FAIL
+
+Real-time co-editing isn't possible here: the open `The Wonders of Our Solar System.docx` is in desktop LibreOffice Writer, which has no real-time sharing — it would need Collabora/LibreOffice Online or a cloud suite, and no such server, sync client, cloud mount, or team-sharing backend exists on this machine (verified: `which collabora-online loolwsd nextcloud rclone dropbox gdrive insync owncloud seafile-client` → empty, no collab components in `/usr/lib/libreoffice/program`, no NFS/CIFS/cloud mounts).
