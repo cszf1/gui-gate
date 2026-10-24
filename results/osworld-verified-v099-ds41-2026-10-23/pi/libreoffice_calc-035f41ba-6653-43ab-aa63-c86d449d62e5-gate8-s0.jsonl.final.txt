@@ -1,0 +1,1 @@
+DONE — Filled Sheet1's Gross Profit column (J2:J10 = Net Sales − Discounts/Allowances − Materials − Labor − Overhead, e.g. 2015 → 55,000) plus Net Sales and Total COGS, created Sheet2 with header `Year_Profit` in A1 and A2:A10 as `Year_<GrossProfit>` (2015_55000 … 2023_43649), and saved IncomeStatement2.xlsx.

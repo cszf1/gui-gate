@@ -1,0 +1,1 @@
+DONE — In LibreOffice Calc I used File > Save As with the "HTML Document (Calc) (.html)" filter to write `/home/user/Desktop/annual-enterprise-survey-2021-financial-year-provisional.html` (58,882 B, full data table), then opened it in Chromium in a new tab where the spreadsheet renders as an HTML table.

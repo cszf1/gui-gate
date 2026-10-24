@@ -1,0 +1,1 @@
+DONE — Downloaded the first paper in the sheet (BERT, arXiv:1810.04805) to `/home/user/paper01.pdf` (16-page PDF verified as the BERT paper), and saved `/home/user/ans.docx` naming the citing paper: "TinyBERT: Distilling BERT for Natural Language Understanding" (2019, arXiv:1909.10351 — its reference list includes Devlin et al.'s BERT).

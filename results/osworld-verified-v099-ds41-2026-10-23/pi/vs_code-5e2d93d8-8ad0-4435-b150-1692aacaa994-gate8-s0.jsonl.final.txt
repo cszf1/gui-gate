@@ -1,0 +1,1 @@
+DONE — In VS Code I ran *Workspaces: Save Workspace As…* for the open `/home/user/project` folder and saved it as `/home/user/project/project.code-workspace` (valid JSON, folder path `/home/user/project`), which the window now shows as "project (Workspace)".

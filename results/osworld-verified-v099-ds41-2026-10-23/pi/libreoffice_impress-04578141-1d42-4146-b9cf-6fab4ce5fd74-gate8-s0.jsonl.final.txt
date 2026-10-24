@@ -1,0 +1,1 @@
+DONE — On slide 1 of `/data/home/Desktop/45_2.pptx` (open in Impress), the top textbox "NEW PR DUCT" is now exactly yellow (FFFF00), "LAUNCH" exactly red (FF0000), and the bottom "PR JECT PR POSAL" exactly green (00FF00); the file was updated on disk and reloaded in Impress, which now shows the three colors.

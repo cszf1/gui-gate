@@ -1,0 +1,1 @@
+DONE — Opened Slide 1 of `214_9.pptx` (already slide 1 of 2), used Slide ▸ Slide Properties ▸ Background ▸ Color and picked the palette's **Green** (#00A933), applied to that slide only, then saved (Ctrl+S, PowerPoint format kept) — slide1.xml now holds `<p:bg>` solid fill `00a933` while slide 2 is unchanged.

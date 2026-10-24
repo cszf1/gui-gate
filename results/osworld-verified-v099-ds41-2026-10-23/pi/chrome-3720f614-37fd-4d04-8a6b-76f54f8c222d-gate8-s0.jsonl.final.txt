@@ -1,0 +1,1 @@
+FAIL — Xenothian (and Atlantis) are not real languages: Chrome's interface language list is built from the locale packs shipped with the browser, and this installation contains only `en-US.pak` (`/usr/lib/chromium/locales`), with no Xenothian locale anywhere, so no such option exists in Chrome's built-in settings.

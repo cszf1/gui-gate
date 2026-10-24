@@ -1,0 +1,1 @@
+DONE — In GIMP I added a new layer to `white_background.xcf` via Layer > New Layer, named it **Square**, and saved the image (Ctrl+S/File > Save) so the layer persists in the file (2 layers now, verified in both the Layers dock and the saved file on disk).
