@@ -1,0 +1,1 @@
+DONE — In Thunderbird's Account Settings → Composition & Addressing for anonym-x2024@outlook.com I unchecked "Automatically quote the original message when replying" (`mail.identity.id1.auto_quote` is now `false` in prefs.js), and a test reply opened with a completely empty body — no quoted text, no ">" indentation.

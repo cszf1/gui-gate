@@ -1,0 +1,1 @@
+The name field has focus with the basename selected. I'll type the new name and press Enter.

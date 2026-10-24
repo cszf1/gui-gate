@@ -1,0 +1,1 @@
+DONE — Collected arXivDaily's 11 Oct 2023 new cs.CL (foundation language model) submissions — 29 papers including Mistral 7B — and added title, arXiv PDF link and 2023.10.11 date to /data/home/Desktop/New Large Language Models.xlsx (rows 3–31), saved.

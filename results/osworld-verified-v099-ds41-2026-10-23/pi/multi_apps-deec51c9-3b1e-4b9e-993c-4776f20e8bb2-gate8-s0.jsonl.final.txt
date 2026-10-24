@@ -1,0 +1,1 @@
+DONE — Scraped arxivdaily's "语言大模型 / LLM" (foundation language models) listing for 2023‑10‑11 (78 papers across 3 pages) and entered all rows (title, arXiv PDF link, date 2023.10.11) below the sample row in `/data/home/Desktop/New Large Language Models.xlsx`, then saved the file.

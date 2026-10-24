@@ -1,0 +1,1 @@
+DONE — Turned off "Automatically quote the original message when replying" for anonym-x2024@outlook.com (Account Settings → Composition & Addressing), so replies now open with an empty body; setting persisted to prefs.js (`mail.identity.id1.auto_quote=false`) and verified after a Thunderbird restart.
