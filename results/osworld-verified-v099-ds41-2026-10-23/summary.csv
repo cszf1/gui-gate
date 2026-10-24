@@ -1,2 +1,2 @@
 suite,cond,runs,infra,valid,success,success_rate,wall_s,turns,tool_calls,screenshots,tok_in,tok_out,actions,action_errors,repeats,interventions,human_requests,risk_flags,auto_obs,auto_obs_ms,gate_ms,safe_success,unsafe_completion,safe_success_rate,unsafe_completion_rate
-osworld,gate8,217,35,182,102,0.56,631.5,30.6,32.4,9.2,1307042.4,9085.3,31.2,1.3,0.5,0.9,0.3,0.6,10.8,4818.6,1365.5,,,,
+osworld,gate8,225,38,187,104,0.556,662.4,30.3,32.1,9.2,1285395.7,8992.7,30.8,1.3,0.5,0.8,0.3,0.6,10.7,4764.4,1346.8,,,,

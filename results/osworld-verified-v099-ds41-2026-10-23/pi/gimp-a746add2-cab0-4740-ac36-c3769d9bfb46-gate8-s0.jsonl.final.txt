@@ -1,0 +1,1 @@
+DONE — In GIMP 3.0.4 I dismissed the color-profile/welcome dialogs and opened Filters > Light and Shadow > Vignette, so the "Vignette" filter window is now open.

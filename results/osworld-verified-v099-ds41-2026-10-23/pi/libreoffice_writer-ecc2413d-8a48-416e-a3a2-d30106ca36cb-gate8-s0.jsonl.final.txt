@@ -1,0 +1,1 @@
+**DONE** — In LibreOffice Writer I placed the cursor at the end of page 1 (the cover page, after the "…legal advice." disclaimer), pressed Ctrl+Enter to insert a page break, and saved; `~/Desktop/Sample_Statutory_Declaration.docx` now has 8 pages (was 7) with a blank page 2, text unchanged at 972 words.
