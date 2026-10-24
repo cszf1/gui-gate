@@ -1,0 +1,1 @@
+DONE — Set VLC’s “Maximum Volume displayed” to 200% in Advanced Preferences, saved it to `~/.config/vlc/vlcrc` (`qt-max-volume=200`), and restarted VLC; the volume slider now reaches 200%.

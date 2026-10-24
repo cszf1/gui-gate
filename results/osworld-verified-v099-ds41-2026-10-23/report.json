@@ -1,13 +1,13 @@
 {
  "summary": {
   "expected": 361,
-  "rows": 189,
-  "valid": 172,
+  "rows": 200,
+  "valid": 183,
   "infra": 17,
-  "success": 94,
-  "score_sum": 99.35,
-  "rate_official": 26.04,
-  "rate_valid": 54.65,
+  "success": 102,
+  "score_sum": 107.35,
+  "rate_official": 28.25,
+  "rate_valid": 55.74,
   "infra_kinds": {
    "relay_error": 2,
    "setup_failed": 14,
@@ -15,8 +15,8 @@
   },
   "domains": {
    "libreoffice_impress": {
-    "tasks": 24,
-    "valid": 24,
+    "tasks": 25,
+    "valid": 25,
     "success": 5,
     "score_sum": 5.925318705016887,
     "infra": 0
@@ -29,45 +29,45 @@
     "infra": 3
    },
    "multi_apps": {
-    "tasks": 51,
-    "valid": 39,
-    "success": 17,
-    "score_sum": 20.488890566084056,
+    "tasks": 54,
+    "valid": 42,
+    "success": 18,
+    "score_sum": 21.488890566084056,
     "infra": 12
    },
    "libreoffice_writer": {
-    "tasks": 11,
-    "valid": 10,
-    "success": 7,
-    "score_sum": 7.0,
+    "tasks": 12,
+    "valid": 11,
+    "success": 8,
+    "score_sum": 8.0,
     "infra": 1
    },
    "vs_code": {
-    "tasks": 13,
-    "valid": 13,
-    "success": 11,
-    "score_sum": 11.0,
+    "tasks": 16,
+    "valid": 16,
+    "success": 14,
+    "score_sum": 14.0,
     "infra": 0
    },
    "libreoffice_calc": {
-    "tasks": 32,
-    "valid": 31,
-    "success": 27,
-    "score_sum": 27.0,
+    "tasks": 33,
+    "valid": 32,
+    "success": 28,
+    "score_sum": 28.0,
     "infra": 1
    },
    "vlc": {
-    "tasks": 7,
-    "valid": 7,
-    "success": 5,
-    "score_sum": 5.0,
+    "tasks": 8,
+    "valid": 8,
+    "success": 6,
+    "score_sum": 6.0,
     "infra": 0
    },
    "chrome": {
-    "tasks": 21,
-    "valid": 21,
-    "success": 5,
-    "score_sum": 5.932778548312529,
+    "tasks": 22,
+    "valid": 22,
+    "success": 6,
+    "score_sum": 6.932778548312529,
     "infra": 0
    },
    "gimp": {
@@ -86,75 +86,76 @@
    }
   },
   "stops": {
-   "agent": 162,
+   "agent": 171,
    "max_turns": 3,
-   "timeout": 7
+   "timeout": 9
   },
-  "turns_mean": 31.1,
-  "turns_median": 25.0,
-  "wall_mean_s": 619.1,
-  "wall_median_s": 324.6,
-  "wall_total_h": 30.61,
-  "tok_in": 8869351,
-  "tok_cache": 222899200,
-  "tok_out": 1592302,
-  "screenshots": 1612,
-  "tool_calls": 5659,
+  "turns_mean": 30.6,
+  "turns_median": 25,
+  "wall_mean_s": 651.7,
+  "wall_median_s": 334.6,
+  "wall_total_h": 34.16,
+  "tok_in": 9288353,
+  "tok_cache": 229312000,
+  "tok_out": 1657899,
+  "screenshots": 1690,
+  "tool_calls": 5923,
   "tools": {
-   "run_command": 1427,
-   "run_actions": 1106,
-   "get_window_state": 889,
-   "click": 702,
-   "set_plan": 375,
-   "list_windows": 321,
-   "press_key": 304,
-   "inspect": 214,
-   "check_done": 167,
-   "type_text": 54,
-   "scroll": 51,
-   "list_apps": 37,
+   "run_command": 1474,
+   "run_actions": 1154,
+   "get_window_state": 931,
+   "click": 741,
+   "set_plan": 399,
+   "list_windows": 342,
+   "press_key": 322,
+   "inspect": 218,
+   "check_done": 176,
+   "scroll": 58,
+   "type_text": 56,
+   "list_apps": 39,
    "request_human": 10,
    "update_plan": 1,
-   "mcp__gui_run_actions": 1
+   "mcp__gui_run_actions": 1,
+   "mcp__gui_set_plan": 1
   },
   "request_human_calls": 10,
-  "final_fail_answers": 17,
+  "final_fail_answers": 18,
   "reviewer": {
-   "calls": 59,
+   "calls": 62,
    "decisions": {
-    "deny": 35,
-    "allow": 24
+    "deny": 36,
+    "allow": 26
    },
-   "ms_mean": 922.7,
-   "ms_median": 696.0
+   "ms_mean": 918.7,
+   "ms_median": 700.0
   },
   "roles": {
    "feasibility": {
-    "invocations": 172,
-    "http_calls": 1006,
+    "invocations": 183,
+    "http_calls": 1068,
     "errors": 4,
-    "ms_mean": 65441.8,
-    "ms_median": 53562.3,
-    "timed": 172,
-    "runs_using": 172
+    "ms_mean": 65631.1,
+    "ms_median": 54842.6,
+    "timed": 183,
+    "runs_using": 183
    },
    "planner": {
-    "invocations": 172,
-    "http_calls": 586,
+    "invocations": 183,
+    "http_calls": 606,
     "errors": 3,
     "ms_mean": null,
     "ms_median": null,
     "timed": 0,
-    "runs_using": 172
+    "runs_using": 183
    },
    "verifier": {
-    "invocations": 167,
-    "http_calls": 1178,
-    "errors": 7,
-    "ms_mean": 70749.1,
-    "ms_median": 55321.5,
-    "timed": 167,
-    "runs_using": 158
+    "invocations": 176,
+    "http_calls": 1226,
+    "errors": 8,
+    "ms_mean": 70048.3,
+    "ms_median": 54862.1,
+    "timed": 176,
+    "runs_using": 166
    },
    "judge": {
     "invocations": 0,
@@ -175,13 +176,13 @@
     "runs_using": 4
    },
    "compact": {
-    "invocations": 513,
-    "http_calls": 513,
+    "invocations": 538,
+    "http_calls": 538,
     "errors": 1,
-    "ms_mean": 9804.1,
-    "ms_median": 8846.0,
-    "timed": 513,
-    "runs_using": 139
+    "ms_mean": 9887.0,
+    "ms_median": 8870.0,
+    "timed": 538,
+    "runs_using": 149
    },
    "grounder": {
     "invocations": 8,
@@ -194,10 +195,10 @@
    }
   },
   "gate": {
-   "actions": 5413,
-   "executed": 5260,
-   "interventions": 153,
-   "human_events": 57,
+   "actions": 5697,
+   "executed": 5540,
+   "interventions": 157,
+   "human_events": 58,
    "loop_notes": 10,
    "loop_refused": 6
   }
@@ -20105,6 +20106,1219 @@
      "tree_extra": 1,
      "role": 1,
      "check_done": 1,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "vlc-9195653c-f4aa-453d-aa95-787f6ccfaae9",
+   "domain": "vlc",
+   "tag": "vlc-9195653c-f4aa-453d-aa95-787f6ccfaae9-gate8-s0-try2",
+   "attempts": 2,
+   "infra": null,
+   "stop": "agent",
+   "wall_s": 560.8,
+   "turns_monitor": 21,
+   "score": 1.0,
+   "success": true,
+   "final_fail": false,
+   "turns": 21,
+   "tool_calls": 25,
+   "screenshots": 6,
+   "tok_in": 43347,
+   "tok_cache": 467328,
+   "tok_out": 4095,
+   "pi_error": null,
+   "final": "DONE \u2014 Set VLC\u2019s `qt-max-volume` to 200, restarted VLC, and verified the volume control now reaches 200%.",
+   "request_human": 0,
+   "tools": {
+    "list_apps": 1,
+    "list_windows": 3,
+    "set_plan": 3,
+    "get_window_state": 6,
+    "press_key": 2,
+    "click": 3,
+    "run_actions": 1,
+    "run_command": 5,
+    "check_done": 1
+   },
+   "gate": {
+    "actions": 12,
+    "executed": 12,
+    "interventions": 0,
+    "decisions": {
+     "direct": 12
+    },
+    "reviewer": [],
+    "reviewer_decisions": {},
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 7,
+      "errors": 0,
+      "ms": [
+       74763.0
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 2,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 1,
+      "http_calls": 6,
+      "errors": 0,
+      "ms": [
+       110585.1
+      ]
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 1,
+      "http_calls": 1,
+      "errors": 0,
+      "ms": [
+       14259.0
+      ]
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 0,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "briefing": 1,
+     "obs": 13,
+     "plan": 3,
+     "img": 6,
+     "action": 12,
+     "streak_hint": 1,
+     "batch": 1,
+     "command": 5,
+     "role": 2,
+     "delivery_fallback": 1,
+     "check_done": 1,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "vs_code-847a96b6-df94-4927-97e6-8cc9ea66ced7",
+   "domain": "vs_code",
+   "tag": "vs_code-847a96b6-df94-4927-97e6-8cc9ea66ced7-gate8-s0",
+   "attempts": 1,
+   "infra": null,
+   "stop": "agent",
+   "wall_s": 71.2,
+   "turns_monitor": 3,
+   "score": 1.0,
+   "success": true,
+   "final_fail": true,
+   "turns": 3,
+   "tool_calls": 3,
+   "screenshots": 0,
+   "tok_in": 6578,
+   "tok_cache": 16000,
+   "tok_out": 778,
+   "pi_error": null,
+   "final": "FAIL \u2014 VS Code binds one workspace file per window: opening `/home/user/workspace2.code-workspace` where `workspace1.code-workspace` is already open replaces it, and \"Add Folder to Workspace\" only add",
+   "request_human": 0,
+   "tools": {
+    "set_plan": 2,
+    "run_command": 1
+   },
+   "gate": {
+    "actions": 1,
+    "executed": 1,
+    "interventions": 0,
+    "decisions": {
+     "direct": 1
+    },
+    "reviewer": [],
+    "reviewer_decisions": {},
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 5,
+      "errors": 0,
+      "ms": [
+       54079.1
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 1,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 0,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "plan": 2,
+     "briefing": 1,
+     "command": 1,
+     "action": 1,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "chrome-030eeff7-b492-4218-b312-701ec99ee0cc",
+   "domain": "chrome",
+   "tag": "chrome-030eeff7-b492-4218-b312-701ec99ee0cc-gate8-s0",
+   "attempts": 1,
+   "infra": null,
+   "stop": "agent",
+   "wall_s": 1200.9,
+   "turns_monitor": 27,
+   "score": 1.0,
+   "success": true,
+   "final_fail": false,
+   "turns": 27,
+   "tool_calls": 28,
+   "screenshots": 14,
+   "tok_in": 38583,
+   "tok_cache": 641664,
+   "tok_out": 4906,
+   "pi_error": null,
+   "final": "DONE \u2014 Enabled \"Do Not Track\" in Chromium/Chrome: opened chrome://settings/cookies, scrolled to the Advanced section's \"Send a 'Do Not Track' request with your browsing traffic\" toggle, switched it ON",
+   "request_human": 0,
+   "tools": {
+    "set_plan": 2,
+    "list_apps": 1,
+    "run_command": 3,
+    "list_windows": 1,
+    "get_window_state": 5,
+    "run_actions": 1,
+    "inspect": 1,
+    "scroll": 6,
+    "click": 6,
+    "type_text": 1,
+    "check_done": 1
+   },
+   "gate": {
+    "actions": 19,
+    "executed": 18,
+    "interventions": 1,
+    "decisions": {
+     "direct": 18,
+     "deny": 1
+    },
+    "reviewer": [
+     703.5,
+     845.5
+    ],
+    "reviewer_decisions": {
+     "allow": 1,
+     "deny": 1
+    },
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 9,
+      "errors": 0,
+      "ms": [
+       146710.4
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 2,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 1,
+      "http_calls": 2,
+      "errors": 0,
+      "ms": [
+       11192.3
+      ]
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 2,
+      "http_calls": 2,
+      "errors": 0,
+      "ms": [
+       4938.0,
+       17003.0
+      ]
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 0,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "plan": 2,
+     "briefing": 1,
+     "command": 3,
+     "action": 19,
+     "obs": 20,
+     "delivery_fallback": 1,
+     "batch": 1,
+     "inspect": 1,
+     "img": 12,
+     "retro_repeat": 1,
+     "role": 3,
+     "check_done": 1,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "multi_apps-3c8f201a-009d-4bbe-8b65-a6f8b35bb57f",
+   "domain": "multi_apps",
+   "tag": "multi_apps-3c8f201a-009d-4bbe-8b65-a6f8b35bb57f-gate8-s0",
+   "attempts": 1,
+   "infra": null,
+   "stop": "agent",
+   "wall_s": 624.8,
+   "turns_monitor": 33,
+   "score": 1.0,
+   "success": true,
+   "final_fail": false,
+   "turns": 33,
+   "tool_calls": 32,
+   "screenshots": 3,
+   "tok_in": 33904,
+   "tok_cache": 667264,
+   "tok_out": 5322,
+   "pi_error": null,
+   "final": "DONE \u2014 Downloaded the image (808KB, 4084\u00d72310) to the Desktop, opened it in GIMP, scaled it to 2000\u00d71131, and exported it as `/home/user/Desktop/compressed.jpeg` with JPEG quality 80 + optimization \u2192 ",
+   "request_human": 0,
+   "tools": {
+    "set_plan": 3,
+    "run_command": 7,
+    "list_windows": 5,
+    "get_window_state": 3,
+    "press_key": 3,
+    "click": 4,
+    "run_actions": 5,
+    "check_done": 2
+   },
+   "gate": {
+    "actions": 29,
+    "executed": 28,
+    "interventions": 1,
+    "decisions": {
+     "direct": 28,
+     "ask_human": 1
+    },
+    "reviewer": [],
+    "reviewer_decisions": {},
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 7,
+      "errors": 0,
+      "ms": [
+       58283.5
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 2,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 2,
+      "http_calls": 12,
+      "errors": 0,
+      "ms": [
+       74692.3,
+       63013.8
+      ]
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 3,
+      "http_calls": 3,
+      "errors": 0,
+      "ms": [
+       8445.0,
+       19972.0,
+       10982.0
+      ]
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 1,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "briefing": 1,
+     "plan": 2,
+     "command": 6,
+     "action": 29,
+     "obs": 16,
+     "img": 3,
+     "delivery_fallback": 1,
+     "batch": 5,
+     "role": 5,
+     "check_done": 2,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "multi_apps-716a6079-22da-47f1-ba73-c9d58f986a38",
+   "domain": "multi_apps",
+   "tag": "multi_apps-716a6079-22da-47f1-ba73-c9d58f986a38-gate8-s0",
+   "attempts": 1,
+   "infra": null,
+   "stop": "agent",
+   "wall_s": 222.3,
+   "turns_monitor": 16,
+   "score": 0.0,
+   "success": false,
+   "final_fail": false,
+   "turns": 16,
+   "tool_calls": 18,
+   "screenshots": 5,
+   "tok_in": 18259,
+   "tok_cache": 184832,
+   "tok_out": 2319,
+   "pi_error": null,
+   "final": "DONE \u2014 Found the file at `/data/home/Data3/List3/secret.docx` (only match on the disk) and copied it in Thunar (Ctrl+C), so the clipboard now holds the real file reference (`x-special/gnome-copied-fil",
+   "request_human": 0,
+   "tools": {
+    "set_plan": 2,
+    "run_command": 6,
+    "list_windows": 2,
+    "get_window_state": 1,
+    "press_key": 3,
+    "click": 3,
+    "check_done": 1
+   },
+   "gate": {
+    "actions": 12,
+    "executed": 12,
+    "interventions": 0,
+    "decisions": {
+     "direct": 12
+    },
+    "reviewer": [],
+    "reviewer_decisions": {},
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 4,
+      "errors": 0,
+      "ms": [
+       41305.1
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 2,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 1,
+      "http_calls": 8,
+      "errors": 0,
+      "ms": [
+       54282.3
+      ]
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 1,
+      "http_calls": 1,
+      "errors": 0,
+      "ms": [
+       8235.0
+      ]
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 0,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "plan": 2,
+     "briefing": 1,
+     "command": 6,
+     "action": 12,
+     "obs": 10,
+     "img": 4,
+     "delivery_fallback": 1,
+     "role": 2,
+     "check_done": 1,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "vs_code-0ed39f63-6049-43d4-ba4d-5fa2fe04a951",
+   "domain": "vs_code",
+   "tag": "vs_code-0ed39f63-6049-43d4-ba4d-5fa2fe04a951-gate8-s0",
+   "attempts": 1,
+   "infra": null,
+   "stop": "agent",
+   "wall_s": 323.4,
+   "turns_monitor": 16,
+   "score": 1.0,
+   "success": true,
+   "final_fail": false,
+   "turns": 16,
+   "tool_calls": 17,
+   "screenshots": 5,
+   "tok_in": 25101,
+   "tok_cache": 248064,
+   "tok_out": 2106,
+   "pi_error": null,
+   "final": "DONE \u2014 Opened `/home/user/Desktop/vscode_replace_text.txt` in VS Code, used Find & Replace (Ctrl+H) with \"text\" \u2192 \"test\" and Replace All, then saved with Ctrl+S; all 10 occurrences replaced (finder no",
+   "request_human": 0,
+   "tools": {
+    "set_plan": 2,
+    "run_command": 3,
+    "list_windows": 1,
+    "get_window_state": 4,
+    "run_actions": 5,
+    "mcp__gui_set_plan": 1,
+    "check_done": 1
+   },
+   "gate": {
+    "actions": 12,
+    "executed": 12,
+    "interventions": 0,
+    "decisions": {
+     "direct": 12
+    },
+    "reviewer": [],
+    "reviewer_decisions": {},
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 3,
+      "errors": 0,
+      "ms": [
+       29293.6
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 1,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 1,
+      "http_calls": 4,
+      "errors": 0,
+      "ms": [
+       43704.0
+      ]
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 1,
+      "http_calls": 1,
+      "errors": 0,
+      "ms": [
+       5974.0
+      ]
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 0,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "plan": 2,
+     "briefing": 1,
+     "command": 3,
+     "action": 12,
+     "obs": 10,
+     "delivery_fallback": 1,
+     "batch": 5,
+     "img": 5,
+     "role": 2,
+     "check_done": 1,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "libreoffice_calc-01b269ae-2111-4a07-81fd-3fcd711993b0",
+   "domain": "libreoffice_calc",
+   "tag": "libreoffice_calc-01b269ae-2111-4a07-81fd-3fcd711993b0-gate8-s0",
+   "attempts": 1,
+   "infra": null,
+   "stop": "agent",
+   "wall_s": 878.3,
+   "turns_monitor": 22,
+   "score": 1.0,
+   "success": true,
+   "final_fail": false,
+   "turns": 22,
+   "tool_calls": 23,
+   "screenshots": 5,
+   "tok_in": 46479,
+   "tok_cache": 535424,
+   "tok_out": 14950,
+   "pi_error": null,
+   "final": "All milestones are done and the saved file verifies cleanly.\n\nDONE \u2014 Filled every blank cell in B1:E30 of `Student_Level_Fill_Blank.xlsx` with the value from the cell directly above using Calc's Fill ",
+   "request_human": 0,
+   "tools": {
+    "set_plan": 2,
+    "list_windows": 1,
+    "run_command": 5,
+    "get_window_state": 1,
+    "run_actions": 11,
+    "press_key": 2,
+    "check_done": 1
+   },
+   "gate": {
+    "actions": 80,
+    "executed": 80,
+    "interventions": 0,
+    "decisions": {
+     "direct": 80
+    },
+    "reviewer": [],
+    "reviewer_decisions": {},
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 7,
+      "errors": 0,
+      "ms": [
+       101441.8
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 1,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 1,
+      "http_calls": 6,
+      "errors": 1,
+      "ms": [
+       84494.2
+      ]
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 6,
+      "http_calls": 6,
+      "errors": 0,
+      "ms": [
+       10282.0,
+       16826.0,
+       25412.0,
+       15126.0,
+       20193.0,
+       12253.0
+      ]
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 0,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "obs": 14,
+     "briefing": 1,
+     "plan": 2,
+     "command": 5,
+     "action": 80,
+     "img": 5,
+     "tree_extra": 13,
+     "batch": 11,
+     "delivery_fallback": 1,
+     "role": 7,
+     "retro_repeat": 1,
+     "check_done": 1,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "libreoffice_impress-a434992a-89df-4577-925c-0c58b747f0f4",
+   "domain": "libreoffice_impress",
+   "tag": "libreoffice_impress-a434992a-89df-4577-925c-0c58b747f0f4-gate8-s0",
+   "attempts": 1,
+   "infra": null,
+   "stop": "timeout",
+   "wall_s": 3600.6,
+   "turns_monitor": 47,
+   "score": 0.0,
+   "success": false,
+   "final_fail": false,
+   "turns": 47,
+   "tool_calls": 48,
+   "screenshots": 21,
+   "tok_in": 84686,
+   "tok_cache": 2262784,
+   "tok_out": 18429,
+   "pi_error": null,
+   "final": "I'll start by checking the environment and what's open.",
+   "request_human": 0,
+   "tools": {
+    "set_plan": 1,
+    "list_windows": 2,
+    "get_window_state": 8,
+    "run_actions": 13,
+    "click": 13,
+    "press_key": 2,
+    "run_command": 9
+   },
+   "gate": {
+    "actions": 58,
+    "executed": 58,
+    "interventions": 0,
+    "decisions": {
+     "direct": 58
+    },
+    "reviewer": [],
+    "reviewer_decisions": {},
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 2,
+      "errors": 0,
+      "ms": [
+       26504.5
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 1,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 6,
+      "http_calls": 6,
+      "errors": 0,
+      "ms": [
+       5689.0,
+       11397.0,
+       11825.0,
+       18356.0,
+       5332.0,
+       8540.0
+      ]
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 0,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "plan": 1,
+     "briefing": 1,
+     "obs": 38,
+     "img": 20,
+     "delivery_fallback": 1,
+     "action": 58,
+     "batch": 13,
+     "role": 6,
+     "command": 9,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "vs_code-c6bf789c-ba3a-4209-971d-b63abf0ab733",
+   "domain": "vs_code",
+   "tag": "vs_code-c6bf789c-ba3a-4209-971d-b63abf0ab733-gate8-s0",
+   "attempts": 1,
+   "infra": null,
+   "stop": "agent",
+   "wall_s": 610.3,
+   "turns_monitor": 20,
+   "score": 1.0,
+   "success": true,
+   "final_fail": false,
+   "turns": 20,
+   "tool_calls": 22,
+   "screenshots": 10,
+   "tok_in": 39522,
+   "tok_cache": 423936,
+   "tok_out": 4275,
+   "pi_error": null,
+   "final": "DONE \u2014 Added `\"files.exclude\": { \"**/__pycache__\": true }` to VS Code's user settings (`~/.config/Code/User/settings.json`) via Preferences: Open User Settings (JSON) and saved it; the Settings UI now",
+   "request_human": 0,
+   "tools": {
+    "set_plan": 3,
+    "run_command": 5,
+    "list_windows": 1,
+    "get_window_state": 3,
+    "run_actions": 6,
+    "type_text": 1,
+    "press_key": 1,
+    "scroll": 1,
+    "check_done": 1
+   },
+   "gate": {
+    "actions": 22,
+    "executed": 22,
+    "interventions": 0,
+    "decisions": {
+     "direct": 22
+    },
+    "reviewer": [],
+    "reviewer_decisions": {},
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 6,
+      "errors": 0,
+      "ms": [
+       60613.6
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 1,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 1,
+      "http_calls": 4,
+      "errors": 0,
+      "ms": [
+       29218.7
+      ]
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 2,
+      "http_calls": 2,
+      "errors": 0,
+      "ms": [
+       12840.0,
+       4694.0
+      ]
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 0,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "plan": 3,
+     "briefing": 1,
+     "command": 5,
+     "action": 22,
+     "obs": 12,
+     "img": 10,
+     "delivery_fallback": 1,
+     "batch": 6,
+     "role": 3,
+     "check_done": 1,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "libreoffice_writer-66399b0d-8fda-4618-95c4-bfc6191617e9",
+   "domain": "libreoffice_writer",
+   "tag": "libreoffice_writer-66399b0d-8fda-4618-95c4-bfc6191617e9-gate8-s0",
+   "attempts": 1,
+   "infra": null,
+   "stop": "agent",
+   "wall_s": 354.6,
+   "turns_monitor": 19,
+   "score": 1.0,
+   "success": true,
+   "final_fail": false,
+   "turns": 19,
+   "tool_calls": 21,
+   "screenshots": 2,
+   "tok_in": 28224,
+   "tok_cache": 301184,
+   "tok_out": 4045,
+   "pi_error": null,
+   "final": "DONE \u2014 In the open Writer document `Table_Of_Work_Effort_Instructions.docx` I used Table \u25b8 Insert Table\u2026 with Columns=7, Rows=5 (no heading) at the cursor and saved with Ctrl+S; the file on disk now c",
+   "request_human": 0,
+   "tools": {
+    "set_plan": 3,
+    "list_windows": 4,
+    "get_window_state": 3,
+    "press_key": 4,
+    "click": 3,
+    "run_actions": 1,
+    "run_command": 2,
+    "check_done": 1
+   },
+   "gate": {
+    "actions": 16,
+    "executed": 16,
+    "interventions": 0,
+    "decisions": {
+     "direct": 16
+    },
+    "reviewer": [],
+    "reviewer_decisions": {},
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 3,
+      "errors": 0,
+      "ms": [
+       35011.2
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 3,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 1,
+      "http_calls": 6,
+      "errors": 0,
+      "ms": [
+       42232.4
+      ]
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 1,
+      "http_calls": 1,
+      "errors": 0,
+      "ms": [
+       4197.0
+      ]
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 0,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "briefing": 1,
+     "obs": 14,
+     "plan": 2,
+     "img": 2,
+     "delivery_fallback": 1,
+     "action": 16,
+     "batch": 1,
+     "role": 2,
+     "command": 2,
+     "tree_extra": 1,
+     "check_done": 1,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "multi_apps-873cafdd-a581-47f6-8b33-b9696ddb7b05",
+   "domain": "multi_apps",
+   "tag": "multi_apps-873cafdd-a581-47f6-8b33-b9696ddb7b05-gate8-s0",
+   "attempts": 1,
+   "infra": null,
+   "stop": "timeout",
+   "wall_s": 4336.1,
+   "turns_monitor": 25,
+   "score": 0.0,
+   "success": false,
+   "final_fail": false,
+   "turns": 25,
+   "tool_calls": 27,
+   "screenshots": 7,
+   "tok_in": 54319,
+   "tok_cache": 664320,
+   "tok_out": 4372,
+   "pi_error": null,
+   "final": "I'll start by checking the task briefing and the current state.",
+   "request_human": 0,
+   "tools": {
+    "set_plan": 1,
+    "list_windows": 1,
+    "inspect": 3,
+    "run_actions": 5,
+    "get_window_state": 8,
+    "press_key": 1,
+    "click": 7,
+    "run_command": 1
+   },
+   "gate": {
+    "actions": 23,
+    "executed": 21,
+    "interventions": 2,
+    "decisions": {
+     "direct": 21,
+     "look_full": 2
+    },
+    "reviewer": [
+     968.9
+    ],
+    "reviewer_decisions": {
+     "allow": 1
+    },
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 9,
+      "errors": 0,
+      "ms": [
+       126503.7
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 4,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 2,
+      "http_calls": 2,
+      "errors": 0,
+      "ms": [
+       6003.0,
+       10912.0
+      ]
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 0,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "obs": 21,
+     "briefing": 1,
+     "plan": 1,
+     "inspect": 3,
+     "delivery_fallback": 1,
+     "action": 23,
+     "batch": 5,
+     "img": 7,
+     "role": 2,
+     "command": 1,
      "shutdown": 1
     }
    }
