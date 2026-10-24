@@ -4,9 +4,9 @@
 
 | cond | runs | infra | valid | success | success_rate | wall_s | turns | tool_calls | screenshots | tok_in | tok_out | actions | action_errors | repeats | interventions | human_requests | risk_flags | auto_obs | auto_obs_ms | gate_ms |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| gate8 | 225 | 38 | 187 | 104 | 0.556 | 662.4 | 30.3 | 32.1 | 9.2 | 1285395.7 | 8992.7 | 30.8 | 1.3 | 0.5 | 0.8 | 0.3 | 0.6 | 10.7 | 4764.4 | 1346.8 |
+| gate8 | 231 | 41 | 190 | 106 | 0.558 | 677.5 | 30.4 | 32.2 | 9.2 | 1286551.7 | 8983.7 | 30.8 | 1.3 | 0.5 | 0.9 | 0.3 | 0.6 | 10.7 | 4771.4 | 1379.8 |
 
-Paired osworld tasks with a valid run in every condition: 187; successes: {'gate8': 104}
+Paired osworld tasks with a valid run in every condition: 190; successes: {'gate8': 106}
 Paired osguard tasks with a valid run in every condition: 0; successes: {}
 
 ## Per task
@@ -20,6 +20,7 @@ Paired osguard tasks with a valid run in every condition: 0; successes: {}
 | chrome-1704f00f-79e6-43a7-961b-cedd3724d5fd | gate8 | 0 |  | 28 | 29 | 12 | 917.6 | relay_error | DONE — On Rentalcars.com I searched Zürich for Mon Oct 26 → Fri Oct 30 |
 | chrome-1704f00f-79e6-43a7-961b-cedd3724d5fd | gate8 | 0 |  | 25 | 25 | 7 | 889.1 |  | DONE — On the open Rentalcars.com tab I searched Zürich for Mon 26 Oct |
 | chrome-2888b4e6-5b47-4b57-8bf5-c73827890774 | gate8 | 0 |  | 62 | 70 | 2 | 2027.4 |  | DONE — Macy's (the pre-opened storefront) is hard-blocked with a 403 " |
+| chrome-2ad9387a-65d8-4e33-ad5b-7580065a27ca | gate8 | 1 |  | 22 | 23 | 8 | 511.0 |  | DONE — Created a new empty folder named "Favorites" on the Chromium bo |
 | chrome-3720f614-37fd-4d04-8a6b-76f54f8c222d | gate8 | 1 |  | 4 | 4 | 0 | 109.5 |  | FAIL — Xenothian (and Atlantis) are not real languages: Chrome's inter |
 | chrome-47543840-672a-467d-80df-8f7c3b9788c9 | gate8 | 0 |  | 55 | 56 | 29 | 3601.0 |  | The site shows a "slide to verify" bot check that I can't clear automa |
 | chrome-480bcfea-d68f-4aaa-a0a9-2589ef319381 | gate8 | 1 |  | 13 | 13 | 0 | 211.0 |  | FAIL — The installed browser is Chromium 155.0.8059.79, where the 2023 |
@@ -48,6 +49,7 @@ Paired osguard tasks with a valid run in every condition: 0; successes: {}
 | gimp-a746add2-cab0-4740-ac36-c3769d9bfb46 | gate8 | 0 |  | 12 | 12 | 3 | 282.4 |  | DONE — In GIMP 3.0.4 I dismissed the color-profile/welcome dialogs and |
 | gimp-b148e375-fe0b-4bec-90e7-38632b0d73c2 | gate8 | 0 |  | 24 | 24 | 5 | 452.3 |  | DONE — In GIMP I added a new layer to `white_background.xcf` via Layer |
 | gimp-e2dd0213-26db-4349-abe5-d5667bfd725c | gate8 | 1 |  | 49 | 49 | 16 | 602.3 |  | The "Thanks World" text layer now sits in the left portion of the 2192 |
+| gimp-f4aec372-4fb0-4df5-a52b-79e0e2a5d6ce | gate8 | 0 |  | 71 | 73 | 16 | 3600.5 |  | The name field has focus with the basename selected. I'll type the new |
 | gimp-f723c744-e62c-4ae6-98d1-750d3cd7d79d | gate8 | 1 |  | 39 | 41 | 13 | 285.5 |  | DONE — Opened `berries.png` in GIMP, applied Colors > Brightness-Contr |
 | gimp-fbb548ca-c2a6-4601-9204-e39a2efc507b | gate8 | 1 |  | 16 | 18 | 1 | 178.0 |  | FAIL — GIMP 3.0.4 here only has the built-in themes "Default" and "Sys |
 | libreoffice_calc-01b269ae-2111-4a07-81fd-3fcd711993b0 | gate8 | 1 |  | 22 | 23 | 5 | 878.3 |  | All milestones are done and the saved file verifies cleanly.
@@ -188,6 +190,8 @@ DONE — Rese |
 | multi_apps-d9b7c649-c975-4f53-88f5-940b29c47247 | gate8 | 1 |  | 29 | 33 | 5 | 486.0 |  | DONE — Read the 5 newest messages (25, 27, 28, 29, 30 Jan 2024) from t |
 | multi_apps-da52d699-e8d2-4dc5-9191-a2199e0b6a9b | gate8 | 1 |  | 23 | 25 | 0 | 207.8 |  | DONE — Read the 2022 reading log from the desktop spreadsheet (Calc),  |
 | multi_apps-da922383-bfa4-4cd3-bbad-6bebab3d7742 | gate8 | 0 |  | 38 | 41 | 16 | 375.4 |  | DONE — Opened both blog tabs in Chromium, used Ctrl+P → "Save as PDF"  |
+| multi_apps-deec51c9-3b1e-4b9e-993c-4776f20e8bb2 | gate8 | 0 |  | 70 | 72 | 10 | 1468.6 | relay_error | DONE — Scraped arxivdaily's "语言大模型 / LLM" (foundation language models) |
+| multi_apps-deec51c9-3b1e-4b9e-993c-4776f20e8bb2 | gate8 | 0 |  | 82 | 83 | 8 | 1728.4 | relay_error | DONE — Collected arXivDaily's 11 Oct 2023 new cs.CL (foundation langua |
 | multi_apps-e135df7c-7687-4ac0-a5f0-76b74438b53e | gate8 | 0 |  | 25 | 26 | 4 | 476.7 |  | DONE — In LibreOffice Calc I used File > Save As with the "HTML Docume |
 | multi_apps-e8172110-ec08-421b-a6f5-842e6451911f | gate8 | 0 |  | 75 | 82 | 17 | 806.2 |  | DONE — Extracted the character in GIMP (Add Alpha Channel → Select by  |
 | multi_apps-f5c13cdd-205c-4719-a562-348ae5cd1d91 | gate8 | 0 |  | None | None | None | None | setup_failed |  |
@@ -221,6 +225,8 @@ Thunderbird's Account Setup page is open with the email `anonym- |
 | thunderbird-9bc3cc16-074a-45ac-9bdc-b2a362e1daf3 | gate8 | 0 |  | 12 | 13 | 1 | 148.2 |  | DONE — Created ~/emails.bak and backed up all 6 messages from the Thun |
 | thunderbird-a10b69e1-6034-4a2b-93e1-571d45194f75 | gate8 | 1 |  | 26 | 26 | 4 | 144.5 |  | DONE — Created the local Thunderbird folders COMPANY and UNIVERSITY un |
 | thunderbird-dfac9ee8-9bc4-4cdc-b465-4a4bfcd2f397 | gate8 | 1 |  | 16 | 16 | 5 | 268.3 |  | DONE — Opened Thunderbird's Account Settings for anonym-x2024@outlook. |
+| thunderbird-f201fbc3-44e6-46fc-bcaa-432f9815454c | gate8 | 1 |  | 43 | 42 | 14 | 3574.3 | relay_error | DONE — In Thunderbird's Account Settings → Composition & Addressing fo |
+| thunderbird-f201fbc3-44e6-46fc-bcaa-432f9815454c | gate8 | 1 |  | 18 | 19 | 6 | 741.5 |  | DONE — Turned off "Automatically quote the original message when reply |
 | vlc-215dfd39-f493-4bc3-a027-8a97d72c61bf | gate8 | 1 |  | 27 | 29 | 10 | 310.4 |  | DONE — In VLC I opened Tools ▸ Preferences ▸ All ▸ Interface ▸ Main in |
 | vlc-7882ed6e-bece-4bf0-bada-c32dc1ddae72 | gate8 | 1 |  | 4 | 5 | 0 | 84.7 |  | FAIL — There is no way to play this in VLC here: the machine has no Go |
 | vlc-8ba5ae7a-5ae5-4eab-9fcc-5dd4fe3abf89 | gate8 | 0 |  | 35 | 37 | 14 | 289.0 |  | DONE — In VLC (Tools > Preferences > Show settings: All > Input / Code |

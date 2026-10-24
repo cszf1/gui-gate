@@ -1,0 +1,1 @@
+DONE — Created a new empty folder named "Favorites" on the Chromium bookmarks bar (chrome://bookmarks → Organize → Add new folder), enabled the bookmarks bar (Ctrl+Shift+B) so it's visible, and confirmed the folder persisted under `roots.bookmark_bar` in the live profile file `/data/home/.config/google-chrome/Default/Bookmarks`.

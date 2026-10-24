@@ -1,13 +1,13 @@
 {
  "summary": {
   "expected": 361,
-  "rows": 205,
-  "valid": 187,
+  "rows": 209,
+  "valid": 191,
   "infra": 18,
-  "success": 104,
-  "score_sum": 109.35,
-  "rate_official": 28.81,
-  "rate_valid": 55.61,
+  "success": 106,
+  "score_sum": 111.35,
+  "rate_official": 29.36,
+  "rate_valid": 55.5,
   "infra_kinds": {
    "relay_error": 3,
    "setup_failed": 14,
@@ -29,8 +29,8 @@
     "infra": 3
    },
    "multi_apps": {
-    "tasks": 55,
-    "valid": 42,
+    "tasks": 56,
+    "valid": 43,
     "success": 18,
     "score_sum": 21.488890566084056,
     "infra": 13
@@ -64,55 +64,55 @@
     "infra": 0
    },
    "chrome": {
-    "tasks": 22,
-    "valid": 22,
-    "success": 6,
-    "score_sum": 6.932778548312529,
+    "tasks": 23,
+    "valid": 23,
+    "success": 7,
+    "score_sum": 7.932778548312529,
     "infra": 0
    },
    "gimp": {
-    "tasks": 12,
-    "valid": 12,
+    "tasks": 13,
+    "valid": 13,
     "success": 6,
     "score_sum": 6.0,
     "infra": 0
    },
    "thunderbird": {
-    "tasks": 6,
-    "valid": 6,
-    "success": 4,
-    "score_sum": 4.0,
+    "tasks": 7,
+    "valid": 7,
+    "success": 5,
+    "score_sum": 5.0,
     "infra": 0
    }
   },
   "stops": {
-   "agent": 174,
+   "agent": 176,
    "max_turns": 3,
-   "timeout": 10
+   "timeout": 12
   },
-  "turns_mean": 30.3,
+  "turns_mean": 30.7,
   "turns_median": 25,
-  "wall_mean_s": 662.4,
-  "wall_median_s": 334.6,
-  "wall_total_h": 36.25,
-  "tok_in": 9426144,
-  "tok_cache": 230942848,
-  "tok_out": 1681632,
-  "screenshots": 1713,
-  "tool_calls": 5997,
+  "wall_mean_s": 694.7,
+  "wall_median_s": 335.4,
+  "wall_total_h": 38.71,
+  "tok_in": 9711236,
+  "tok_cache": 239825280,
+  "tok_out": 1733787,
+  "screenshots": 1767,
+  "tool_calls": 6213,
   "tools": {
-   "run_command": 1492,
-   "run_actions": 1165,
-   "get_window_state": 944,
-   "click": 749,
-   "set_plan": 406,
-   "list_windows": 345,
-   "press_key": 323,
-   "inspect": 223,
-   "check_done": 180,
+   "run_command": 1560,
+   "run_actions": 1198,
+   "get_window_state": 972,
+   "click": 782,
+   "set_plan": 415,
+   "list_windows": 358,
+   "press_key": 343,
+   "inspect": 226,
+   "check_done": 183,
+   "type_text": 61,
    "scroll": 59,
-   "type_text": 56,
-   "list_apps": 42,
+   "list_apps": 43,
    "request_human": 10,
    "update_plan": 1,
    "mcp__gui_run_actions": 1,
@@ -121,41 +121,41 @@
   "request_human_calls": 10,
   "final_fail_answers": 18,
   "reviewer": {
-   "calls": 62,
+   "calls": 64,
    "decisions": {
-    "deny": 36,
+    "deny": 38,
     "allow": 26
    },
-   "ms_mean": 918.7,
+   "ms_mean": 913.8,
    "ms_median": 700.0
   },
   "roles": {
    "feasibility": {
-    "invocations": 187,
-    "http_calls": 1091,
-    "errors": 4,
-    "ms_mean": 65568.7,
-    "ms_median": 54079.1,
-    "timed": 187,
-    "runs_using": 187
+    "invocations": 191,
+    "http_calls": 1115,
+    "errors": 5,
+    "ms_mean": 67291.4,
+    "ms_median": 55448.6,
+    "timed": 191,
+    "runs_using": 191
    },
    "planner": {
-    "invocations": 187,
-    "http_calls": 615,
+    "invocations": 191,
+    "http_calls": 640,
     "errors": 3,
     "ms_mean": null,
     "ms_median": null,
     "timed": 0,
-    "runs_using": 187
+    "runs_using": 191
    },
    "verifier": {
-    "invocations": 180,
-    "http_calls": 1241,
-    "errors": 9,
-    "ms_mean": 69780.2,
-    "ms_median": 54862.1,
-    "timed": 180,
-    "runs_using": 170
+    "invocations": 182,
+    "http_calls": 1249,
+    "errors": 10,
+    "ms_mean": 69381.1,
+    "ms_median": 54342.4,
+    "timed": 182,
+    "runs_using": 172
    },
    "judge": {
     "invocations": 0,
@@ -176,13 +176,13 @@
     "runs_using": 4
    },
    "compact": {
-    "invocations": 543,
-    "http_calls": 543,
+    "invocations": 566,
+    "http_calls": 566,
     "errors": 1,
-    "ms_mean": 9922.6,
-    "ms_median": 8900.0,
-    "timed": 543,
-    "runs_using": 151
+    "ms_mean": 10056.0,
+    "ms_median": 9100.5,
+    "timed": 566,
+    "runs_using": 155
    },
    "grounder": {
     "invocations": 8,
@@ -195,10 +195,10 @@
    }
   },
   "gate": {
-   "actions": 5762,
-   "executed": 5604,
-   "interventions": 158,
-   "human_events": 59,
+   "actions": 5966,
+   "executed": 5801,
+   "interventions": 165,
+   "human_events": 62,
    "loop_notes": 10,
    "loop_refused": 6
   }
@@ -21842,6 +21842,474 @@
      "role": 5,
      "inspect": 5,
      "check_done": 1,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "thunderbird-f201fbc3-44e6-46fc-bcaa-432f9815454c",
+   "domain": "thunderbird",
+   "tag": "thunderbird-f201fbc3-44e6-46fc-bcaa-432f9815454c-gate8-s0-try2",
+   "attempts": 2,
+   "infra": null,
+   "stop": "agent",
+   "wall_s": 741.5,
+   "turns_monitor": 18,
+   "score": 1.0,
+   "success": true,
+   "final_fail": false,
+   "turns": 18,
+   "tool_calls": 19,
+   "screenshots": 6,
+   "tok_in": 57838,
+   "tok_cache": 385280,
+   "tok_out": 2977,
+   "pi_error": null,
+   "final": "DONE \u2014 Turned off \"Automatically quote the original message when replying\" for anonym-x2024@outlook.com (Account Settings \u2192 Composition & Addressing), so replies now open with an empty body; setting p",
+   "request_human": 0,
+   "tools": {
+    "set_plan": 2,
+    "list_windows": 1,
+    "get_window_state": 6,
+    "click": 3,
+    "press_key": 1,
+    "run_command": 3,
+    "run_actions": 2,
+    "check_done": 1
+   },
+   "gate": {
+    "actions": 9,
+    "executed": 8,
+    "interventions": 1,
+    "decisions": {
+     "direct": 8,
+     "ask_human": 1
+    },
+    "reviewer": [],
+    "reviewer_decisions": {},
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 6,
+      "errors": 0,
+      "ms": [
+       69511.2
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 1,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 1,
+      "http_calls": 4,
+      "errors": 1,
+      "ms": [
+       37752.9
+      ]
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 1,
+      "http_calls": 1,
+      "errors": 0,
+      "ms": [
+       21830.0
+      ]
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 1,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "plan": 2,
+     "briefing": 1,
+     "obs": 12,
+     "img": 6,
+     "action": 9,
+     "delivery_fallback": 1,
+     "command": 2,
+     "batch": 2,
+     "role": 2,
+     "check_done": 1,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "gimp-f4aec372-4fb0-4df5-a52b-79e0e2a5d6ce",
+   "domain": "gimp",
+   "tag": "gimp-f4aec372-4fb0-4df5-a52b-79e0e2a5d6ce-gate8-s0",
+   "attempts": 1,
+   "infra": null,
+   "stop": "timeout",
+   "wall_s": 3600.5,
+   "turns_monitor": 71,
+   "score": 0.0,
+   "success": false,
+   "final_fail": false,
+   "turns": 71,
+   "tool_calls": 73,
+   "screenshots": 16,
+   "tok_in": 78727,
+   "tok_cache": 3109120,
+   "tok_out": 18397,
+   "pi_error": "Connection error.",
+   "final": "The name field has focus with the basename selected. I'll type the new name and press Enter.",
+   "request_human": 0,
+   "tools": {
+    "set_plan": 2,
+    "list_windows": 7,
+    "run_command": 10,
+    "get_window_state": 14,
+    "inspect": 2,
+    "click": 10,
+    "type_text": 4,
+    "press_key": 9,
+    "run_actions": 15
+   },
+   "gate": {
+    "actions": 71,
+    "executed": 69,
+    "interventions": 2,
+    "decisions": {
+     "direct": 69,
+     "ask_human": 1,
+     "look_full": 1
+    },
+    "reviewer": [],
+    "reviewer_decisions": {},
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 8,
+      "errors": 1,
+      "ms": [
+       349177.7
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 9,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 8,
+      "http_calls": 8,
+      "errors": 0,
+      "ms": [
+       9569.0,
+       6108.0,
+       11780.0,
+       34765.0,
+       11562.0,
+       21601.0,
+       20664.0,
+       12296.0
+      ]
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 1,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "obs": 45,
+     "briefing": 1,
+     "plan": 2,
+     "command": 10,
+     "action": 71,
+     "img": 16,
+     "inspect": 2,
+     "delivery_fallback": 1,
+     "role": 8,
+     "batch": 15,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "chrome-2ad9387a-65d8-4e33-ad5b-7580065a27ca",
+   "domain": "chrome",
+   "tag": "chrome-2ad9387a-65d8-4e33-ad5b-7580065a27ca-gate8-s0",
+   "attempts": 1,
+   "infra": null,
+   "stop": "agent",
+   "wall_s": 511.0,
+   "turns_monitor": 22,
+   "score": 1.0,
+   "success": true,
+   "final_fail": false,
+   "turns": 22,
+   "tool_calls": 23,
+   "screenshots": 8,
+   "tok_in": 33087,
+   "tok_cache": 411776,
+   "tok_out": 3906,
+   "pi_error": null,
+   "final": "DONE \u2014 Created a new empty folder named \"Favorites\" on the Chromium bookmarks bar (chrome://bookmarks \u2192 Organize \u2192 Add new folder), enabled the bookmarks bar (Ctrl+Shift+B) so it's visible, and confir",
+   "request_human": 0,
+   "tools": {
+    "set_plan": 2,
+    "list_windows": 2,
+    "run_actions": 2,
+    "press_key": 2,
+    "click": 6,
+    "get_window_state": 3,
+    "type_text": 1,
+    "run_command": 4,
+    "check_done": 1
+   },
+   "gate": {
+    "actions": 17,
+    "executed": 16,
+    "interventions": 1,
+    "decisions": {
+     "direct": 16,
+     "look_full": 1
+    },
+    "reviewer": [],
+    "reviewer_decisions": {},
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 3,
+      "errors": 0,
+      "ms": [
+       80480.0
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 7,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 1,
+      "http_calls": 4,
+      "errors": 0,
+      "ms": [
+       29168.2
+      ]
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 2,
+      "http_calls": 2,
+      "errors": 0,
+      "ms": [
+       9005.0,
+       19029.0
+      ]
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 0,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "obs": 15,
+     "briefing": 1,
+     "plan": 2,
+     "delivery_fallback": 1,
+     "action": 17,
+     "batch": 2,
+     "img": 8,
+     "role": 3,
+     "command": 4,
+     "check_done": 1,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "multi_apps-deec51c9-3b1e-4b9e-993c-4776f20e8bb2",
+   "domain": "multi_apps",
+   "tag": "multi_apps-deec51c9-3b1e-4b9e-993c-4776f20e8bb2-gate8-s0-try3",
+   "attempts": 3,
+   "infra": null,
+   "stop": "timeout",
+   "wall_s": 3979.4,
+   "turns_monitor": 97,
+   "score": 0.0,
+   "success": false,
+   "final_fail": false,
+   "turns": 97,
+   "tool_calls": 101,
+   "screenshots": 24,
+   "tok_in": 115440,
+   "tok_cache": 4976256,
+   "tok_out": 26875,
+   "pi_error": "terminated",
+   "final": "I'll start by checking the environment and what's already open.",
+   "request_human": 0,
+   "tools": {
+    "set_plan": 3,
+    "list_apps": 1,
+    "list_windows": 3,
+    "run_command": 51,
+    "get_window_state": 5,
+    "run_actions": 14,
+    "click": 14,
+    "inspect": 1,
+    "press_key": 8,
+    "check_done": 1
+   },
+   "gate": {
+    "actions": 107,
+    "executed": 104,
+    "interventions": 3,
+    "decisions": {
+     "direct": 104,
+     "deny": 2,
+     "ask_human": 1
+    },
+    "reviewer": [
+     837.1,
+     685.5
+    ],
+    "reviewer_decisions": {
+     "deny": 2
+    },
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 7,
+      "errors": 0,
+      "ms": [
+       92150.0
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 8,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 12,
+      "http_calls": 12,
+      "errors": 0,
+      "ms": [
+       10141.0,
+       7772.0,
+       9817.0,
+       10159.0,
+       7941.0,
+       8606.0,
+       12352.0,
+       11643.0,
+       11355.0,
+       9647.0,
+       15194.0,
+       10895.0
+      ]
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 1,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "obs": 43,
+     "briefing": 1,
+     "plan": 3,
+     "tree_extra": 37,
+     "command": 47,
+     "action": 107,
+     "img": 19,
+     "role": 12,
+     "delivery_fallback": 1,
+     "batch": 14,
+     "retro_repeat": 1,
+     "inspect": 1,
      "shutdown": 1
     }
    }
