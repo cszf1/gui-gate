@@ -1,0 +1,1 @@
+DONE — Enabled "Do Not Track" in Chromium/Chrome: opened chrome://settings/cookies, scrolled to the Advanced section's "Send a 'Do Not Track' request with your browsing traffic" toggle, switched it ON, confirmed the dialog, and verified the pref `enable_do_not_track: true` was written to the profile's Preferences file.

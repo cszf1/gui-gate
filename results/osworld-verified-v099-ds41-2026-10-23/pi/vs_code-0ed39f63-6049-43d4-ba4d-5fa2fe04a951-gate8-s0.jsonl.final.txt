@@ -1,0 +1,1 @@
+DONE — Opened `/home/user/Desktop/vscode_replace_text.txt` in VS Code, used Find & Replace (Ctrl+H) with "text" → "test" and Replace All, then saved with Ctrl+S; all 10 occurrences replaced (finder now shows "No results") and the file on disk has zero remaining "text".

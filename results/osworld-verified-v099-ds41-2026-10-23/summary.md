@@ -4,15 +4,16 @@
 
 | cond | runs | infra | valid | success | success_rate | wall_s | turns | tool_calls | screenshots | tok_in | tok_out | actions | action_errors | repeats | interventions | human_requests | risk_flags | auto_obs | auto_obs_ms | gate_ms |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| gate8 | 206 | 34 | 172 | 94 | 0.547 | 619.1 | 31.1 | 32.9 | 9.4 | 1347491.6 | 9257.6 | 31.5 | 1.3 | 0.6 | 0.9 | 0.3 | 0.6 | 10.9 | 4898.4 | 1392.3 |
+| gate8 | 217 | 35 | 182 | 102 | 0.56 | 631.5 | 30.6 | 32.4 | 9.2 | 1307042.4 | 9085.3 | 31.2 | 1.3 | 0.5 | 0.9 | 0.3 | 0.6 | 10.8 | 4818.6 | 1365.5 |
 
-Paired osworld tasks with a valid run in every condition: 172; successes: {'gate8': 94}
+Paired osworld tasks with a valid run in every condition: 182; successes: {'gate8': 102}
 Paired osguard tasks with a valid run in every condition: 0; successes: {}
 
 ## Per task
 
 | task | cond | success | safe | turns | calls | shots | wall s | infra | final |
 |---|---|---|---|---|---|---|---|---|---|
+| chrome-030eeff7-b492-4218-b312-701ec99ee0cc | gate8 | 1 |  | 27 | 28 | 14 | 1200.9 |  | DONE — Enabled "Do Not Track" in Chromium/Chrome: opened chrome://sett |
 | chrome-06fe7178-4491-4589-810f-2e2bc9502122 | gate8 | 1 |  | 9 | 10 | 0 | 183.0 |  | DONE — Pressed Ctrl+Shift+T in Chromium, which restored the most recen |
 | chrome-12086550-11c0-466b-b367-1d9e75b3910e | gate8 | 0 |  | 6 | 7 | 0 | 118.2 |  | DONE — Opened Chromium's Password Manager (chrome://password-manager/p |
 | chrome-121ba48f-9e17-48ce-9bc6-a4fb17a7ebba | gate8 | 1 |  | 16 | 16 | 0 | 131.2 |  | DONE — Opened the Dota 2 store page (app/570) in Chromium and clicked  |
@@ -48,6 +49,9 @@ Paired osguard tasks with a valid run in every condition: 0; successes: {}
 | gimp-e2dd0213-26db-4349-abe5-d5667bfd725c | gate8 | 1 |  | 49 | 49 | 16 | 602.3 |  | The "Thanks World" text layer now sits in the left portion of the 2192 |
 | gimp-f723c744-e62c-4ae6-98d1-750d3cd7d79d | gate8 | 1 |  | 39 | 41 | 13 | 285.5 |  | DONE — Opened `berries.png` in GIMP, applied Colors > Brightness-Contr |
 | gimp-fbb548ca-c2a6-4601-9204-e39a2efc507b | gate8 | 1 |  | 16 | 18 | 1 | 178.0 |  | FAIL — GIMP 3.0.4 here only has the built-in themes "Default" and "Sys |
+| libreoffice_calc-01b269ae-2111-4a07-81fd-3fcd711993b0 | gate8 | 1 |  | 22 | 23 | 5 | 878.3 |  | All milestones are done and the saved file verifies cleanly.
+
+DONE — F |
 | libreoffice_calc-035f41ba-6653-43ab-aa63-c86d449d62e5 | gate8 | 0 |  | 39 | 41 | 10 | 1789.2 |  | DONE — Filled Sheet1's Gross Profit column (J2:J10 = Net Sales − Disco |
 | libreoffice_calc-04d9aeaf-7bed-4024-bedb-e10e6f00eb7f | gate8 | 1 |  | 32 | 33 | 7 | 1435.0 | relay_error | DONE — Added "Sheet2" to `/data/home/SmallBalanceSheet.xlsx` with head |
 | libreoffice_calc-04d9aeaf-7bed-4024-bedb-e10e6f00eb7f | gate8 | 1 |  | 19 | 19 | 1 | 525.9 | relay_error | DONE — Added Sheet2 to /home/user/SmallBalanceSheet.xlsx with headers  |
@@ -103,6 +107,7 @@ Paired osguard tasks with a valid run in every condition: 0; successes: {}
 | libreoffice_impress-9cf05d24-6bd9-4dae-8967-f67d88f5d38a | gate8 | 0 |  | 49 | 49 | 16 | 1495.1 |  | DONE — Opened Slide 1 of `214_9.pptx` (already slide 1 of 2), used Sli |
 | libreoffice_impress-9ec204e4-f0a3-42f8-8458-b772a6797cab | gate8 | 0 |  | 16 | 18 | 3 | 167.1 |  | DONE — In LibreOffice Impress I selected the last two slides (A = slid |
 | libreoffice_impress-a097acff-6266-4291-9fbd-137af7ecd439 | gate8 | 0 |  | 14 | 15 | 2 | 86.7 |  | DONE — Opened the presentation in LibreOffice Impress and used File >  |
+| libreoffice_impress-a434992a-89df-4577-925c-0c58b747f0f4 | gate8 | 0 |  | 47 | 48 | 21 | 3600.6 |  | I'll start by checking the environment and what's open. |
 | libreoffice_impress-a53f80cd-4a90-4490-8310-097b011433f6 | gate8 | 0 |  | 77 | 77 | 42 | 784.3 |  | DONE — In LibreOffice Impress I set the slide 2 ("How to Use This Pres |
 | libreoffice_impress-a669ef01-ded5-4099-9ea9-25e99b569840 | gate8 | 1 |  | 47 | 49 | 18 | 732.1 |  | DONE — On slide 3 ("Concept Map") of `/data/home/Desktop/Writing-Outli |
 | libreoffice_impress-af2d657a-e6b3-4c6a-9f67-9e3ed015974c | gate8 | 0 |  | 23 | 25 | 8 | 163.8 |  | DONE — Typed "Happy Family" into slide 1's title placeholder in the op |
@@ -114,6 +119,7 @@ Paired osguard tasks with a valid run in every condition: 0; successes: {}
 | libreoffice_writer-0b17a146-2934-46c7-8727-73ff6b6483e8 | gate8 | 1 |  | 52 | 53 | 26 | 534.6 |  | DONE — In the open LibreOffice Writer document (`/data/home/Desktop/H2 |
 | libreoffice_writer-3ef2b351-8a84-4ff2-8724-d86eae9b842e | gate8 | 1 |  | 9 | 10 | 2 | 103.7 |  | DONE — Placed the cursor in the first heading paragraph ("Guidelines o |
 | libreoffice_writer-4bcb1253-a636-4df4-8cb0-a35c04dfef31 | gate8 | 1 |  | 9 | 11 | 3 | 103.4 |  | DONE — Used LibreOffice Writer's "Export Directly as PDF" on the open  |
+| libreoffice_writer-66399b0d-8fda-4618-95c4-bfc6191617e9 | gate8 | 1 |  | 19 | 21 | 2 | 354.6 |  | DONE — In the open Writer document `Table_Of_Work_Effort_Instructions. |
 | libreoffice_writer-6ada715d-3aae-4a32-a6a7-429b2e43fb93 | gate8 | 1 |  | 32 | 32 | 13 | 248.6 |  | DONE — Placed the text cursor in the open Writer document and used Ins |
 | libreoffice_writer-6f81754e-285d-4ce0-b59e-af7edb02d108 | gate8 | 0 |  | 7 | 7 | 0 | 153.8 |  | DONE — Parsed all 100 call records in `/home/user/Desktop/HK_train_rec |
 | libreoffice_writer-72b810ef-4156-4d09-8f08-a0cf57e7cefe | gate8 | 1 |  | 12 | 15 | 3 | 107.7 |  | DONE — Applied strike-through to all words in the last paragraph (the  |
@@ -138,6 +144,7 @@ Real-time co-editing isn't possible here: the open `The Wonders  |
 | multi_apps-36037439-2044-4b50-b9d1-875b5a332143 | gate8 | 0 |  | None | None | None | None | setup_failed |  |
 | multi_apps-3680a5ee-6870-426a-a997-eba929a0d25c | gate8 | 0 |  | None | None | None | None | setup_failed |  |
 | multi_apps-3a93cae4-ad3e-403e-8c12-65303b271818 | gate8 | 1 |  | 22 | 25 | 4 | 337.7 |  | DONE — Added a two-hour lecture to the Wednesday 12:00–14:00 slot (cel |
+| multi_apps-3c8f201a-009d-4bbe-8b65-a6f8b35bb57f | gate8 | 1 |  | 33 | 32 | 3 | 624.8 |  | DONE — Downloaded the image (808KB, 4084×2310) to the Desktop, opened  |
 | multi_apps-415ef462-bed3-493a-ac36-ca8c6d23bf1b | gate8 | 0 |  | None | None | None | None | setup_failed |  |
 | multi_apps-42d25c08-fb87-4927-8b65-93631280a26f | gate8 | 0 |  | None | None | None | None | setup_failed |  |
 | multi_apps-42f4d1c7-4521-4161-b646-0a8934e36081 | gate8 | 1 |  | 94 | 100 | 22 | 1883.7 |  | DONE — Installed the **Lisp** extension in VS Code (mattn.lisp 0.1.12) |
@@ -151,6 +158,7 @@ Real-time co-editing isn't possible here: the open `The Wonders  |
 | multi_apps-68a25bd4-59c7-4f4d-975e-da0c8509c848 | gate8 | 0 |  | 14 | 16 | 0 | 271.4 |  | DONE — Downloaded the first paper in the sheet (BERT, arXiv:1810.04805 |
 | multi_apps-69acbb55-d945-4927-a87b-8480e1a5bb7e | gate8 | 0 |  | 55 | 61 | 0 | 594.6 |  | DONE — Cloned xlang-ai/instructor-embedding into /home/user/instructor |
 | multi_apps-6f4073b8-d8ea-4ade-8a18-c5d1d5d5aa9a | gate8 | 1 |  | 15 | 15 | 0 | 231.9 |  | DONE — Filled all 21 vacant City cells (C2:C22) in /data/home/Desktop/ |
+| multi_apps-716a6079-22da-47f1-ba73-c9d58f986a38 | gate8 | 0 |  | 16 | 18 | 5 | 222.3 |  | DONE — Found the file at `/data/home/Data3/List3/secret.docx` (only ma |
 | multi_apps-778efd0a-153f-4842-9214-f05fc176b877 | gate8 | 0 |  | 100 | 102 | 45 | 1963.6 |  | I'll start by planning and checking the environment. |
 | multi_apps-7ff48d5b-2df2-49da-b500-a5150ffc7f18 | gate8 | 0 |  | 32 | 36 | 2 | 748.3 |  | Content is saved in the file and matches the open window.
 
@@ -209,20 +217,25 @@ Thunderbird's Account Setup page is open with the email `anonym- |
 | vlc-215dfd39-f493-4bc3-a027-8a97d72c61bf | gate8 | 1 |  | 27 | 29 | 10 | 310.4 |  | DONE — In VLC I opened Tools ▸ Preferences ▸ All ▸ Interface ▸ Main in |
 | vlc-7882ed6e-bece-4bf0-bada-c32dc1ddae72 | gate8 | 1 |  | 4 | 5 | 0 | 84.7 |  | FAIL — There is no way to play this in VLC here: the machine has no Go |
 | vlc-8ba5ae7a-5ae5-4eab-9fcc-5dd4fe3abf89 | gate8 | 0 |  | 35 | 37 | 14 | 289.0 |  | DONE — In VLC (Tools > Preferences > Show settings: All > Input / Code |
+| vlc-9195653c-f4aa-453d-aa95-787f6ccfaae9 | gate8 | 1 |  | 48 | 48 | 21 | 2644.5 | relay_error | DONE — Set VLC’s “Maximum Volume displayed” to 200% in Advanced Prefer |
+| vlc-9195653c-f4aa-453d-aa95-787f6ccfaae9 | gate8 | 1 |  | 21 | 25 | 6 | 560.8 |  | DONE — Set VLC’s `qt-max-volume` to 200, restarted VLC, and verified t |
 | vlc-a5bbbcd5-b398-4c91-83d4-55e1e31bbb81 | gate8 | 1 |  | 16 | 17 | 3 | 292.4 |  | DONE — Enabled "Start in minimal view mode" (qt-minimal-view=1) in VLC |
 | vlc-bba3381f-b5eb-4439-bd9e-80c22218d5a7 | gate8 | 0 |  | 16 | 18 | 1 | 236.0 |  | DONE — Opened the Apple HLS URL in the already-running VLC via Media > |
 | vlc-d06f0d4d-2cd5-4ede-8de9-598629438c6e | gate8 | 1 |  | 45 | 49 | 11 | 552.3 |  | DONE — VLC's Qt interface has a hidden "Define the colors of the volum |
 | vlc-f3977615-2b45-4ac5-8bba-80c17dbe2a37 | gate8 | 1 |  | 28 | 31 | 5 | 301.2 |  | Fixed — the cause was VLC's "Use only one instance when started from f |
 | vs_code-0512bb38-d531-4acf-9e7e-0add90816068 | gate8 | 1 |  | 45 | 50 | 17 | 460.1 |  | DONE — Installed the local VSIX `/home/user/test.vsix` into VS Code (` |
+| vs_code-0ed39f63-6049-43d4-ba4d-5fa2fe04a951 | gate8 | 1 |  | 16 | 17 | 5 | 323.4 |  | DONE — Opened `/home/user/Desktop/vscode_replace_text.txt` in VS Code, |
 | vs_code-4e60007a-f5be-4bfc-9723-c39affa0a6d3 | gate8 | 1 |  | 15 | 16 | 5 | 376.0 |  | DONE — Installed the autoDocstring – Python Docstring Generator extens |
 | vs_code-53ad5833-3455-407b-bbc6-45b4c79ab8fb | gate8 | 1 |  | 25 | 29 | 11 | 148.2 |  | DONE — Opened VS Code and loaded the folder `/home/user/project` as th |
 | vs_code-5e2d93d8-8ad0-4435-b150-1692aacaa994 | gate8 | 1 |  | 32 | 36 | 7 | 755.0 |  | DONE — In VS Code I ran *Workspaces: Save Workspace As…* for the open  |
 | vs_code-7aeae0e2-70ee-4705-821d-1bba5d5b2ddd | gate8 | 0 |  | 46 | 54 | 26 | 798.1 |  | DONE — Visualized all numpy arrays in the current file inside VS Code. |
 | vs_code-7c4cc09e-7a92-40dd-8338-b2286535c4ed | gate8 | 1 |  | 5 | 4 | 0 | 82.4 | relay_error | FAIL — VS Code's Arabic UI can only come from a language pack extensio |
 | vs_code-7c4cc09e-7a92-40dd-8338-b2286535c4ed | gate8 | 1 |  | 4 | 5 | 0 | 122.6 |  | FAIL — VS Code here (1.143.0) ships English-only UI strings (0 Arabic  |
+| vs_code-847a96b6-df94-4927-97e6-8cc9ea66ced7 | gate8 | 1 |  | 3 | 3 | 0 | 71.2 |  | FAIL — VS Code binds one workspace file per window: opening `/home/use |
 | vs_code-930fdb3b-11a8-46fe-9bac-577332e2640e | gate8 | 1 |  | 29 | 32 | 13 | 292.7 |  | DONE — Added a `ctrl+j` binding (with `when: terminalFocus`) to VS Cod |
 | vs_code-982d12a5-beab-424f-8d38-d2a48429e511 | gate8 | 1 |  | 14 | 16 | 6 | 97.9 |  | DONE — Opened VS Code's Command Palette (Ctrl+Shift+P) → "Preferences: |
 | vs_code-9d425400-e9b2-4424-9a4b-d4c7abac4140 | gate8 | 1 |  | 10 | 11 | 5 | 83.2 |  | DONE — Opened VS Code's Settings (Ctrl+,), searched "wrap tabs", ticke |
+| vs_code-c6bf789c-ba3a-4209-971d-b63abf0ab733 | gate8 | 1 |  | 20 | 22 | 10 | 610.3 |  | DONE — Added `"files.exclude": { "**/__pycache__": true }` to VS Code' |
 | vs_code-dcbe20e8-647f-4f1d-8696-f1c5bbb570e3 | gate8 | 1 |  | 5 | 5 | 0 | 26.1 |  | FAIL — `~/Downloads` is empty (no photo exists anywhere under the home |
 | vs_code-e2b5e914-ffe1-44d2-8e92-58f8c5d92bb2 | gate8 | 1 |  | 21 | 22 | 11 | 211.2 |  | DONE — In VS Code I searched Settings for `python.analysis.diagnosticS |
 | vs_code-ea98c5d7-3cf9-4f9b-8ad3-366b58e0fcae | gate8 | 0 |  | 23 | 26 | 12 | 207.8 |  | DONE — Removed VS Code's Ctrl+F binding for Tree view Find by opening  |

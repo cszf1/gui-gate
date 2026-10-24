@@ -1,0 +1,1 @@
+DONE — Set VLC’s `qt-max-volume` to 200, restarted VLC, and verified the volume control now reaches 200%.

@@ -1,0 +1,1 @@
+DONE — Added `"files.exclude": { "**/__pycache__": true }` to VS Code's user settings (`~/.config/Code/User/settings.json`) via Preferences: Open User Settings (JSON) and saved it; the Settings UI now lists `**/__pycache__` under Files: Exclude.

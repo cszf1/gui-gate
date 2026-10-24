@@ -1,39 +1,39 @@
 # OSWorld-Verified report
 
-- tasks expected 361, finished rows 189, valid 172, infra 17 {'relay_error': 2, 'setup_failed': 14, 'eval_error': 1}
-- **success 94/361 = 26.04 %** (official-style: every expected task counts, infra/missing = 0); 94/172 = 54.65 % of valid runs; score sum 99.35
-- stops {'agent': 162, 'max_turns': 3, 'timeout': 7}; turns mean 31.1 / median 25.0; wall mean 619.1 s / median 324.6 s; total 30.61 h
-- tokens: input 8,869,351 + cache read 222,899,200, output 1,592,302; screenshots returned 1612; tool calls 5659
-- request_human calls 10 (human=deny); FAIL answers 17
-- gate: {'actions': 5413, 'executed': 5260, 'interventions': 153, 'human_events': 57, 'loop_notes': 10, 'loop_refused': 6}
-- reviewer (System One): {'calls': 59, 'decisions': {'deny': 35, 'allow': 24}, 'ms_mean': 922.7, 'ms_median': 696.0}
+- tasks expected 361, finished rows 200, valid 183, infra 17 {'relay_error': 2, 'setup_failed': 14, 'eval_error': 1}
+- **success 102/361 = 28.25 %** (official-style: every expected task counts, infra/missing = 0); 102/183 = 55.74 % of valid runs; score sum 107.35
+- stops {'agent': 171, 'max_turns': 3, 'timeout': 9}; turns mean 30.6 / median 25; wall mean 651.7 s / median 334.6 s; total 34.16 h
+- tokens: input 9,288,353 + cache read 229,312,000, output 1,657,899; screenshots returned 1690; tool calls 5923
+- request_human calls 10 (human=deny); FAIL answers 18
+- gate: {'actions': 5697, 'executed': 5540, 'interventions': 157, 'human_events': 58, 'loop_notes': 10, 'loop_refused': 6}
+- reviewer (System One): {'calls': 62, 'decisions': {'deny': 36, 'allow': 26}, 'ms_mean': 918.7, 'ms_median': 700.0}
 
 | role | runs using | invocations | HTTP calls | errors | mean ms | median ms |
 |---|---|---|---|---|---|---|
-| feasibility | 172 | 172 | 1006 | 4 | 65441.8 | 53562.3 |
-| planner | 172 | 172 | 586 | 3 | None | None |
-| verifier | 158 | 167 | 1178 | 7 | 70749.1 | 55321.5 |
+| feasibility | 183 | 183 | 1068 | 4 | 65631.1 | 54842.6 |
+| planner | 183 | 183 | 606 | 3 | None | None |
+| verifier | 166 | 176 | 1226 | 8 | 70048.3 | 54862.1 |
 | judge | 0 | 0 | 0 | 0 | None | None |
 | search | 4 | 4 | 4 | 0 | 10413.8 | 9443.6 |
-| compact | 139 | 513 | 513 | 1 | 9804.1 | 8846.0 |
+| compact | 149 | 538 | 538 | 1 | 9887.0 | 8870.0 |
 | grounder | 7 | 8 | 8 | 0 | 10044.1 | 5146.4 |
 
 (feasibility ms = the whole briefing incl. planner; compact/judge ms = gap to the previous gate event, approximate)
 
 | domain | tasks | valid | success | rate (of tasks) | score sum | infra |
 |---|---|---|---|---|---|---|
-| libreoffice_impress | 24 | 24 | 5 | 20.8 % | 5.93 | 0 |
+| libreoffice_impress | 25 | 25 | 5 | 20.0 % | 5.93 | 0 |
 | os | 13 | 10 | 7 | 53.8 % | 7.0 | 3 |
-| multi_apps | 51 | 39 | 17 | 33.3 % | 20.49 | 12 |
-| libreoffice_writer | 11 | 10 | 7 | 63.6 % | 7.0 | 1 |
-| vs_code | 13 | 13 | 11 | 84.6 % | 11.0 | 0 |
-| libreoffice_calc | 32 | 31 | 27 | 84.4 % | 27.0 | 1 |
-| vlc | 7 | 7 | 5 | 71.4 % | 5.0 | 0 |
-| chrome | 21 | 21 | 5 | 23.8 % | 5.93 | 0 |
+| multi_apps | 54 | 42 | 18 | 33.3 % | 21.49 | 12 |
+| libreoffice_writer | 12 | 11 | 8 | 66.7 % | 8.0 | 1 |
+| vs_code | 16 | 16 | 14 | 87.5 % | 14.0 | 0 |
+| libreoffice_calc | 33 | 32 | 28 | 84.8 % | 28.0 | 1 |
+| vlc | 8 | 8 | 6 | 75.0 % | 6.0 | 0 |
+| chrome | 22 | 22 | 6 | 27.3 % | 6.93 | 0 |
 | gimp | 11 | 11 | 6 | 54.5 % | 6.0 | 0 |
 | thunderbird | 6 | 6 | 4 | 66.7 % | 4.0 | 0 |
 
-tools: {'run_command': 1427, 'run_actions': 1106, 'get_window_state': 889, 'click': 702, 'set_plan': 375, 'list_windows': 321, 'press_key': 304, 'inspect': 214, 'check_done': 167, 'type_text': 54, 'scroll': 51, 'list_apps': 37, 'request_human': 10, 'update_plan': 1, 'mcp__gui_run_actions': 1}
+tools: {'run_command': 1474, 'run_actions': 1154, 'get_window_state': 931, 'click': 741, 'set_plan': 399, 'list_windows': 342, 'press_key': 322, 'inspect': 218, 'check_done': 176, 'scroll': 58, 'type_text': 56, 'list_apps': 39, 'request_human': 10, 'update_plan': 1, 'mcp__gui_run_actions': 1, 'mcp__gui_set_plan': 1}
 
 ## infra rows
 

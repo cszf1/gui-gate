@@ -1,0 +1,1 @@
+DONE — Downloaded the image (808KB, 4084×2310) to the Desktop, opened it in GIMP, scaled it to 2000×1131, and exported it as `/home/user/Desktop/compressed.jpeg` with JPEG quality 80 + optimization → 238KB (under 600KB).

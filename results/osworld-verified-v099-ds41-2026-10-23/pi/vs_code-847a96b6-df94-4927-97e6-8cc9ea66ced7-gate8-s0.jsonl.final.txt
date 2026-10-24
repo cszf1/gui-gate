@@ -1,0 +1,1 @@
+FAIL — VS Code binds one workspace file per window: opening `/home/user/workspace2.code-workspace` where `workspace1.code-workspace` is already open replaces it, and "Add Folder to Workspace" only adds folders (not workspace files), so two `.code-workspace` files cannot be open simultaneously in the same window without authoring an unrequested combined workspace file.

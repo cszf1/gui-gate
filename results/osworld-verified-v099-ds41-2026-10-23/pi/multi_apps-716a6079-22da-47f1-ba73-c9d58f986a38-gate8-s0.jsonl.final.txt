@@ -1,0 +1,1 @@
+DONE — Found the file at `/data/home/Data3/List3/secret.docx` (only match on the disk) and copied it in Thunar (Ctrl+C), so the clipboard now holds the real file reference (`x-special/gnome-copied-files` = `copy\nfile:///data/home/Data3/List3/secret.docx`) plus its path as text; Thunar stays open as the clipboard owner.

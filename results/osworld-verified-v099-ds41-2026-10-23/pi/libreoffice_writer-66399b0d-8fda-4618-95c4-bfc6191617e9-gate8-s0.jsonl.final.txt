@@ -1,0 +1,1 @@
+DONE — In the open Writer document `Table_Of_Work_Effort_Instructions.docx` I used Table ▸ Insert Table… with Columns=7, Rows=5 (no heading) at the cursor and saved with Ctrl+S; the file on disk now contains an empty 7-column × 5-row table (35 empty cells).
