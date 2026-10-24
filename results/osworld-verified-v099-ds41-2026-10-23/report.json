@@ -1,15 +1,15 @@
 {
  "summary": {
   "expected": 361,
-  "rows": 200,
-  "valid": 183,
-  "infra": 17,
-  "success": 102,
-  "score_sum": 107.35,
-  "rate_official": 28.25,
-  "rate_valid": 55.74,
+  "rows": 205,
+  "valid": 187,
+  "infra": 18,
+  "success": 104,
+  "score_sum": 109.35,
+  "rate_official": 28.81,
+  "rate_valid": 55.61,
   "infra_kinds": {
-   "relay_error": 2,
+   "relay_error": 3,
    "setup_failed": 14,
    "eval_error": 1
   },
@@ -22,29 +22,29 @@
     "infra": 0
    },
    "os": {
-    "tasks": 13,
-    "valid": 10,
-    "success": 7,
-    "score_sum": 7.0,
-    "infra": 3
-   },
-   "multi_apps": {
-    "tasks": 54,
-    "valid": 42,
-    "success": 18,
-    "score_sum": 21.488890566084056,
-    "infra": 12
-   },
-   "libreoffice_writer": {
-    "tasks": 12,
+    "tasks": 14,
     "valid": 11,
     "success": 8,
     "score_sum": 8.0,
+    "infra": 3
+   },
+   "multi_apps": {
+    "tasks": 55,
+    "valid": 42,
+    "success": 18,
+    "score_sum": 21.488890566084056,
+    "infra": 13
+   },
+   "libreoffice_writer": {
+    "tasks": 13,
+    "valid": 12,
+    "success": 9,
+    "score_sum": 9.0,
     "infra": 1
    },
    "vs_code": {
-    "tasks": 16,
-    "valid": 16,
+    "tasks": 17,
+    "valid": 17,
     "success": 14,
     "score_sum": 14.0,
     "infra": 0
@@ -71,8 +71,8 @@
     "infra": 0
    },
    "gimp": {
-    "tasks": 11,
-    "valid": 11,
+    "tasks": 12,
+    "valid": 12,
     "success": 6,
     "score_sum": 6.0,
     "infra": 0
@@ -86,33 +86,33 @@
    }
   },
   "stops": {
-   "agent": 171,
+   "agent": 174,
    "max_turns": 3,
-   "timeout": 9
+   "timeout": 10
   },
-  "turns_mean": 30.6,
+  "turns_mean": 30.3,
   "turns_median": 25,
-  "wall_mean_s": 651.7,
+  "wall_mean_s": 662.4,
   "wall_median_s": 334.6,
-  "wall_total_h": 34.16,
-  "tok_in": 9288353,
-  "tok_cache": 229312000,
-  "tok_out": 1657899,
-  "screenshots": 1690,
-  "tool_calls": 5923,
+  "wall_total_h": 36.25,
+  "tok_in": 9426144,
+  "tok_cache": 230942848,
+  "tok_out": 1681632,
+  "screenshots": 1713,
+  "tool_calls": 5997,
   "tools": {
-   "run_command": 1474,
-   "run_actions": 1154,
-   "get_window_state": 931,
-   "click": 741,
-   "set_plan": 399,
-   "list_windows": 342,
-   "press_key": 322,
-   "inspect": 218,
-   "check_done": 176,
-   "scroll": 58,
+   "run_command": 1492,
+   "run_actions": 1165,
+   "get_window_state": 944,
+   "click": 749,
+   "set_plan": 406,
+   "list_windows": 345,
+   "press_key": 323,
+   "inspect": 223,
+   "check_done": 180,
+   "scroll": 59,
    "type_text": 56,
-   "list_apps": 39,
+   "list_apps": 42,
    "request_human": 10,
    "update_plan": 1,
    "mcp__gui_run_actions": 1,
@@ -131,31 +131,31 @@
   },
   "roles": {
    "feasibility": {
-    "invocations": 183,
-    "http_calls": 1068,
+    "invocations": 187,
+    "http_calls": 1091,
     "errors": 4,
-    "ms_mean": 65631.1,
-    "ms_median": 54842.6,
-    "timed": 183,
-    "runs_using": 183
+    "ms_mean": 65568.7,
+    "ms_median": 54079.1,
+    "timed": 187,
+    "runs_using": 187
    },
    "planner": {
-    "invocations": 183,
-    "http_calls": 606,
+    "invocations": 187,
+    "http_calls": 615,
     "errors": 3,
     "ms_mean": null,
     "ms_median": null,
     "timed": 0,
-    "runs_using": 183
+    "runs_using": 187
    },
    "verifier": {
-    "invocations": 176,
-    "http_calls": 1226,
-    "errors": 8,
-    "ms_mean": 70048.3,
+    "invocations": 180,
+    "http_calls": 1241,
+    "errors": 9,
+    "ms_mean": 69780.2,
     "ms_median": 54862.1,
-    "timed": 176,
-    "runs_using": 166
+    "timed": 180,
+    "runs_using": 170
    },
    "judge": {
     "invocations": 0,
@@ -176,13 +176,13 @@
     "runs_using": 4
    },
    "compact": {
-    "invocations": 538,
-    "http_calls": 538,
+    "invocations": 543,
+    "http_calls": 543,
     "errors": 1,
-    "ms_mean": 9887.0,
-    "ms_median": 8870.0,
-    "timed": 538,
-    "runs_using": 149
+    "ms_mean": 9922.6,
+    "ms_median": 8900.0,
+    "timed": 543,
+    "runs_using": 151
    },
    "grounder": {
     "invocations": 8,
@@ -195,10 +195,10 @@
    }
   },
   "gate": {
-   "actions": 5697,
-   "executed": 5540,
-   "interventions": 157,
-   "human_events": 58,
+   "actions": 5762,
+   "executed": 5604,
+   "interventions": 158,
+   "human_events": 59,
    "loop_notes": 10,
    "loop_refused": 6
   }
@@ -21319,6 +21319,529 @@
      "img": 7,
      "role": 2,
      "command": 1,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "libreoffice_writer-ecc2413d-8a48-416e-a3a2-d30106ca36cb",
+   "domain": "libreoffice_writer",
+   "tag": "libreoffice_writer-ecc2413d-8a48-416e-a3a2-d30106ca36cb-gate8-s0",
+   "attempts": 1,
+   "infra": null,
+   "stop": "agent",
+   "wall_s": 645.8,
+   "turns_monitor": 17,
+   "score": 1.0,
+   "success": true,
+   "final_fail": false,
+   "turns": 17,
+   "tool_calls": 19,
+   "screenshots": 4,
+   "tok_in": 29324,
+   "tok_cache": 319872,
+   "tok_out": 7751,
+   "pi_error": null,
+   "final": "**DONE** \u2014 In LibreOffice Writer I placed the cursor at the end of page 1 (the cover page, after the \"\u2026legal advice.\" disclaimer), pressed Ctrl+Enter to insert a page break, and saved; `~/Desktop/Samp",
+   "request_human": 0,
+   "tools": {
+    "list_apps": 1,
+    "list_windows": 1,
+    "set_plan": 2,
+    "get_window_state": 4,
+    "run_actions": 2,
+    "scroll": 1,
+    "press_key": 1,
+    "run_command": 6,
+    "check_done": 1
+   },
+   "gate": {
+    "actions": 14,
+    "executed": 13,
+    "interventions": 1,
+    "decisions": {
+     "direct": 13,
+     "ask_human": 1
+    },
+    "reviewer": [],
+    "reviewer_decisions": {},
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 5,
+      "errors": 0,
+      "ms": [
+       49252.6
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 2,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 1,
+      "http_calls": 9,
+      "errors": 1,
+      "ms": [
+       146412.3
+      ]
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 1,
+      "http_calls": 1,
+      "errors": 0,
+      "ms": [
+       4038.0
+      ]
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 1,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "obs": 9,
+     "briefing": 1,
+     "plan": 2,
+     "img": 4,
+     "delivery_fallback": 1,
+     "action": 14,
+     "batch": 2,
+     "role": 2,
+     "command": 5,
+     "tree_extra": 1,
+     "check_done": 1,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "gimp-a746add2-cab0-4740-ac36-c3769d9bfb46",
+   "domain": "gimp",
+   "tag": "gimp-a746add2-cab0-4740-ac36-c3769d9bfb46-gate8-s0",
+   "attempts": 1,
+   "infra": null,
+   "stop": "agent",
+   "wall_s": 282.4,
+   "turns_monitor": 12,
+   "score": 0.0,
+   "success": false,
+   "final_fail": false,
+   "turns": 12,
+   "tool_calls": 12,
+   "screenshots": 3,
+   "tok_in": 16154,
+   "tok_cache": 124288,
+   "tok_out": 990,
+   "pi_error": null,
+   "final": "DONE \u2014 In GIMP 3.0.4 I dismissed the color-profile/welcome dialogs and opened Filters > Light and Shadow > Vignette, so the \"Vignette\" filter window is now open.",
+   "request_human": 0,
+   "tools": {
+    "set_plan": 2,
+    "list_apps": 1,
+    "list_windows": 1,
+    "get_window_state": 3,
+    "click": 4,
+    "check_done": 1
+   },
+   "gate": {
+    "actions": 4,
+    "executed": 4,
+    "interventions": 0,
+    "decisions": {
+     "direct": 4
+    },
+    "reviewer": [],
+    "reviewer_decisions": {},
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 9,
+      "errors": 0,
+      "ms": [
+       112264.3
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 2,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 1,
+      "http_calls": 2,
+      "errors": 0,
+      "ms": [
+       7758.2
+      ]
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 0,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "briefing": 1,
+     "plan": 2,
+     "obs": 6,
+     "img": 3,
+     "action": 4,
+     "role": 1,
+     "check_done": 1,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "os-6f56bf42-85b8-4fbb-8e06-6c44960184ba",
+   "domain": "os",
+   "tag": "os-6f56bf42-85b8-4fbb-8e06-6c44960184ba-gate8-s0",
+   "attempts": 1,
+   "infra": null,
+   "stop": "agent",
+   "wall_s": 64.1,
+   "turns_monitor": 4,
+   "score": 1.0,
+   "success": true,
+   "final_fail": false,
+   "turns": 4,
+   "tool_calls": 5,
+   "screenshots": 0,
+   "tok_in": 5132,
+   "tok_cache": 25472,
+   "tok_out": 602,
+   "pi_error": null,
+   "final": "DONE \u2014 Copied `/home/user/file1` into `dir1`, `dir2`, and `dir3`; all three copies verified identical (md5 match).",
+   "request_human": 0,
+   "tools": {
+    "run_command": 2,
+    "set_plan": 2,
+    "check_done": 1
+   },
+   "gate": {
+    "actions": 2,
+    "executed": 2,
+    "interventions": 0,
+    "decisions": {
+     "direct": 2
+    },
+    "reviewer": [],
+    "reviewer_decisions": {},
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 4,
+      "errors": 0,
+      "ms": [
+       41040.9
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 4,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 1,
+      "http_calls": 1,
+      "errors": 0,
+      "ms": [
+       3524.2
+      ]
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 0,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "plan": 2,
+     "briefing": 1,
+     "command": 2,
+     "action": 2,
+     "role": 1,
+     "check_done": 1,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "multi_apps-82e3c869-49f6-4305-a7ce-f3e64a0618e7",
+   "domain": "multi_apps",
+   "tag": "multi_apps-82e3c869-49f6-4305-a7ce-f3e64a0618e7-gate8-s0-try3",
+   "attempts": 3,
+   "infra": "relay_error",
+   "stop": "agent",
+   "wall_s": 2942.7,
+   "turns_monitor": 6,
+   "score": 0.0,
+   "success": false,
+   "final_fail": false,
+   "turns": 6,
+   "tool_calls": 4,
+   "screenshots": 2,
+   "tok_in": 6045,
+   "tok_cache": 8192,
+   "tok_out": 423,
+   "pi_error": "Request timed out.",
+   "final": "I'll start by planning and inspecting the task environment.",
+   "request_human": 0,
+   "tools": {
+    "set_plan": 1,
+    "run_command": 1,
+    "inspect": 2
+   },
+   "gate": {
+    "actions": 1,
+    "executed": 1,
+    "interventions": 0,
+    "decisions": {
+     "direct": 1
+    },
+    "reviewer": [],
+    "reviewer_decisions": {},
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 5,
+      "errors": 0,
+      "ms": [
+       67853.8
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 2,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 0,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "plan": 1,
+     "briefing": 1,
+     "command": 1,
+     "action": 1,
+     "inspect": 2,
+     "img": 2,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "vs_code-ec71221e-ac43-46f9-89b8-ee7d80f7e1c5",
+   "domain": "vs_code",
+   "tag": "vs_code-ec71221e-ac43-46f9-89b8-ee7d80f7e1c5-gate8-s0",
+   "attempts": 1,
+   "infra": null,
+   "stop": "timeout",
+   "wall_s": 3600.7,
+   "turns_monitor": 35,
+   "score": 0.0,
+   "success": false,
+   "final_fail": false,
+   "turns": 35,
+   "tool_calls": 38,
+   "screenshots": 16,
+   "tok_in": 87181,
+   "tok_cache": 1161216,
+   "tok_out": 14390,
+   "pi_error": "Request timed out.",
+   "final": "",
+   "request_human": 0,
+   "tools": {
+    "list_apps": 1,
+    "list_windows": 1,
+    "set_plan": 1,
+    "run_command": 10,
+    "get_window_state": 6,
+    "run_actions": 9,
+    "inspect": 5,
+    "click": 4,
+    "check_done": 1
+   },
+   "gate": {
+    "actions": 45,
+    "executed": 45,
+    "interventions": 0,
+    "decisions": {
+     "direct": 45
+    },
+    "reviewer": [],
+    "reviewer_decisions": {},
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 5,
+      "errors": 0,
+      "ms": [
+       48283.1
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 1,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 1,
+      "http_calls": 3,
+      "errors": 0,
+      "ms": [
+       74231.0
+      ]
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 4,
+      "http_calls": 4,
+      "errors": 0,
+      "ms": [
+       10853.0,
+       15028.0,
+       25244.0,
+       13617.0
+      ]
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 0,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "briefing": 1,
+     "obs": 20,
+     "command": 10,
+     "action": 45,
+     "plan": 1,
+     "delivery_fallback": 1,
+     "batch": 9,
+     "img": 15,
+     "retro_repeat": 1,
+     "role": 5,
+     "inspect": 5,
+     "check_done": 1,
      "shutdown": 1
     }
    }

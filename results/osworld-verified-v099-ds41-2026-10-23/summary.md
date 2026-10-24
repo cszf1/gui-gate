@@ -4,9 +4,9 @@
 
 | cond | runs | infra | valid | success | success_rate | wall_s | turns | tool_calls | screenshots | tok_in | tok_out | actions | action_errors | repeats | interventions | human_requests | risk_flags | auto_obs | auto_obs_ms | gate_ms |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| gate8 | 217 | 35 | 182 | 102 | 0.56 | 631.5 | 30.6 | 32.4 | 9.2 | 1307042.4 | 9085.3 | 31.2 | 1.3 | 0.5 | 0.9 | 0.3 | 0.6 | 10.8 | 4818.6 | 1365.5 |
+| gate8 | 225 | 38 | 187 | 104 | 0.556 | 662.4 | 30.3 | 32.1 | 9.2 | 1285395.7 | 8992.7 | 30.8 | 1.3 | 0.5 | 0.8 | 0.3 | 0.6 | 10.7 | 4764.4 | 1346.8 |
 
-Paired osworld tasks with a valid run in every condition: 182; successes: {'gate8': 102}
+Paired osworld tasks with a valid run in every condition: 187; successes: {'gate8': 104}
 Paired osguard tasks with a valid run in every condition: 0; successes: {}
 
 ## Per task
@@ -45,6 +45,7 @@ Paired osguard tasks with a valid run in every condition: 0; successes: {}
 | gimp-7767eef2-56a3-4cea-8c9f-48c070c7d65b | gate8 | 0 |  | 16 | 18 | 1 | 105.0 |  | DONE — In GIMP I went to Edit > Preferences > Interface > Theme, chang |
 | gimp-7b7617bd-57cc-468e-9c91-40c4ec2bcb3d | gate8 | 0 |  | 16 | 17 | 4 | 127.2 |  | DONE — In GIMP 3.0.4 I opened Edit > Preferences, set "Minimal number  |
 | gimp-8ea73f6f-9689-42ad-8c60-195bbf06a7ba | gate8 | 0 |  | 85 | 95 | 11 | 3601.2 |  |  |
+| gimp-a746add2-cab0-4740-ac36-c3769d9bfb46 | gate8 | 0 |  | 12 | 12 | 3 | 282.4 |  | DONE — In GIMP 3.0.4 I dismissed the color-profile/welcome dialogs and |
 | gimp-b148e375-fe0b-4bec-90e7-38632b0d73c2 | gate8 | 0 |  | 24 | 24 | 5 | 452.3 |  | DONE — In GIMP I added a new layer to `white_background.xcf` via Layer |
 | gimp-e2dd0213-26db-4349-abe5-d5667bfd725c | gate8 | 1 |  | 49 | 49 | 16 | 602.3 |  | The "Thanks World" text layer now sits in the left portion of the 2192 |
 | gimp-f723c744-e62c-4ae6-98d1-750d3cd7d79d | gate8 | 1 |  | 39 | 41 | 13 | 285.5 |  | DONE — Opened `berries.png` in GIMP, applied Colors > Brightness-Contr |
@@ -131,6 +132,7 @@ Real-time co-editing isn't possible here: the open `The Wonders  |
 | libreoffice_writer-e246f6d8-78d7-44ac-b668-fcf47946cb50 | gate8 | 1 |  | 69 | 69 | 19 | 859.2 | relay_error | DONE — In LibreOffice Writer I ran a Basic macro over the open `Y22-21 |
 | libreoffice_writer-e246f6d8-78d7-44ac-b668-fcf47946cb50 | gate8 | 1 |  | 38 | 36 | 13 | 623.5 | relay_error | DONE — In LibreOffice Writer I used Find & Replace with a formatting f |
 | libreoffice_writer-e528b65e-1107-4b8c-8988-490e4fece599 | gate8 | 1 |  | 16 | 18 | 1 | 187.4 |  | DONE — Opened the document in LibreOffice Writer, selected all body te |
+| libreoffice_writer-ecc2413d-8a48-416e-a3a2-d30106ca36cb | gate8 | 1 |  | 17 | 19 | 4 | 645.8 |  | **DONE** — In LibreOffice Writer I placed the cursor at the end of pag |
 | multi_apps-09a37c51-e625-49f4-a514-20a773797a8a | gate8 | 0 |  | 77 | 96 | 39 | 822.8 |  | DONE — I cut the backpacker out of the mountain/sky photo (isolating t |
 | multi_apps-185f29bd-5da0-40a6-b69c-ba7f4e0324ef | gate8 | 0 |  | None | None | None | None | setup_failed |  |
 | multi_apps-1f18aa87-af6f-41ef-9853-cdb8f32ebdea | gate8 | 1 |  | 18 | 19 | 3 | 225.9 |  | DONE — Opened `/data/home/Desktop/Answer.docx`, added the multiple-cho |
@@ -163,6 +165,10 @@ Real-time co-editing isn't possible here: the open `The Wonders  |
 | multi_apps-7ff48d5b-2df2-49da-b500-a5150ffc7f18 | gate8 | 0 |  | 32 | 36 | 2 | 748.3 |  | Content is saved in the file and matches the open window.
 
 DONE — Rese |
+| multi_apps-82e3c869-49f6-4305-a7ce-f3e64a0618e7 | gate8 | 0 |  | 7 | 6 | 3 | 1533.7 | relay_error | I'll start by planning and inspecting the photos folder. |
+| multi_apps-82e3c869-49f6-4305-a7ce-f3e64a0618e7 | gate8 | 0 |  | 6 | 4 | 2 | 1934.5 | relay_error | Six photos. Let me view each one. |
+| multi_apps-82e3c869-49f6-4305-a7ce-f3e64a0618e7 | gate8 | 0 |  | 6 | 4 | 2 | 2942.7 | relay_error | I'll start by planning and inspecting the task environment. |
+| multi_apps-873cafdd-a581-47f6-8b33-b9696ddb7b05 | gate8 | 0 |  | 25 | 27 | 7 | 4336.1 |  | I'll start by checking the task briefing and the current state. |
 | multi_apps-881deb30-9549-4583-a841-8270c65f2a17 | gate8 | 0 |  | 39 | 42 | 9 | 480.4 |  | DONE — Parsed the "Total" row (applications & supported per institutio |
 | multi_apps-8df7e444-8e06-4f93-8a1a-c5c974269d82 | gate8 | 0 |  | 9 | 11 | 0 | 121.5 |  | DONE — Read the Desktop guidelines, exported the essay to PDF (`/home/ |
 | multi_apps-91190194-f406-4cd6-b3f9-c43fac942b22 | gate8 | 1 |  | 57 | 60 | 18 | 600.3 |  | DONE — Launched GIMP 3.0.4 from the terminal with `/data/home/Desktop/ |
@@ -198,6 +204,7 @@ DONE — Rese |
 | os-4783cc41-c03c-4e1b-89b4-50658f642bd5 | gate8 | 0 |  | 5 | 6 | 0 | 143.7 |  | DONE — Copied the hierarchy recursively: `/data/home/Desktop/dir1` (wi |
 | os-4d117223-a354-47fb-8b45-62ab1390a95f | gate8 | 1 |  | 8 | 9 | 0 | 108.1 |  | DONE — Ran `find . -type f -exec chmod 644 {} +` in `/home/user/testDi |
 | os-5ea617a3-0e86-4ba6-aab2-dac9aa2e8d57 | gate8 | 1 |  | 18 | 20 | 2 | 188.3 |  | DONE — Found `poster_party_night.webp` (1131x1600 WebP) in the Trash,  |
+| os-6f56bf42-85b8-4fbb-8e06-6c44960184ba | gate8 | 1 |  | 4 | 5 | 0 | 64.1 |  | DONE — Copied `/home/user/file1` into `dir1`, `dir2`, and `dir3`; all  |
 | os-a462a795-fdc7-4b23-b689-e8b6df786b78 | gate8 | 1 |  | 4 | 5 | 0 | 82.2 |  | FAIL
 
 The user `Charles` does not exist on this machine, so I could no |
@@ -240,3 +247,4 @@ Thunderbird's Account Setup page is open with the email `anonym- |
 | vs_code-e2b5e914-ffe1-44d2-8e92-58f8c5d92bb2 | gate8 | 1 |  | 21 | 22 | 11 | 211.2 |  | DONE — In VS Code I searched Settings for `python.analysis.diagnosticS |
 | vs_code-ea98c5d7-3cf9-4f9b-8ad3-366b58e0fcae | gate8 | 0 |  | 23 | 26 | 12 | 207.8 |  | DONE — Removed VS Code's Ctrl+F binding for Tree view Find by opening  |
 | vs_code-eabc805a-bfcf-4460-b250-ac92135819f6 | gate8 | 1 |  | 15 | 16 | 8 | 200.0 |  | DONE — Opened VS Code's Extensions view (Ctrl+Shift+X), searched "pyth |
+| vs_code-ec71221e-ac43-46f9-89b8-ee7d80f7e1c5 | gate8 | 0 |  | 35 | 38 | 16 | 3600.7 |  |  |

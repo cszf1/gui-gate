@@ -1,0 +1,1 @@
+Please sift through the event photos in '/home/user/Desktop/IDS LLM seminar'. Copy the photos featuring the presenter (a.k.a. Tao Yu) into a separate folder at '/home/user/Desktop/presenter'. Then compress that folder into '/home/user/Desktop/presenter.zip' so I can easily share it with others later.
