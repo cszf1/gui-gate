@@ -1,0 +1,1 @@
+DONE — Selected the first paragraph in LibreOffice Writer and used Find & Replace (regex `([.!?]) ` → `$1\n\n`, "Current selection only") to put a blank line after each of its 7 sentences, then saved the .docx.

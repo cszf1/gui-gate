@@ -1,0 +1,6 @@
+FAIL — the deck was built correctly (6 blank slides, pic1–pic6 in order, kiosk loop/auto-advance) but the final step was blocked: saving to `/home/user/Desktop/4.3-Template_4.29.2016.pptx` requires replacing the existing template file, and the person at this computer declined/cancelled that overwrite twice and told me to stop.
+
+Status:
+- Correct presentation is ready, unmodified template untouched: `/tmp/work/out.pptx` (2.4 MB, verified 6 slides → 6 pages in PDF render, one image per slide, no other shapes).
+- `/home/user/Desktop/4.3-Template_4.29.2016.pptx` is still the original 1-slide template (unchanged).
+- To finish, the deck only needs to be saved over that path (File > Save As, PowerPoint 2007–365 format) — which needs your approval.

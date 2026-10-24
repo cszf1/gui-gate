@@ -1,0 +1,1 @@
+DONE — Used LibreOffice Writer's "Export Directly as PDF" on the open View_Person_Organizational_Summary.docx and saved it to /data/home/Desktop/View_Person_Organizational_Summary.pdf (valid PDF 1.7, 5 pages, text verified).

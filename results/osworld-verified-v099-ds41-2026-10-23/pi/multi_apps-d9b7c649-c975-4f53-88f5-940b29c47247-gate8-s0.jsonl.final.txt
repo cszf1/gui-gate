@@ -1,0 +1,1 @@
+DONE — Read the 5 newest messages (25, 27, 28, 29, 30 Jan 2024) from the Thunderbird "daily" folder and saved them oldest→newest in `/data/home/Desktop/report.xlsx` (Calc, xlsx) with columns sender_name, sender_address, subject, CC, number_of_attachments.

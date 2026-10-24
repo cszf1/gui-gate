@@ -1,0 +1,1 @@
+DONE — Read column B (B2:B18) and wrote the six unique names in first-occurrence order (Keira Daily, 50 Dollar Dollar, Jonah Mountain, Jeff Tunnels, Emma Stoned, Morgan Prisoner) into D2:D7 under the existing "Unique Names" header, then saved /data/home/Names_Duplicate_Unique.xlsx.
