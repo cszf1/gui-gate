@@ -1,0 +1,1 @@
+DONE — Added Sheet2 to NetIncome.xlsx with headers "Total Revenue"/"Total Expenses" (A1/B1) and sums =SUM(Sheet1.A2:A20)=867786 and =SUM(Sheet1.B2:B20)=411686 in row 2, then saved in xlsx format.

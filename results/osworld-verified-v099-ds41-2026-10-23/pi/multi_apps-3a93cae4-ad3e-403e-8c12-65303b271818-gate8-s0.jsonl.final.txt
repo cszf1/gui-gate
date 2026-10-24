@@ -1,0 +1,1 @@
+DONE — Added a two-hour lecture to the Wednesday 12:00–14:00 slot (cell D5, labelled "Lecture 2 (12:00-14:00)" with the same yellow styling as the other lecture) in `/data/home/Desktop/Course Timetable.xlsx` via LibreOffice Calc and saved it in xlsx format, leaving all existing entries and grid merges intact.

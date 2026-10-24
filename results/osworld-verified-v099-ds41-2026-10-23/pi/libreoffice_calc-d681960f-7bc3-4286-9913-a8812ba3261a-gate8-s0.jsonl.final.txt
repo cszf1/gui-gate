@@ -1,0 +1,1 @@
+DONE — Filled the "Message" column (F10:F23) in `Student_Grades_and_Remarks.xlsx` with each student's grade looked up from the scale table (0 Fail, ≥30 Pass, ≥60 Average, ≥80 Above average, ≥90 Excellent, 100 Exceptional!), converted the results to static values and saved in xlsx format in place; all other cells left untouched.

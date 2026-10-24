@@ -1,0 +1,1 @@
+DONE — In the open LibreOffice Calc workbook `Date_Budget_Variance_HideNA.xlsx` I hid the 13 rows (3, 6, 8–9, 12, 14, 18–20, 24, 27, 32–33) whose Actual/Difference cells show `N/A`/`#N/A` via Format ▸ Rows ▸ Hide (all cells and formulas kept, no filter), and saved the file.

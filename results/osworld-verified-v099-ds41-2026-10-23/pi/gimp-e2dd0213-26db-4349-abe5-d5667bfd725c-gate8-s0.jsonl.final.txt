@@ -1,0 +1,3 @@
+The "Thanks World" text layer now sits in the left portion of the 2192×1118 canvas (text spans roughly image x 150–610, well left of center), the background image layer was left untouched, and the XCF is saved.
+
+DONE — Selected the "Thanks World" text layer in GIMP, used the Move tool in "Move the selected layers" mode to shift only that layer to the left side of the canvas, and saved /data/home/Desktop/orange_background.xcf with Ctrl+S.

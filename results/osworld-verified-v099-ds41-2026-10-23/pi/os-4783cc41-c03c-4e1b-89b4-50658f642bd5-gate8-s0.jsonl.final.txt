@@ -1,0 +1,1 @@
+DONE — Copied the hierarchy recursively: `/data/home/Desktop/dir1` (with its `dir2` subfolder) was copied into `/data/home/Desktop/dir3`, producing `/data/home/Desktop/dir3/dir1/dir2` while leaving the existing `dir3/dir4` untouched; verified with `diff -r` (identical).

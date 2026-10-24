@@ -1,0 +1,1 @@
+DONE — Opened both blog tabs in Chromium, used Ctrl+P → "Save as PDF" (21 and 25 pages), and stored them titled `/home/user/Documents/Blog/Thinking about High-Quality Human Data | Lil'Log.pdf` and `/home/user/Documents/Blog/LLM Powered Autonomous Agents | Lil'Log.pdf`.

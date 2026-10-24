@@ -1,0 +1,1 @@
+DONE — Ran a speed test on speedtest.net (Result ID 19824840142), copied the values from speedtest.net/results (Ping 9 ms, Download 3864.98 Mbps, Upload 48.48 Mbps) and saved them one-per-line to ~/Test/Speed/results.txt.

@@ -1,0 +1,7 @@
+DONE — Navigated the open Chromium (VA DMV site) to **https://www.dmv.virginia.gov/licenses-ids/license/applying/eligibility** via the Driver's License → Driver's License Eligibility link and read the requirements there.
+
+Key requirements found on that page:
+- **First-time drivers:** must be a Virginia resident and at least **16 years and 3 months** old (learner's permit: **15 years 6 months**); no exceptions to age rules. Applicants 18+ never licensed must show an approved driver education course or 60+ days on a learner's permit; under 18 must complete state-approved driver education and provide parent/guardian consent. New training rules take effect Jan 1, 2027.
+- **New residents:** obtain a VA license within 60 days of moving (CDL: 30 days).
+- **Military / out-of-state students / non-residents:** conditional allowances to drive on home-state licenses.
+- **Identification & residency (each application):** 1 proof of identity, 1 proof of legal presence, 2 proofs of VA residency, 1 proof of SSN (if issued; required for CDL), current out-of-state license when exchanging, and proof of name change if applicable — originals only, names must match.

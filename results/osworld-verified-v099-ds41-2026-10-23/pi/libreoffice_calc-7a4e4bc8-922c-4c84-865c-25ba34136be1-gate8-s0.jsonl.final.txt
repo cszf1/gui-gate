@@ -1,0 +1,1 @@
+DONE — Reordered the spreadsheet columns in the open LibreOffice Calc file (`/data/home/Name_Order_Id_move_column.xlsx`) to Date, First Name, Last Name, Order ID, Sales using column cut/insert-move, removed the leftover blank column, kept column A untouched, and saved the xlsx.

@@ -1,0 +1,1 @@
+DONE — The two 30-day-old files (`old_file1.txt`, `old_file2.txt`) were compressed into `/tmp/test_files/old_files/old_files.tar.gz`, and the recent files (`new_file1.txt`, `new_file2.txt`) are in `/tmp/test_files/new_files`; no loose files remain at the top level.

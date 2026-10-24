@@ -1,0 +1,1 @@
+DONE — Added "Sheet2" to FutureValue.xlsx, merged A1:C1 with "Investment Summary", A2:B2 with "High Interest Rate", C2:D2 with "Low Interest Rate", and saved in xlsx format (verified in the file on disk).

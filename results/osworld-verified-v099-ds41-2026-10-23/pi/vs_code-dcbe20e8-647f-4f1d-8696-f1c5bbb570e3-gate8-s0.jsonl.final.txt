@@ -1,0 +1,1 @@
+FAIL — `~/Downloads` is empty (no photo exists anywhere under the home directory: Desktop, Documents and Pictures are all empty, and a search for *.jpg/*.jpeg/*.png/*.webp/*.bmp found nothing), and VS Code 1.143.0 has no built-in background-image setting — that would require the third-party "background" extension, which is not installed.

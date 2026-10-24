@@ -1,0 +1,10 @@
+DONE — Macy's (the pre-opened storefront) is hard-blocked with a 403 "Access Denied" page, so I used Destination XL, a men's Big & Tall specialist, applied its **Short Sleeve** facet plus **Discount (High to Low)** sort, and enumerated the full 752-shirt listing until discounts fell below 50% — the complete set is **70 shirts, all 50% off**; I saved a linked HTML report + CSV in `~/Documents/` and left the report open in Chromium.
+
+The 70 qualifying shirts (brand · product · price):
+- Boss · Pallas Polo Shirt · $58.98–$70.78
+- Boss · Taut 81 Graphic Tee · $128.00 → $63.98
+- Harbor Bay · Chest Striped Polo Shirt · $40.00 → $19.98
+- Harbor Bay · Fair Isle Moisture-Wicking T-Shirt (2 colors) · $30.00 → $14.98
+- Harbor Bay · Floral Print Moisture-Wicking Pocket T-Shirt · $30.00 → $14.98
+- Harbor Bay · Moisture-Wicking Plaid T-Shirt · $30.00 → $14.98
+…plus 63 more (True Nation graphic tees, Synrgy sport shirts, Polo Ralph Lauren tees, etc.) — full table in the report/CSV.

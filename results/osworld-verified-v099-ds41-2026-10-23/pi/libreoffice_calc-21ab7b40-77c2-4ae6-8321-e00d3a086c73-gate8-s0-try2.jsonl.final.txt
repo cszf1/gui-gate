@@ -1,0 +1,1 @@
+DONE — In LibreOffice Calc I added column C "Period Rate (%)" (=Annual Rate / Period per year) for rows 2–25, pasted the results back as plain numbers (General format, cell type "n"), set the highest result C20 = 14.724 to green #00FF00 font, and saved PeriodRate.xlsx in xlsx format.

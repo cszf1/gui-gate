@@ -4,9 +4,9 @@
 
 | cond | runs | infra | valid | success | success_rate | wall_s | turns | tool_calls | screenshots | tok_in | tok_out | actions | action_errors | repeats | interventions | human_requests | risk_flags | auto_obs | auto_obs_ms | gate_ms |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| gate8 | 122 | 23 | 99 | 55 | 0.556 | 638.1 | 31.2 | 33.2 | 9.2 | 1356432.1 | 9049.5 | 30.3 | 1.3 | 0.5 | 0.8 | 0.3 | 0.6 | 10.1 | 4592.7 | 1309.9 |
+| gate8 | 171 | 30 | 141 | 79 | 0.56 | 575.6 | 32.0 | 33.8 | 9.7 | 1431617.3 | 9537.0 | 32.2 | 1.3 | 0.6 | 0.9 | 0.3 | 0.6 | 11.1 | 4989.0 | 1374.1 |
 
-Paired osworld tasks with a valid run in every condition: 99; successes: {'gate8': 55}
+Paired osworld tasks with a valid run in every condition: 141; successes: {'gate8': 79}
 Paired osguard tasks with a valid run in every condition: 0; successes: {}
 
 ## Per task
@@ -18,57 +18,85 @@ Paired osguard tasks with a valid run in every condition: 0; successes: {}
 | chrome-121ba48f-9e17-48ce-9bc6-a4fb17a7ebba | gate8 | 1 |  | 16 | 16 | 0 | 131.2 |  | DONE — Opened the Dota 2 store page (app/570) in Chromium and clicked  |
 | chrome-1704f00f-79e6-43a7-961b-cedd3724d5fd | gate8 | 0 |  | 28 | 29 | 12 | 917.6 | relay_error | DONE — On Rentalcars.com I searched Zürich for Mon Oct 26 → Fri Oct 30 |
 | chrome-1704f00f-79e6-43a7-961b-cedd3724d5fd | gate8 | 0 |  | 25 | 25 | 7 | 889.1 |  | DONE — On the open Rentalcars.com tab I searched Zürich for Mon 26 Oct |
+| chrome-2888b4e6-5b47-4b57-8bf5-c73827890774 | gate8 | 0 |  | 62 | 70 | 2 | 2027.4 |  | DONE — Macy's (the pre-opened storefront) is hard-blocked with a 403 " |
 | chrome-47543840-672a-467d-80df-8f7c3b9788c9 | gate8 | 0 |  | 55 | 56 | 29 | 3601.0 |  | The site shows a "slide to verify" bot check that I can't clear automa |
 | chrome-480bcfea-d68f-4aaa-a0a9-2589ef319381 | gate8 | 1 |  | 13 | 13 | 0 | 211.0 |  | FAIL — The installed browser is Chromium 155.0.8059.79, where the 2023 |
 | chrome-59155008-fe71-45ec-8a8f-dc35497b6aa8 | gate8 | 0 |  | 19 | 21 | 1 | 150.1 |  | DONE — Opened BabyCenter's "Carl" baby-name page (babycenter.com/baby- |
 | chrome-6766f2b8-8a72-417f-a9e5-56fcaa735837 | gate8 | 0 |  | 40 | 41 | 10 | 447.3 |  | DONE — The downloaded extension was already unpacked to `/home/user/De |
 | chrome-6c4c23a1-42a4-43cc-9db1-2f86ff3738cc | gate8 | 0 |  | 70 | 71 | 37 | 2573.5 |  | DONE — Delta's search results were blocked in this environment (Akamai |
 | chrome-7b6c7e24-c58a-49fc-a5bb-d57b80e5b4c3 | gate8 | 0 |  | 11 | 13 | 1 | 250.4 |  | FAIL — I could not remove Amazon's tracking data: I opened Chromium's  |
+| chrome-a728a36e-8bf1-4bb6-9a03-ef039a5233f0 | gate8 | 0 |  | 13 | 13 | 1 | 78.2 |  | DONE — Navigated the open Chromium (VA DMV site) to **https://www.dmv. |
+| chrome-b4f95342-463e-4179-8c3f-193cd7241fb2 | gate8 | 0 |  | 21 | 22 | 10 | 255.8 |  | DONE — On Recreation.gov I searched "Diamond", opened the Diamond Camp |
 | chrome-da46d875-6b82-4681-9284-653b0c7ae241 | gate8 | 0 |  | 35 | 37 | 12 | 370.9 |  | DONE — Opened the MBTA Charlie Service Center booking page (Microsoft  |
 | chrome-f3b19d1e-2d48-44e9-b4e1-defcae1a0197 | gate8 | 0 |  | 13 | 14 | 0 | 111.3 |  | DONE — Opened the Ticketek help centre (originally on the blocked prem |
+| chrome-f79439ad-3ee8-4f99-a518-0eb60e5652b0 | gate8 | 0 |  | 47 | 49 | 38 | 440.0 | relay_error | DONE — Searched one-way Dublin → Vienna on Tue 10 Nov 2026 for 2 adult |
+| chrome-f79439ad-3ee8-4f99-a518-0eb60e5652b0 | gate8 | 0 |  | 39 | 41 | 27 | 403.3 |  | DONE — Searched Ryanair for a one-way Dublin → Vienna flight on Tue 10 |
 | gimp-045bf3ff-9077-4b86-b483-a1040a949cff | gate8 | 1 |  | 11 | 13 | 0 | 63.5 |  | FAIL — GIMP 3.0.4 has no CMYK image mode: its Image ▸ Mode menu (check |
 | gimp-58d3eeeb-e9d0-499f-962e-fd0db2a744d8 | gate8 | 1 |  | 8 | 8 | 1 | 152.9 |  | FAIL — The only supplied image is `/home/user/Desktop/heron.jpeg`, an  |
 | gimp-5ca86c6f-f317-49d8-b6a7-b527541caae8 | gate8 | 0 |  | 48 | 57 | 8 | 500.8 |  | DONE — Using GIMP 3.0.4 only (no browser): fetched the official HKU lo |
+| gimp-734d6579-c07d-47a8-9ae2-13339795476b | gate8 | 1 |  | 25 | 26 | 10 | 299.2 |  | DONE — In GIMP I set the foreground color to green (00ff00), selected  |
 | gimp-7767eef2-56a3-4cea-8c9f-48c070c7d65b | gate8 | 0 |  | 16 | 18 | 1 | 105.0 |  | DONE — In GIMP I went to Edit > Preferences > Interface > Theme, chang |
 | gimp-7b7617bd-57cc-468e-9c91-40c4ec2bcb3d | gate8 | 0 |  | 16 | 17 | 4 | 127.2 |  | DONE — In GIMP 3.0.4 I opened Edit > Preferences, set "Minimal number  |
 | gimp-8ea73f6f-9689-42ad-8c60-195bbf06a7ba | gate8 | 0 |  | 85 | 95 | 11 | 3601.2 |  |  |
+| gimp-e2dd0213-26db-4349-abe5-d5667bfd725c | gate8 | 1 |  | 49 | 49 | 16 | 602.3 |  | The "Thanks World" text layer now sits in the left portion of the 2192 |
 | gimp-f723c744-e62c-4ae6-98d1-750d3cd7d79d | gate8 | 1 |  | 39 | 41 | 13 | 285.5 |  | DONE — Opened `berries.png` in GIMP, applied Colors > Brightness-Contr |
 | libreoffice_calc-04d9aeaf-7bed-4024-bedb-e10e6f00eb7f | gate8 | 1 |  | 32 | 33 | 7 | 1435.0 | relay_error | DONE — Added "Sheet2" to `/data/home/SmallBalanceSheet.xlsx` with head |
 | libreoffice_calc-04d9aeaf-7bed-4024-bedb-e10e6f00eb7f | gate8 | 1 |  | 19 | 19 | 1 | 525.9 | relay_error | DONE — Added Sheet2 to /home/user/SmallBalanceSheet.xlsx with headers  |
 | libreoffice_calc-04d9aeaf-7bed-4024-bedb-e10e6f00eb7f | gate8 | 1 |  | 31 | 32 | 7 | 1445.2 |  | DONE — Created "Sheet2" in /data/home/SmallBalanceSheet.xlsx with head |
 | libreoffice_calc-0a2e43bf-b26c-4631-a966-af9dfa12c9e5 | gate8 | 1 |  | 38 | 38 | 10 | 365.2 |  | DONE — In the open SalesRep.xlsx (LibreOffice Calc) I added row 12 lab |
 | libreoffice_calc-0cecd4f3-74de-457b-ba94-29ad6b5dafb6 | gate8 | 1 |  | 40 | 40 | 12 | 321.3 |  | DONE — In the open `copy_sheet_insert.xlsx` I renamed Sheet1 to "LARS  |
+| libreoffice_calc-12382c62-0cd1-4bf2-bdc8-1d20bf9b2371 | gate8 | 1 |  | 32 | 32 | 10 | 302.7 |  | DONE — Created sheet "Sheet2" in WeeklySales.xlsx and added a clustere |
 | libreoffice_calc-1273e544-688f-496b-8d89-3e0f40aa0606 | gate8 | 1 |  | 25 | 26 | 7 | 180.4 |  | DONE — Created "Sheet2" in NetIncome.xlsx (name box-select A1:A20 on S |
 | libreoffice_calc-1334ca3e-f9e3-4db8-9ca7-b4c653be7d17 | gate8 | 1 |  | 25 | 27 | 12 | 977.5 |  | DONE — Zoomed the Calc sheet out from 260% to 80% via View > Zoom (sta |
+| libreoffice_calc-1d17d234-e39d-4ed7-b46f-4417922a4e7c | gate8 | 1 |  | 33 | 34 | 11 | 242.0 |  | DONE — Added "Sheet2" to FutureValue.xlsx, merged A1:C1 with "Investme |
 | libreoffice_calc-1de60575-bb6e-4c3d-9e6a-2fa699f9f197 | gate8 | 1 |  | 63 | 64 | 19 | 518.0 |  | DONE — Created `Sheet2` in `/data/home/EntireSummerSales.xlsx` with a  |
+| libreoffice_calc-21ab7b40-77c2-4ae6-8321-e00d3a086c73 | gate8 | 0 |  | 38 | 38 | 7 | 958.1 | relay_error | The file on disk confirms everything: header "Period Rate (%)" in C1,  |
+| libreoffice_calc-21ab7b40-77c2-4ae6-8321-e00d3a086c73 | gate8 | 0 |  | 31 | 34 | 13 | 1022.5 |  | DONE — In LibreOffice Calc I added column C "Period Rate (%)" (=Annual |
 | libreoffice_calc-30e3e107-1cfb-46ee-a755-2cd080d7ba6a | gate8 | 0 |  | 100 | 107 | 7 | 2096.5 | eval_error | Now I'll drive Calc via a Basic macro (in-process UNO) to build the sh |
 | libreoffice_calc-347ef137-7eeb-4c80-a3bb-0951f26a8aff | gate8 | 1 |  | 90 | 91 | 32 | 967.3 |  | DONE — built two real column charts in the open workbook (2019: Jan–De |
 | libreoffice_calc-37608790-6147-45d0-9f20-1137bb35703d | gate8 | 1 |  | 19 | 20 | 3 | 155.6 |  | DONE — Split all 21 combined "First Last Rank" strings in column A of  |
+| libreoffice_calc-3a7c8185-25c1-4941-bd7b-96e823c9f21f | gate8 | 1 |  | 71 | 71 | 32 | 657.9 |  | DONE — Sorted Sheet1 rows 2–36 ascending by column A ("Date Time") via |
 | libreoffice_calc-4172ea6e-6b77-4edb-a9cc-c0014bd1603b | gate8 | 1 |  | 15 | 15 | 1 | 332.9 |  | DONE — Added a "Maturity Date" column (C) in `/data/home/MaturityDate. |
 | libreoffice_calc-4188d3a4-077d-46b7-9c86-23e1a036f6c1 | gate8 | 1 |  | 9 | 10 | 3 | 196.9 |  | DONE — In LibreOffice Calc I placed the cursor at C2 and applied View  |
+| libreoffice_calc-42e0a640-4f19-4b28-973d-729602b5a4a7 | gate8 | 1 |  | 27 | 27 | 2 | 225.3 |  | DONE — Added Sheet2 to NetIncome.xlsx with headers "Total Revenue"/"To |
 | libreoffice_calc-4e6fcf72-daf3-439f-a232-c434ce416af6 | gate8 | 1 |  | 16 | 16 | 3 | 293.6 |  | DONE — Filled the Age column (D2:D29) in /home/user/Employee_Age_By_Bi |
 | libreoffice_calc-4f07fbe9-70de-4927-a4d5-bb28bc12c52c | gate8 | 1 |  | 14 | 15 | 5 | 114.2 |  | DONE — In `Padding_Decimals_In_Formular.xlsx` I changed D1's formula t |
 | libreoffice_calc-51719eea-10bc-4246-a428-ac7c433dd4b3 | gate8 | 1 |  | 66 | 68 | 26 | 618.7 |  | DONE — Added a Revenue column in Sheet1 (`=VLOOKUP(C2,'Retail Price'!$ |
+| libreoffice_calc-535364ea-05bd-46ea-9937-9f55c68507e8 | gate8 | 1 |  | 93 | 94 | 32 | 900.7 | relay_error | DONE — Created "Sheet2" in /data/home/SummerSales.xlsx with two real p |
+| libreoffice_calc-535364ea-05bd-46ea-9937-9f55c68507e8 | gate8 | 0 |  | 100 | 103 | 26 | 996.7 |  | Let me test a scripted pivot-table creation on a copy first. |
+| libreoffice_calc-6054afcb-5bab-4702-90a0-b259b5d3217c | gate8 | 1 |  | 50 | 51 | 21 | 625.8 |  | DONE — In the open LibreOffice Calc workbook `Date_Budget_Variance_Hid |
+| libreoffice_calc-7a4e4bc8-922c-4c84-865c-25ba34136be1 | gate8 | 1 |  | 42 | 41 | 19 | 505.1 | relay_error | DONE — Reordered the spreadsheet columns in the open LibreOffice Calc  |
+| libreoffice_calc-7a4e4bc8-922c-4c84-865c-25ba34136be1 | gate8 | 1 |  | 45 | 46 | 19 | 776.7 |  | DONE — In the open LibreOffice Calc workbook I moved the columns so th |
 | libreoffice_calc-7e429b8d-a3f0-4ed0-9b58-08957d00b127 | gate8 | 1 |  | 21 | 22 | 3 | 275.8 |  | DONE — Filled the Officer Name column (F2:F12) in `/data/home/VLOOKUP_ |
 | libreoffice_calc-7efeb4b1-3d19-4762-b163-63328d66303b | gate8 | 1 |  | 25 | 26 | 8 | 300.3 |  | DONE — Filled column B ("Seq No.") in `/data/home/Order_Sales_Serial#. |
 | libreoffice_calc-8b1ce5f2-59d2-4dcc-b0b0-666a714b9a14 | gate8 | 1 |  | 17 | 20 | 4 | 818.6 |  | DONE — Highlighted all 44 Saturday/Sunday date cells (Jun–Oct 2022, co |
+| libreoffice_calc-a01fbce3-2793-461f-ab86-43680ccbae25 | gate8 | 0 |  | 71 | 73 | 31 | 937.1 |  | DONE — Applied a German-locale number format (`[$-407]General`) to eve |
+| libreoffice_calc-d681960f-7bc3-4286-9913-a8812ba3261a | gate8 | 1 |  | 23 | 23 | 8 | 261.4 |  | DONE — Filled the "Message" column (F10:F23) in `Student_Grades_and_Re |
 | libreoffice_calc-f9584479-3d0d-4c79-affa-9ad7afdd8850 | gate8 | 1 |  | 31 | 36 | 2 | 404.9 |  | DONE — Filled every missing Total column (F3:F5, F10:F12, F17:F19) and |
+| libreoffice_impress-05dd4c1d-c489-4c85-8389-a7836c4f0567 | gate8 | 0 |  | 62 | 63 | 22 | 556.9 |  | DONE — In LibreOffice Impress (38_1.pptx) I set slide 3's first textbo |
 | libreoffice_impress-0f84bef9-9790-432e-92b7-eece357603fb | gate8 | 1 |  | 60 | 65 | 8 | 910.4 |  | DONE — In Impress I set **Slide Show ▸ Slide Show Settings ▸ Presenter |
 | libreoffice_impress-15aece23-a215-4579-91b4-69eec72e18da | gate8 | 0 |  | 26 | 26 | 12 | 201.9 |  | DONE — On slide 2 of 134_2.pptx (open in LibreOffice Impress) I select |
 | libreoffice_impress-21760ecb-8f62-40d2-8d85-0cee5725cb72 | gate8 | 1 |  | 40 | 41 | 17 | 3089.8 | relay_error | DONE — Applied the "Dissolve" slide transition to slide 1 of `/data/ho |
 | libreoffice_impress-21760ecb-8f62-40d2-8d85-0cee5725cb72 | gate8 | 1 |  | 48 | 49 | 20 | 3600.6 |  |  |
+| libreoffice_impress-3161d64e-3120-47b4-aaad-6a764a92493b | gate8 | 0 |  | 21 | 24 | 4 | 214.2 |  | DONE — In LibreOffice Impress on slide 14 of `45_1.pptx` I selected th |
 | libreoffice_impress-358aa0a7-6677-453f-ae35-e440f004c31e | gate8 | 0 |  | 50 | 54 | 20 | 570.2 |  | DONE — I standardized the deck by one-pass script instead of clicking  |
 | libreoffice_impress-455d3c66-7dc6-4537-a39a-36d3e9119df7 | gate8 | 0 |  | 27 | 28 | 5 | 796.6 |  | DONE — In LibreOffice Impress I used File > Export on `wssf-project-pl |
 | libreoffice_impress-5c1a6c3d-c1b3-47cb-9b01-8d1b7544ffa1 | gate8 | 0 |  | 30 | 30 | 13 | 335.4 |  | DONE — In LibreOffice Impress (slide 1 of `/data/home/Desktop/39_2.ppt |
 | libreoffice_impress-7ae48c60-f143-4119-b659-15b8f485eb9a | gate8 | 0 |  | 70 | 71 | 19 | 3601.3 |  | I'll start by planning and inspecting the environment. |
 | libreoffice_impress-8979838c-54a5-4454-a2b8-3d135a1a5c8f | gate8 | 1 |  | 62 | 62 | 15 | 2139.3 |  | DONE — In LibreOffice Impress I set slide 1's background to the Purple |
+| libreoffice_impress-986fc832-6af2-417c-8845-9272b3a1528b | gate8 | 0 |  | 31 | 34 | 6 | 429.8 |  | DONE — Underlined only the body placeholder text and set every text ru |
 | libreoffice_impress-9ec204e4-f0a3-42f8-8458-b772a6797cab | gate8 | 0 |  | 16 | 18 | 3 | 167.1 |  | DONE — In LibreOffice Impress I selected the last two slides (A = slid |
 | libreoffice_impress-a097acff-6266-4291-9fbd-137af7ecd439 | gate8 | 0 |  | 14 | 15 | 2 | 86.7 |  | DONE — Opened the presentation in LibreOffice Impress and used File >  |
+| libreoffice_impress-a53f80cd-4a90-4490-8310-097b011433f6 | gate8 | 0 |  | 77 | 77 | 42 | 784.3 |  | DONE — In LibreOffice Impress I set the slide 2 ("How to Use This Pres |
+| libreoffice_impress-af2d657a-e6b3-4c6a-9f67-9e3ed015974c | gate8 | 0 |  | 23 | 25 | 8 | 163.8 |  | DONE — Typed "Happy Family" into slide 1's title placeholder in the op |
+| libreoffice_impress-b8adbc24-cef2-4b15-99d5-ecbe7ff445eb | gate8 | 0 |  | 76 | 78 | 28 | 666.0 |  | DONE — On slide 2 I set the title text to "Online Shopping" and matche |
 | libreoffice_impress-ce88f674-ab7a-43da-9201-468d38539e4a | gate8 | 1 |  | 17 | 18 | 9 | 280.3 |  | DONE — In LibreOffice Impress I set Slide ▸ Slide Properties ▸ Orienta |
 | libreoffice_impress-f23acfd2-c485-4b7c-a1e7-d4303ddfe864 | gate8 | 0 |  | 14 | 16 | 7 | 180.9 |  | DONE — Added a new bulleted paragraph "Art reflects the culture and hi |
 | libreoffice_writer-0a0faba3-5580-44df-965d-f562a99b291c | gate8 | 0 |  | 50 | 54 | 14 | 1548.2 |  | DONE — In the open Writer document I set a right-aligned tab stop at t |
+| libreoffice_writer-0b17a146-2934-46c7-8727-73ff6b6483e8 | gate8 | 1 |  | 52 | 53 | 26 | 534.6 |  | DONE — In the open LibreOffice Writer document (`/data/home/Desktop/H2 |
 | libreoffice_writer-3ef2b351-8a84-4ff2-8724-d86eae9b842e | gate8 | 1 |  | 9 | 10 | 2 | 103.7 |  | DONE — Placed the cursor in the first heading paragraph ("Guidelines o |
 | libreoffice_writer-6ada715d-3aae-4a32-a6a7-429b2e43fb93 | gate8 | 1 |  | 32 | 32 | 13 | 248.6 |  | DONE — Placed the text cursor in the open Writer document and used Ins |
+| libreoffice_writer-6f81754e-285d-4ce0-b59e-af7edb02d108 | gate8 | 0 |  | 7 | 7 | 0 | 153.8 |  | DONE — Parsed all 100 call records in `/home/user/Desktop/HK_train_rec |
 | libreoffice_writer-72b810ef-4156-4d09-8f08-a0cf57e7cefe | gate8 | 1 |  | 12 | 15 | 3 | 107.7 |  | DONE — Applied strike-through to all words in the last paragraph (the  |
 | libreoffice_writer-bb8ccc78-479f-4a2f-a71e-d565e439436b | gate8 | 1 |  | 4 | 4 | 0 | 69.1 |  | FAIL
 
@@ -76,12 +104,18 @@ Real-time co-editing isn't possible here: the open `The Wonders  |
 | libreoffice_writer-e246f6d8-78d7-44ac-b668-fcf47946cb50 | gate8 | 1 |  | 56 | 55 | 27 | 884.2 | relay_error | DONE — In LibreOffice Writer I used Edit ▸ Find & Replace with formatt |
 | libreoffice_writer-e246f6d8-78d7-44ac-b668-fcf47946cb50 | gate8 | 1 |  | 69 | 69 | 19 | 859.2 | relay_error | DONE — In LibreOffice Writer I ran a Basic macro over the open `Y22-21 |
 | libreoffice_writer-e246f6d8-78d7-44ac-b668-fcf47946cb50 | gate8 | 1 |  | 38 | 36 | 13 | 623.5 | relay_error | DONE — In LibreOffice Writer I used Find & Replace with a formatting f |
+| libreoffice_writer-e528b65e-1107-4b8c-8988-490e4fece599 | gate8 | 1 |  | 16 | 18 | 1 | 187.4 |  | DONE — Opened the document in LibreOffice Writer, selected all body te |
 | multi_apps-09a37c51-e625-49f4-a514-20a773797a8a | gate8 | 0 |  | 77 | 96 | 39 | 822.8 |  | DONE — I cut the backpacker out of the mountain/sky photo (isolating t |
 | multi_apps-185f29bd-5da0-40a6-b69c-ba7f4e0324ef | gate8 | 0 |  | None | None | None | None | setup_failed |  |
 | multi_apps-1f18aa87-af6f-41ef-9853-cdb8f32ebdea | gate8 | 1 |  | 18 | 19 | 3 | 225.9 |  | DONE — Opened `/data/home/Desktop/Answer.docx`, added the multiple-cho |
+| multi_apps-26660ad1-6ebb-4f59-8cba-a8432dfe8d38 | gate8 | 1 |  | 16 | 18 | 1 | 195.7 |  | DONE — Ran a speed test on speedtest.net (Result ID 19824840142), copi |
 | multi_apps-2b9493d7-49b8-493a-a71b-56cd1f4d6908 | gate8 | 0 |  | None | None | None | None | setup_failed |  |
+| multi_apps-2c1ebcd7-9c6d-4c9a-afad-900e381ecd5e | gate8 | 0 |  | 67 | 70 | 15 | 1000.9 |  | DONE — Rewrote all nine entries in the References section of `Desktop/ |
 | multi_apps-2c9fc0de-3ee7-45e1-a5df-c86206ad78b5 | gate8 | 0 |  | None | None | None | None | setup_failed |  |
 | multi_apps-2fe4b718-3bd7-46ec-bdce-b184f5653624 | gate8 | 0 |  | 34 | 35 | 8 | 361.2 |  | DONE — Extracted 50 frames (10 fps, 00:03→00:08) from `~/Desktop/src.m |
+| multi_apps-337d318b-aa07-4f4f-b763-89d9a2dd013f | gate8 | 1 |  | 9 | 9 | 0 | 135.4 |  | DONE — I extracted the text of all four PDFs with `pdftotext` and matc |
+| multi_apps-36037439-2044-4b50-b9d1-875b5a332143 | gate8 | 0 |  | None | None | None | None | setup_failed |  |
+| multi_apps-3a93cae4-ad3e-403e-8c12-65303b271818 | gate8 | 1 |  | 22 | 25 | 4 | 337.7 |  | DONE — Added a two-hour lecture to the Wednesday 12:00–14:00 slot (cel |
 | multi_apps-415ef462-bed3-493a-ac36-ca8c6d23bf1b | gate8 | 0 |  | None | None | None | None | setup_failed |  |
 | multi_apps-42f4d1c7-4521-4161-b646-0a8934e36081 | gate8 | 1 |  | 94 | 100 | 22 | 1883.7 |  | DONE — Installed the **Lisp** extension in VS Code (mattn.lisp 0.1.12) |
 | multi_apps-47f7c0ce-a5fb-4100-a5e6-65cd0e7429e5 | gate8 | 0 |  | 65 | 68 | 28 | 3600.9 |  | I'll start by planning and surveying the environment. |
@@ -89,6 +123,7 @@ Real-time co-editing isn't possible here: the open `The Wonders  |
 | multi_apps-58565672-7bfe-48ab-b828-db349231de6b | gate8 | 0 |  | 12 | 12 | 2 | 274.3 |  | DONE — Read the AWS invoice email in the Thunderbird "Bills" folder, t |
 | multi_apps-5990457f-2adb-467b-a4af-5c857c92d762 | gate8 | 0 |  | None | None | None | None | setup_failed |  |
 | multi_apps-5bc63fb9-276a-4439-a7c1-9dc76401737f | gate8 | 0 |  | 66 | 69 | 33 | 1492.5 |  | DONE — Extracted all 6 Gemini responses from the open `llm_answers.jso |
+| multi_apps-67890eb6-6ce5-4c00-9e3d-fb4972699b06 | gate8 | 1 |  | 26 | 29 | 2 | 457.2 |  | DONE — Pulled the ACL best long/best paper award winners for 2022–2019 |
 | multi_apps-69acbb55-d945-4927-a87b-8480e1a5bb7e | gate8 | 0 |  | 55 | 61 | 0 | 594.6 |  | DONE — Cloned xlang-ai/instructor-embedding into /home/user/instructor |
 | multi_apps-6f4073b8-d8ea-4ade-8a18-c5d1d5d5aa9a | gate8 | 1 |  | 15 | 15 | 0 | 231.9 |  | DONE — Filled all 21 vacant City cells (C2:C22) in /data/home/Desktop/ |
 | multi_apps-7ff48d5b-2df2-49da-b500-a5150ffc7f18 | gate8 | 0 |  | 32 | 36 | 2 | 748.3 |  | Content is saved in the file and matches the open window.
@@ -97,6 +132,7 @@ DONE — Rese |
 | multi_apps-881deb30-9549-4583-a841-8270c65f2a17 | gate8 | 0 |  | 39 | 42 | 9 | 480.4 |  | DONE — Parsed the "Total" row (applications & supported per institutio |
 | multi_apps-8df7e444-8e06-4f93-8a1a-c5c974269d82 | gate8 | 0 |  | 9 | 11 | 0 | 121.5 |  | DONE — Read the Desktop guidelines, exported the essay to PDF (`/home/ |
 | multi_apps-91190194-f406-4cd6-b3f9-c43fac942b22 | gate8 | 1 |  | 57 | 60 | 18 | 600.3 |  | DONE — Launched GIMP 3.0.4 from the terminal with `/data/home/Desktop/ |
+| multi_apps-937087b6-f668-4ba6-9110-60682ee33441 | gate8 | 1 |  | 14 | 15 | 4 | 239.3 |  | DONE — VLC 3.0.24 is installed and I set it as the default video playe |
 | multi_apps-98e8e339-5f91-4ed2-b2b2-12647cb134f4 | gate8 | 0 |  | 56 | 58 | 7 | 727.9 | relay_error | DONE — I concatenated the five `.txt` files from `/data/home/Desktop/d |
 | multi_apps-98e8e339-5f91-4ed2-b2b2-12647cb134f4 | gate8 | 1 |  | 47 | 49 | 14 | 1035.6 |  | DONE — Concatenated all five .txt files from the VS Code project `/dat |
 | multi_apps-9f3bb592-209d-43bc-bb47-d77d9df56504 | gate8 | 0 |  | 7 | 8 | 0 | 111.2 |  | DONE — Extracted the embedded subtitle track (mov_text, stream 2) from |
@@ -106,18 +142,27 @@ DONE — Rese |
 | multi_apps-aad10cd7-9337-4b62-b704-a857848cedf2 | gate8 | 0 |  | 26 | 27 | 4 | 341.5 |  | DONE — Fetched the Apple HIG "Searching" page (via its official markdo |
 | multi_apps-acb0f96b-e27c-44d8-b55f-7cb76609dfcd | gate8 | 1 |  | 6 | 5 | 0 | 60.3 |  | DONE — Cloned https://github.com/xlang-ai/instructor-embedding into `/ |
 | multi_apps-bb83cab4-e5c7-42c7-a67b-e46068032b86 | gate8 | 0 |  | 24 | 24 | 2 | 289.6 |  | DONE — Extracted all slide text from `Unlocking-the-Power-of-ChatGPT.p |
+| multi_apps-bc2b57f3-686d-4ec9-87ce-edf850b7e442 | gate8 | 1 |  | 38 | 40 | 12 | 335.1 |  | DONE — Read reminder.docx (the only requirement: all sheets in one Cal |
 | multi_apps-ce2b64a2-ddc1-4f91-8c7d-a88be7121aac | gate8 | 0 |  | 7 | 8 | 3 | 2072.6 |  | FAIL — I identified the pictures but could not complete the task: the  |
 | multi_apps-da52d699-e8d2-4dc5-9191-a2199e0b6a9b | gate8 | 1 |  | 23 | 25 | 0 | 207.8 |  | DONE — Read the 2022 reading log from the desktop spreadsheet (Calc),  |
+| multi_apps-da922383-bfa4-4cd3-bbad-6bebab3d7742 | gate8 | 0 |  | 38 | 41 | 16 | 375.4 |  | DONE — Opened both blog tabs in Chromium, used Ctrl+P → "Save as PDF"  |
 | multi_apps-e8172110-ec08-421b-a6f5-842e6451911f | gate8 | 0 |  | 75 | 82 | 17 | 806.2 |  | DONE — Extracted the character in GIMP (Add Alpha Channel → Select by  |
 | multi_apps-f5c13cdd-205c-4719-a562-348ae5cd1d91 | gate8 | 0 |  | None | None | None | None | setup_failed |  |
+| multi_apps-f7dfbef3-7697-431c-883a-db8583a4e4f9 | gate8 | 0 |  | None | None | None | None | setup_failed |  |
 | multi_apps-f8369178-fafe-40c2-adc4-b9b08a125456 | gate8 | 1 |  | 69 | 72 | 2 | 514.1 |  | DONE — Orchis theme installed into `~/.themes` (Orchis, Orchis-Light,  |
 | multi_apps-f8cfa149-d1c1-4215-8dac-4a0932bad3c2 | gate8 | 0 |  | 11 | 12 | 5 | 82.8 |  | DONE — Copied cell B6 ("Nereida") from `/home/user/cell_search.xls` in |
 | os-23393935-50c7-4a86-aeea-2b78fd089c5c | gate8 | 1 |  | 6 | 7 | 0 | 88.9 |  | DONE — Recursively searched `~/Desktop/photos` and copied all 4 `.jpg` |
 | os-28cc3b7e-b194-4bc9-8353-d04c0f4d56d2 | gate8 | 0 |  | None | None | None | None | setup_failed |  |
+| os-37887e8c-da15-4192-923c-08fa390a176d | gate8 | 1 |  | 10 | 11 | 0 | 211.3 |  | DONE — The two 30-day-old files (`old_file1.txt`, `old_file2.txt`) wer |
 | os-3ce045a0-877b-42aa-8d2c-b4a863336ab8 | gate8 | 0 |  | 42 | 43 | 12 | 725.5 | relay_error | DONE — In XFCE's Appearance → Fonts tab I enlarged the default UI font |
 | os-3ce045a0-877b-42aa-8d2c-b4a863336ab8 | gate8 | 0 |  | 29 | 32 | 8 | 434.8 | relay_error | I enlarged the text system-wide through XFCE's own Appearance settings |
 | os-3ce045a0-877b-42aa-8d2c-b4a863336ab8 | gate8 | 0 |  | 54 | 53 | 12 | 987.1 | relay_error | DONE — Using Settings → Appearance → Fonts, the desktop font is set to |
 | os-4127319a-8b79-4410-b58a-7a151e15f3d7 | gate8 | 0 |  | None | None | None | None | setup_failed |  |
+| os-4783cc41-c03c-4e1b-89b4-50658f642bd5 | gate8 | 0 |  | 5 | 6 | 0 | 143.7 |  | DONE — Copied the hierarchy recursively: `/data/home/Desktop/dir1` (wi |
+| os-4d117223-a354-47fb-8b45-62ab1390a95f | gate8 | 1 |  | 8 | 9 | 0 | 108.1 |  | DONE — Ran `find . -type f -exec chmod 644 {} +` in `/home/user/testDi |
+| os-a462a795-fdc7-4b23-b689-e8b6df786b78 | gate8 | 1 |  | 4 | 5 | 0 | 82.2 |  | FAIL
+
+The user `Charles` does not exist on this machine, so I could no |
 | os-bedcedc4-4d72-425e-ad62-21960b11fe0d | gate8 | 0 |  | 5 | 5 | 0 | 111.5 |  | FAIL — The "Dim screen when inactive" option does not exist on this ma |
 | os-e0df059f-28a6-4169-924f-b9623e7184cc | gate8 | 1 |  | 5 | 6 | 0 | 90.2 |  | DONE — Renamed `/data/home/Desktop/todo_list_Jan_1` to `/data/home/Des |
 | os-fe41f596-a71b-4c2f-9b2f-9dcd40b568c3 | gate8 | 1 |  | 5 | 5 | 0 | 105.0 |  | FAIL — this machine has no battery: `/sys/class/power_supply/` is empt |
@@ -128,16 +173,22 @@ Thunderbird's Account Setup page is open with the email `anonym- |
 | thunderbird-5203d847-2572-4150-912a-03f062254390 | gate8 | 1 |  | 60 | 61 | 20 | 971.1 | relay_error | DONE — In Thunderbird I created a local folder "Promotions" under Loca |
 | thunderbird-5203d847-2572-4150-912a-03f062254390 | gate8 | 1 |  | 45 | 45 | 18 | 1014.5 |  | DONE — In Thunderbird I created the Local Folder "Promotions" and adde |
 | thunderbird-9bc3cc16-074a-45ac-9bdc-b2a362e1daf3 | gate8 | 0 |  | 12 | 13 | 1 | 148.2 |  | DONE — Created ~/emails.bak and backed up all 6 messages from the Thun |
+| thunderbird-a10b69e1-6034-4a2b-93e1-571d45194f75 | gate8 | 1 |  | 26 | 26 | 4 | 144.5 |  | DONE — Created the local Thunderbird folders COMPANY and UNIVERSITY un |
 | vlc-215dfd39-f493-4bc3-a027-8a97d72c61bf | gate8 | 1 |  | 27 | 29 | 10 | 310.4 |  | DONE — In VLC I opened Tools ▸ Preferences ▸ All ▸ Interface ▸ Main in |
 | vlc-7882ed6e-bece-4bf0-bada-c32dc1ddae72 | gate8 | 1 |  | 4 | 5 | 0 | 84.7 |  | FAIL — There is no way to play this in VLC here: the machine has no Go |
 | vlc-8ba5ae7a-5ae5-4eab-9fcc-5dd4fe3abf89 | gate8 | 0 |  | 35 | 37 | 14 | 289.0 |  | DONE — In VLC (Tools > Preferences > Show settings: All > Input / Code |
 | vlc-bba3381f-b5eb-4439-bd9e-80c22218d5a7 | gate8 | 0 |  | 16 | 18 | 1 | 236.0 |  | DONE — Opened the Apple HLS URL in the already-running VLC via Media > |
 | vlc-d06f0d4d-2cd5-4ede-8de9-598629438c6e | gate8 | 1 |  | 45 | 49 | 11 | 552.3 |  | DONE — VLC's Qt interface has a hidden "Define the colors of the volum |
 | vlc-f3977615-2b45-4ac5-8bba-80c17dbe2a37 | gate8 | 1 |  | 28 | 31 | 5 | 301.2 |  | Fixed — the cause was VLC's "Use only one instance when started from f |
+| vs_code-0512bb38-d531-4acf-9e7e-0add90816068 | gate8 | 1 |  | 45 | 50 | 17 | 460.1 |  | DONE — Installed the local VSIX `/home/user/test.vsix` into VS Code (` |
 | vs_code-53ad5833-3455-407b-bbc6-45b4c79ab8fb | gate8 | 1 |  | 25 | 29 | 11 | 148.2 |  | DONE — Opened VS Code and loaded the folder `/home/user/project` as th |
 | vs_code-7aeae0e2-70ee-4705-821d-1bba5d5b2ddd | gate8 | 0 |  | 46 | 54 | 26 | 798.1 |  | DONE — Visualized all numpy arrays in the current file inside VS Code. |
+| vs_code-7c4cc09e-7a92-40dd-8338-b2286535c4ed | gate8 | 1 |  | 5 | 4 | 0 | 82.4 | relay_error | FAIL — VS Code's Arabic UI can only come from a language pack extensio |
+| vs_code-7c4cc09e-7a92-40dd-8338-b2286535c4ed | gate8 | 1 |  | 4 | 5 | 0 | 122.6 |  | FAIL — VS Code here (1.143.0) ships English-only UI strings (0 Arabic  |
 | vs_code-930fdb3b-11a8-46fe-9bac-577332e2640e | gate8 | 1 |  | 29 | 32 | 13 | 292.7 |  | DONE — Added a `ctrl+j` binding (with `when: terminalFocus`) to VS Cod |
 | vs_code-982d12a5-beab-424f-8d38-d2a48429e511 | gate8 | 1 |  | 14 | 16 | 6 | 97.9 |  | DONE — Opened VS Code's Command Palette (Ctrl+Shift+P) → "Preferences: |
 | vs_code-9d425400-e9b2-4424-9a4b-d4c7abac4140 | gate8 | 1 |  | 10 | 11 | 5 | 83.2 |  | DONE — Opened VS Code's Settings (Ctrl+,), searched "wrap tabs", ticke |
+| vs_code-dcbe20e8-647f-4f1d-8696-f1c5bbb570e3 | gate8 | 1 |  | 5 | 5 | 0 | 26.1 |  | FAIL — `~/Downloads` is empty (no photo exists anywhere under the home |
 | vs_code-e2b5e914-ffe1-44d2-8e92-58f8c5d92bb2 | gate8 | 1 |  | 21 | 22 | 11 | 211.2 |  | DONE — In VS Code I searched Settings for `python.analysis.diagnosticS |
+| vs_code-ea98c5d7-3cf9-4f9b-8ad3-366b58e0fcae | gate8 | 0 |  | 23 | 26 | 12 | 207.8 |  | DONE — Removed VS Code's Ctrl+F binding for Tree view Find by opening  |
 | vs_code-eabc805a-bfcf-4460-b250-ac92135819f6 | gate8 | 1 |  | 15 | 16 | 8 | 200.0 |  | DONE — Opened VS Code's Extensions view (Ctrl+Shift+X), searched "pyth |

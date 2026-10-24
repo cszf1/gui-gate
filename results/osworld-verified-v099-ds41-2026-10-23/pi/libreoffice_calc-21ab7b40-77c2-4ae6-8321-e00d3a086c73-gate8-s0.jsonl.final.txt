@@ -1,0 +1,3 @@
+The file on disk confirms everything: header "Period Rate (%)" in C1, 24 numeric formula results in C2:C25 (=A/B, format #,##0.00), and the maximum (C20 = 14.724) carries green font color FF00FF00.
+
+DONE — Added a "Period Rate (%)" column in C1:C25 of /data/home/PeriodRate.xlsx (=A2/B2 filled down, formatted as numbers) and set the highest value (C20, 14.72) to green #00FF00 font, then saved the file in xlsx format.

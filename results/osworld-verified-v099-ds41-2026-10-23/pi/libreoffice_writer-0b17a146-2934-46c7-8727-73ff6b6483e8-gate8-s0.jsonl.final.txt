@@ -1,0 +1,1 @@
+DONE — In the open LibreOffice Writer document (`/data/home/Desktop/H2O_Factsheet_WA.docx`) I made the "2" in all 8 occurrences of "H₂O" a true subscript (Find & Replace with regex `(?<=H)2(?=O)` → replace "2" with Subscript character formatting), then saved over the original .docx (re-enabling font embedding so the embedded Libre Franklin fonts stayed in the file).
