@@ -1,0 +1,1 @@
+DONE — On slide 2 I set the title text to "Online Shopping" and matched slide 1's title formatting exactly: Calibri, 44 pt, color FF0000 (#FF0000), centered paragraph alignment, in the same title placeholder position (offset 457200×274680 EMU), then saved `/home/user/Desktop/189_4.pptx` and reloaded it in Impress so the open window shows the final result.

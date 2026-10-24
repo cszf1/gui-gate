@@ -1,0 +1,1 @@
+FAIL — VS Code here (1.143.0) ships English-only UI strings (0 Arabic characters in its nls bundle) and no Arabic language pack exists on disk, and VS Code's display-language switching only works through a Language Pack **extension** (`MS-CEINTL.vscode-language-pack-ar` from the Marketplace); with extensions forbidden, `locale.json`/`--locale=ar` just falls back to English.

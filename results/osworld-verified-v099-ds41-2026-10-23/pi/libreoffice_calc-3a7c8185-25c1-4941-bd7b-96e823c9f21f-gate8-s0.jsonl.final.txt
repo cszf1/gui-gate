@@ -1,0 +1,1 @@
+DONE — Sorted Sheet1 rows 2–36 ascending by column A ("Date Time") via Data > Sort, then inserted a real Line chart (title "Quantity over Time") with Date Time as X categories ($Sheet1.$A$2:$A$36) and Quantity as the only Y series ($Sheet1.$E$2:$E$36), placed it below the data, and saved /home/user/BoomerangSales.xlsx in xlsx format.

@@ -1,0 +1,1 @@
+DONE — Applied a German-locale number format (`[$-407]General`) to every numeric cell in A2:B20 of /data/home/Set_Decimal_Separator_Dot.xlsx, so all figures now display with a comma decimal separator (e.g. 1,5 / 0,2) while the stored values and formulas (=A2+0.1 …) are untouched; the file was saved in Calc.

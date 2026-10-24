@@ -1,0 +1,1 @@
+DONE — In GIMP I set the foreground color to green (00ff00), selected the "Background" layer as the active layer and used Edit > Fill with Foreground Color, then saved the XCF (Ctrl+S). The "user-add.png" object layer was left untouched and still shows on top of the new green background.

@@ -1,0 +1,1 @@
+DONE — Ran `find . -type f -exec chmod 644 {} +` in `/home/user/testDir` from the open terminal; all three regular files (file1.txt, subDir1/file2.txt, subDir2/file3.txt) are now `-rw-r--r--` (644) while directories keep 775.

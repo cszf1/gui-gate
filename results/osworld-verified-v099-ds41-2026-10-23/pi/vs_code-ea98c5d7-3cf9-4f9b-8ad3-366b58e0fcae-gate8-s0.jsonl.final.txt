@@ -1,0 +1,1 @@
+DONE — Removed VS Code's Ctrl+F binding for Tree view Find by opening `~/.config/Code/User/keybindings.json` (via Preferences: Open Keyboard Shortcuts (JSON)), adding `{ "key": "ctrl+f", "command": "-list.find" }`, and saving; the Keyboard Shortcuts editor now lists `list.find` only with F3 / Ctrl+Alt+F.

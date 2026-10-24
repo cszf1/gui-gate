@@ -1,0 +1,1 @@
+DONE — Opened the document in LibreOffice Writer, selected all body text (Ctrl+A), applied **Format → Text → Capitalize Every Word**, and saved it back to `/data/home/Desktop/Geography_And_Magical_Realism.docx` in Word format (verified: every word now starts with an uppercase letter).

@@ -1,0 +1,1 @@
+DONE — Underlined only the body placeholder text and set every text run (title, body, and all 6 table cells) to the palette color Dark Red 2 (#C9211E) in `/data/home/Desktop/154_3.pptx`, then reloaded the document in Impress so the open window shows the saved result.

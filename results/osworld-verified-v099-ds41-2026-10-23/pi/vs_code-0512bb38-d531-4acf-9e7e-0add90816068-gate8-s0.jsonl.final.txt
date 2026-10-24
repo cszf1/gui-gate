@@ -1,0 +1,1 @@
+DONE — Installed the local VSIX `/home/user/test.vsix` into VS Code (`code --install-extension`), giving `undefined_publisher.test` v0.0.1 in `~/.vscode/extensions` (`extensions.json` source: `vsix`); restarted VS Code and confirmed the Extensions view lists "test v0.0.1" (Disable/Uninstall shown) and its `OpenProject` command appears in the command palette.

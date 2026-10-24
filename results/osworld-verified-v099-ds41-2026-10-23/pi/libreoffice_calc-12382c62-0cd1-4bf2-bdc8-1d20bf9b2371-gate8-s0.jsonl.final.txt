@@ -1,0 +1,1 @@
+DONE — Created sheet "Sheet2" in WeeklySales.xlsx and added a clustered column chart there (series Sales and COGS, categories Week 1–Week 10 from Sheet1) titled "Sales & COGS", then saved the file in xlsx format.

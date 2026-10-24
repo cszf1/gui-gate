@@ -1,0 +1,1 @@
+DONE — Created "Sheet2" in /data/home/SummerSales.xlsx with two real pivot tables from Sheet1!A1:G30: Product × Sum - Revenue ($) at A1 (total 2368.15) and Sales Channel × Sum - Revenue ($) at D1 (In Store 649.16, Web 1643.37, E-mail 75.62; total 2368.15), then saved the workbook in xlsx format.

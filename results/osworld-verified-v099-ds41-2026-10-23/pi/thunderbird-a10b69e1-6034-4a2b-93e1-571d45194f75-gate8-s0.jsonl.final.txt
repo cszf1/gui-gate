@@ -1,0 +1,1 @@
+DONE — Created the local Thunderbird folders COMPANY and UNIVERSITY under Local Folders (via File > New > Folder); both show in the folder pane and exist on disk with their .msf indexes.

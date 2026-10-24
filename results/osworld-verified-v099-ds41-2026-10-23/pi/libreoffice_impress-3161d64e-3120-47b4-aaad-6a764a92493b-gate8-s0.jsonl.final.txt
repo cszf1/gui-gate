@@ -1,0 +1,1 @@
+DONE — In LibreOffice Impress on slide 14 of `45_1.pptx` I selected the "Target audience" textbox and set its font size to 60 pt, set the "Elaborate on what you want to discuss." textbox to 28 pt, and saved the file (slide14.xml now shows sz=6000 and sz=2800).

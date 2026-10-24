@@ -1,0 +1,3 @@
+FAIL
+
+The user `Charles` does not exist on this machine, so I could not switch to it (and did not create or modify any account, per your instruction). Evidence: `id charles` → "no such user", `getent passwd charles` → empty (exit 2), full `/etc/passwd` list contains only system accounts plus `sandbox` (uid 1000), `/home` contains only `user -> /data/home`, and `loginctl list-sessions` shows the single `sandbox` session.
