@@ -1,0 +1,1 @@
+DONE — Used File ▸ Save As in LibreOffice Calc with the "Text CSV (.csv)" filter, keeping the default export options (UTF-8, comma field delimiter, "Save cell content as shown"), which wrote `/data/home/Export_Calc_to_CSV.csv` (same base name as the original xlsx, which stays untouched), containing exactly the sheet's displayed rows.

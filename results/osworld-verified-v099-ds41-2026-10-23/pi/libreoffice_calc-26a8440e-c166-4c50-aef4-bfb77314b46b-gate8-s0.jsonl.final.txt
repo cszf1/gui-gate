@@ -1,0 +1,1 @@
+DONE — Inserted a new sheet named "Sheet2" (after Sheet1) in SalesRep.xlsx with headers Month/Total in A1:B1 and each month's summed sales (Jan 4852, Feb 4587, Mar 3943, Apr 3857, May 4677, Jun 4243) in A2:B7, then saved the file in xlsx format.

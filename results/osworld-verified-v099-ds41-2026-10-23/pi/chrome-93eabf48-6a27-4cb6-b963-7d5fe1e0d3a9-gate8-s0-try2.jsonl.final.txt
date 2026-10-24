@@ -1,0 +1,1 @@
+DONE — In Chrome's `chrome://settings/appearance` I set **Mode** from Dark to **Light** (confirmed visually: the whole browser UI is now light, and the persisted pref `browser.theme.color_scheme2` changed from 2/Dark to 1/Light).

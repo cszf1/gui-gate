@@ -1,0 +1,1 @@
+DONE — Installed the autoDocstring – Python Docstring Generator extension (njpwerner.autodocstring v0.6.1) via `code --install-extension`, reloaded VS Code, and confirmed it appears under Extensions: Installed (enabled) and in `/data/home/.vscode/extensions/extensions.json`.

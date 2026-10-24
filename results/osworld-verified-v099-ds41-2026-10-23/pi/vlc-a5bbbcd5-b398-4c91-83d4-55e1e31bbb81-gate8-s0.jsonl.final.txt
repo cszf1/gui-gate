@@ -1,0 +1,1 @@
+DONE — Enabled "Start in minimal view mode" (qt-minimal-view=1) in VLC's Tools > Preferences (Interface), saved it to `~/.config/vlc/vlcrc`, then restarted VLC, which now opens in windowed minimal interface with the menu bar and bottom playback controls hidden.

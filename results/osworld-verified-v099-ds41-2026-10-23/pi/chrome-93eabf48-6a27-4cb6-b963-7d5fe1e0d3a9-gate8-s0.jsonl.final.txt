@@ -1,0 +1,3 @@
+Dark mode is now off in Chrome (set via chrome://settings/appearance → Mode → Light), and the change persisted to the profile Preferences (`browser.theme.color_scheme2: 1`); the settings page confirms Mode = Light and `prefers-color-scheme: dark` is now false.
+
+DONE — Opened chrome://settings/appearance and changed the Mode selector from Dark to Light, then verified the setting persisted (page shows "Light", dark color scheme disabled).

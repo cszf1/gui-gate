@@ -1,0 +1,3 @@
+FAIL — vim is not in this desktop's favorites, so there is nothing to remove.
+
+Evidence: the favorites/dock here is the XFCE panel-2 launcher dock (`xfconf` `xfce4-panel /plugins/plugin-13..16`, files in `~/.config/xfce4/panel/launcher-13..16/`), and its only four items are Terminal Emulator, File Manager, Web Browser and Application Finder — no vim entry exists anywhere (no Whisker menu plugin installed, applications menu has no Favorites section, no favorites key in dconf, no vim `.desktop` in `~/.local/share/applications` or `~/Desktop`, Chromium bookmarks contain no vim).
