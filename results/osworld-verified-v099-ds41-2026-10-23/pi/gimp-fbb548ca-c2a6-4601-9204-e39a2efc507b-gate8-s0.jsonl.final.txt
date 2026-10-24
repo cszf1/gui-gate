@@ -1,0 +1,3 @@
+FAIL — GIMP 3.0.4 here only has the built-in themes "Default" and "System" (confirmed in Edit > Preferences > Interface > Theme and on disk); there is no "Blue" theme to select, and creating a custom blue theme would be an unrequested workaround.
+
+I opened GIMP, checked Edit > Preferences > Interface > Theme, and cancelled out without changes.

@@ -1,0 +1,1 @@
+DONE — Searched "spider-man toys for kids" on Walmart (the pre-opened Kohl's window returned Akamai 403 on every page, so I used a reachable shopping site) and applied the lowest-price sort (`sort=price_low`); results show 313 items sorted ascending from $4.95 upward.

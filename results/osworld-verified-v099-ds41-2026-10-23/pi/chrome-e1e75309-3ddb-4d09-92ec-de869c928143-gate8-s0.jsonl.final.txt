@@ -1,0 +1,1 @@
+DONE — Used Chromium's Ctrl+P print preview on the open Lil'Log page, chose "Save as PDF", set Margins to **None**, and saved with the default filename to the Desktop: `/home/user/Desktop/LLM Powered Autonomous Agents _ Lil'Log.pdf` (23 pages, verified).
