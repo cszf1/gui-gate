@@ -55,6 +55,8 @@ class FakeLLM:
             R = r.upper()
             e.update({f"GUI_GATE_ROLE_{R}_URL": self.url, f"GUI_GATE_ROLE_{R}_MODEL": f"fake-{r}", f"GUI_GATE_ROLE_{R}_KEY": "k",
                       f"GUI_GATE_ROLE_{R}_TIMEOUT": "5"})
+            if r in ("planner", "search", "compact"):
+                e[f"GUI_GATE_ROLE_{R}_ENABLE"] = "1"  # 0.10.1: these three are off in the gate unless enabled
         return e
 
     def close(self):

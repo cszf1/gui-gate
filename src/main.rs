@@ -41,7 +41,7 @@ mod proc;
 use decide::GateConfig;
 use util::*;
 
-const HELP: &str = "usage: gui-gate [setup|doctor|update|cleanup|uninstall|check-reviewer|train|compare|replay|costs] [options]
+const HELP: &str = "usage: gui-gate [setup|doctor|update|cleanup|uninstall|check-reviewer|train|compare|replay|costs|report] [options]
 
 Cua Driver behind a pre-action value gate (MCP stdio server).
 
@@ -109,6 +109,7 @@ fn main() {
             "check-reviewer" => Some(reviewer::check_main(rest)),
             "train" => Some(tools::train_main(rest)),
             "compare" => Some(tools::compare_main(rest)),
+            "report" => Some(tools::report_main(rest)),
             "replay" => Some(tools::replay_main(rest)),
             "costs" => Some(valuetrain::costs_main(rest)),
             "memory" => Some(memory::main_cli(rest)),

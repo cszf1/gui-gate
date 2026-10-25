@@ -637,7 +637,13 @@ pub fn clarify_options(given: Option<&Value>, q: &str) -> Vec<String> {
     if last.ends_with('?') && last.contains(" or ") {
         let body = last.rsplit(|c| c == ':' || c == '-').next().unwrap_or(last);
         let body = Regex::new(r"(?i)^\s*(should i|do you want|which( one)?|shall i|use|pick|choose)\s+").unwrap().replace(body, "").to_string();
-        let parts: Vec<String> = Regex::new(r",\s*|\s+or\s+").unwrap().split(&body).map(String::from).collect();
+        let mut parts: Vec<String> = Regex::new(r",\s*|\s+or\s+").unwrap().split(&body).map(|x| x.trim().to_string()).collect();
+        // "save it as report.pdf or report_v2.pdf": when the other choices are single words, the first is its last word
+        if parts.len() >= 2 && parts[1..].iter().all(|p| !p.contains(' ')) {
+            if let Some(w) = parts[0].split_whitespace().last().map(String::from) {
+                parts[0] = w;
+            }
+        }
         return ok(parts);
     }
     vec![]
@@ -720,6 +726,8 @@ pub struct Inner {
     pub probe_disabled: bool,
     /// refused effects (a record, never a credential): (structured key, who refused); covers the same effect by any route
     pub denials: Vec<(crate::effect::EffectKey, String)>,
+    /// operator task version each denial record was made under (parallel to `denials`)
+    pub denial_versions: Vec<u64>,
     /// one-shot dispatch permits gated() issued for an approved risky effect (see Gate::tool's final check)
     pub permits: Vec<Permit>,
     /// the risky effect the current gated() call has approval for, and from whom (operator task, reviewer, person)
@@ -1114,7 +1122,7 @@ impl Gate {
             inner: Mutex::new(Inner {
                 state: GateState::with_text_only(cfg.text_only), cfg, stats: new_stats(), aid: 0,
                 want_shot: HashSet::new(), seen_pids: HashSet::new(), fg_sticky: false, pixel_pids: HashSet::new(),
-                probe_disabled: false, denials: vec![], permits: vec![], approval: None, agent_task: String::new(), unknown_sigs: HashMap::new(), step_doubted: HashSet::new(), acted: false, read_streak: 0, hinted: HashSet::new(), cells_seen: HashMap::new(), term_seen: HashMap::new(), denials_consec: 0, denials_total: 0,
+                probe_disabled: false, denials: vec![], denial_versions: vec![], permits: vec![], approval: None, agent_task: String::new(), unknown_sigs: HashMap::new(), step_doubted: HashSet::new(), acted: false, read_streak: 0, hinted: HashSet::new(), cells_seen: HashMap::new(), term_seen: HashMap::new(), denials_consec: 0, denials_total: 0,
                 task_locked, task_source, in_batch: false, batch_ctx: Value::Null, pix_age: HashMap::new(),
                 last_auto: HashMap::new(), seen_rows: HashMap::new(), recent: vec![], plan: vec![], plan_verdict: String::new(), plan_checks: vec![], facts: vec![], briefed: false, history: vec![], verdict_nagged: false, lb: Default::default(), risk_info: Value::Null, cur_ack: false,
                 rethought: HashSet::new(), resets: 0,
@@ -1506,6 +1514,7 @@ impl Gate {
 
     /// Send a tools/call result; modern-era requests get the 2026-07-28 envelope.
     fn reply(&self, msg: &Value, mut result: Value) {
+        redact_value(&mut result); // no key the gate holds ever reaches the agent
         if is_modern(msg) {
             let sh = self.shared.lock().unwrap();
             modern_envelope(&mut result, "tools/call", &sh);
@@ -2216,6 +2225,9 @@ impl Gate {
     }
 
     fn gated_inner(&self, inn: &mut Inner, name: &str, mut args: Value) -> Value {
+        if let Some(refused) = self.own_dialog_check(inn, name, &args) {
+            return refused; // never decided, never sent: only the person answers the gate's own dialog
+        }
         let tg0 = Instant::now();
         let ack = false; // the acting model never approves its own step (gate_ack is accepted and ignored)
         inn.cfg.reviewer = self.reviewer.available();
@@ -2513,7 +2525,9 @@ impl Gate {
                 event["executed"] = json!(false);
                 event["gate_ms"] = json!(round_to(tg0.elapsed().as_secs_f64() * 1000.0, 1));
                 self.log.write(event);
-                let txt = self.deny_text(inn, &ctx, &dec, &format!("the person {verdict}"));
+                let no_answer = NO_ANSWER_OUTCOMES.contains(&outcome.as_str()) || outcome == "not_asked_again";
+                let who = if outcome == "not_asked_again" { "the person was already asked about this exact step and gave no answer; it is not asked again in this task".to_string() } else { format!("the person {verdict}") };
+                let txt = self.deny_text_r(inn, &ctx, &dec, &who, !no_answer);
                 let mut extra = Obj::new();
                 extra.insert("human".into(), json!(ans));
                 extra.insert("human_outcome".into(), json!(outcome));
@@ -3135,7 +3149,24 @@ impl Gate {
         let hz = key.hazard.clone();
         inn.risk_info = json!({"effect": key.to_json(), "hazard": hz});
         // a denial is a record covering the same effect by any route (another button, key, command, tool)
-        if let Some((dk, prev)) = inn.denials.iter().find(|(d, _)| d.denial_covers(&key)).cloned() {
+        // a NEWER version of the operator's own task (the trusted channel) can change what is authorized: a denial
+        // made under an older version no longer blocks an effect the newest task explicitly covers
+        self.refresh_task(inn);
+        let cur = inn.task_version;
+        let superseded = |i: usize, inn: &Inner| -> bool {
+            inn.denial_versions.get(i).map(|v| *v < cur).unwrap_or(false)
+                && authz::authorized(&key, &inn.cfg.task, &[], if ctx.tool == "run_command" { Some(crate::features::command_cwd(&ctx.args)) } else { t.pid.filter(|p| crate::sidefx::is_terminal(*p)).map(crate::sidefx::shell_cwd) }.as_deref()).0
+        };
+        let hit = inn.denials.iter().enumerate().find(|(_, (d, _))| d.denial_covers(&key)).map(|(i, x)| (i, x.clone()));
+        let hit = match hit {
+            Some((i, _)) if superseded(i, inn) => {
+                trail.push("denial_superseded".into());
+                self.log.write(json!({"ev": "denial_superseded", "aid": inn.aid, "task_version": cur}));
+                None
+            }
+            h => h.map(|x| x.1),
+        };
+        if let Some((dk, prev)) = hit {
             trail.push("denied_before".into());
             inn.risk_info["denied_before"] = json!(dk.to_json());
             return Some(Decision::new("deny", 0.0, format!("{}; the same effect was already refused ({prev})", dec.reason), "rule"));
@@ -3208,15 +3239,23 @@ impl Gate {
 
     /// Deny-and-continue: say no, remember the effect, give the safe way on; escalate after repeated denials.
     fn deny_text(&self, inn: &mut Inner, ctx: &ActionCtx, dec: &Decision, who: &str) -> String {
+        self.deny_text_r(inn, ctx, dec, who, true)
+    }
+
+    /// `record`: keep a denial record (a person or rule said no). A request that got NO answer (timeout, cancel,
+    /// closed) is not a "no": it is refused this time and not asked again in this task version, but it is no record.
+    fn deny_text_r(&self, inn: &mut Inner, ctx: &ActionCtx, dec: &Decision, who: &str, record: bool) -> String {
         inn.denials_consec += 1;
         inn.denials_total += 1;
         inn.inc("denials");
         let risk = ctx.risk.clone().unwrap_or_default();
-        if ctx.risk.is_some() || ctx.handoff.is_some() {
+        if record && (ctx.risk.is_some() || ctx.handoff.is_some()) {
             // a record, never a credential: it blocks this effect by any route and is never cleared by a later approval
             let key = self.effect_key(inn, ctx);
             self.log.write(json!({"ev": "denial", "aid": inn.aid, "effect": key.to_json(), "who": who}));
             inn.denials.push((key, who.to_string()));
+            let v = inn.task_version;
+            inn.denial_versions.push(v);
         }
         let cleared = match (ctx.target.pid, ctx.risk.is_some()) {
             (Some(p), true) => self.clear_terminal_line(inn, p, ctx.target.window_id).unwrap_or_default(),
@@ -4218,6 +4257,9 @@ impl Gate {
         st.insert("screenshot_format".into(), json!(self.shot.name()));
         st.insert("features_097".into(), json!(crate::v097::active()));
         st.insert("roles".into(), json!(self.roles.configured()));
+        st.insert("person_burden".into(), inn.burden.json());
+        st.insert("task_version".into(), json!(inn.task_version));
+        let pb = inn.burden.json();
         let lines = [
             format!("policy={} lambda={} model={}", inn.cfg.policy, inn.cfg.lam, inn.cfg.model_name),
             format!("actions={} executed={} errors={}", g("actions"), g("executed"), g("exec_errors")),
@@ -4231,6 +4273,8 @@ impl Gate {
 
             format!("screenshot format={} bytes {} -> {} ({} ms re-encoding)", self.shot.name(), g("img_bytes_in"), g("img_bytes_out"), round_to(g("img_ms"), 1)),
             format!("0.9.7 features={:?} roles={:?}", crate::v097::active(), self.roles.configured()),
+            format!("person burden: asks={} repeat ratio={} wait={} s active={} s takeover steps={} cancel/timeout rate={} not asked again={}",
+                    pb["asks"], pb["repeat_ratio"], pb["person_wait_s"], pb["person_active_s"], pb["takeover_steps"], pb["cancel_timeout_rate"], pb["not_asked_again"]),
         ];
         json!({"content": [{"type": "text", "text": lines.join("\n")}], "structuredContent": st})
     }

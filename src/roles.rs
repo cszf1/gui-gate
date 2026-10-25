@@ -17,6 +17,20 @@ use std::sync::OnceLock;
 
 pub const ROLES: &[&str] = &["feasibility", "planner", "verifier", "judge", "search", "compact", "grounder"];
 
+/// 0.10.1: planner, search and compact are OFF in the gate even when an endpoint is configured; they are candidates
+/// to move out of the gate (into the client). Turn one on explicitly: GUI_GATE_ROLE_<NAME>_ENABLE=1 or
+/// GUI_GATE_ROLES_ENABLE=planner,search,compact.
+pub const OFF_BY_DEFAULT: &[&str] = &["planner", "search", "compact"];
+
+pub fn role_enabled(name: &str) -> bool {
+    if !OFF_BY_DEFAULT.contains(&name) {
+        return true;
+    }
+    let on = |v: Option<String>| v.map(|v| matches!(v.trim().to_lowercase().as_str(), "1" | "true" | "yes" | "on")).unwrap_or(false);
+    on(env(&format!("GUI_GATE_ROLE_{}_ENABLE", name.to_uppercase())))
+        || env("GUI_GATE_ROLES_ENABLE").map(|v| v.split(',').any(|x| x.trim().eq_ignore_ascii_case(name))).unwrap_or(false)
+}
+
 pub struct Role {
     pub name: String,
     pub llm: Reviewer,
@@ -41,7 +55,7 @@ pub struct Roles {
 
 impl Roles {
     pub fn from_env() -> Roles {
-        Roles { map: ROLES.iter().filter_map(|r| Role::from_env(r).map(|x| (r.to_string(), x))).collect() }
+        Roles { map: ROLES.iter().filter(|r| role_enabled(r)).filter_map(|r| Role::from_env(r).map(|x| (r.to_string(), x))).collect() }
     }
     pub fn get(&self, name: &str) -> Option<&Role> {
         self.map.get(name)
@@ -313,6 +327,18 @@ pub const GROUNDER_SYSTEM: &str = "You locate one UI element in a screenshot of 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn planner_search_compact_are_off_unless_enabled() {
+        for r in ["planner", "search", "compact"] {
+            if std::env::var(format!("GUI_GATE_ROLE_{}_ENABLE", r.to_uppercase())).is_err() && std::env::var("GUI_GATE_ROLES_ENABLE").is_err() {
+                assert!(!role_enabled(r), "{r}");
+            }
+        }
+        for r in ["feasibility", "verifier", "judge", "grounder"] {
+            assert!(role_enabled(r));
+        }
+    }
 
     #[test]
     fn readonly_probe_allowlist() {
