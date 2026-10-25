@@ -1682,6 +1682,15 @@ impl Gate {
                 return;
             }
         };
+        // run_command is not offered (Windows: its risk rules are bash rules; or switched off): a call to it is refused
+        // before anything else, so nothing is executed and no gate verdict is made about a tool that is not there
+        if name == "run_command" && !crate::command::enabled() {
+            self.log.write(json!({"ev": "tool_not_offered", "tool": name}));
+            let mut r = text_result("[gate] run_command is not available in this session (not offered on this OS, or switched off). Nothing was executed. Do it through the apps' own windows, or ask the person with request_human.", true);
+            set_status(&name, &mut r);
+            self.reply(&msg, r);
+            return;
+        }
         // 0.9.7 feasibility first: no GUI action before the agent stated its feasibility verdict (once)
         if crate::v097::on("FEASIBILITY_FIRST") && plan_enabled() && (is_gated(&name) || name == "run_actions") && name != "run_command" {
             let mut inn = self.inner.lock().unwrap_or_else(|e| e.into_inner());
@@ -3813,7 +3822,7 @@ impl Gate {
             let mut shown_docs = 0;
             let mut cands: Vec<String> = named.iter().filter_map(|n| {
                 let e = crate::sidefx::expanduser(n);
-                if e.starts_with('/') { Some(e) } else { roots.iter().map(|r| format!("{r}/{e}")).find(|c| std::path::Path::new(c).is_file()) }
+                if crate::sidefx::is_abs(&e) { Some(crate::sidefx::p(&e, "/")) } else { roots.iter().map(|r| format!("{r}/{e}")).find(|c| std::path::Path::new(c).is_file()) }
             }).collect();
             if let Some(st) = start {
                 for (p, _, _) in crate::done::changed_since(&home, st, 10) {

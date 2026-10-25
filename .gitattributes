@@ -1,0 +1,10 @@
+# LF in every checkout (Windows too): bench task JSON is hashed in the frozen manifest, shell scripts must stay LF
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.xlsx binary
+*.docx binary
+*.pptx binary
+*.ods binary
+*.odt binary
+*.pdf binary

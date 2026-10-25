@@ -17,6 +17,7 @@ import schedule  # noqa: E402
 import stats  # noqa: E402
 
 RUN_BENCH = os.path.join(ROOT, "bench", "run_bench.sh")
+BASH_BENCH = unittest.skipUnless(sys.platform.startswith("linux"), "the bench harness is bash + GNU coreutils on Linux (cp -T, seq; on Windows `bash` is the WSL launcher)")
 
 
 def write_tasks(d, names):
@@ -185,6 +186,7 @@ class ScheduleTests(unittest.TestCase):
         self.assertEqual(set(follows.values()), {1})  # Williams: each ordered pair once
 
 
+@BASH_BENCH
 class RunBenchGuardTests(unittest.TestCase):
     def setUp(self):
         self.sh = open(RUN_BENCH).read()

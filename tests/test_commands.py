@@ -11,6 +11,8 @@ import unittest
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from test_gate import Client, txt  # noqa: E402
+
+UNIX_ONLY = unittest.skipIf(os.name == "nt", "bash-only: run_command / terminal rules / jobs are not offered on Windows")
 from test_v04 import _Rev  # noqa: E402
 
 OLD = time.mktime((2020, 1, 1, 0, 0, 0, 0, 0, 0))
@@ -60,6 +62,7 @@ TASKS = {"og04": "Copies file 'file1' to each of directories 'dir1', 'dir2', 'di
          "og02": "Export the current document into PDF, keep the file name"}
 
 
+@UNIX_ONLY
 class RunCommandTests(unittest.TestCase):
     def setUp(self):
         self.d = fixture()
@@ -121,7 +124,10 @@ class RunCommandTests(unittest.TestCase):
             c = Client("--human", "deny", "--task", TASKS[task])
             try:
                 r = c.call("run_command", command=cmd, cwd=d)
-                self.assertEqual(not r.get("isError"), runs, f"{task} {cmd}: {txt(r)}")
+                ran = not r.get("isError")
+                if sys.platform == "darwin" and "cp -n" in cmd and "[run_command] exit 1 " in txt(r):
+                    ran = True  # BSD cp -n exits 1 when the target exists: the gate let it run, which is what counts
+                self.assertEqual(ran, runs, f"{task} {cmd}: {txt(r)}")
                 if task == "og06":
                     self.assertTrue(os.path.isdir(os.path.join(d, "todo_list_Jan_2")))
                     ev = [e for e in c.events() if e.get("ev") == "action"][-1]
@@ -329,6 +335,7 @@ class PlanTests(unittest.TestCase):
         self.assertNotIn("set_plan", [t["name"] for t in self.c.rpc("tools/list", {})["tools"]])
 
 
+@UNIX_ONLY
 class BatchCommandTests(unittest.TestCase):
     def test_batch_stops_at_the_first_refused_step(self):
         d = fixture()

@@ -12,6 +12,9 @@ from test_gate import BIN, Client, txt  # noqa: E402
 
 
 
+UNIX_ONLY = unittest.skipIf(os.name == "nt", "bash-only: run_command / terminal rules / jobs are not offered on Windows")
+
+
 class V04GateTests(unittest.TestCase):
     def tearDown(self):
         self.c.close()
@@ -48,6 +51,7 @@ class V04GateTests(unittest.TestCase):
         self.assertNotIn("authorized", ev["trail"])
         self.assertIn("cannot match", ev["risk_gate"]["why"])
 
+    @UNIX_ONLY  # through run_command (bash)
     def test_task_naming_the_file_authorizes(self):
         import tempfile, time
         d = tempfile.mkdtemp()
@@ -562,6 +566,7 @@ class ReviewerIsRequired(unittest.TestCase):
             c.close()
 
 
+@UNIX_ONLY
 class TerminalLineTests(unittest.TestCase):
     """0.9.5: a refused Enter in a terminal clears the typed command from the input line (og04 loop)."""
 

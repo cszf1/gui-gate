@@ -24,6 +24,9 @@ for _k in list(os.environ):
 # the advertised tool list of the default (core) toolset, against the fake driver (it has no list_apps, scroll, ...)
 DEFAULT_TOOLS = ["get_window_state", "click", "type_text", "press_key", "hotkey", "list_windows", "launch_app", "bring_to_front",
                  "request_human", "gate_task", "gate_report", "run_command", "check_done", "set_plan", "run_actions"]
+if os.name == "nt":  # run_command is bash-only: not offered on Windows
+    DEFAULT_TOOLS.remove("run_command")
+UNIX_ONLY = unittest.skipIf(os.name == "nt", "bash-only: run_command / terminal rules / jobs are not offered on Windows")
 
 
 class FakeLLM:
@@ -74,8 +77,9 @@ class ToolListTests(unittest.TestCase):
         try:
             self.assertEqual(names(c), DEFAULT_TOOLS)
             self.assertNotIn("0.9.7", c.init["instructions"])
-            rc = next(t for t in c.rpc("tools/list", {})["tools"] if t["name"] == "run_command")
-            self.assertNotIn("mode", rc["inputSchema"]["properties"])
+            if os.name != "nt":
+                rc = next(t for t in c.rpc("tools/list", {})["tools"] if t["name"] == "run_command")
+                self.assertNotIn("mode", rc["inputSchema"]["properties"])
         finally:
             c.close()
 
@@ -85,8 +89,9 @@ class ToolListTests(unittest.TestCase):
             tools = c.rpc("tools/list", {})["tools"]
             self.assertEqual([t["name"] for t in tools], DEFAULT_TOOLS + ["inspect"])
             self.assertEqual(len(tools), len(DEFAULT_TOOLS) + 1)
-            rc = next(t for t in tools if t["name"] == "run_command")
-            self.assertEqual(rc["inputSchema"]["properties"]["mode"]["enum"], ["run", "start", "poll", "stop"])
+            if os.name != "nt":
+                rc = next(t for t in tools if t["name"] == "run_command")
+                self.assertEqual(rc["inputSchema"]["properties"]["mode"]["enum"], ["run", "start", "poll", "stop"])
             ins = next(t for t in tools if t["name"] == "inspect")
             self.assertEqual(ins["inputSchema"]["properties"]["kind"]["enum"], ["file", "env", "page", "region", "locate", "howto", "memory"])
             self.assertTrue(ins["annotations"]["readOnlyHint"])
@@ -126,9 +131,13 @@ class PhantomTests(unittest.TestCase):
         st = json.loads(txt(self.c.call("fake_state")))
         self.assertIn("Return", st["keys"])
         r = self.c.call("bash", cmd="echo phantom-$((6*7))")
-        self.assertIn("phantom-42", txt(r))
         ev = [e for e in self.c.events() if e.get("ev") == "phantom"]
-        self.assertEqual([e["to"] for e in ev], ["click", "press_key", "run_command"])
+        if os.name == "nt":  # no run_command on Windows: "bash" maps to nothing
+            self.assertIn('there is no tool "bash"', txt(r))
+            self.assertEqual([e["to"] for e in ev], ["click", "press_key"])
+        else:
+            self.assertIn("phantom-42", txt(r))
+            self.assertEqual([e["to"] for e in ev], ["click", "press_key", "run_command"])
 
     def test_triple_click_is_emulated(self):
         s = self.c.read()
@@ -216,6 +225,7 @@ class HowtoRoleTests(unittest.TestCase):
             llm.close()
 
 
+@UNIX_ONLY
 class JobTests(unittest.TestCase):
     def test_start_poll_stop(self):
         c = Client("--human", "deny", env={"GUI_GATE_JOBS": "1"})
@@ -586,7 +596,11 @@ class VerifyPlusTests(unittest.TestCase):
         c = Client("--human", "deny", "--task", f"Write the total into {p}", env={"GUI_GATE_VERIFY_PLUS": "1", "GUI_GATE_STATE_PLAN": "1"})
         try:
             c.call("set_plan", feasible=True, milestones=[{"state": f"{p} holds the total 42", "check": {"file_contains": [p, "42"]}}])
-            c.call("run_command", command=f"echo 'total 41' > {p}")
+            if os.name == "nt":  # no run_command on Windows: the file is written the way an app would
+                with open(p, "w") as fh:
+                    fh.write("total 41\n")
+            else:
+                c.call("run_command", command=f"echo 'total 41' > {p}")
             r = c.call("check_done")
             t = txt(r)
             self.assertIn("Saved content of", t)

@@ -52,6 +52,9 @@ def state(c):
     return json.loads(txt(c.call("fake_state")))
 
 
+UNIX_ONLY = unittest.skipIf(os.name == "nt", "bash-only: run_command / terminal rules / jobs are not offered on Windows")
+
+
 class PassThroughActions(unittest.TestCase):
     def test_harmless_launch_app_runs_through_the_dispatch_check(self):
         c = Client("--human", "deny")
@@ -461,6 +464,7 @@ class ClientInterface(unittest.TestCase):
         finally:
             c.close()
 
+    @UNIX_ONLY  # the task file is exercised through run_command (bash); the gui path is covered by test_actions_e2e
     def test_client_task_file_format(self):
         d = tempfile.mkdtemp(prefix="gg-task-")
         f = old_file(os.path.join(d, "draft.txt"))
@@ -487,6 +491,7 @@ class ClientInterface(unittest.TestCase):
 
 
 class TrustedTaskFile(unittest.TestCase):
+    @UNIX_ONLY  # through run_command (bash)
     def test_task_file_versions_and_the_newest_one_authorizes(self):
         d = tempfile.mkdtemp(prefix="gg-task-")
         f = old_file(os.path.join(d, "notes.txt"))

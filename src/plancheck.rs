@@ -25,8 +25,8 @@ pub struct Ctx {
 
 fn resolve(p: &str, roots: &[String]) -> Option<String> {
     let e = crate::sidefx::expanduser(p.trim());
-    if e.starts_with('/') {
-        return Some(e);
+    if crate::sidefx::is_abs(&e) {
+        return Some(crate::sidefx::p(&e, "/"));
     }
     roots.iter().map(|r| format!("{r}/{e}")).find(|c| std::path::Path::new(c).exists())
 }
@@ -34,7 +34,7 @@ fn resolve(p: &str, roots: &[String]) -> Option<String> {
 fn changed_since(path: &str, start: Option<SystemTime>) -> bool {
     let Some(st) = start else { return false };
     let Ok(md) = std::fs::metadata(path) else { return false };
-    crate::proc::changed_at(&md).map(|t| t >= st).unwrap_or(false)
+    crate::proc::changed_at(std::path::Path::new(path), &md).map(|t| t >= st).unwrap_or(false)
 }
 
 fn proc_running(name: &str) -> bool {
