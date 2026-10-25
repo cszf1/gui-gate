@@ -1,0 +1,4401 @@
+{
+  "summary": {
+    "gate": "/tmp/gg099/gui-gate",
+    "gate_version": "0.9.9",
+    "driver": "/tmp/cua/cua-driver",
+    "driver_version": "cua-driver 0.38.0",
+    "mode": "legacy",
+    "tool": "list_apps",
+    "tools_listed": 22,
+    "tools_call_ok": true,
+    "tools_call_error": null,
+    "stderr_tail": ""
+  },
+  "transcript": [
+    {
+      "request": {
+        "jsonrpc": "2.0",
+        "method": "initialize",
+        "params": {
+          "protocolVersion": "2025-06-18",
+          "capabilities": {},
+          "clientInfo": {
+            "name": "realdriver-client",
+            "version": "1"
+          }
+        },
+        "id": 1
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "result": {
+          "capabilities": {
+            "extensions": {
+              "io.modelcontextprotocol/skills": {}
+            },
+            "resources": {},
+            "tools": {}
+          },
+          "instructions": "cua-driver: background GUI automation. No shell: for non-GUI outcomes use an app API/SDK, CLI or filesystem and read the result back there.\n\n1. `list_windows({app:\"Name\"})` or `launch_app` for `pid` and `window_id`.\n2. Read narrowly: `get_window_state` with `query:\"Save\"`. Re-read with `since:\"latest\"`.\n3. Act by `element_token` (AT-SPI): row `[N]` is `<snapshot_id>:N`. Pixels only for surfaces missing from the tree.\n4. Act through `run_steps({steps:[{tool,args}],observe:{}})`, even for one step: stops at the first failure, returns what changed. Loops, branches or retries: one `run_script` call.\n5. Verify at checkpoints, not after every action: `verify_state(pid, window_id, expect)`. `unknown` and `effect:\"unverifiable\"` are not success.\n\nUse the narrowest semantic route first: `set_window_frame` plus `list_windows` for geometry, typed browser tools for pages. Stay in the background; `delivery_mode:\"foreground\"` only if refused or unverifiable.\n\nChrome/Edge/Brave page: `get_browser_state({pid, window_id})`, its `detail.next_call` (`browser_prepare`) if refused, then `browser_click`/`browser_type`/`browser_pointer` (hover, drag); never desktop pointer tools.\n\n`start_session` is optional; repeat a short `session` label on every call that accepts it. On continuation/recent-work, call `history_status`; if ready, make one bounded initial `history_query` before broad discovery.\n\nGuides: `get_guide({topic})` (drag, browser, permissions, batching, menus), `skill://cua-driver/SKILL.md`, LINUX.md (X11/Wayland status, AT-SPI bus, BETA-level support).\n\n[gui-gate] Actions go through a value gate before they run. Usually they execute at once. If a call returns a message starting with \"[gate]\", nothing was executed: do exactly what it says (re-read, re-aim with a screenshot, take the safe way it names, or ask the user and retry with gate_confirm). The gate settles doubtful and risky steps itself (rules, the user's own words, its own independent reviewer, or a person); it never asks you to approve your own action. To save time the gate omits the screenshot from get_window_state when the element tree is enough; pass include_screenshot:true when you really need pixels. Each action's result already carries a fresh read of the window: do not read it again before the next step. Several steps whose targets you can already see go in ONE run_actions call. If the user's request is known, pass it verbatim once with gate_task. When the gate refuses a risky step it tells you a safe way to go on: take it and finish the task.",
+          "protocolVersion": "2025-06-18",
+          "serverInfo": {
+            "name": "gui-gate (cua-driver 0.38.0)",
+            "version": "0.9.9"
+          }
+        }
+      },
+      "seconds": 0.188
+    },
+    {
+      "request": {
+        "jsonrpc": "2.0",
+        "method": "notifications/initialized",
+        "params": {}
+      }
+    },
+    {
+      "request": {
+        "jsonrpc": "2.0",
+        "method": "tools/list",
+        "params": {},
+        "id": 2
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 2,
+        "result": {
+          "capability_version": "1",
+          "enforcement_adapters": [
+            {
+              "absolute_ttl_seconds": null,
+              "authorization_requirement": "profile_behavior_and_optional_capability_manifest",
+              "authorization_source": "built_in_standard; unattended_bounded_profile; trusted_unrestricted_mode; optional_capability_manifest_ceiling",
+              "behavior_by_mode": {
+                "bounded": "manifest",
+                "standard": "allow",
+                "unrestricted": "allow"
+              },
+              "enforcement_by_mode": {
+                "bounded": "active",
+                "standard": "active",
+                "unrestricted": "active"
+              },
+              "grant_type": null,
+              "id": "browser_prepare.isolated",
+              "idle_ttl_seconds": null,
+              "operations": [
+                "browser_prepare[profile.mode=isolated]"
+              ],
+              "profile_behavior_class": "routine",
+              "refusal_code": "authorization_required",
+              "resource_kind": "driver_owned_browser_profile",
+              "revocation_triggers": [
+                "session_end",
+                "expiry",
+                "policy_change",
+                "resource_identity_change",
+                "daemon_restart"
+              ],
+              "risk_class": "r1",
+              "scope_keys": [
+                "daemon_generation",
+                "public_session",
+                "transport_session",
+                "pid",
+                "profile_mode",
+                "profile_name",
+                "permission_mode",
+                "managed_policy_sha256",
+                "user_policy_sha256"
+              ],
+              "state": "active"
+            },
+            {
+              "absolute_ttl_seconds": 28800,
+              "authorization_requirement": "profile_approval_behavior_and_optional_capability_manifest",
+              "authorization_source": "launch_grant_or_authorization_host_in_standard; unattended_in_bounded; trusted_launch_acknowledgement_in_unrestricted; optional_capability_manifest_ceiling",
+              "behavior_by_mode": {
+                "bounded": "manifest",
+                "standard": "require_grant",
+                "unrestricted": "allow"
+              },
+              "enforcement_by_mode": {
+                "bounded": "active",
+                "standard": "active",
+                "unrestricted": "active"
+              },
+              "grant_type": "existing_profile_session_grant",
+              "id": "browser_prepare.existing_profile",
+              "idle_ttl_seconds": 1800,
+              "operations": [
+                "browser_prepare[strategy.kind=existing_profile]"
+              ],
+              "profile_behavior_class": "grant_in_standard",
+              "refusal_code": "browser_consent_required",
+              "resource_kind": "existing_browser_profile",
+              "revocation_triggers": [
+                "session_end",
+                "idle_expiry",
+                "absolute_expiry",
+                "policy_change",
+                "process_identity_change",
+                "endpoint_identity_change",
+                "daemon_restart",
+                "reconnect_budget_exhaustion"
+              ],
+              "risk_class": "r2",
+              "scope_keys": [
+                "daemon_generation",
+                "public_session",
+                "transport_session",
+                "pid",
+                "window_id",
+                "process_fingerprint",
+                "browser_product",
+                "endpoint_owner",
+                "permission_mode",
+                "managed_policy_sha256",
+                "user_policy_sha256"
+              ],
+              "state": "active"
+            },
+            {
+              "absolute_ttl_seconds": 28800,
+              "authorization_requirement": "profile_behavior_and_optional_capability_manifest",
+              "authorization_source": "built_in_standard; unattended_bounded_profile; trusted_unrestricted_mode; optional_capability_manifest_ceiling",
+              "behavior_by_mode": {
+                "bounded": "manifest",
+                "standard": "allow",
+                "unrestricted": "allow"
+              },
+              "enforcement_by_mode": {
+                "bounded": "active",
+                "standard": "active",
+                "unrestricted": "active"
+              },
+              "grant_type": "protected_resource_grant",
+              "id": "private_observation",
+              "idle_ttl_seconds": 1800,
+              "operations": [
+                "get_desktop_state",
+                "get_accessibility_tree",
+                "get_window_state",
+                "parse_visual_regions",
+                "verify_state",
+                "list_apps",
+                "list_windows",
+                "debug_window_info",
+                "get_browser_state",
+                "browser_dialog[action=inspect]",
+                "page[action=get_text|query_dom]",
+                "escalate_session",
+                "zoom",
+                "start_recording"
+              ],
+              "profile_behavior_class": "routine",
+              "refusal_code": "authorization_required",
+              "resource_kind": "user_window_or_display_observation",
+              "revocation_triggers": [
+                "session_end",
+                "expiry",
+                "policy_change",
+                "resource_identity_change",
+                "daemon_restart"
+              ],
+              "risk_class": "r2",
+              "scope_keys": [
+                "daemon_generation",
+                "public_session",
+                "pid",
+                "process_fingerprint",
+                "window_id",
+                "display_generation",
+                "capture_scope",
+                "permission_mode",
+                "managed_policy_sha256",
+                "user_policy_sha256"
+              ],
+              "state": "active"
+            },
+            {
+              "absolute_ttl_seconds": 28800,
+              "authorization_requirement": "explicit_standard_grant_or_approved_capability_manifest",
+              "authorization_source": "authorization_host_in_standard; approved_capability_manifest_in_bounded; trusted_unrestricted_mode",
+              "behavior_by_mode": {
+                "bounded": "manifest",
+                "standard": "require_grant",
+                "unrestricted": "allow"
+              },
+              "enforcement_by_mode": {
+                "bounded": "active",
+                "standard": "active",
+                "unrestricted": "active"
+              },
+              "grant_type": "protected_resource_grant",
+              "id": "computer_history",
+              "idle_ttl_seconds": 1800,
+              "operations": [
+                "history_status",
+                "history_query"
+              ],
+              "profile_behavior_class": "grant_in_standard",
+              "refusal_code": "authorization_required",
+              "resource_kind": "computer_history_metadata",
+              "revocation_triggers": [
+                "session_end",
+                "expiry",
+                "policy_change",
+                "resource_identity_change",
+                "daemon_restart"
+              ],
+              "risk_class": "r2",
+              "scope_keys": [
+                "daemon_generation",
+                "public_session",
+                "operation",
+                "permission_mode",
+                "managed_policy_sha256",
+                "user_policy_sha256"
+              ],
+              "state": "active"
+            },
+            {
+              "absolute_ttl_seconds": 28800,
+              "authorization_requirement": "profile_behavior_and_optional_capability_manifest",
+              "authorization_source": "built_in_standard; unattended_bounded_profile; trusted_unrestricted_mode; optional_capability_manifest_ceiling",
+              "behavior_by_mode": {
+                "bounded": "manifest",
+                "standard": "allow",
+                "unrestricted": "allow"
+              },
+              "enforcement_by_mode": {
+                "bounded": "active",
+                "standard": "active",
+                "unrestricted": "active"
+              },
+              "grant_type": "protected_resource_grant",
+              "id": "desktop_input",
+              "idle_ttl_seconds": 1800,
+              "operations": [
+                "click",
+                "double_click",
+                "right_click",
+                "drag",
+                "scroll",
+                "move_cursor",
+                "mouse_button_down",
+                "mouse_button_up",
+                "mouse_drag",
+                "parallel_mouse_drag",
+                "replay_trajectory",
+                "type_text",
+                "type_text_chars",
+                "press_key",
+                "hotkey",
+                "set_value",
+                "bring_to_front",
+                "set_window_frame"
+              ],
+              "profile_behavior_class": "routine",
+              "refusal_code": "authorization_required",
+              "resource_kind": "user_window_or_display_input",
+              "revocation_triggers": [
+                "session_end",
+                "expiry",
+                "policy_change",
+                "resource_identity_change",
+                "daemon_restart"
+              ],
+              "risk_class": "r1",
+              "scope_keys": [
+                "daemon_generation",
+                "public_session",
+                "pid",
+                "process_fingerprint",
+                "window_id",
+                "display_generation",
+                "delivery_mode_ceiling",
+                "permission_mode",
+                "managed_policy_sha256",
+                "user_policy_sha256"
+              ],
+              "state": "active"
+            },
+            {
+              "absolute_ttl_seconds": 28800,
+              "authorization_requirement": "profile_behavior_and_optional_capability_manifest",
+              "authorization_source": "built_in_standard; unattended_bounded_profile; trusted_unrestricted_mode; optional_capability_manifest_ceiling",
+              "behavior_by_mode": {
+                "bounded": "manifest",
+                "standard": "allow",
+                "unrestricted": "allow"
+              },
+              "enforcement_by_mode": {
+                "bounded": "active",
+                "standard": "active",
+                "unrestricted": "active"
+              },
+              "grant_type": "protected_resource_grant",
+              "id": "file_transfer_and_output",
+              "idle_ttl_seconds": 1800,
+              "operations": [
+                "browser_set_input_files",
+                "browser_download",
+                "get_desktop_state[with_file_output]",
+                "get_window_state[with_file_output]",
+                "start_recording",
+                "stop_recording",
+                "replay_trajectory",
+                "install_ffmpeg",
+                "install_extension"
+              ],
+              "profile_behavior_class": "routine",
+              "refusal_code": "authorization_required",
+              "resource_kind": "canonical_file_path_and_destination",
+              "revocation_triggers": [
+                "session_end",
+                "expiry",
+                "policy_change",
+                "resource_identity_change",
+                "daemon_restart"
+              ],
+              "risk_class": "r3",
+              "scope_keys": [
+                "daemon_generation",
+                "public_session",
+                "browser_binding",
+                "tab",
+                "canonical_path",
+                "destination_class",
+                "direction",
+                "permission_mode",
+                "managed_policy_sha256",
+                "user_policy_sha256"
+              ],
+              "state": "active"
+            },
+            {
+              "absolute_ttl_seconds": 1800,
+              "authorization_requirement": "profile_behavior_and_optional_capability_manifest",
+              "authorization_source": "built_in_standard; unattended_bounded_profile; trusted_unrestricted_mode; optional_capability_manifest_ceiling",
+              "behavior_by_mode": {
+                "bounded": "manifest",
+                "standard": "allow",
+                "unrestricted": "allow"
+              },
+              "enforcement_by_mode": {
+                "bounded": "active",
+                "standard": "active",
+                "unrestricted": "active"
+              },
+              "grant_type": "protected_resource_grant",
+              "id": "browser_consequential_action",
+              "idle_ttl_seconds": 300,
+              "operations": [
+                "browser_dialog[action=accept|dismiss]"
+              ],
+              "profile_behavior_class": "routine",
+              "refusal_code": "authorization_required",
+              "resource_kind": "typed_browser_consequential_action",
+              "revocation_triggers": [
+                "session_end",
+                "expiry",
+                "policy_change",
+                "resource_identity_change",
+                "daemon_restart"
+              ],
+              "risk_class": "r3",
+              "scope_keys": [
+                "daemon_generation",
+                "public_session",
+                "browser_binding",
+                "tab",
+                "origin",
+                "action_kind",
+                "permission_mode",
+                "managed_policy_sha256",
+                "user_policy_sha256"
+              ],
+              "state": "active"
+            },
+            {
+              "absolute_ttl_seconds": null,
+              "authorization_requirement": "not_grantable_in_standard_or_bounded",
+              "authorization_source": "unrestricted_mode_with_trusted_launch_time_risk_acknowledgement",
+              "behavior_by_mode": {
+                "bounded": "deny",
+                "standard": "deny",
+                "unrestricted": "allow"
+              },
+              "enforcement_by_mode": {
+                "bounded": "active",
+                "standard": "active",
+                "unrestricted": "active"
+              },
+              "grant_type": "trusted_launch_mode_gate",
+              "id": "browser_unbounded_script",
+              "idle_ttl_seconds": null,
+              "operations": [
+                "page[action=execute_javascript|click_element|insert_text|type_keystrokes|enable_javascript_apple_events]"
+              ],
+              "profile_behavior_class": "unrestricted_only",
+              "refusal_code": "unbounded_operation_requires_unrestricted",
+              "resource_kind": "unbounded_authenticated_page_script",
+              "revocation_triggers": [],
+              "risk_class": "r3",
+              "scope_keys": [],
+              "state": "active"
+            },
+            {
+              "absolute_ttl_seconds": 28800,
+              "authorization_requirement": "profile_behavior_and_optional_capability_manifest",
+              "authorization_source": "built_in_standard; unattended_bounded_profile; trusted_unrestricted_mode; optional_capability_manifest_ceiling",
+              "behavior_by_mode": {
+                "bounded": "manifest",
+                "standard": "allow",
+                "unrestricted": "allow"
+              },
+              "enforcement_by_mode": {
+                "bounded": "active",
+                "standard": "active",
+                "unrestricted": "active"
+              },
+              "grant_type": "protected_resource_grant",
+              "id": "browser_bound_input",
+              "idle_ttl_seconds": 1800,
+              "operations": [
+                "browser_navigate",
+                "browser_click",
+                "browser_type",
+                "browser_select",
+                "browser_pointer"
+              ],
+              "profile_behavior_class": "routine",
+              "refusal_code": "authorization_required",
+              "resource_kind": "authenticated_browser_binding_and_tab_input",
+              "revocation_triggers": [
+                "session_end",
+                "expiry",
+                "policy_change",
+                "resource_identity_change",
+                "daemon_restart"
+              ],
+              "risk_class": "r2",
+              "scope_keys": [
+                "daemon_generation",
+                "public_session",
+                "browser_binding",
+                "tab",
+                "origin",
+                "permission_mode",
+                "managed_policy_sha256",
+                "user_policy_sha256"
+              ],
+              "state": "active"
+            },
+            {
+              "absolute_ttl_seconds": 600,
+              "authorization_requirement": "driver_ownership_in_standard; unattended_in_bounded; optional_capability_manifest",
+              "authorization_source": "driver_ownership_in_standard; unattended_bounded_profile; trusted_unrestricted_mode; optional_capability_manifest_ceiling",
+              "behavior_by_mode": {
+                "bounded": "manifest",
+                "standard": "deny",
+                "unrestricted": "allow"
+              },
+              "enforcement_by_mode": {
+                "bounded": "active",
+                "standard": "active",
+                "unrestricted": "active"
+              },
+              "grant_type": "protected_resource_grant",
+              "id": "process_control",
+              "idle_ttl_seconds": 120,
+              "operations": [
+                "kill_app"
+              ],
+              "profile_behavior_class": "bounded_or_unrestricted",
+              "refusal_code": "authorization_required",
+              "resource_kind": "exact_process_termination",
+              "revocation_triggers": [
+                "session_end",
+                "expiry",
+                "policy_change",
+                "resource_identity_change",
+                "daemon_restart"
+              ],
+              "risk_class": "r3",
+              "scope_keys": [
+                "daemon_generation",
+                "public_session",
+                "pid",
+                "process_fingerprint",
+                "permission_mode",
+                "managed_policy_sha256",
+                "user_policy_sha256"
+              ],
+              "state": "active"
+            },
+            {
+              "absolute_ttl_seconds": null,
+              "authorization_requirement": "never_agent_controllable",
+              "authorization_source": "trusted_host_setup_outside_the_agent_tool_path",
+              "behavior_by_mode": {
+                "bounded": "deny",
+                "standard": "deny",
+                "unrestricted": "deny"
+              },
+              "enforcement_by_mode": {
+                "bounded": "active",
+                "standard": "active",
+                "unrestricted": "active"
+              },
+              "grant_type": null,
+              "id": "os_permission_prompt",
+              "idle_ttl_seconds": null,
+              "operations": [
+                "check_permissions[prompt=true]"
+              ],
+              "profile_behavior_class": "denied",
+              "refusal_code": "os_permission_prompt_requires_trusted_host",
+              "resource_kind": "operating_system_permission_prompt",
+              "revocation_triggers": [],
+              "risk_class": "r2",
+              "scope_keys": [
+                "daemon_generation",
+                "permission_mode"
+              ],
+              "state": "active"
+            },
+            {
+              "absolute_ttl_seconds": 1800,
+              "authorization_requirement": "profile_behavior_and_optional_capability_manifest",
+              "authorization_source": "built_in_standard; unattended_bounded_profile; trusted_unrestricted_mode; optional_capability_manifest_ceiling",
+              "behavior_by_mode": {
+                "bounded": "manifest",
+                "standard": "allow",
+                "unrestricted": "allow"
+              },
+              "enforcement_by_mode": {
+                "bounded": "active",
+                "standard": "active",
+                "unrestricted": "active"
+              },
+              "grant_type": "protected_resource_grant",
+              "id": "driver_configuration",
+              "idle_ttl_seconds": 300,
+              "operations": [
+                "set_config"
+              ],
+              "profile_behavior_class": "routine",
+              "refusal_code": "authorization_required",
+              "resource_kind": "persistent_driver_configuration",
+              "revocation_triggers": [
+                "session_end",
+                "expiry",
+                "policy_change",
+                "resource_identity_change",
+                "daemon_restart"
+              ],
+              "risk_class": "r2",
+              "scope_keys": [
+                "daemon_generation",
+                "permission_mode",
+                "managed_policy_sha256",
+                "user_policy_sha256"
+              ],
+              "state": "active"
+            },
+            {
+              "absolute_ttl_seconds": 28800,
+              "authorization_requirement": "profile_behavior_and_optional_capability_manifest",
+              "authorization_source": "built_in_standard; unattended_bounded_profile; trusted_unrestricted_mode; optional_capability_manifest_ceiling",
+              "behavior_by_mode": {
+                "bounded": "manifest",
+                "standard": "allow",
+                "unrestricted": "allow"
+              },
+              "enforcement_by_mode": {
+                "bounded": "active",
+                "standard": "active",
+                "unrestricted": "active"
+              },
+              "grant_type": "protected_resource_grant",
+              "id": "clipboard",
+              "idle_ttl_seconds": 1800,
+              "operations": [
+                "clipboard_read",
+                "clipboard_write"
+              ],
+              "profile_behavior_class": "routine",
+              "refusal_code": "authorization_required",
+              "resource_kind": "system_clipboard",
+              "revocation_triggers": [
+                "session_end",
+                "expiry",
+                "policy_change",
+                "resource_identity_change",
+                "daemon_restart"
+              ],
+              "risk_class": "r2",
+              "scope_keys": [
+                "daemon_generation",
+                "public_session",
+                "operation",
+                "content_kind",
+                "permission_mode",
+                "managed_policy_sha256",
+                "user_policy_sha256"
+              ],
+              "state": "active"
+            },
+            {
+              "absolute_ttl_seconds": null,
+              "authorization_requirement": "required_before_exposure",
+              "authorization_source": "capability_not_exposed",
+              "behavior_by_mode": {
+                "bounded": "deny",
+                "standard": "deny",
+                "unrestricted": "deny"
+              },
+              "enforcement_by_mode": {
+                "bounded": "not_exposed",
+                "standard": "not_exposed",
+                "unrestricted": "not_exposed"
+              },
+              "grant_type": null,
+              "id": "devices",
+              "idle_ttl_seconds": null,
+              "operations": [
+                "microphone",
+                "camera"
+              ],
+              "profile_behavior_class": "denied",
+              "refusal_code": null,
+              "resource_kind": "device_capture",
+              "revocation_triggers": [],
+              "risk_class": "unclassified",
+              "scope_keys": [],
+              "state": "not_exposed"
+            },
+            {
+              "absolute_ttl_seconds": null,
+              "authorization_requirement": "required_before_exposure",
+              "authorization_source": "capability_not_exposed",
+              "behavior_by_mode": {
+                "bounded": "deny",
+                "standard": "deny",
+                "unrestricted": "deny"
+              },
+              "enforcement_by_mode": {
+                "bounded": "not_exposed",
+                "standard": "not_exposed",
+                "unrestricted": "not_exposed"
+              },
+              "grant_type": null,
+              "id": "shell_and_network",
+              "idle_ttl_seconds": null,
+              "operations": [
+                "generic_shell",
+                "generic_network"
+              ],
+              "profile_behavior_class": "denied",
+              "refusal_code": null,
+              "resource_kind": "open_ended_external_capability",
+              "revocation_triggers": [],
+              "risk_class": "unclassified",
+              "scope_keys": [],
+              "state": "not_exposed"
+            }
+          ],
+          "schema_version": "1",
+          "tools": [
+            {
+              "annotations": {
+                "destructiveHint": false,
+                "idempotentHint": true,
+                "openWorldHint": false,
+                "readOnlyHint": true
+              },
+              "capabilities": [
+                "app.list"
+              ],
+              "description": "List Linux apps — both currently running and installed-but-not-running — with per-app state flags:\n\n- running: is a process for this app live? (pid is 0 when false)\n- active: reserved (Linux X11/Wayland focus model differs from frontmost-app); always false.\n- kind: `\"desktop\"` for XDG `.desktop` launcher entries.\n- launch_path: the launcher command from `Exec=` (field codes stripped). Pass to `launch_app(launch_path=...)`.",
+              "inputSchema": {
+                "additionalProperties": false,
+                "properties": {
+                  "all": {
+                    "type": "boolean",
+                    "description": "Also list kernel threads and system daemons (hidden by default)."
+                  }
+                },
+                "type": "object",
+                "required": []
+              },
+              "name": "list_apps",
+              "outputSchema": {
+                "anyOf": [
+                  {
+                    "additionalProperties": true,
+                    "properties": {
+                      "apps": {
+                        "items": {
+                          "properties": {
+                            "active": {
+                              "type": "boolean"
+                            },
+                            "bundle_id": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "kind": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "last_used": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "launch_path": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "pid": {
+                              "minimum": 0,
+                              "type": "integer"
+                            },
+                            "running": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "pid",
+                            "name",
+                            "running",
+                            "active"
+                          ],
+                          "type": "object"
+                        },
+                        "type": "array"
+                      }
+                    },
+                    "required": [
+                      "apps"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": true,
+                    "anyOf": [
+                      {
+                        "required": [
+                          "refusal"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "status"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "code"
+                        ]
+                      }
+                    ],
+                    "type": "object"
+                  }
+                ],
+                "type": "object"
+              },
+              "risk": {
+                "class": "r2",
+                "enforcement": "active",
+                "operation_sensitive": true,
+                "version": "1"
+              }
+            },
+            {
+              "annotations": {
+                "destructiveHint": false,
+                "idempotentHint": true,
+                "openWorldHint": false,
+                "readOnlyHint": true
+              },
+              "capabilities": [
+                "window.list"
+              ],
+              "description": "List top-level windows. Each record includes z_index (integer or null; higher values are closer to the front; null means stacking order is unavailable and callers must not infer one). To select a frontmost candidate, take the maximum integer z_index; if every value is null, use an explicit fallback instead of relying on array order. Filter with `app` or `pid`: an unfiltered call lists every window on the host.",
+              "inputSchema": {
+                "additionalProperties": false,
+                "properties": {
+                  "app": {
+                    "description": "Only windows of apps whose name contains this text (case-insensitive), or whose bundle id equals it.",
+                    "type": "string"
+                  },
+                  "on_screen_only": {
+                    "description": "When true, filter to visible windows only. Default false.",
+                    "type": "boolean"
+                  },
+                  "pid": {
+                    "description": "Only list windows owned by this process ID.",
+                    "type": "integer"
+                  }
+                },
+                "type": "object",
+                "required": []
+              },
+              "name": "list_windows",
+              "outputSchema": {
+                "anyOf": [
+                  {
+                    "additionalProperties": true,
+                    "properties": {
+                      "current_space_id": {
+                        "minimum": 0,
+                        "type": [
+                          "integer",
+                          "null"
+                        ]
+                      },
+                      "windows": {
+                        "items": {
+                          "properties": {
+                            "app_name": {
+                              "type": "string"
+                            },
+                            "bounds": {
+                              "properties": {
+                                "height": {
+                                  "type": "number"
+                                },
+                                "width": {
+                                  "type": "number"
+                                },
+                                "x": {
+                                  "type": "number"
+                                },
+                                "y": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "x",
+                                "y",
+                                "width",
+                                "height"
+                              ],
+                              "type": "object"
+                            },
+                            "current_space_id": {
+                              "minimum": 0,
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            },
+                            "is_on_screen": {
+                              "type": "boolean"
+                            },
+                            "layer": {
+                              "format": "int32",
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            },
+                            "minimized": {
+                              "type": [
+                                "boolean",
+                                "null"
+                              ]
+                            },
+                            "on_current_space": {
+                              "type": [
+                                "boolean",
+                                "null"
+                              ]
+                            },
+                            "pid": {
+                              "maximum": 4294967295,
+                              "minimum": 0,
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            },
+                            "space_ids": {
+                              "items": {
+                                "minimum": 0,
+                                "type": "integer"
+                              },
+                              "type": [
+                                "array",
+                                "null"
+                              ]
+                            },
+                            "title": {
+                              "type": "string"
+                            },
+                            "window_id": {
+                              "minimum": 0,
+                              "type": "integer"
+                            },
+                            "z_index": {
+                              "description": "Higher values are closer to the front. Null means the provider cannot observe stacking order; callers must not infer an order from array position or treat null as zero.",
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "window_id",
+                            "pid",
+                            "app_name",
+                            "title",
+                            "bounds",
+                            "is_on_screen",
+                            "z_index"
+                          ],
+                          "type": "object"
+                        },
+                        "type": "array"
+                      }
+                    },
+                    "required": [
+                      "windows"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": true,
+                    "anyOf": [
+                      {
+                        "required": [
+                          "refusal"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "status"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "code"
+                        ]
+                      }
+                    ],
+                    "type": "object"
+                  }
+                ],
+                "type": "object"
+              },
+              "risk": {
+                "class": "r2",
+                "enforcement": "active",
+                "operation_sensitive": true,
+                "version": "1"
+              }
+            },
+            {
+              "annotations": {
+                "destructiveHint": false,
+                "idempotentHint": false,
+                "openWorldHint": false,
+                "readOnlyHint": true
+              },
+              "capabilities": [
+                "accessibility.window_state",
+                "accessibility.tree",
+                "accessibility.tree.structured",
+                "accessibility.tree.bounded",
+                "accessibility.element_tokens",
+                "screen.capture",
+                "screen.capture.window"
+              ],
+              "description": "Walk a running app's AT-SPI tree and return it ONCE, as compact Markdown by default (`tree_format:\"markdown\"`). Every actionable element is tagged `[N]` (an element_index); its element_token is `<snapshot_id>:N`, where `snapshot_id` is printed in the response header and returned in structuredContent. Pass `tree_format:\"elements\"` for the structured `elements` array instead (explicit `element_token`, `role`, `label`, `value`, `enabled`, `selected`, `actions`, `frame: {x,y,w,h}` when AT-SPI reports usable bounds, `parent_index`, `depth`), or `\"both\"` for both (about twice the size).",
+              "inputSchema": {
+                "additionalProperties": false,
+                "properties": {
+                  "include_accessibility_tree": {
+                    "description": "Default true — walk the AT-SPI tree and return it (per `tree_format`) alongside the screenshot.",
+                    "type": "boolean"
+                  },
+                  "include_screenshot": {
+                    "description": "Default true — returns a grounding screenshot alongside the tree.",
+                    "type": "boolean"
+                  },
+                  "max_depth": {
+                    "description": "Cap on the AT-SPI tree walk depth. Omit for the default (uncapped). Lower for deeply nested apps.",
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "max_dimension": {
+                    "description": "Legacy optional cap on the returned screenshot's long edge.",
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "max_elements": {
+                    "description": "Cap on total AT-SPI nodes walked. Default 250 (5 000 with full_output:true); the response states when the tree was cut.",
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "pid": {
+                    "description": "Process ID that owns the window.",
+                    "type": "integer"
+                  },
+                  "query": {
+                    "description": "Optional case-insensitive substring. Projects both tree_markdown and structured elements to matches plus ancestors while preserving original ...",
+                    "type": "string"
+                  },
+                  "since": {
+                    "description": "A `snapshot_id` from an earlier get_window_state of the same window, or \"latest\" for this window's most recent read with the same query/max_ ...",
+                    "type": "string"
+                  },
+                  "tree_format": {
+                    "description": "Which tree representation to return. Default \"markdown\": the compact `tree_markdown` only, where a row `[N]` is addressed with element_token ...",
+                    "enum": [
+                      "markdown",
+                      "elements",
+                      "both"
+                    ],
+                    "type": "string"
+                  },
+                  "window_id": {
+                    "description": "Native window identifier from list_windows, or the `popup.window_id` a click / right_click result named (an open context menu / popover; its ...",
+                    "type": "integer"
+                  },
+                  "fresh": {
+                    "type": "boolean",
+                    "description": "Force a new read even though nothing was done since the tree that came back with your last action."
+                  }
+                },
+                "required": [
+                  "pid"
+                ],
+                "type": "object"
+              },
+              "name": "get_window_state",
+              "outputSchema": {
+                "anyOf": [
+                  {
+                    "additionalProperties": true,
+                    "properties": {
+                      "app_name": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "degraded": {
+                        "type": [
+                          "boolean",
+                          "null"
+                        ]
+                      },
+                      "degraded_reason": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "element_count": {
+                        "minimum": 0,
+                        "type": [
+                          "integer",
+                          "null"
+                        ]
+                      },
+                      "elements": {
+                        "items": {
+                          "properties": {
+                            "actions": {
+                              "items": {
+                                "type": "string"
+                              },
+                              "type": [
+                                "array",
+                                "null"
+                              ]
+                            },
+                            "depth": {
+                              "minimum": 0,
+                              "type": "integer"
+                            },
+                            "element_index": {
+                              "minimum": 0,
+                              "type": "integer"
+                            },
+                            "element_token": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "enabled": {
+                              "type": [
+                                "boolean",
+                                "null"
+                              ]
+                            },
+                            "frame": {
+                              "properties": {
+                                "h": {
+                                  "type": "number"
+                                },
+                                "w": {
+                                  "type": "number"
+                                },
+                                "x": {
+                                  "type": "number"
+                                },
+                                "y": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "x",
+                                "y",
+                                "w",
+                                "h"
+                              ],
+                              "type": [
+                                "object",
+                                "null"
+                              ]
+                            },
+                            "in_web_content": {
+                              "type": [
+                                "boolean",
+                                "null"
+                              ]
+                            },
+                            "label": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "max": {
+                              "type": [
+                                "number",
+                                "null"
+                              ]
+                            },
+                            "min": {
+                              "type": [
+                                "number",
+                                "null"
+                              ]
+                            },
+                            "parent_index": {
+                              "minimum": 0,
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            },
+                            "role": {
+                              "type": "string"
+                            },
+                            "selected": {
+                              "type": [
+                                "boolean",
+                                "null"
+                              ]
+                            },
+                            "value": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "value_description": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "element_index",
+                            "role",
+                            "depth"
+                          ],
+                          "type": "object"
+                        },
+                        "type": [
+                          "array",
+                          "null"
+                        ]
+                      },
+                      "elements_complete": {
+                        "type": [
+                          "boolean",
+                          "null"
+                        ]
+                      },
+                      "filtered_element_count": {
+                        "minimum": 0,
+                        "type": [
+                          "integer",
+                          "null"
+                        ]
+                      },
+                      "pid": {
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "returned_element_count": {
+                        "minimum": 0,
+                        "type": [
+                          "integer",
+                          "null"
+                        ]
+                      },
+                      "screenshot_file_path": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "screenshot_frame_valid": {
+                        "type": [
+                          "boolean",
+                          "null"
+                        ]
+                      },
+                      "screenshot_height": {
+                        "minimum": 0,
+                        "type": [
+                          "integer",
+                          "null"
+                        ]
+                      },
+                      "screenshot_mime_type": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "screenshot_scale": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "screenshot_width": {
+                        "minimum": 0,
+                        "type": [
+                          "integer",
+                          "null"
+                        ]
+                      },
+                      "since": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "since_status": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "snapshot_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "total_element_count": {
+                        "minimum": 0,
+                        "type": [
+                          "integer",
+                          "null"
+                        ]
+                      },
+                      "tree_diff": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "tree_format": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "tree_markdown": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "truncated": {
+                        "type": [
+                          "boolean",
+                          "null"
+                        ]
+                      },
+                      "truncation_hint": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "truncation_reason": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "window_bounds": {
+                        "properties": {
+                          "height": {
+                            "type": "number"
+                          },
+                          "width": {
+                            "type": "number"
+                          },
+                          "x": {
+                            "type": "number"
+                          },
+                          "y": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "x",
+                          "y",
+                          "width",
+                          "height"
+                        ],
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "window_id": {
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "window_title": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "pid",
+                      "window_id"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": true,
+                    "anyOf": [
+                      {
+                        "required": [
+                          "refusal"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "status"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "code"
+                        ]
+                      }
+                    ],
+                    "type": "object"
+                  }
+                ],
+                "type": "object"
+              },
+              "risk": {
+                "class": "r3",
+                "enforcement": "active",
+                "operation_sensitive": true,
+                "version": "1"
+              }
+            },
+            {
+              "annotations": {
+                "destructiveHint": false,
+                "idempotentHint": false,
+                "openWorldHint": true,
+                "readOnlyHint": false
+              },
+              "capabilities": [
+                "app.launch"
+              ],
+              "description": "Launch a Linux app in the background. Provide launch_path (preferred — round-trip the value from list_apps), name (tried as a direct command, then matched against installed .desktop applications, then handed to xdg-open if it is a URL or existing file path), bundle_id (ignored on Linux), or urls (list of URLs to open). Resolution precedence: launch_path > name > bundle_id. Errors when the name resolves to nothing launchable.",
+              "inputSchema": {
+                "additionalProperties": false,
+                "properties": {
+                  "additional_arguments": {
+                    "description": "Extra command-line arguments passed to the launched process.",
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "bundle_id": {
+                    "description": "Ignored on Linux (macOS/Windows concept).",
+                    "type": "string"
+                  },
+                  "launch_path": {
+                    "description": "Round-trip the `launch_path` returned by `list_apps` — the Exec= command from the .desktop file with XDG field codes already stripped.",
+                    "type": "string"
+                  },
+                  "name": {
+                    "description": "App name or command to launch. Tried as a direct command first, then matched against installed .desktop applications (exact display name, de ...",
+                    "type": "string"
+                  },
+                  "urls": {
+                    "description": "URLs to open via xdg-open.",
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "type": "object",
+                "required": []
+              },
+              "name": "launch_app",
+              "risk": {
+                "class": "r1",
+                "enforcement": "metadata_only",
+                "operation_sensitive": false,
+                "version": "1"
+              }
+            },
+            {
+              "annotations": {
+                "destructiveHint": false,
+                "idempotentHint": true,
+                "openWorldHint": false,
+                "readOnlyHint": false
+              },
+              "capabilities": [
+                "window.activate"
+              ],
+              "description": "Persistently activate a window so subsequent input lands on it. This deliberately breaks the no-foreground contract and is not part of the normal input ladder. For an ordinary `background_unavailable` response, retry only the refused action with `delivery_mode:\"foreground\"`; the input tool performs its own activate, act, and restore sequence. Use `bring_to_front` only for a focus-proxy surface that must remain foreground across multiple calls, such as a remote desktop session, or when repeated action-scoped activation prevents the remote surface from accepting input.",
+              "inputSchema": {
+                "additionalProperties": false,
+                "properties": {
+                  "pid": {
+                    "description": "Process ID of the app to activate.",
+                    "type": "integer"
+                  },
+                  "window_id": {
+                    "description": "X11 window id (xid) to activate. If omitted, the first window of `pid` is used.",
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "pid"
+                ],
+                "type": "object"
+              },
+              "name": "bring_to_front",
+              "risk": {
+                "class": "r1",
+                "enforcement": "active",
+                "operation_sensitive": false,
+                "version": "1"
+              }
+            },
+            {
+              "annotations": {
+                "destructiveHint": true,
+                "idempotentHint": false,
+                "openWorldHint": true,
+                "readOnlyHint": false
+              },
+              "capabilities": [
+                "menu.path.invoke",
+                "accessibility.menu.native"
+              ],
+              "description": "Resolve an exact application-menu path one live native level at a time and invoke its final item through accessibility APIs. Missing, ambiguous, disabled, or structurally mismatched segments fail closed; this tool never falls back to pixels. Menu paths and refusals: `get_guide({topic:\"menus\"})`.",
+              "inputSchema": {
+                "additionalProperties": false,
+                "description": "Exact, immediate-child application menu path to resolve and invoke through\nthe operating system's accessibility API. Path labels are matched after\ntrimming surrounding whitespace and otherwise remain case-sensitive. On\nmacOS, three periods in a label also match the ellipsis character that\nnative menu titles use (`Save As...` finds `Save As…`).",
+                "properties": {
+                  "path": {
+                    "description": "Menu labels from the top-level menu to the item, e.g. `[\"File\", \"Save As...\"]`\n(1 to 16 labels).",
+                    "items": {
+                      "maxLength": 200,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 16,
+                    "minItems": 1,
+                    "type": "array"
+                  },
+                  "pid": {
+                    "description": "Process ID of the application that owns the menu.",
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "window_id": {
+                    "description": "Window ID from list_windows whose menu is invoked.",
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "gate_confirm": {
+                    "type": "string",
+                    "description": "Confirmation code the gate gave for a high-risk action, only after the user approved it."
+                  }
+                },
+                "required": [
+                  "pid",
+                  "window_id",
+                  "path"
+                ],
+                "type": "object"
+              },
+              "name": "invoke_menu",
+              "outputSchema": {
+                "anyOf": [
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "delivery": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "delivered_count": {
+                            "minimum": 0,
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "mode": {
+                            "enum": [
+                              "background",
+                              "foreground",
+                              "not_applicable",
+                              "unknown"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "mode"
+                        ],
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "effect": {
+                        "enum": [
+                          "confirmed",
+                          "partial",
+                          "unverifiable",
+                          "suspected_noop",
+                          "refused"
+                        ],
+                        "type": "string"
+                      },
+                      "error": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "code": {
+                            "type": "string"
+                          },
+                          "hint": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "code"
+                        ],
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "escalation": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "reason": {
+                            "enum": [
+                              "route_unavailable",
+                              "delivery_failed",
+                              "effect_unconfirmed",
+                              "suspected_noop",
+                              "permission_required"
+                            ],
+                            "type": "string"
+                          },
+                          "target": {
+                            "enum": [
+                              "pixel",
+                              "foreground",
+                              "page",
+                              "session"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "target",
+                          "reason"
+                        ],
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "evidence": {
+                        "items": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "detail": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "kind": {
+                              "enum": [
+                                "value_readback",
+                                "window_change"
+                              ],
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "kind"
+                          ],
+                          "type": "object"
+                        },
+                        "type": [
+                          "array",
+                          "null"
+                        ]
+                      },
+                      "hint": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "next_call": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "arguments": {
+                            "type": "object"
+                          },
+                          "tool": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "tool",
+                          "arguments"
+                        ],
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "route": {
+                        "enum": [
+                          "accessibility",
+                          "synthetic_events",
+                          "global_input",
+                          "system_api",
+                          "dom",
+                          "trusted_input"
+                        ],
+                        "type": "string"
+                      },
+                      "summary": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "effect",
+                      "route"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": true,
+                    "anyOf": [
+                      {
+                        "required": [
+                          "refusal"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "status"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "code"
+                        ]
+                      }
+                    ],
+                    "type": "object"
+                  }
+                ],
+                "type": "object"
+              },
+              "risk": {
+                "class": "r1",
+                "enforcement": "metadata_only",
+                "operation_sensitive": false,
+                "version": "1"
+              }
+            },
+            {
+              "annotations": {
+                "destructiveHint": true,
+                "idempotentHint": false,
+                "openWorldHint": true,
+                "readOnlyHint": false
+              },
+              "capabilities": [
+                "input.pointer.click",
+                "input.pointer.click.left",
+                "accessibility.element_tokens",
+                "input.delivery_mode"
+              ],
+              "description": "Click against a target pid. **Prefer `element_token` over pixel coordinates** — element_token works on backgrounded / hidden windows, surfaces a stable handle, and tells you what you're clicking via the cached AT-SPI element's role + label. Reach for `x, y` only when the target is a canvas / custom-drawn surface that doesn't appear in the AT-SPI tree.\n\nProvide either (window_id + x/y) or (pid + element_token).",
+              "inputSchema": {
+                "additionalProperties": false,
+                "properties": {
+                  "button": {
+                    "description": "Mouse button. Default: \"left\" (legacy back-compat). X11: routed via ButtonPress/Release with the matching evdev code.",
+                    "enum": [
+                      "left",
+                      "right",
+                      "middle"
+                    ],
+                    "type": "string"
+                  },
+                  "coordinate_frame": {
+                    "description": "Frame of x/y (and from_x/from_y/to_x/to_y). Default \"window\": window-local screenshot pixels as returned by get_window_state.",
+                    "enum": [
+                      "window",
+                      "desktop"
+                    ],
+                    "type": "string"
+                  },
+                  "count": {
+                    "description": "Number of clicks in one press train: 1 (default), 2 = double-click, 3 = triple-click (line/paragraph selection).",
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "element_token": {
+                    "description": "Element handle `<snapshot_id>:<row>` from get_window_state: row `[11]` of a read whose snapshot_id is s0000002a is \"s0000002a:11\" (also in ` ...",
+                    "pattern": "^s[0-9a-f]{8}:[0-9]+$",
+                    "type": "string"
+                  },
+                  "modifier": {
+                    "description": "Modifier keys held during the action: cmd, shift, option/alt, ctrl.",
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "pid": {
+                    "description": "Target process ID. Required unless scope is \"desktop\" or element_token is supplied (the token carries the pid).",
+                    "type": "integer"
+                  },
+                  "window_id": {
+                    "description": "Window id from list_windows. Required with x/y or element_index; optional with element_token (the token carries it).",
+                    "type": "integer"
+                  },
+                  "x": {
+                    "description": "Window-local pixel X of the target window's own get_window_state screenshot (0..screenshot_width).",
+                    "type": "number"
+                  },
+                  "y": {
+                    "description": "Window-local pixel Y of the target window's own get_window_state screenshot (0..screenshot_height); see x.",
+                    "type": "number"
+                  },
+                  "gate_confirm": {
+                    "type": "string",
+                    "description": "Confirmation code the gate gave for a high-risk action, only after the user approved it."
+                  }
+                },
+                "required": [],
+                "type": "object"
+              },
+              "name": "click",
+              "outputSchema": {
+                "anyOf": [
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "delivery": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "delivered_count": {
+                            "minimum": 0,
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "mode": {
+                            "enum": [
+                              "background",
+                              "foreground",
+                              "not_applicable",
+                              "unknown"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "mode"
+                        ],
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "effect": {
+                        "enum": [
+                          "confirmed",
+                          "partial",
+                          "unverifiable",
+                          "suspected_noop",
+                          "refused"
+                        ],
+                        "type": "string"
+                      },
+                      "error": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "code": {
+                            "type": "string"
+                          },
+                          "hint": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "code"
+                        ],
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "escalation": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "reason": {
+                            "enum": [
+                              "route_unavailable",
+                              "delivery_failed",
+                              "effect_unconfirmed",
+                              "suspected_noop",
+                              "permission_required"
+                            ],
+                            "type": "string"
+                          },
+                          "target": {
+                            "enum": [
+                              "pixel",
+                              "foreground",
+                              "page",
+                              "session"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "target",
+                          "reason"
+                        ],
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "evidence": {
+                        "items": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "detail": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "kind": {
+                              "enum": [
+                                "value_readback",
+                                "window_change"
+                              ],
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "kind"
+                          ],
+                          "type": "object"
+                        },
+                        "type": [
+                          "array",
+                          "null"
+                        ]
+                      },
+                      "hint": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "next_call": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "arguments": {
+                            "type": "object"
+                          },
+                          "tool": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "tool",
+                          "arguments"
+                        ],
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "route": {
+                        "enum": [
+                          "accessibility",
+                          "synthetic_events",
+                          "global_input",
+                          "system_api",
+                          "dom",
+                          "trusted_input"
+                        ],
+                        "type": "string"
+                      },
+                      "summary": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "effect",
+                      "route"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": true,
+                    "anyOf": [
+                      {
+                        "required": [
+                          "refusal"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "status"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "code"
+                        ]
+                      }
+                    ],
+                    "type": "object"
+                  }
+                ],
+                "type": "object"
+              },
+              "risk": {
+                "class": "r1",
+                "enforcement": "active",
+                "operation_sensitive": false,
+                "version": "1"
+              }
+            },
+            {
+              "annotations": {
+                "destructiveHint": true,
+                "idempotentHint": false,
+                "openWorldHint": true,
+                "readOnlyHint": false
+              },
+              "capabilities": [
+                "input.pointer.click",
+                "input.pointer.click.left",
+                "input.pointer.click.double",
+                "accessibility.element_tokens",
+                "input.delivery_mode"
+              ],
+              "description": "Double-click at (x,y) or an element_token (AT-SPI bounds). Background delivery on X11 sends real button events from the session's virtual master pointer (path mpx_pointer); a point covered by another application's window is refused (target_occluded), one covered by this app's own dialog is retargeted to it (retargeted_to). No focus steal. Provide either (window_id + x/y) or (pid + element_token). After a zoom call, pass from_zoom=true to auto-translate zoom-image coords.",
+              "inputSchema": {
+                "additionalProperties": false,
+                "properties": {
+                  "coordinate_frame": {
+                    "description": "Frame of x/y (and from_x/from_y/to_x/to_y). Default \"window\": window-local screenshot pixels as returned by get_window_state.",
+                    "enum": [
+                      "window",
+                      "desktop"
+                    ],
+                    "type": "string"
+                  },
+                  "element_token": {
+                    "description": "Element handle `<snapshot_id>:<row>` from get_window_state: row `[11]` of a read whose snapshot_id is s0000002a is \"s0000002a:11\" (also in ` ...",
+                    "pattern": "^s[0-9a-f]{8}:[0-9]+$",
+                    "type": "string"
+                  },
+                  "pid": {
+                    "description": "Target process ID. Optional with element_token (the token carries the pid).",
+                    "type": "integer"
+                  },
+                  "window_id": {
+                    "description": "Window id from list_windows. Required with x/y or element_index; optional with element_token (the token carries it).",
+                    "type": "integer"
+                  },
+                  "x": {
+                    "description": "Window-local pixel X of the target window's own get_window_state screenshot (0..screenshot_width).",
+                    "type": "number"
+                  },
+                  "y": {
+                    "description": "Window-local pixel Y of the target window's own get_window_state screenshot (0..screenshot_height); see x.",
+                    "type": "number"
+                  },
+                  "gate_confirm": {
+                    "type": "string",
+                    "description": "Confirmation code the gate gave for a high-risk action, only after the user approved it."
+                  }
+                },
+                "required": [],
+                "type": "object"
+              },
+              "name": "double_click",
+              "outputSchema": {
+                "anyOf": [
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "delivery": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "delivered_count": {
+                            "minimum": 0,
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "mode": {
+                            "enum": [
+                              "background",
+                              "foreground",
+                              "not_applicable",
+                              "unknown"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "mode"
+                        ],
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "effect": {
+                        "enum": [
+                          "confirmed",
+                          "partial",
+                          "unverifiable",
+                          "suspected_noop",
+                          "refused"
+                        ],
+                        "type": "string"
+                      },
+                      "error": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "code": {
+                            "type": "string"
+                          },
+                          "hint": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "code"
+                        ],
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "escalation": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "reason": {
+                            "enum": [
+                              "route_unavailable",
+                              "delivery_failed",
+                              "effect_unconfirmed",
+                              "suspected_noop",
+                              "permission_required"
+                            ],
+                            "type": "string"
+                          },
+                          "target": {
+                            "enum": [
+                              "pixel",
+                              "foreground",
+                              "page",
+                              "session"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "target",
+                          "reason"
+                        ],
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "evidence": {
+                        "items": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "detail": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "kind": {
+                              "enum": [
+                                "value_readback",
+                                "window_change"
+                              ],
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "kind"
+                          ],
+                          "type": "object"
+                        },
+                        "type": [
+                          "array",
+                          "null"
+                        ]
+                      },
+                      "hint": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "next_call": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "arguments": {
+                            "type": "object"
+                          },
+                          "tool": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "tool",
+                          "arguments"
+                        ],
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "route": {
+                        "enum": [
+                          "accessibility",
+                          "synthetic_events",
+                          "global_input",
+                          "system_api",
+                          "dom",
+                          "trusted_input"
+                        ],
+                        "type": "string"
+                      },
+                      "summary": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "effect",
+                      "route"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": true,
+                    "anyOf": [
+                      {
+                        "required": [
+                          "refusal"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "status"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "code"
+                        ]
+                      }
+                    ],
+                    "type": "object"
+                  }
+                ],
+                "type": "object"
+              },
+              "risk": {
+                "class": "r1",
+                "enforcement": "active",
+                "operation_sensitive": false,
+                "version": "1"
+              }
+            },
+            {
+              "annotations": {
+                "destructiveHint": true,
+                "idempotentHint": false,
+                "openWorldHint": true,
+                "readOnlyHint": false
+              },
+              "capabilities": [
+                "input.pointer.click",
+                "input.pointer.click.right",
+                "accessibility.element_tokens",
+                "input.delivery_mode"
+              ],
+              "description": "Right-click at (x,y) or an element_token (AT-SPI bounds). Background delivery on X11 sends real button events from the session's virtual master pointer (path mpx_pointer); a point covered by another application's window is refused (target_occluded), one covered by this app's own dialog is retargeted to it (retargeted_to), one outside the window is refused (point_outside_window; x/y are window-local pixels, the result reports window_point / screen_point). No focus steal.",
+              "inputSchema": {
+                "additionalProperties": false,
+                "properties": {
+                  "coordinate_frame": {
+                    "description": "Frame of x/y (and from_x/from_y/to_x/to_y). Default \"window\": window-local screenshot pixels as returned by get_window_state.",
+                    "enum": [
+                      "window",
+                      "desktop"
+                    ],
+                    "type": "string"
+                  },
+                  "element_token": {
+                    "description": "Element handle `<snapshot_id>:<row>` from get_window_state: row `[11]` of a read whose snapshot_id is s0000002a is \"s0000002a:11\" (also in ` ...",
+                    "pattern": "^s[0-9a-f]{8}:[0-9]+$",
+                    "type": "string"
+                  },
+                  "modifier": {
+                    "description": "Modifier keys held during the action: cmd, shift, option/alt, ctrl.",
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "pid": {
+                    "description": "Target process ID. Optional with element_token (the token carries the pid).",
+                    "type": "integer"
+                  },
+                  "window_id": {
+                    "description": "Window id from list_windows. Required with x/y or element_index; optional with element_token (the token carries it).",
+                    "type": "integer"
+                  },
+                  "x": {
+                    "description": "Window-local pixel X of the target window's own get_window_state screenshot (0..screenshot_width).",
+                    "type": "number"
+                  },
+                  "y": {
+                    "description": "Window-local pixel Y of the target window's own get_window_state screenshot (0..screenshot_height); see x.",
+                    "type": "number"
+                  },
+                  "gate_confirm": {
+                    "type": "string",
+                    "description": "Confirmation code the gate gave for a high-risk action, only after the user approved it."
+                  }
+                },
+                "required": [],
+                "type": "object"
+              },
+              "name": "right_click",
+              "outputSchema": {
+                "anyOf": [
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "delivery": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "delivered_count": {
+                            "minimum": 0,
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "mode": {
+                            "enum": [
+                              "background",
+                              "foreground",
+                              "not_applicable",
+                              "unknown"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "mode"
+                        ],
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "effect": {
+                        "enum": [
+                          "confirmed",
+                          "partial",
+                          "unverifiable",
+                          "suspected_noop",
+                          "refused"
+                        ],
+                        "type": "string"
+                      },
+                      "error": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "code": {
+                            "type": "string"
+                          },
+                          "hint": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "code"
+                        ],
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "escalation": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "reason": {
+                            "enum": [
+                              "route_unavailable",
+                              "delivery_failed",
+                              "effect_unconfirmed",
+                              "suspected_noop",
+                              "permission_required"
+                            ],
+                            "type": "string"
+                          },
+                          "target": {
+                            "enum": [
+                              "pixel",
+                              "foreground",
+                              "page",
+                              "session"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "target",
+                          "reason"
+                        ],
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "evidence": {
+                        "items": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "detail": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "kind": {
+                              "enum": [
+                                "value_readback",
+                                "window_change"
+                              ],
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "kind"
+                          ],
+                          "type": "object"
+                        },
+                        "type": [
+                          "array",
+                          "null"
+                        ]
+                      },
+                      "hint": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "next_call": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "arguments": {
+                            "type": "object"
+                          },
+                          "tool": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "tool",
+                          "arguments"
+                        ],
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "route": {
+                        "enum": [
+                          "accessibility",
+                          "synthetic_events",
+                          "global_input",
+                          "system_api",
+                          "dom",
+                          "trusted_input"
+                        ],
+                        "type": "string"
+                      },
+                      "summary": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "effect",
+                      "route"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": true,
+                    "anyOf": [
+                      {
+                        "required": [
+                          "refusal"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "status"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "code"
+                        ]
+                      }
+                    ],
+                    "type": "object"
+                  }
+                ],
+                "type": "object"
+              },
+              "risk": {
+                "class": "r1",
+                "enforcement": "active",
+                "operation_sensitive": false,
+                "version": "1"
+              }
+            },
+            {
+              "annotations": {
+                "destructiveHint": true,
+                "idempotentHint": false,
+                "openWorldHint": true,
+                "readOnlyHint": false
+              },
+              "capabilities": [
+                "input.pointer.drag",
+                "input.delivery_mode"
+              ],
+              "description": "Press-drag-release gesture from (from_x, from_y) to (to_x, to_y) in window-local screenshot pixels. Background delivery on X11 is one real held gesture on the session's virtual master pointer (path mpx_pointer: press, interpolated motion, release) — it lands on GTK/VCL/Qt/Chromium; a point covered by another application's window is refused (target_occluded), one covered by this app's own dialog is retargeted to it. Headless servers fall back to XSendEvent. duration_ms (default 500), steps (default 20). No focus steal. Limits and fallbacks: `get_guide({topic:\"drag\"})`.",
+              "inputSchema": {
+                "additionalProperties": false,
+                "properties": {
+                  "button": {
+                    "description": "Mouse button. Default \"left\".",
+                    "enum": [
+                      "left",
+                      "right",
+                      "middle"
+                    ],
+                    "type": "string"
+                  },
+                  "coordinate_frame": {
+                    "description": "Frame of x/y (and from_x/from_y/to_x/to_y). Default \"window\": window-local screenshot pixels as returned by get_window_state.",
+                    "enum": [
+                      "window",
+                      "desktop"
+                    ],
+                    "type": "string"
+                  },
+                  "duration_ms": {
+                    "description": "Total drag duration. Default: 500.",
+                    "maximum": 10000,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "from_x": {
+                    "description": "Drag start X: window-local pixels of the target window's own get_window_state screenshot; pass scope:\"desktop\" for get_desktop_state pixels.",
+                    "type": "number"
+                  },
+                  "from_y": {
+                    "description": "Drag start Y (same frame as from_x).",
+                    "type": "number"
+                  },
+                  "modifier": {
+                    "description": "Modifier keys held during the action: cmd, shift, option/alt, ctrl.",
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "pid": {
+                    "description": "Target process ID. Required unless scope is \"desktop\".",
+                    "type": "integer"
+                  },
+                  "steps": {
+                    "description": "Intermediate MotionNotify events. Default: 20.",
+                    "maximum": 200,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "to_x": {
+                    "description": "Drag end X (same frame as from_x).",
+                    "type": "number"
+                  },
+                  "to_y": {
+                    "description": "Drag end Y (same frame as from_x).",
+                    "type": "number"
+                  },
+                  "window_id": {
+                    "description": "Target window XID. Required.",
+                    "type": "integer"
+                  },
+                  "gate_confirm": {
+                    "type": "string",
+                    "description": "Confirmation code the gate gave for a high-risk action, only after the user approved it."
+                  }
+                },
+                "required": [
+                  "from_x",
+                  "from_y",
+                  "to_x",
+                  "to_y"
+                ],
+                "type": "object"
+              },
+              "name": "drag",
+              "outputSchema": {
+                "anyOf": [
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "delivery": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "delivered_count": {
+                            "minimum": 0,
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "mode": {
+                            "enum": [
+                              "background",
+                              "foreground",
+                              "not_applicable",
+                              "unknown"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "mode"
+                        ],
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "effect": {
+                        "enum": [
+                          "confirmed",
+                          "partial",
+                          "unverifiable",
+                          "suspected_noop",
+                          "refused"
+                        ],
+                        "type": "string"
+                      },
+                      "error": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "code": {
+                            "type": "string"
+                          },
+                          "hint": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "code"
+                        ],
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "escalation": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "reason": {
+                            "enum": [
+                              "route_unavailable",
+                              "delivery_failed",
+                              "effect_unconfirmed",
+                              "suspected_noop",
+                              "permission_required"
+                            ],
+                            "type": "string"
+                          },
+                          "target": {
+                            "enum": [
+                              "pixel",
+                              "foreground",
+                              "page",
+                              "session"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "target",
+                          "reason"
+                        ],
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "evidence": {
+                        "items": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "detail": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "kind": {
+                              "enum": [
+                                "value_readback",
+                                "window_change"
+                              ],
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "kind"
+                          ],
+                          "type": "object"
+                        },
+                        "type": [
+                          "array",
+                          "null"
+                        ]
+                      },
+                      "hint": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "next_call": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "arguments": {
+                            "type": "object"
+                          },
+                          "tool": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "tool",
+                          "arguments"
+                        ],
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "route": {
+                        "enum": [
+                          "accessibility",
+                          "synthetic_events",
+                          "global_input",
+                          "system_api",
+                          "dom",
+                          "trusted_input"
+                        ],
+                        "type": "string"
+                      },
+                      "summary": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "effect",
+                      "route"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": true,
+                    "anyOf": [
+                      {
+                        "required": [
+                          "refusal"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "status"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "code"
+                        ]
+                      }
+                    ],
+                    "type": "object"
+                  }
+                ],
+                "type": "object"
+              },
+              "risk": {
+                "class": "r1",
+                "enforcement": "active",
+                "operation_sensitive": false,
+                "version": "1"
+              }
+            },
+            {
+              "annotations": {
+                "destructiveHint": true,
+                "idempotentHint": false,
+                "openWorldHint": true,
+                "readOnlyHint": false
+              },
+              "capabilities": [
+                "input.keyboard.type",
+                "input.keyboard.type.terminal_safe",
+                "accessibility.element_tokens",
+                "input.delivery_mode"
+              ],
+              "description": "Type text to a window via XSendEvent (KeyPress/KeyRelease). No focus steal.",
+              "inputSchema": {
+                "additionalProperties": false,
+                "properties": {
+                  "coordinate_frame": {
+                    "description": "Frame of x/y (and from_x/from_y/to_x/to_y). Default \"window\": window-local screenshot pixels as returned by get_window_state.",
+                    "enum": [
+                      "window",
+                      "desktop"
+                    ],
+                    "type": "string"
+                  },
+                  "element_token": {
+                    "description": "Element handle `<snapshot_id>:<row>` from get_window_state: row `[11]` of a read whose snapshot_id is s0000002a is \"s0000002a:11\" (also in ` ...",
+                    "pattern": "^s[0-9a-f]{8}:[0-9]+$",
+                    "type": "string"
+                  },
+                  "pid": {
+                    "description": "Target process ID. Omit with scope \"desktop\" to type into the focused application.",
+                    "type": "integer"
+                  },
+                  "text": {
+                    "description": "Text to type.",
+                    "type": "string"
+                  },
+                  "window_id": {
+                    "description": "Window id from list_windows. Required with x/y; optional with element_token (the token carries it).",
+                    "type": "integer"
+                  },
+                  "x": {
+                    "description": "Pixel X of the field to type into — the element px action form.",
+                    "type": "number"
+                  },
+                  "y": {
+                    "description": "Pixel Y of the field (see x).",
+                    "type": "number"
+                  },
+                  "gate_confirm": {
+                    "type": "string",
+                    "description": "Confirmation code the gate gave for a high-risk action, only after the user approved it."
+                  }
+                },
+                "required": [
+                  "text"
+                ],
+                "type": "object"
+              },
+              "name": "type_text",
+              "outputSchema": {
+                "anyOf": [
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "delivery": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "delivered_count": {
+                            "minimum": 0,
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "mode": {
+                            "enum": [
+                              "background",
+                              "foreground",
+                              "not_applicable",
+                              "unknown"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "mode"
+                        ],
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "effect": {
+                        "enum": [
+                          "confirmed",
+                          "partial",
+                          "unverifiable",
+                          "suspected_noop",
+                          "refused"
+                        ],
+                        "type": "string"
+                      },
+                      "error": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "code": {
+                            "type": "string"
+                          },
+                          "hint": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "code"
+                        ],
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "escalation": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "reason": {
+                            "enum": [
+                              "route_unavailable",
+                              "delivery_failed",
+                              "effect_unconfirmed",
+                              "suspected_noop",
+                              "permission_required"
+                            ],
+                            "type": "string"
+                          },
+                          "target": {
+                            "enum": [
+                              "pixel",
+                              "foreground",
+                              "page",
+                              "session"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "target",
+                          "reason"
+                        ],
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "evidence": {
+                        "items": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "detail": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "kind": {
+                              "enum": [
+                                "value_readback",
+                                "window_change"
+                              ],
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "kind"
+                          ],
+                          "type": "object"
+                        },
+                        "type": [
+                          "array",
+                          "null"
+                        ]
+                      },
+                      "hint": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "next_call": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "arguments": {
+                            "type": "object"
+                          },
+                          "tool": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "tool",
+                          "arguments"
+                        ],
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "route": {
+                        "enum": [
+                          "accessibility",
+                          "synthetic_events",
+                          "global_input",
+                          "system_api",
+                          "dom",
+                          "trusted_input"
+                        ],
+                        "type": "string"
+                      },
+                      "summary": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "effect",
+                      "route"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": true,
+                    "anyOf": [
+                      {
+                        "required": [
+                          "refusal"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "status"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "code"
+                        ]
+                      }
+                    ],
+                    "type": "object"
+                  }
+                ],
+                "type": "object"
+              },
+              "risk": {
+                "class": "r1",
+                "enforcement": "active",
+                "operation_sensitive": false,
+                "version": "1"
+              }
+            },
+            {
+              "annotations": {
+                "destructiveHint": true,
+                "idempotentHint": false,
+                "openWorldHint": true,
+                "readOnlyHint": false
+              },
+              "capabilities": [
+                "input.keyboard.press",
+                "accessibility.element_tokens",
+                "input.delivery_mode"
+              ],
+              "description": "Press a key via XSendEvent to a window. No focus steal.",
+              "inputSchema": {
+                "additionalProperties": false,
+                "properties": {
+                  "coordinate_frame": {
+                    "description": "Frame of x/y (and from_x/from_y/to_x/to_y). Default \"window\": window-local screenshot pixels as returned by get_window_state.",
+                    "enum": [
+                      "window",
+                      "desktop"
+                    ],
+                    "type": "string"
+                  },
+                  "element_token": {
+                    "description": "Element handle `<snapshot_id>:<row>` from get_window_state: row `[11]` of a read whose snapshot_id is s0000002a is \"s0000002a:11\" (also in ` ...",
+                    "pattern": "^s[0-9a-f]{8}:[0-9]+$",
+                    "type": "string"
+                  },
+                  "key": {
+                    "description": "Key name: enter/return, tab, escape, space, backspace, delete, insert, home, end, pageup, pagedown, up, down, left, right, f1-f12, or any si ...",
+                    "type": "string"
+                  },
+                  "modifiers": {
+                    "description": "Modifier keys held while the key is pressed: ctrl, shift, alt, super.",
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "pid": {
+                    "description": "Target process ID. Omit with scope \"desktop\" to send the key to the focused application.",
+                    "type": "integer"
+                  },
+                  "window_id": {
+                    "description": "Window id from list_windows. Required with x/y or element_index; optional with element_token (the token carries it).",
+                    "type": "integer"
+                  },
+                  "x": {
+                    "description": "Pixel X — the element px action form: pixel-click there to focus, then send the key.",
+                    "type": "number"
+                  },
+                  "y": {
+                    "description": "Pixel Y (see x).",
+                    "type": "number"
+                  },
+                  "gate_confirm": {
+                    "type": "string",
+                    "description": "Confirmation code the gate gave for a high-risk action, only after the user approved it."
+                  }
+                },
+                "required": [
+                  "key"
+                ],
+                "type": "object"
+              },
+              "name": "press_key",
+              "outputSchema": {
+                "anyOf": [
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "delivery": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "delivered_count": {
+                            "minimum": 0,
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "mode": {
+                            "enum": [
+                              "background",
+                              "foreground",
+                              "not_applicable",
+                              "unknown"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "mode"
+                        ],
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "effect": {
+                        "enum": [
+                          "confirmed",
+                          "partial",
+                          "unverifiable",
+                          "suspected_noop",
+                          "refused"
+                        ],
+                        "type": "string"
+                      },
+                      "error": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "code": {
+                            "type": "string"
+                          },
+                          "hint": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "code"
+                        ],
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "escalation": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "reason": {
+                            "enum": [
+                              "route_unavailable",
+                              "delivery_failed",
+                              "effect_unconfirmed",
+                              "suspected_noop",
+                              "permission_required"
+                            ],
+                            "type": "string"
+                          },
+                          "target": {
+                            "enum": [
+                              "pixel",
+                              "foreground",
+                              "page",
+                              "session"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "target",
+                          "reason"
+                        ],
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "evidence": {
+                        "items": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "detail": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "kind": {
+                              "enum": [
+                                "value_readback",
+                                "window_change"
+                              ],
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "kind"
+                          ],
+                          "type": "object"
+                        },
+                        "type": [
+                          "array",
+                          "null"
+                        ]
+                      },
+                      "hint": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "next_call": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "arguments": {
+                            "type": "object"
+                          },
+                          "tool": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "tool",
+                          "arguments"
+                        ],
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "route": {
+                        "enum": [
+                          "accessibility",
+                          "synthetic_events",
+                          "global_input",
+                          "system_api",
+                          "dom",
+                          "trusted_input"
+                        ],
+                        "type": "string"
+                      },
+                      "summary": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "effect",
+                      "route"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": true,
+                    "anyOf": [
+                      {
+                        "required": [
+                          "refusal"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "status"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "code"
+                        ]
+                      }
+                    ],
+                    "type": "object"
+                  }
+                ],
+                "type": "object"
+              },
+              "risk": {
+                "class": "r1",
+                "enforcement": "active",
+                "operation_sensitive": false,
+                "version": "1"
+              }
+            },
+            {
+              "annotations": {
+                "destructiveHint": true,
+                "idempotentHint": false,
+                "openWorldHint": true,
+                "readOnlyHint": false
+              },
+              "capabilities": [
+                "input.keyboard.hotkey",
+                "input.delivery_mode"
+              ],
+              "description": "Press a combination of keys simultaneously, e.g. [\"ctrl\",\"c\"] for Copy. Delivered to the target window without focus steal (real key events from a virtual master keyboard on X11); target does NOT need to be frontmost. Window-manager chords cannot reach the WM that way: alt+F4 on a window target closes that window through the WM (_NET_CLOSE_WINDOW, effect confirmed when it unmaps); super+*, alt+tab, ctrl+alt+* and other WM bindings are refused with code wm_chord_unavailable — use bring_to_front / list_windows / kill_app or delivery_mode:\"foreground\" instead.",
+              "inputSchema": {
+                "additionalProperties": false,
+                "properties": {
+                  "element_token": {
+                    "description": "Element handle `<snapshot_id>:<row>` from get_window_state: row `[11]` of a read whose snapshot_id is s0000002a is \"s0000002a:11\" (also in ` ...",
+                    "pattern": "^s[0-9a-f]{8}:[0-9]+$",
+                    "type": "string"
+                  },
+                  "keys": {
+                    "description": "Modifier(s) + one non-modifier key, e.g. [\"ctrl\",\"c\"].",
+                    "items": {
+                      "type": "string"
+                    },
+                    "minItems": 2,
+                    "type": "array"
+                  },
+                  "pid": {
+                    "description": "Target process ID. Omit with scope \"desktop\" to send the chord to the focused application.",
+                    "type": "integer"
+                  },
+                  "window_id": {
+                    "description": "Window id from list_windows. Required with x/y or element_index; optional with element_token (the token carries it).",
+                    "type": "integer"
+                  },
+                  "x": {
+                    "description": "Screenshot-pixel X — the element px action form: pixel-click there to focus, then send the combo (so e.g. Ctrl+V pastes into that field).",
+                    "type": "number"
+                  },
+                  "y": {
+                    "description": "Screenshot-pixel Y (see x).",
+                    "type": "number"
+                  },
+                  "gate_confirm": {
+                    "type": "string",
+                    "description": "Confirmation code the gate gave for a high-risk action, only after the user approved it."
+                  }
+                },
+                "required": [
+                  "keys"
+                ],
+                "type": "object"
+              },
+              "name": "hotkey",
+              "outputSchema": {
+                "anyOf": [
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "delivery": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "delivered_count": {
+                            "minimum": 0,
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "mode": {
+                            "enum": [
+                              "background",
+                              "foreground",
+                              "not_applicable",
+                              "unknown"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "mode"
+                        ],
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "effect": {
+                        "enum": [
+                          "confirmed",
+                          "partial",
+                          "unverifiable",
+                          "suspected_noop",
+                          "refused"
+                        ],
+                        "type": "string"
+                      },
+                      "error": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "code": {
+                            "type": "string"
+                          },
+                          "hint": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "code"
+                        ],
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "escalation": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "reason": {
+                            "enum": [
+                              "route_unavailable",
+                              "delivery_failed",
+                              "effect_unconfirmed",
+                              "suspected_noop",
+                              "permission_required"
+                            ],
+                            "type": "string"
+                          },
+                          "target": {
+                            "enum": [
+                              "pixel",
+                              "foreground",
+                              "page",
+                              "session"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "target",
+                          "reason"
+                        ],
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "evidence": {
+                        "items": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "detail": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "kind": {
+                              "enum": [
+                                "value_readback",
+                                "window_change"
+                              ],
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "kind"
+                          ],
+                          "type": "object"
+                        },
+                        "type": [
+                          "array",
+                          "null"
+                        ]
+                      },
+                      "hint": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "next_call": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "arguments": {
+                            "type": "object"
+                          },
+                          "tool": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "tool",
+                          "arguments"
+                        ],
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "route": {
+                        "enum": [
+                          "accessibility",
+                          "synthetic_events",
+                          "global_input",
+                          "system_api",
+                          "dom",
+                          "trusted_input"
+                        ],
+                        "type": "string"
+                      },
+                      "summary": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "effect",
+                      "route"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": true,
+                    "anyOf": [
+                      {
+                        "required": [
+                          "refusal"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "status"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "code"
+                        ]
+                      }
+                    ],
+                    "type": "object"
+                  }
+                ],
+                "type": "object"
+              },
+              "risk": {
+                "class": "r1",
+                "enforcement": "active",
+                "operation_sensitive": false,
+                "version": "1"
+              }
+            },
+            {
+              "annotations": {
+                "destructiveHint": true,
+                "idempotentHint": false,
+                "openWorldHint": true,
+                "readOnlyHint": false
+              },
+              "capabilities": [
+                "input.keyboard.type",
+                "accessibility.element_tokens",
+                "input.delivery_mode"
+              ],
+              "description": "Set value of an AT-SPI element via SetValue action.",
+              "inputSchema": {
+                "additionalProperties": false,
+                "properties": {
+                  "element_token": {
+                    "description": "Element handle `<snapshot_id>:<row>` from get_window_state: row `[11]` of a read whose snapshot_id is s0000002a is \"s0000002a:11\" (also in ` ...",
+                    "pattern": "^s[0-9a-f]{8}:[0-9]+$",
+                    "type": "string"
+                  },
+                  "pid": {
+                    "description": "Target process ID. Optional with element_token (the token carries the pid).",
+                    "type": "integer"
+                  },
+                  "value": {
+                    "description": "New value. Written through AT-SPI EditableText/Value when the element exposes them; otherwise (GTK2 spin scales, VCL spin buttons) the field ...",
+                    "type": "string"
+                  },
+                  "window_id": {
+                    "description": "Omit when element_token is supplied (the token carries it).",
+                    "type": "integer"
+                  },
+                  "gate_confirm": {
+                    "type": "string",
+                    "description": "Confirmation code the gate gave for a high-risk action, only after the user approved it."
+                  }
+                },
+                "required": [
+                  "value"
+                ],
+                "type": "object"
+              },
+              "name": "set_value",
+              "outputSchema": {
+                "anyOf": [
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "delivery": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "delivered_count": {
+                            "minimum": 0,
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "mode": {
+                            "enum": [
+                              "background",
+                              "foreground",
+                              "not_applicable",
+                              "unknown"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "mode"
+                        ],
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "effect": {
+                        "enum": [
+                          "confirmed",
+                          "partial",
+                          "unverifiable",
+                          "suspected_noop",
+                          "refused"
+                        ],
+                        "type": "string"
+                      },
+                      "error": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "code": {
+                            "type": "string"
+                          },
+                          "hint": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "code"
+                        ],
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "escalation": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "reason": {
+                            "enum": [
+                              "route_unavailable",
+                              "delivery_failed",
+                              "effect_unconfirmed",
+                              "suspected_noop",
+                              "permission_required"
+                            ],
+                            "type": "string"
+                          },
+                          "target": {
+                            "enum": [
+                              "pixel",
+                              "foreground",
+                              "page",
+                              "session"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "target",
+                          "reason"
+                        ],
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "evidence": {
+                        "items": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "detail": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "kind": {
+                              "enum": [
+                                "value_readback",
+                                "window_change"
+                              ],
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "kind"
+                          ],
+                          "type": "object"
+                        },
+                        "type": [
+                          "array",
+                          "null"
+                        ]
+                      },
+                      "hint": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "next_call": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "arguments": {
+                            "type": "object"
+                          },
+                          "tool": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "tool",
+                          "arguments"
+                        ],
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "route": {
+                        "enum": [
+                          "accessibility",
+                          "synthetic_events",
+                          "global_input",
+                          "system_api",
+                          "dom",
+                          "trusted_input"
+                        ],
+                        "type": "string"
+                      },
+                      "summary": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "effect",
+                      "route"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": true,
+                    "anyOf": [
+                      {
+                        "required": [
+                          "refusal"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "status"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "code"
+                        ]
+                      }
+                    ],
+                    "type": "object"
+                  }
+                ],
+                "type": "object"
+              },
+              "risk": {
+                "class": "r1",
+                "enforcement": "active",
+                "operation_sensitive": false,
+                "version": "1"
+              }
+            },
+            {
+              "annotations": {
+                "destructiveHint": false,
+                "idempotentHint": false,
+                "openWorldHint": true,
+                "readOnlyHint": false
+              },
+              "capabilities": [
+                "input.pointer.scroll",
+                "accessibility.element_tokens",
+                "input.delivery_mode",
+                "input.scroll.coordinates"
+              ],
+              "description": "Scroll the target pid's focused region via XSendEvent Button4/5. direction required; by defaults to line, amount defaults to 3.",
+              "inputSchema": {
+                "additionalProperties": false,
+                "properties": {
+                  "amount": {
+                    "description": "Number of scroll steps. Default: 3.",
+                    "maximum": 50,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "by": {
+                    "description": "Scroll granularity. Default: line.",
+                    "enum": [
+                      "line",
+                      "page"
+                    ],
+                    "type": "string"
+                  },
+                  "coordinate_frame": {
+                    "description": "Frame of x/y (and from_x/from_y/to_x/to_y). Default \"window\": window-local screenshot pixels as returned by get_window_state.",
+                    "enum": [
+                      "window",
+                      "desktop"
+                    ],
+                    "type": "string"
+                  },
+                  "direction": {
+                    "description": "Scroll direction.",
+                    "enum": [
+                      "up",
+                      "down",
+                      "left",
+                      "right"
+                    ],
+                    "type": "string"
+                  },
+                  "element_token": {
+                    "description": "Element handle `<snapshot_id>:<row>` from get_window_state: row `[11]` of a read whose snapshot_id is s0000002a is \"s0000002a:11\" (also in ` ...",
+                    "pattern": "^s[0-9a-f]{8}:[0-9]+$",
+                    "type": "string"
+                  },
+                  "pid": {
+                    "description": "Target process ID. Required unless scope is \"desktop\" or element_token is supplied (the token carries the pid).",
+                    "type": "integer"
+                  },
+                  "window_id": {
+                    "description": "Window id from list_windows. Required with x/y; optional with element_token (the token carries it).",
+                    "type": "integer"
+                  },
+                  "x": {
+                    "description": "Window-local screenshot-pixel X of the scroll target. Pass with y and without element_token.",
+                    "type": "number"
+                  },
+                  "y": {
+                    "description": "Window-local screenshot-pixel Y of the scroll target. Pass with x and without element_token.",
+                    "type": "number"
+                  },
+                  "gate_confirm": {
+                    "type": "string",
+                    "description": "Confirmation code the gate gave for a high-risk action, only after the user approved it."
+                  }
+                },
+                "required": [
+                  "direction"
+                ],
+                "type": "object"
+              },
+              "name": "scroll",
+              "outputSchema": {
+                "anyOf": [
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "delivery": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "delivered_count": {
+                            "minimum": 0,
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "mode": {
+                            "enum": [
+                              "background",
+                              "foreground",
+                              "not_applicable",
+                              "unknown"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "mode"
+                        ],
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "effect": {
+                        "enum": [
+                          "confirmed",
+                          "partial",
+                          "unverifiable",
+                          "suspected_noop",
+                          "refused"
+                        ],
+                        "type": "string"
+                      },
+                      "error": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "code": {
+                            "type": "string"
+                          },
+                          "hint": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "code"
+                        ],
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "escalation": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "reason": {
+                            "enum": [
+                              "route_unavailable",
+                              "delivery_failed",
+                              "effect_unconfirmed",
+                              "suspected_noop",
+                              "permission_required"
+                            ],
+                            "type": "string"
+                          },
+                          "target": {
+                            "enum": [
+                              "pixel",
+                              "foreground",
+                              "page",
+                              "session"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "target",
+                          "reason"
+                        ],
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "evidence": {
+                        "items": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "detail": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "kind": {
+                              "enum": [
+                                "value_readback",
+                                "window_change"
+                              ],
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "kind"
+                          ],
+                          "type": "object"
+                        },
+                        "type": [
+                          "array",
+                          "null"
+                        ]
+                      },
+                      "hint": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "next_call": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "arguments": {
+                            "type": "object"
+                          },
+                          "tool": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "tool",
+                          "arguments"
+                        ],
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "route": {
+                        "enum": [
+                          "accessibility",
+                          "synthetic_events",
+                          "global_input",
+                          "system_api",
+                          "dom",
+                          "trusted_input"
+                        ],
+                        "type": "string"
+                      },
+                      "summary": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "effect",
+                      "route"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": true,
+                    "anyOf": [
+                      {
+                        "required": [
+                          "refusal"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "status"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "code"
+                        ]
+                      }
+                    ],
+                    "type": "object"
+                  }
+                ],
+                "type": "object"
+              },
+              "risk": {
+                "class": "r1",
+                "enforcement": "active",
+                "operation_sensitive": false,
+                "version": "1"
+              }
+            },
+            {
+              "name": "request_human",
+              "description": "Ask the person at this computer. kind=approve: a yes/no on what you are about to do. kind=answer: a short free-text answer (e.g. which option they want). kind=takeover: ask them to do a step themselves (log in, solve a captcha, anything you cannot or should not do); it returns when they are done. Use only when a person is really needed.",
+              "inputSchema": {
+                "type": "object",
+                "properties": {
+                  "question": {
+                    "type": "string",
+                    "description": "What you need from them, in one or two plain sentences."
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "approve",
+                      "answer",
+                      "takeover"
+                    ]
+                  }
+                },
+                "required": [
+                  "question"
+                ]
+              }
+            },
+            {
+              "name": "gate_task",
+              "description": "Tell the gate the user's request, VERBATIM, once at the start (copy their words; do not summarise or add to them). The gate lets a risky step through without stopping you when the request explicitly asks for it (e.g. \"overwrite report.pdf\"). It can be set only once.",
+              "inputSchema": {
+                "type": "object",
+                "properties": {
+                  "request": {
+                    "type": "string",
+                    "description": "The user's request, word for word."
+                  }
+                },
+                "required": [
+                  "request"
+                ]
+              }
+            },
+            {
+              "name": "gate_report",
+              "description": "Value-gate statistics for this session: how many actions ran directly, how many observations/screenshots were requested or avoided, interventions by type, and gate overhead.",
+              "inputSchema": {
+                "type": "object",
+                "properties": {},
+                "required": []
+              },
+              "annotations": {
+                "readOnlyHint": true
+              }
+            },
+            {
+              "name": "run_command",
+              "description": "Run a bash command (or a short script) on this computer and get its exit code and output. Use it for terminal, file and document work done in code instead of by clicking: inspect files (ls, cat, head), edit spreadsheets / documents with python3 (openpyxl, odfpy, python-docx, python-pptx when installed), convert with `soffice --headless -env:UserInstallation=file:///tmp/gui-gate-lo-4053 --convert-to FMT --outdir DIR FILE` (the -env part lets it run while LibreOffice is open). Every command is checked by the gate like a typed terminal command (overwrites, moves, deletes, permission changes and other risky effects need the user's words, the gate's reviewer or a person). If you change a file that is open in an app, reload it there (LibreOffice: File > Reload) or the app's own save will write its old copy over your change. No interactive programs (no editors, pagers or password prompts): stdin is empty.",
+              "inputSchema": {
+                "type": "object",
+                "properties": {
+                  "command": {
+                    "type": "string",
+                    "description": "bash command line or script (heredocs allowed)"
+                  },
+                  "cwd": {
+                    "type": "string",
+                    "description": "working directory (default: the user's home)"
+                  },
+                  "timeout_s": {
+                    "type": "number",
+                    "description": "seconds before the command is killed (default 30, max 300)"
+                  }
+                },
+                "required": [
+                  "command"
+                ]
+              }
+            },
+            {
+              "name": "check_done",
+              "description": "Before you reply DONE, call this once: the gate gathers evidence about the end state (files the task names: exist? changed during this session?; files changed this session; unsaved-document markers; visible Calc cells; terminal tail; open windows; steps the gate refused; your plan's open milestones) and lists possible gaps. It does not judge the task; you decide whether to finish or fix something first.",
+              "inputSchema": {
+                "type": "object",
+                "properties": {
+                  "files": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "extra paths you produced or changed (optional)"
+                  }
+                },
+                "required": []
+              },
+              "annotations": {
+                "readOnlyHint": true
+              }
+            },
+            {
+              "name": "set_plan",
+              "description": "Your own plan, kept by the gate (no model involved). Call it once at the start with 2-6 short milestones and your feasibility verdict: feasible:false when the task cannot be done on this computer (the app has no such feature or setting, the thing asked for does not exist, the file or data is not there) - then reply FAIL with the reason instead of trying. Later calls mark milestones done (done: [numbers]) or replace the list. Every action result then ends with a one-line progress note, and check_done lists milestones still open.",
+              "inputSchema": {
+                "type": "object",
+                "properties": {
+                  "milestones": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "2-6 short steps (replaces the current list)"
+                  },
+                  "done": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer"
+                    },
+                    "description": "numbers (1-based) of milestones now done"
+                  },
+                  "feasible": {
+                    "type": "boolean",
+                    "description": "false = this task cannot be done here"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "description": "why (required with feasible:false)"
+                  }
+                },
+                "required": []
+              }
+            },
+            {
+              "name": "run_actions",
+              "description": "Batch mode: run several GUI steps in ONE call (single-step tools remain available). Each GUI step is checked by the gate like a single call. Steps, in order:\n  {tool, args, expect?}  a GUI action (click, type_text, press_key, hotkey, scroll, set_value, ...) or a run_command (its output comes back in the result; a failing command stops the batch). Name things that appear only after an earlier step with args.target = {label, role?}; the gate finds them on screen when the step runs. x/y only in the first GUI step.\n  {find: SELECTOR, as: \"rows\", max?: 20}  read the screen now and keep the matching elements.\n  {for_each: \"rows\", do: [steps]}  repeat steps per element; inside, args.target = \"$item\" points at it and \"$item.label\" in any string is its label.\n  {if: {exists: SELECTOR} | {not_exists: SELECTOR}, then: [steps], else?: [steps]}\n  {read: SELECTOR, as?: \"name\"}  report the matching elements' labels/values in the result.\nSELECTOR = {label} exact, {label_contains}, {label_regex} and/or {role}. The batch stops at the first refused or failed step, when a dialog opens unexpectedly (a popup menu is fine), or when an expect fails ({title_contains} or {new_window: true}). You get what ran plus one fresh read of the window at the end. Max 20 GUI actions.",
+              "inputSchema": {
+                "type": "object",
+                "properties": {
+                  "pid": {
+                    "type": "integer",
+                    "description": "Default pid for steps that omit it."
+                  },
+                  "window_id": {
+                    "type": "integer",
+                    "description": "Default window_id for steps that omit it."
+                  },
+                  "steps": {
+                    "type": "array",
+                    "description": "The program, see the tool description.",
+                    "items": {
+                      "type": "object"
+                    }
+                  }
+                },
+                "required": [
+                  "steps"
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "seconds": 0.009
+    },
+    {
+      "request": {
+        "jsonrpc": "2.0",
+        "method": "tools/call",
+        "params": {
+          "name": "list_apps",
+          "arguments": {}
+        },
+        "id": 3
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 3,
+        "result": {
+          "content": [
+            {
+              "text": "✅ Found 76 app(s): 74 running, 2 installed-not-running. <process list redacted>",
+              "type": "text"
+            },
+            {
+              "type": "text",
+              "text": "[gate] 64 kernel threads / system daemons hidden; call list_apps with all:true to see everything. <process list redacted>"
+            }
+          ],
+          "structuredContent": "<redacted: sandbox process list>"
+        }
+      },
+      "seconds": 0.013
+    }
+  ]
+}
