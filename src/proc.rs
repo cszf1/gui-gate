@@ -168,7 +168,10 @@ pub fn child_may_inherit(k: &str, extra: &[String]) -> bool {
     if is_secret_var(k) {
         return false;
     }
-    CHILD_ENV_NAMES.contains(&k) || CHILD_ENV_PREFIXES.iter().any(|p| k.starts_with(p))
+    // Windows variable names are case-insensitive and come as the system spells them ("Path", "SystemRoot"): compare
+    // without case there, or the driver starts without PATH
+    let named = if cfg!(windows) { CHILD_ENV_NAMES.iter().any(|n| n.eq_ignore_ascii_case(k)) } else { CHILD_ENV_NAMES.contains(&k) };
+    named || CHILD_ENV_PREFIXES.iter().any(|p| k.starts_with(p))
         || extra.iter().any(|e| e == k || (e.ends_with('*') && k.starts_with(&e[..e.len() - 1])))
 }
 
@@ -449,5 +452,17 @@ mod env_tests {
         assert!(!child_may_inherit("MY_API_KEY", &["MY_API_KEY".to_string()]));
         assert!(child_may_inherit("FAKE_PNG", &["FAKE_*".to_string()]));
         assert!(!child_may_inherit("FAKE_TOKEN", &["FAKE_*".to_string()]));
+    }
+}
+
+#[cfg(test)]
+mod env_case_tests {
+    /// Windows spells it "Path" / "SystemRoot": inherited there; on unix names stay exact.
+    #[test]
+    fn windows_names_ignore_case() {
+        let none: Vec<String> = vec![];
+        assert_eq!(super::child_may_inherit("Path", &none), cfg!(windows));
+        assert!(super::child_may_inherit("SystemRoot", &none));
+        assert!(!super::child_may_inherit("Gui_Gate_Reviewer_Key", &none));
     }
 }
