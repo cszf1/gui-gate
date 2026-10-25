@@ -206,7 +206,7 @@ def assign(participants, tasks, seed=0):
 HUMAN_SCHEMA = "gui-pi-human/1"
 DESKTOP_KIND = {"approve": "approve", "clarify": "answer", "takeover": "takeover", "help": "help"}
 GATE_KIND = {"approve": "approve", "answer": "answer", "takeover": "takeover", "ask_help": "help", "help": "help"}
-NO_ANSWER = {"timeout": "timeout", "timed out": "timeout", "cancelled": "cancel", "window closed": "cancel",
+NO_ANSWER = {"timeout": "timeout", "timed out": "timeout", "expired": "timeout", "cancelled": "cancel", "window closed": "cancel",
              "window_closed": "cancel", "declined_form": "cancel", "unavailable": "unavailable",
              "channel_unavailable": "unavailable", "no_response": "no_response"}
 

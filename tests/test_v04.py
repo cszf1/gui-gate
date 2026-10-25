@@ -327,6 +327,67 @@ class RunActionsTests(unittest.TestCase):
         r = self.c.call("run_actions", steps=[{"tool": "run_steps", "args": {}}])
         self.assertIn("cannot be used inside a batch", txt(r))
 
+    # ---- 0.10.2: every step after the first is checked for a busy window, a disabled target and a late dialog
+    def clicked(self):
+        return json.loads(txt(self.c.call("fake_state")))["clicked"]
+
+    def test_batch_stops_while_the_window_is_loading(self):
+        self.c.call("fake_mutate", elements=[["button", "Load data"], ["button", "Increment"], ["text", "count=0"]], load_reads=999)
+        s = self.c.read()
+        r = self.c.call("run_actions", pid=4242, window_id=777, steps=[
+            {"tool": "click", "args": {"element_token": f"{s}:0"}},
+            {"tool": "click", "args": {"element_token": f"{s}:1"}},
+            {"tool": "click", "args": {"element_token": f"{s}:1"}}])
+        self.assertTrue(r.get("isError"), txt(r))
+        self.assertEqual(r["structuredContent"]["batch"]["executed"], 1, txt(r))
+        self.assertIn("NOT RUN", txt(r))
+        self.assertIn("busy", txt(r))
+        self.assertEqual(self.clicked(), ["Load data"], "no click on the greyed-out button")
+
+    def test_batch_waits_out_a_short_load(self):
+        self.c.call("fake_mutate", elements=[["button", "Load data"], ["button", "Increment"], ["text", "count=0"]], load_reads=2)
+        s = self.c.read()
+        r = self.c.call("run_actions", pid=4242, window_id=777, steps=[
+            {"tool": "click", "args": {"element_token": f"{s}:0"}},
+            {"tool": "click", "args": {"element_token": f"{s}:1"}}])
+        self.assertFalse(r.get("isError"), txt(r))
+        self.assertEqual(r["structuredContent"]["batch"]["executed"], 2)
+        self.assertIn("waited", txt(r))
+        self.assertEqual(self.clicked(), ["Load data", "Increment"])
+
+    def test_batch_stops_on_a_disabled_target(self):
+        self.c.call("fake_mutate", elements=[["button", "Increment"], ["button", "Save"], ["text", "x"]], disabled=["Save"])
+        s = self.c.read()
+        r = self.c.call("run_actions", pid=4242, window_id=777, steps=[
+            {"tool": "click", "args": {"element_token": f"{s}:0"}},
+            {"tool": "click", "args": {"target": {"label": "Save"}}}])
+        self.assertTrue(r.get("isError"), txt(r))
+        self.assertIn("disabled", txt(r))
+        self.assertEqual(r["structuredContent"]["batch"]["executed"], 1)
+        self.assertEqual(self.clicked(), ["Increment"])
+
+    def test_batch_stops_on_a_dialog_that_opens_late(self):
+        self.c.call("fake_mutate", elements=[["button", "Open later"], ["button", "Increment"], ["text", "x"]])
+        s = self.c.read()
+        r = self.c.call("run_actions", pid=4242, window_id=777, steps=[
+            {"tool": "click", "args": {"element_token": f"{s}:0"}},
+            {"tool": "click", "args": {"element_token": f"{s}:1"}}])
+        self.assertTrue(r.get("isError"), txt(r))
+        self.assertIn("appeared after step 1", txt(r))
+        self.assertEqual(r["structuredContent"]["batch"]["executed"], 1)
+        self.assertEqual(self.clicked(), ["Open later"])
+
+    def test_batch_rebinds_old_tokens_after_its_own_read(self):
+        # the pre-step read makes the batch's own tokens refer to an older snapshot: they are re-bound by label
+        s = self.c.read()
+        r = self.c.call("run_actions", pid=4242, window_id=777, steps=[
+            {"tool": "click", "args": {"element_token": f"{s}:0"}},
+            {"tool": "click", "args": {"element_token": f"{s}:0"}},
+            {"tool": "click", "args": {"element_token": f"{s}:0"}}])
+        self.assertFalse(r.get("isError"), txt(r))
+        self.assertEqual(r["structuredContent"]["batch"]["executed"], 3)
+        self.assertEqual(self.clicked(), ["Increment"] * 3)
+
 
 class ProgramTests(unittest.TestCase):
     """run_actions control steps: find / for_each / if / read (the codemode replacement, no JS engine)."""

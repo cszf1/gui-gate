@@ -250,7 +250,8 @@ pub fn map_elicit(kind: &str, r: Option<&Value>) -> (String, String) {
 /// How a refusal reads in the agent's message (all of them are refusals).
 pub fn outcome_words(outcome: &str, timeout: f64) -> String {
     match outcome {
-        "timeout" => format!("did not answer within {} s", timeout as i64),
+        "timeout" => format!("did not answer within {} s (no answer; not a refusal by the person)", timeout as i64),
+        "expired" => "never saw the question: it expired while another question was open (no answer)".into(),
         "cancelled" => "cancelled the request".into(),
         "window_closed" => "closed the dialog without answering".into(),
         "channel_unavailable" => "could not be reached".into(),
@@ -265,13 +266,29 @@ pub fn map_elicit_o(kind: &str, r: Option<&Value>) -> (String, String, String) {
     let Some(r) = r else { return ("deny".into(), String::new(), "no_response".into()) };
     match s(r, "action") {
         "accept" => {}
-        "decline" => return ("deny".into(), String::new(), "declined".into()),
-        "cancel" => return ("deny".into(), String::new(), "cancelled".into()),
+        "decline" => return ("deny".into(), String::new(), refusal_outcome(r, "declined")),
+        "cancel" => return ("deny".into(), String::new(), refusal_outcome(r, "cancelled")),
         _ => return ("deny".into(), String::new(), "no_response".into()),
     }
     let (a, n) = map_accepted(kind, r);
     let o = if a == "deny" { "denied" } else { "accepted" };
     (a, n, o.into())
+}
+
+/// Why a declined / cancelled form ended, when the client says so: the reason in the ElicitResult's
+/// `_meta["io.github.cszf1/gui-gate"].reason` (or a top-level `reason`). A client popup that timed out, expired in its
+/// queue, was closed or could not be shown is NOT the person saying no: it is recorded as no answer with its cause.
+fn refusal_outcome(r: &Value, dflt: &str) -> String {
+    let why = r.get("_meta").and_then(|m| m.get(META_KEY)).and_then(|m| m.get("reason")).or_else(|| r.get("reason"));
+    match why.and_then(|v| v.as_str()).unwrap_or("") {
+        "timed_out" | "timeout" | "no_answer" => "timeout".into(),
+        "expired" => "expired".into(),
+        "closed" | "window_closed" => "window_closed".into(),
+        "cancelled" => "cancelled".into(),
+        "unavailable" | "channel_unavailable" => "channel_unavailable".into(),
+        "declined" => "declined".into(),
+        _ => dflt.into(),
+    }
 }
 
 fn map_accepted(kind: &str, r: &Value) -> (String, String) {
@@ -729,6 +746,20 @@ mod tests {
         assert_eq!(o(json!({"action": "decline"})), "declined");
         assert_eq!(o(json!({"action": "cancel"})), "cancelled");
         assert_eq!(map_elicit_o("approve", None).2, "no_response");
+        // the client's reason (gui-pi: ElicitResult _meta) says why the form ended: a timeout is no answer, not "declined"
+        let m = |a: &str, why: &str| json!({"action": a, "_meta": {META_KEY: {"reason": why}}});
+        assert_eq!(o(m("decline", "timed_out")), "timeout");
+        assert_eq!(o(m("decline", "expired")), "expired");
+        assert_eq!(o(m("cancel", "closed")), "window_closed");
+        assert_eq!(o(m("cancel", "cancelled")), "cancelled");
+        assert_eq!(o(m("decline", "unavailable")), "channel_unavailable");
+        assert_eq!(o(m("decline", "declined")), "declined");
+        assert_eq!(o(m("decline", "whatever")), "declined");
+        assert_eq!(o(json!({"action": "decline", "reason": "timed_out"})), "timeout");
+        for (a, why) in [("decline", "timed_out"), ("decline", "expired"), ("cancel", "closed")] {
+            assert_eq!(map_elicit_o("approve", Some(&m(a, why))).0, "deny", "never an approval");
+            assert!(crate::server::NO_ANSWER_OUTCOMES.contains(&o(m(a, why)).as_str()));
+        }
         // every one but accepted is a refusal
         for r in [json!({"action": "decline", "content": {"decision": "allow"}}), json!({"action": "cancel"}), json!({"action": "?"})] {
             assert_eq!(map_elicit_o("approve", Some(&r)).0, "deny");

@@ -7,6 +7,10 @@
 //!  * no auto-observe between steps, one observation at the end (or where the batch stopped);
 //!  * blind-batch guard: stop on a driver error, an unexpected new window/dialog (a popup menu is fine), a
 //!    failed `expect`, or a pixel (x/y) step after the first executed step;
+//!  * before every step after the first: a fresh tree read of the step's window. While the window shows a loading
+//!    cue (progress bar, "Loading", "please wait"...) or the step's target is disabled, the batch waits up to
+//!    SETTLE_S; still busy / disabled -> the batch stops there and says so (a click on a disabled button would
+//!    "succeed" at the driver and do nothing). A window/dialog that appeared since the last step also stops it;
 //!  * at most MAX_STEPS GUI actions, MAX_NODES interpreted steps, MAX_DEPTH nesting.
 use crate::features::is_gated;
 use crate::server::{ids_of, Gate, Inner};
@@ -19,6 +23,8 @@ use std::collections::HashSet;
 pub const MAX_STEPS: usize = 20;
 const MAX_NODES: usize = 200;
 const MAX_DEPTH: usize = 3;
+/// How long a batch step waits for a busy window / a disabled target before the batch stops.
+pub const SETTLE_S: f64 = 3.0;
 const NOT_IN_BATCH: &[&str] = &["run_steps", "run_script", "kill_app"];
 const MENU_ROLES: &[&str] = &["menu", "popup menu", "menu item", "check menu item", "radio menu item", "menu bar", "list",
     "list item", "combo box", "tear off menu item", "separator"];
@@ -26,7 +32,7 @@ const MENU_ROLES: &[&str] = &["menu", "popup menu", "menu item", "check menu ite
 pub fn run_actions_tool() -> Value {
     json!({
         "name": "run_actions",
-        "description": "Batch mode: run several GUI steps in ONE call (single-step tools remain available). Each GUI step is checked by the gate like a single call. Steps, in order:\n  {tool, args, expect?}  a GUI action (click, type_text, press_key, hotkey, scroll, set_value, ...) or a run_command (its output comes back in the result; a failing command stops the batch). Name things that appear only after an earlier step with args.target = {label, role?}; the gate finds them on screen when the step runs. x/y only in the first GUI step.\n  {find: SELECTOR, as: \"rows\", max?: 20}  read the screen now and keep the matching elements.\n  {for_each: \"rows\", do: [steps]}  repeat steps per element; inside, args.target = \"$item\" points at it and \"$item.label\" in any string is its label.\n  {if: {exists: SELECTOR} | {not_exists: SELECTOR}, then: [steps], else?: [steps]}\n  {read: SELECTOR, as?: \"name\"}  report the matching elements' labels/values in the result.\nSELECTOR = {label} exact, {label_contains}, {label_regex} and/or {role}. The batch stops at the first refused or failed step, when a dialog opens unexpectedly (a popup menu is fine), or when an expect fails ({title_contains} or {new_window: true}). You get what ran plus one fresh read of the window at the end. Max 20 GUI actions.",
+        "description": "Batch mode: run several GUI steps in ONE call (single-step tools remain available). Each GUI step is checked by the gate like a single call. Steps, in order:\n  {tool, args, expect?}  a GUI action (click, type_text, press_key, hotkey, scroll, set_value, ...) or a run_command (its output comes back in the result; a failing command stops the batch). Name things that appear only after an earlier step with args.target = {label, role?}; the gate finds them on screen when the step runs. x/y only in the first GUI step.\n  {find: SELECTOR, as: \"rows\", max?: 20}  read the screen now and keep the matching elements.\n  {for_each: \"rows\", do: [steps]}  repeat steps per element; inside, args.target = \"$item\" points at it and \"$item.label\" in any string is its label.\n  {if: {exists: SELECTOR} | {not_exists: SELECTOR}, then: [steps], else?: [steps]}\n  {read: SELECTOR, as?: \"name\"}  report the matching elements' labels/values in the result.\nSELECTOR = {label} exact, {label_contains}, {label_regex} and/or {role}. The batch stops at the first refused or failed step, when a dialog opens unexpectedly (a popup menu is fine), or when an expect fails ({title_contains} or {new_window: true}). Before each step after the first the gate re-reads the window: while it is still loading or the step's target is disabled it waits up to 3 s, then stops the batch there (that step NOT run). You get what ran plus one fresh read of the window at the end. Max 20 GUI actions.",
         "inputSchema": {"type": "object", "properties": {
             "pid": {"type": "integer", "description": "Default pid for steps that omit it."},
             "window_id": {"type": "integer", "description": "Default window_id for steps that omit it."},
@@ -68,6 +74,8 @@ struct Batch<'a> {
     menu_open: bool,
     /// the step whose outcome is unknown (the driver died / timed out during it): the batch stops there
     unknown_step: Option<usize>,
+    /// the windows of the pid as of the end of the last step (a window not in it appeared since)
+    known: Option<HashSet<String>>,
 }
 
 impl<'a> Batch<'a> {
@@ -179,6 +187,92 @@ impl<'a> Batch<'a> {
         Err(format!("no element named \"{label}\" is on screen (seen: {})", seen.iter().take(10).cloned().collect::<Vec<_>>().join(", ")))
     }
 
+    /// Before step `n` (not the first): is the window still loading, is the target disabled, did a dialog appear?
+    /// Waits up to SETTLE_S for a busy window / disabled target. Ok(note) = go on (the target is re-bound to the
+    /// fresh read); Err(why) = do not run this step.
+    fn preflight(&mut self, inn: &mut Inner, n: usize, tool: &str, a: &mut Value) -> Result<Option<String>, String> {
+        let Some(pid) = as_i64(a.get("pid")) else { return Ok(None) };
+        if self.stop_on_new_window && !self.menu_open {
+            if let Some(known) = self.known.clone() {
+                let now_ids = ids_of(self.g.window_sig(inn, pid).as_deref());
+                let mut new: Vec<String> = now_ids.difference(&known).cloned().collect();
+                new.sort();
+                if let Some(nw) = new.last().cloned() {
+                    let o = nw.parse::<i64>().ok().and_then(|w| self.read(inn, pid, Some(w)));
+                    if !menu_like(inn, o) {
+                        if let Ok(w) = nw.parse::<i64>() {
+                            self.last_wid = Some(w);
+                        }
+                        return Err(format!("a new window/dialog (window_id={nw}) appeared after step {} and before this one; read it before going on", n - 1));
+                    }
+                }
+            }
+        }
+        // the step's target as the batch names it (label + role from the read it was taken from)
+        let ctx = crate::features::build_ctx(tool, a, &inn.state);
+        let tgt = ctx.target.element.clone().filter(|e| !e.label.trim().is_empty() && ctx.target.is_elem());
+        let tidx = ctx.target.index;
+        let by_index = a.get("element_index").is_some() && a.get("element_token").is_none();
+        let wid = as_i64(a.get("window_id")).or(ctx.target.window_id).or(self.last_wid).or(self.wid).filter(|w| *w != 0);
+        let t0 = now();
+        let mut waited = false;
+        loop {
+            let Some(o) = self.read(inn, pid, wid) else { return Ok(None) }; // no read: the gate decides as for any step
+            let ob = inn.state.get(o);
+            let busy = ob.elements.values().find(|e| e.role.to_lowercase().contains("progress bar")
+                || (!e.label.trim().is_empty() && crate::state::loading_re().is_match(&e.label)))
+                .map(|e| if e.label.trim().is_empty() { e.role.clone() } else { trunc(e.label.trim(), 60).to_string() });
+            let mut disabled = None;
+            let mut fresh: Option<(String, i64, Option<i64>)> = None;
+            let mut lost = false;
+            if let Some(t) = &tgt {
+                let want = norm_label(&t.label);
+                let same = |e: &Element| norm_label(&e.label) == want && e.role.eq_ignore_ascii_case(&t.role);
+                let hit = tidx.and_then(|i| ob.elements.get(&i)).filter(|e| same(e)).cloned().or_else(|| {
+                    let v: Vec<&Element> = ob.elements.values().filter(|e| same(e)).collect();
+                    if v.len() == 1 { Some(v[0].clone()) } else { None }
+                });
+                match hit {
+                    Some(e) => {
+                        if e.enabled == Some(false) {
+                            disabled = Some(trunc(&e.label, 60).to_string());
+                        }
+                        fresh = Some((ob.snapshot_id.clone(), e.index, ob.window_id));
+                    }
+                    None => lost = by_index, // an index means "of the newest read": it would now point elsewhere
+                }
+            }
+            if lost {
+                return Err(format!("its target \"{}\" is not in the window any more at a unique place; re-read the window and aim again",
+                                   tgt.as_ref().map(|t| trunc(&t.label, 60).to_string()).unwrap_or_default()));
+            }
+            if busy.is_none() && disabled.is_none() {
+                if let Some((snap, idx, w)) = fresh {
+                    if a.get("element_token").is_some() {
+                        a["element_token"] = json!(format!("{snap}:{idx}"));
+                        if let Some(w) = w {
+                            a["window_id"] = json!(w);
+                        }
+                    } else if a.get("element_index").is_some() {
+                        a["element_index"] = json!(idx);
+                    }
+                }
+                return Ok(if waited { Some(format!("waited {:.1} s for the window to settle", now() - t0)) } else { None });
+            }
+            if now() - t0 >= SETTLE_S {
+                inn.inc("batch_settle_stops");
+                return Err(match (busy, disabled) {
+                    (Some(b), Some(d)) => format!("the window is still busy (\"{b}\") and its target \"{d}\" is disabled after waiting {SETTLE_S:.0} s"),
+                    (Some(b), None) => format!("the window is still busy (\"{b}\") after waiting {SETTLE_S:.0} s"),
+                    (None, Some(d)) => format!("its target \"{d}\" is disabled (greyed out) after waiting {SETTLE_S:.0} s; a click would do nothing"),
+                    (None, None) => unreachable!(),
+                });
+            }
+            waited = true;
+            std::thread::sleep(std::time::Duration::from_millis(400));
+        }
+    }
+
     fn fill(&self, args: &Value) -> Value {
         let mut a = if args.is_object() { args.clone() } else { json!({}) };
         if let (Some(p), None) = (self.pid, a.get("pid")) {
@@ -211,6 +305,7 @@ impl<'a> Batch<'a> {
         if self.seen.is_none() {
             if let Some(p) = pid {
                 self.seen = Some(ids_of(g.window_sig(inn, p).as_deref())); // windows that were there before the batch
+                self.known = self.seen.clone();
             }
         }
         if a.get("target").is_some() {
@@ -222,6 +317,16 @@ impl<'a> Batch<'a> {
         }
         if self.executed > 0 && a.get("x").is_some() && a.get("y").is_some() && a.get("element_token").is_none() {
             return self.stop(format!("step {n}: pixel x/y after the batch already changed the screen; those coordinates are stale. Re-read the window and aim again"));
+        }
+        let mut settled = None;
+        if self.executed > 0 {
+            match self.preflight(inn, n, tool, &mut a) {
+                Ok(note) => settled = note,
+                Err(why) => {
+                    self.lines.push(format!("{n}. {tool}: NOT RUN - {why}"));
+                    return self.stop(format!("step {n} ({tool}) was not run: {why}"));
+                }
+            }
         }
         let before = match (pid, self.stop_on_new_window) { (Some(p), true) => g.window_sig(inn, p), _ => None };
         inn.batch_ctx = json!({"bid": self.bid, "step": n});
@@ -248,11 +353,12 @@ impl<'a> Batch<'a> {
         if truthy(a.get("window_id")) {
             self.last_wid = as_i64(a.get("window_id"));
         }
-        self.lines.push(format!("{n}. {tool}: ok - {first}"));
+        self.lines.push(format!("{n}. {tool}: ok - {first}{}", settled.map(|s| format!(" ({s})")).unwrap_or_default()));
         let empty = json!({});
         let expect = expect.filter(|e| e.is_object()).unwrap_or(&empty);
         if let (Some(p), Some(before)) = (pid, before.as_ref()) {
             let after = g.window_sig(inn, p);
+            self.known = Some(ids_of(after.as_deref()));
             let bi = ids_of(Some(before));
             let mut new: Vec<String> = ids_of(after.as_deref()).into_iter().filter(|x| !bi.contains(x)).collect();
             new.sort();
@@ -480,7 +586,7 @@ pub fn run_actions(g: &Gate, inn: &mut Inner, args: &Value) -> Value {
     let wid = as_i64(args.get("window_id"));
     let b = Batch {
         g, pid, wid, stop_on_new_window: args.get("stop_on_new_window") != Some(&Value::Bool(false)), executed: 0, lines: vec![],
-        stopped: None, last_pid: pid, last_wid: wid, seen: None, bid: format!("b{}", (now() * 1000.0) as u64 % 10_000_000), menu_open: false, unknown_step: None,
+        stopped: None, last_pid: pid, last_wid: wid, seen: None, bid: format!("b{}", (now() * 1000.0) as u64 % 10_000_000), menu_open: false, unknown_step: None, known: None,
     };
     let mut prog = Program { b, vars: Default::default(), nodes: 0, out: vec![] };
     inn.in_batch = true;
