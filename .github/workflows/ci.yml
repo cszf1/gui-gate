@@ -30,7 +30,9 @@ jobs:
       - name: cargo tests (incl. the Windows path / 8.3 short name / NTFS change-time tests on Windows)
         run: cargo test --release
       - run: cargo build --release
+        if: always()
       - name: python suite
+        if: always()
         timeout-minutes: 60
         run: |
           bin=target/release/gui-gate; [ "$RUNNER_OS" = Windows ] && bin=target/release/gui-gate.exe
