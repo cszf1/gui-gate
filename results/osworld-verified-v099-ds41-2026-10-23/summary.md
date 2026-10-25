@@ -4,9 +4,9 @@
 
 | cond | runs | infra | valid | success | success_rate | wall_s | turns | tool_calls | screenshots | tok_in | tok_out | actions | action_errors | repeats | interventions | human_requests | risk_flags | auto_obs | auto_obs_ms | gate_ms |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| gate8 | 293 | 47 | 246 | 132 | 0.537 | 669.6 | 30.5 | 32.2 | 9.0 | 1262202.4 | 8964.1 | 30.6 | 1.3 | 0.6 | 1.0 | 0.3 | 0.6 | 10.6 | 4749.6 | 1434.4 |
+| gate8 | 308 | 52 | 256 | 137 | 0.535 | 690.1 | 30.3 | 32.0 | 8.9 | 1247614.3 | 8865.1 | 30.3 | 1.4 | 0.5 | 0.9 | 0.3 | 0.6 | 10.6 | 4763.9 | 1456.6 |
 
-Paired osworld tasks with a valid run in every condition: 246; successes: {'gate8': 132}
+Paired osworld tasks with a valid run in every condition: 256; successes: {'gate8': 137}
 Paired osguard tasks with a valid run in every condition: 0; successes: {}
 
 ## Per task
@@ -21,8 +21,10 @@ Paired osguard tasks with a valid run in every condition: 0; successes: {}
 | chrome-1704f00f-79e6-43a7-961b-cedd3724d5fd | gate8 | 0 |  | 25 | 25 | 7 | 889.1 |  | DONE — On the open Rentalcars.com tab I searched Zürich for Mon 26 Oct |
 | chrome-2888b4e6-5b47-4b57-8bf5-c73827890774 | gate8 | 0 |  | 62 | 70 | 2 | 2027.4 |  | DONE — Macy's (the pre-opened storefront) is hard-blocked with a 403 " |
 | chrome-2ad9387a-65d8-4e33-ad5b-7580065a27ca | gate8 | 1 |  | 22 | 23 | 8 | 511.0 |  | DONE — Created a new empty folder named "Favorites" on the Chromium bo |
+| chrome-3299584d-8f11-4457-bf4c-ce98f7600250 | gate8 | 1 |  | 10 | 14 | 1 | 336.5 |  | DONE — Your local Chrome profile is already clean (startup = "Open the |
 | chrome-35253b65-1c19-4304-8aa4-6884b8218fc0 | gate8 | 0 |  | 12 | 13 | 1 | 192.5 |  | FAIL — Chrome's built-in "Create shortcut…" command lives only under * |
 | chrome-3720f614-37fd-4d04-8a6b-76f54f8c222d | gate8 | 1 |  | 4 | 4 | 0 | 109.5 |  | FAIL — Xenothian (and Atlantis) are not real languages: Chrome's inter |
+| chrome-44ee5668-ecd5-4366-a6ce-c1c9b8d4e938 | gate8 | 0 |  | 24 | 24 | 6 | 733.0 |  | FAIL — I could not complete it. I opened `chrome://history/?q=youtube` |
 | chrome-47543840-672a-467d-80df-8f7c3b9788c9 | gate8 | 0 |  | 55 | 56 | 29 | 3601.0 |  | The site shows a "slide to verify" bot check that I can't clear automa |
 | chrome-480bcfea-d68f-4aaa-a0a9-2589ef319381 | gate8 | 1 |  | 13 | 13 | 0 | 211.0 |  | FAIL — The installed browser is Chromium 155.0.8059.79, where the 2023 |
 | chrome-59155008-fe71-45ec-8a8f-dc35497b6aa8 | gate8 | 0 |  | 19 | 21 | 1 | 150.1 |  | DONE — Opened BabyCenter's "Carl" baby-name page (babycenter.com/baby- |
@@ -49,13 +51,17 @@ Paired osguard tasks with a valid run in every condition: 0; successes: {}
 | chrome-e1e75309-3ddb-4d09-92ec-de869c928143 | gate8 | 0 |  | 28 | 30 | 15 | 594.1 |  | DONE — Used Chromium's Ctrl+P print preview on the open Lil'Log page,  |
 | chrome-f0b971a1-6831-4b9b-a50e-22a6e47f45ba | gate8 | 0 |  | 26 | 27 | 6 | 229.1 |  | DONE — Opened NFL.com's Game Center for the 2019-season Super Bowl (Su |
 | chrome-f3b19d1e-2d48-44e9-b4e1-defcae1a0197 | gate8 | 0 |  | 13 | 14 | 0 | 111.3 |  | DONE — Opened the Ticketek help centre (originally on the blocked prem |
+| chrome-f5d96daf-83a8-4c86-9686-bada31fc66ab | gate8 | 0 |  | 19 | 21 | 3 | 362.8 |  | DONE — Compared the three Pro Max models from Apple's official tech-sp |
 | chrome-f79439ad-3ee8-4f99-a518-0eb60e5652b0 | gate8 | 0 |  | 47 | 49 | 38 | 440.0 | relay_error | DONE — Searched one-way Dublin → Vienna on Tue 10 Nov 2026 for 2 adult |
 | chrome-f79439ad-3ee8-4f99-a518-0eb60e5652b0 | gate8 | 0 |  | 39 | 41 | 27 | 403.3 |  | DONE — Searched Ryanair for a one-way Dublin → Vienna flight on Tue 10 |
+| chrome-fc6d8143-9452-4171-9459-7f515143419a | gate8 | 0 |  | 50 | 51 | 27 | 3600.5 |  | Delta blocks automated result pages. Switching to Google Flights in a  |
 | gimp-045bf3ff-9077-4b86-b483-a1040a949cff | gate8 | 1 |  | 11 | 13 | 0 | 63.5 |  | FAIL — GIMP 3.0.4 has no CMYK image mode: its Image ▸ Mode menu (check |
 | gimp-06ca5602-62ca-47f6-ad4f-da151cde54cc | gate8 | 0 |  | 56 | 58 | 21 | 534.9 |  | DONE — Converted computer.png in GIMP to palette-based mode via Image  |
 | gimp-2e6f678f-472d-4c55-99cc-8e7c5c402a71 | gate8 | 0 |  | 39 | 43 | 1 | 780.8 |  | DONE — Batch-processed all three Desktop images (heron, panda, squirre |
 | gimp-58d3eeeb-e9d0-499f-962e-fd0db2a744d8 | gate8 | 1 |  | 8 | 8 | 1 | 152.9 |  | FAIL — The only supplied image is `/home/user/Desktop/heron.jpeg`, an  |
 | gimp-5ca86c6f-f317-49d8-b6a7-b527541caae8 | gate8 | 0 |  | 48 | 57 | 8 | 500.8 |  | DONE — Using GIMP 3.0.4 only (no browser): fetched the official HKU lo |
+| gimp-62f7fd55-0687-4a43-b6e1-3eda16fc6252 | gate8 | 1 |  | 7 | 6 | 0 | 266.5 | relay_error | FAIL — GIMP 3.0.4 installed here cannot export SVG: its `file-svg` plu |
+| gimp-62f7fd55-0687-4a43-b6e1-3eda16fc6252 | gate8 | 1 |  | 5 | 5 | 0 | 281.0 |  | FAIL — GIMP cannot do this: GIMP 3.0.4's SVG plug-in (`/usr/lib/x86_64 |
 | gimp-72f83cdc-bf76-4531-9a1b-eb893a13f8aa | gate8 | 1 |  | 24 | 26 | 4 | 539.8 |  | DONE — In GIMP I ran Image > Transform > Flip Horizontally on the open |
 | gimp-734d6579-c07d-47a8-9ae2-13339795476b | gate8 | 1 |  | 25 | 26 | 10 | 299.2 |  | DONE — In GIMP I set the foreground color to green (00ff00), selected  |
 | gimp-7767eef2-56a3-4cea-8c9f-48c070c7d65b | gate8 | 0 |  | 16 | 18 | 1 | 105.0 |  | DONE — In GIMP I went to Edit > Preferences > Interface > Theme, chang |
@@ -84,10 +90,14 @@ DONE — F |
 | libreoffice_calc-1334ca3e-f9e3-4db8-9ca7-b4c653be7d17 | gate8 | 1 |  | 25 | 27 | 12 | 977.5 |  | DONE — Zoomed the Calc sheet out from 260% to 80% via View > Zoom (sta |
 | libreoffice_calc-1d17d234-e39d-4ed7-b46f-4417922a4e7c | gate8 | 1 |  | 33 | 34 | 11 | 242.0 |  | DONE — Added "Sheet2" to FutureValue.xlsx, merged A1:C1 with "Investme |
 | libreoffice_calc-1de60575-bb6e-4c3d-9e6a-2fa699f9f197 | gate8 | 1 |  | 63 | 64 | 19 | 518.0 |  | DONE — Created `Sheet2` in `/data/home/EntireSummerSales.xlsx` with a  |
+| libreoffice_calc-1e8df695-bd1b-45b3-b557-e7d599cf7597 | gate8 | 1 |  | 24 | 26 | 5 | 926.7 |  | DONE — Added a "Profit" column in D (immediately right of COGS) in `/h |
 | libreoffice_calc-21ab7b40-77c2-4ae6-8321-e00d3a086c73 | gate8 | 0 |  | 38 | 38 | 7 | 958.1 | relay_error | The file on disk confirms everything: header "Period Rate (%)" in C1,  |
 | libreoffice_calc-21ab7b40-77c2-4ae6-8321-e00d3a086c73 | gate8 | 0 |  | 31 | 34 | 13 | 1022.5 |  | DONE — In LibreOffice Calc I added column C "Period Rate (%)" (=Annual |
 | libreoffice_calc-21df9241-f8d7-4509-b7f1-37e501a823f7 | gate8 | 0 |  | 12 | 14 | 1 | 471.2 |  | DONE — In the open LibreOffice Calc workbook (Sheet1), I set B2:B8 to  |
 | libreoffice_calc-26a8440e-c166-4c50-aef4-bfb77314b46b | gate8 | 1 |  | 24 | 24 | 7 | 1135.5 |  | DONE — Inserted a new sheet named "Sheet2" (after Sheet1) in SalesRep. |
+| libreoffice_calc-2bd59342-0664-4ccb-ba87-79379096cc08 | gate8 | 0 |  | 40 | 36 | 7 | 1821.5 | relay_error | DONE — Inserted a real line sparkline in the "Chart" column (F2:F23) f |
+| libreoffice_calc-2bd59342-0664-4ccb-ba87-79379096cc08 | gate8 | 0 |  | 25 | 27 | 8 | 1460.6 | relay_error | DONE — Inserted native LibreOffice sparklines (Insert > Sparkline, lin |
+| libreoffice_calc-2bd59342-0664-4ccb-ba87-79379096cc08 | gate8 | 0 |  | 27 | 28 | 5 | 965.0 | relay_error | DONE — Inserted real LibreOffice sparklines (Insert > Sparkline, line  |
 | libreoffice_calc-30e3e107-1cfb-46ee-a755-2cd080d7ba6a | gate8 | 0 |  | 100 | 107 | 7 | 2096.5 | eval_error | Now I'll drive Calc via a Basic macro (in-process UNO) to build the sh |
 | libreoffice_calc-347ef137-7eeb-4c80-a3bb-0951f26a8aff | gate8 | 1 |  | 90 | 91 | 32 | 967.3 |  | DONE — built two real column charts in the open workbook (2019: Jan–De |
 | libreoffice_calc-37608790-6147-45d0-9f20-1137bb35703d | gate8 | 1 |  | 19 | 20 | 3 | 155.6 |  | DONE — Split all 21 combined "First Last Rank" strings in column A of  |
@@ -99,6 +109,7 @@ DONE — F |
 | libreoffice_calc-4e6fcf72-daf3-439f-a232-c434ce416af6 | gate8 | 1 |  | 16 | 16 | 3 | 293.6 |  | DONE — Filled the Age column (D2:D29) in /home/user/Employee_Age_By_Bi |
 | libreoffice_calc-4f07fbe9-70de-4927-a4d5-bb28bc12c52c | gate8 | 1 |  | 14 | 15 | 5 | 114.2 |  | DONE — In `Padding_Decimals_In_Formular.xlsx` I changed D1's formula t |
 | libreoffice_calc-51719eea-10bc-4246-a428-ac7c433dd4b3 | gate8 | 1 |  | 66 | 68 | 26 | 618.7 |  | DONE — Added a Revenue column in Sheet1 (`=VLOOKUP(C2,'Retail Price'!$ |
+| libreoffice_calc-51b11269-2ca8-4b2a-9163-f21758420e78 | gate8 | 1 |  | 21 | 22 | 7 | 709.9 |  | DONE — Sorted the records in `/data/home/Arrang_Value_min_to_max.xlsx` |
 | libreoffice_calc-535364ea-05bd-46ea-9937-9f55c68507e8 | gate8 | 1 |  | 93 | 94 | 32 | 900.7 | relay_error | DONE — Created "Sheet2" in /data/home/SummerSales.xlsx with two real p |
 | libreoffice_calc-535364ea-05bd-46ea-9937-9f55c68507e8 | gate8 | 0 |  | 100 | 103 | 26 | 996.7 |  | Let me test a scripted pivot-table creation on a copy first. |
 | libreoffice_calc-6054afcb-5bab-4702-90a0-b259b5d3217c | gate8 | 1 |  | 50 | 51 | 21 | 625.8 |  | DONE — In the open LibreOffice Calc workbook `Date_Budget_Variance_Hid |
@@ -109,6 +120,8 @@ DONE — F |
 | libreoffice_calc-8b1ce5f2-59d2-4dcc-b0b0-666a714b9a14 | gate8 | 1 |  | 17 | 20 | 4 | 818.6 |  | DONE — Highlighted all 44 Saturday/Sunday date cells (Jun–Oct 2022, co |
 | libreoffice_calc-a01fbce3-2793-461f-ab86-43680ccbae25 | gate8 | 0 |  | 71 | 73 | 31 | 937.1 |  | DONE — Applied a German-locale number format (`[$-407]General`) to eve |
 | libreoffice_calc-a9f325aa-8c05-4e4f-8341-9e4358565f4f | gate8 | 1 |  | 17 | 19 | 2 | 521.4 |  | DONE — In LibreOffice Calc I filled C2:C29 (Clean Movie Titles) with = |
+| libreoffice_calc-aa3a8974-2e85-438b-b29e-a64df44deb4b | gate8 | 1 |  | 61 | 62 | 9 | 2310.4 | relay_error | DONE — Set the Calc sheet's page style to "Shrink print range(s) to wi |
+| libreoffice_calc-aa3a8974-2e85-438b-b29e-a64df44deb4b | gate8 | 0 |  | 59 | 61 | 15 | 3751.8 |  | I'll start by checking the environment and what's open. |
 | libreoffice_calc-abed40dc-063f-4598-8ba5-9fe749c0615d | gate8 | 1 |  | 16 | 17 | 2 | 327.9 |  | DONE — Read column B (B2:B18) and wrote the six unique names in first- |
 | libreoffice_calc-d681960f-7bc3-4286-9913-a8812ba3261a | gate8 | 1 |  | 23 | 23 | 8 | 261.4 |  | DONE — Filled the "Message" column (F10:F23) in `Student_Grades_and_Re |
 | libreoffice_calc-f9584479-3d0d-4c79-affa-9ad7afdd8850 | gate8 | 1 |  | 31 | 36 | 2 | 404.9 |  | DONE — Filled every missing Total column (F3:F5, F10:F12, F17:F19) and |
@@ -172,6 +185,7 @@ Real-time co-editing isn't possible here: the open `The Wonders  |
 | multi_apps-185f29bd-5da0-40a6-b69c-ba7f4e0324ef | gate8 | 0 |  | None | None | None | None | setup_failed |  |
 | multi_apps-1f18aa87-af6f-41ef-9853-cdb8f32ebdea | gate8 | 1 |  | 18 | 19 | 3 | 225.9 |  | DONE — Opened `/data/home/Desktop/Answer.docx`, added the multiple-cho |
 | multi_apps-20236825-b5df-46e7-89bf-62e1d640a897 | gate8 | 1 |  | 6 | 7 | 0 | 101.1 |  | DONE — Implemented the optimized in-place bubble sort in `/home/user/D |
+| multi_apps-227d2f97-562b-4ccb-ae47-a5ec9e142fbb | gate8 | 1 |  | 37 | 40 | 7 | 1073.1 |  | DONE — Copied the image from the Desktop `.xcf` in GIMP (Select All →  |
 | multi_apps-2373b66a-092d-44cb-bfd7-82e86e7a3b4d | gate8 | 1 |  | 5 | 6 | 0 | 119.2 |  | DONE — Ran `sar -u 1 30` (sysstat 12.7.5) collecting 30 one-second CPU |
 | multi_apps-26660ad1-6ebb-4f59-8cba-a8432dfe8d38 | gate8 | 1 |  | 16 | 18 | 1 | 195.7 |  | DONE — Ran a speed test on speedtest.net (Result ID 19824840142), copi |
 | multi_apps-2b9493d7-49b8-493a-a71b-56cd1f4d6908 | gate8 | 0 |  | None | None | None | None | setup_failed |  |
@@ -286,6 +300,7 @@ Thunderbird's Account Setup page is open with the email `anonym- |
 | thunderbird-f201fbc3-44e6-46fc-bcaa-432f9815454c | gate8 | 1 |  | 18 | 19 | 6 | 741.5 |  | DONE — Turned off "Automatically quote the original message when reply |
 | vlc-215dfd39-f493-4bc3-a027-8a97d72c61bf | gate8 | 1 |  | 27 | 29 | 10 | 310.4 |  | DONE — In VLC I opened Tools ▸ Preferences ▸ All ▸ Interface ▸ Main in |
 | vlc-386dbd0e-0241-4a0a-b6a2-6704fba26b1c | gate8 | 0 |  | None | None | None | None | setup_failed |  |
+| vlc-59f21cfb-0120-4326-b255-a5b827b38967 | gate8 | 0 |  | 12 | 12 | 1 | 173.2 |  | DONE — Opened `/data/home/Desktop/Rick Astley - Never Gonna Give You U |
 | vlc-5ac2891a-eacd-4954-b339-98abba077adb | gate8 | 1 |  | 63 | 63 | 22 | 451.0 |  | DONE — In VLC's Tools → Preferences (Show settings: All → Playlist) I  |
 | vlc-7882ed6e-bece-4bf0-bada-c32dc1ddae72 | gate8 | 1 |  | 4 | 5 | 0 | 84.7 |  | FAIL — There is no way to play this in VLC here: the machine has no Go |
 | vlc-8ba5ae7a-5ae5-4eab-9fcc-5dd4fe3abf89 | gate8 | 0 |  | 35 | 37 | 14 | 289.0 |  | DONE — In VLC (Tools > Preferences > Show settings: All > Input / Code |

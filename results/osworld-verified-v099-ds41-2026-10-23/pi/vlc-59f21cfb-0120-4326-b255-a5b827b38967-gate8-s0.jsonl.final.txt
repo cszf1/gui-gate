@@ -1,0 +1,1 @@
+DONE — Opened `/data/home/Desktop/Rick Astley - Never Gonna Give You Up (Official Music Video).mp4` in the already-running VLC via Media > Open File (Ctrl+O), and it is now playing (position advanced 00:08 → 00:11 of 03:32, button showing "Pause the playback"). Note: VLC was started with `--no-audio`, so the clip plays silently (this machine also has no sound card).

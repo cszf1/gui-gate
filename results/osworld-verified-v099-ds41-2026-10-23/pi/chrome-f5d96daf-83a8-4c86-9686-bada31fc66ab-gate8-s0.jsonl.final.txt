@@ -1,0 +1,1 @@
+DONE — Compared the three Pro Max models from Apple's official tech-spec pages (support.apple.com/kb/SP904, SP876, SP848) and saved a side-by-side comparison (design, size/weight, display, chip, cameras, battery/charging/port, key differences) to `/data/home/Desktop/iphone_pro_max_comparison.txt`; Chromium shows the iPhone 15 Pro Max spec page.

@@ -1,0 +1,1 @@
+FAIL — GIMP cannot do this: GIMP 3.0.4's SVG plug-in (`/usr/lib/x86_64-linux-gnu/gimp/3.0/plug-ins/file-svg/file-svg`) registers only `file-svg-load` (SVG is import-only), so `File > Export As` offers no `.svg` type, and no tracer/converter (inkscape, rsvg-convert, potrace, convert) exists on this machine to vectorize `/home/user/logo.png`.

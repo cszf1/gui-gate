@@ -1,0 +1,1 @@
+DONE — Set the Calc sheet's page style to "Shrink print range(s) to width/height" (1×1 page), saved the workbook, and exported it as a single-page A4 PDF at /home/user/Resize_Cells_Fit_Page.pdf (verified with pdfinfo: Pages 1; all rows/columns render on that one page).

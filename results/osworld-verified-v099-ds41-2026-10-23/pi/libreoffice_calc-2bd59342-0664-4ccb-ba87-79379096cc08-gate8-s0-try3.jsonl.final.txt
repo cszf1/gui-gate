@@ -1,0 +1,1 @@
+DONE — Inserted real LibreOffice sparklines (Insert > Sparkline, line type) into the "Chart" column F2:F23 of `/data/home/OrderId_Month_Chart.xlsx`, one per order id driven by that row's Jan–Mar values (C:E), and saved the file.
