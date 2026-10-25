@@ -20,7 +20,13 @@
 //!   takeover  the person does a step themselves, then continues    -> "allow" (done) | "deny"
 //!   ask_help  the agent is stuck: the person does the step, or tells it to try another way
 //!                                                                  -> "allow" (did it) | "deny" (+ note)
-//! A timeout, a declined / cancelled form or a closed dialog is never an approval.
+//! A timeout, a declined / cancelled form or a closed dialog is never an approval. Every answer also carries an
+//! `outcome` saying WHY it ended: accepted | denied (the person chose no) | declined / cancelled (the client's form was
+//! declined or dismissed) | timeout | window_closed | channel_unavailable | unattended (channel "deny"). All but
+//! accepted are refusals; the reason is logged and returned (human_outcome) so a timeout is not read as "the user
+//! objects" and a closed window is not read as "no".
+//! An MRTR answer is bound to the call (tool + arguments) AND to the structured effect the gate asked about: when the
+//! target, window or payload changed before the retry arrived, the answer is not used and the person is asked again.
 use crate::util::*;
 use serde_json::{json, Value};
 use std::cell::RefCell;
@@ -45,8 +51,8 @@ pub struct CallCtx {
     pub mrtr: bool,
     /// tool name + argument digest of this call (a pending request is bound to it)
     pub binding: String,
-    /// the person's answer this retry carries (kind, mapped answer, note)
-    pub answer: Option<(String, String, String)>,
+    /// the person's answer this retry carries (kind, mapped answer, note, effect asked about, outcome)
+    pub answer: Option<(String, String, String, String, String)>,
     /// set by ask(): the input request this call must answer with instead of its normal result
     pub request: Option<Value>,
     /// a gate-built call inside run_actions: never park it as an MRTR request (the batch would re-run on retry)
@@ -91,6 +97,8 @@ pub struct Pending {
     pub binding: String,
     pub kind: String,
     pub deadline: f64,
+    /// the structured effect (JSON text) the person is asked about; "" when the request has none
+    pub effect: String,
 }
 
 /// The gate's table of MRTR requests: one-time, unguessable ids, bound to the call and its deadline.
@@ -100,10 +108,10 @@ pub struct PendingTable {
 }
 
 pub enum Resolved {
-    /// (kind, mapped answer, note)
-    Answer(String, String, String),
-    /// the retry came back after the deadline: a timeout, never an approval
-    Late(String),
+    /// (kind, mapped answer, note, effect asked about, outcome)
+    Answer(String, String, String, String, String),
+    /// the retry came back after the deadline: a timeout, never an approval (kind, effect)
+    Late(String, String),
     Invalid(&'static str),
 }
 
@@ -125,11 +133,11 @@ impl PendingTable {
             return Resolved::Invalid("requestState belongs to a different tool call");
         }
         if now() > p.deadline + MRTR_GRACE_S {
-            return Resolved::Late(p.kind);
+            return Resolved::Late(p.kind, p.effect);
         }
         let r = responses.and_then(|r| r.get("human"));
-        let (ans, note) = map_elicit(&p.kind, r);
-        Resolved::Answer(p.kind, ans, note)
+        let (ans, note, outcome) = map_elicit_o(&p.kind, r);
+        Resolved::Answer(p.kind, ans, note, p.effect, outcome)
     }
 
     pub fn len(&self) -> usize {
@@ -154,10 +162,38 @@ pub fn schema_for(kind: &str) -> Value {
 
 /// ElicitResult -> (answer, note). Anything but an accepted, positive form is a refusal.
 pub fn map_elicit(kind: &str, r: Option<&Value>) -> (String, String) {
-    let Some(r) = r else { return ("deny".into(), String::new()) };
-    if s(r, "action") != "accept" {
-        return ("deny".into(), String::new());
+    let (a, n, _) = map_elicit_o(kind, r);
+    (a, n)
+}
+
+/// How a refusal reads in the agent's message (all of them are refusals).
+pub fn outcome_words(outcome: &str, timeout: f64) -> String {
+    match outcome {
+        "timeout" => format!("did not answer within {} s", timeout as i64),
+        "cancelled" => "cancelled the request".into(),
+        "window_closed" => "closed the dialog without answering".into(),
+        "channel_unavailable" => "could not be reached".into(),
+        "no_response" => "gave no answer".into(),
+        "unattended" => "declined (unattended session: every request is refused)".into(),
+        _ => "declined".into(),
     }
+}
+
+/// map_elicit plus the outcome (why it ended).
+pub fn map_elicit_o(kind: &str, r: Option<&Value>) -> (String, String, String) {
+    let Some(r) = r else { return ("deny".into(), String::new(), "no_response".into()) };
+    match s(r, "action") {
+        "accept" => {}
+        "decline" => return ("deny".into(), String::new(), "declined".into()),
+        "cancel" => return ("deny".into(), String::new(), "cancelled".into()),
+        _ => return ("deny".into(), String::new(), "no_response".into()),
+    }
+    let (a, n) = map_accepted(kind, r);
+    let o = if a == "deny" { "denied" } else { "accepted" };
+    (a, n, o.into())
+}
+
+fn map_accepted(kind: &str, r: &Value) -> (String, String) {
     let c = r.get("content").cloned().unwrap_or(json!({}));
     match kind {
         "answer" => {
@@ -193,7 +229,7 @@ d.add_button(q.get("ok", "Allow"), 1); d.add_button(q.get("no", "Deny"), 2)
 GLib.timeout_add_seconds(int(q.get("timeout", 120)), lambda: (d.response(3), False)[1])
 d.show_all(); d.present()
 r = d.run()
-out = {1: "allow", 2: "deny", 3: "timeout"}.get(r, "deny")
+out = {1: "allow", 2: "deny", 3: "timeout"}.get(r, "closed")
 if entry is not None and r == 1:
     out = entry.get_text() or "deny"
 print(json.dumps({"answer": out}))
@@ -212,7 +248,7 @@ $l.Text = $q.text; $l.Left = 12; $l.Top = 12; $l.Width = 480; $l.Height = 110
 $f.Controls.Add($l)
 $t = $null
 if ($q.want_text) { $t = New-Object System.Windows.Forms.TextBox; $t.Left = 12; $t.Top = 125; $t.Width = 480; $f.Controls.Add($t) }
-$script:ans = 'deny'
+$script:ans = 'closed'
 $ok = New-Object System.Windows.Forms.Button; $ok.Text = $q.ok; $ok.Left = 270; $ok.Top = 160; $ok.Width = 110
 $ok.Add_Click({ if ($t -ne $null) { $script:ans = $t.Text; if ($script:ans -eq '') { $script:ans = 'deny' } } else { $script:ans = 'allow' }; $f.Close() })
 $no = New-Object System.Windows.Forms.Button; $no.Text = $q.no; $no.Left = 385; $no.Top = 160; $no.Width = 110
@@ -364,7 +400,8 @@ impl Human {
                     Some((0, out)) if want_text => text_or(out),
                     Some((0, _)) => "allow".into(),
                     Some((5, _)) | None => "timeout".into(),
-                    Some(_) => "deny".into(),
+                    Some((1, _)) => "deny".into(),
+                    Some(_) => "closed".into(),
                 }
             }
             Some("kdialog") => {
@@ -375,7 +412,8 @@ impl Human {
                     Some((0, out)) if want_text => text_or(out),
                     Some((0, _)) => "allow".into(),
                     None => "timeout".into(),
-                    Some(_) => "deny".into(),
+                    Some((1, _)) => "deny".into(),
+                    Some(_) => "closed".into(),
                 }
             }
             Some("osascript") => {
@@ -406,7 +444,7 @@ impl Human {
                     None => "timeout".into(),
                 }
             }
-            None => "timeout".into(),
+            None => "unavailable".into(),
         }
     }
 
@@ -420,12 +458,20 @@ impl Human {
         let kind = if KINDS.contains(&kind) { kind } else { "approve" };
         let ch = self.resolve_channel();
         let t0 = Instant::now();
+        let mut outcome = String::new();
         let ans: String = match ch.as_str() {
             "elicit" if call_mrtr() => {
                 // a retry that carries the person's answer to this very request
-                if let Some((k, a, _)) = CALL.with(|x| x.borrow().answer.clone()) {
+                let effect_now = meta.get("effect").map(|e| e.to_string()).unwrap_or_default();
+                let mut stale = false;
+                if let Some((k, a, _, eff, outcome)) = CALL.with(|x| x.borrow().answer.clone()) {
+                    if k == kind && eff == effect_now {
+                        return json!({"answer": a, "channel": "elicit", "mrtr": true, "ms": 0.0, "outcome": outcome});
+                    }
                     if k == kind {
-                        return json!({"answer": a, "channel": "elicit", "mrtr": true, "ms": 0.0});
+                        // the target / window / payload changed since the person answered: that answer is not reused
+                        stale = true;
+                        CALL.with(|x| x.borrow_mut().answer = None);
                     }
                 }
                 if CALL.with(|x| x.borrow().in_batch) {
@@ -434,8 +480,11 @@ impl Human {
                 }
                 let binding = CALL.with(|x| x.borrow().binding.clone());
                 let deadline = now() + self.timeout;
-                let state = self.pending.park(Pending { binding, kind: kind.into(), deadline });
+                let state = self.pending.park(Pending { binding, kind: kind.into(), deadline, effect: effect_now });
                 let mut m = if meta.is_object() { meta } else { json!({}) };
+                if stale {
+                    m["asked_again"] = json!("the action's target changed since the earlier answer");
+                }
                 m["kind"] = json!(kind);
                 m["title"] = json!(title);
                 m["timeout_s"] = json!(self.timeout);
@@ -445,7 +494,7 @@ impl Human {
                         "mode": "form", "message": text, "requestedSchema": schema_for(kind), "_meta": {META_KEY: m}}}},
                     "requestState": state});
                 CALL.with(|x| x.borrow_mut().request = Some(req));
-                return json!({"answer": "input_required", "channel": "elicit", "mrtr": true, "ms": 0.0});
+                return json!({"answer": "input_required", "channel": "elicit", "mrtr": true, "ms": 0.0, "stale_answer": stale});
             }
             "elicit" if self.elicit.is_some() => {
                 let mut params = json!({"message": text, "requestedSchema": schema_for(kind)});
@@ -455,21 +504,43 @@ impl Human {
                 }
                 params["_meta"] = json!({META_KEY: {"kind": kind, "title": title, "timeout_s": self.timeout}});
                 match (self.elicit.as_ref().unwrap())(params, self.timeout) {
-                    None => "timeout".into(),
+                    None => {
+                        outcome = "timeout".into();
+                        "timeout".into()
+                    }
                     Some(r) => {
-                        let (a, note) = map_elicit(kind, Some(&r));
+                        let (a, note, o) = map_elicit_o(kind, Some(&r));
+                        outcome = o;
                         if !note.is_empty() {
-                            CALL.with(|x| { let mut c = x.borrow_mut(); c.answer = Some((kind.into(), a.clone(), note.clone())); });
+                            CALL.with(|x| { let mut c = x.borrow_mut(); c.answer = Some((kind.into(), a.clone(), note.clone(), String::new(), outcome.clone())); });
                         }
                         a
                     }
                 }
             }
-            "deny" => "deny".into(),
-            "desktop" => self.desktop(text, kind, if title.is_empty() { "gui-gate: a person is needed" } else { title }),
-            _ => return json!({"answer": "chat", "channel": "chat", "ms": 0.0}),
+            "deny" => {
+                outcome = "unattended".into();
+                "deny".into()
+            }
+            "desktop" => {
+                let a = self.desktop(text, kind, if title.is_empty() { "gui-gate: a person is needed" } else { title });
+                let (a, o) = match a.as_str() {
+                    "allow" => (a.clone(), "accepted"),
+                    "deny" => (a.clone(), "denied"),
+                    "timeout" => (a.clone(), "timeout"),
+                    "closed" => ("deny".to_string(), "window_closed"),
+                    "unavailable" => ("timeout".to_string(), "channel_unavailable"),
+                    _ => (a.clone(), "accepted"), // a typed answer
+                };
+                outcome = o.into();
+                a
+            }
+            _ => return json!({"answer": "chat", "channel": "chat", "ms": 0.0, "outcome": "channel_unavailable"}),
         };
-        json!({"answer": ans, "channel": ch, "ms": round_to(t0.elapsed().as_secs_f64() * 1000.0, 1)})
+        if outcome.is_empty() {
+            outcome = if ans == "allow" { "accepted".into() } else { "denied".into() };
+        }
+        json!({"answer": ans, "channel": ch, "ms": round_to(t0.elapsed().as_secs_f64() * 1000.0, 1), "outcome": outcome})
     }
 }
 
@@ -509,7 +580,7 @@ mod tests {
         let st = take_call().request.unwrap()["requestState"].as_str().unwrap().to_string();
         let resp = json!({"human": {"action": "accept", "content": {"done": true}}});
         match h.pending.resolve(&st, "click|{}", Some(&resp)) {
-            Resolved::Answer(k, a, _) => { assert_eq!(k, "takeover"); assert_eq!(a, "allow"); }
+            Resolved::Answer(k, a, _, _, o) => { assert_eq!(k, "takeover"); assert_eq!(a, "allow"); assert_eq!(o, "accepted"); }
             _ => panic!("expected an answer"),
         }
         assert!(matches!(h.pending.resolve(&st, "click|{}", Some(&resp)), Resolved::Invalid(_)), "one-time");
@@ -518,9 +589,9 @@ mod tests {
     #[test]
     fn late_answer_is_a_timeout() {
         let h = Human::new("elicit", 0.0, Some(Arc::new(|_, _| None)), Arc::new(|| true));
-        let st = h.pending.park(Pending { binding: "b".into(), kind: "approve".into(), deadline: now() - MRTR_GRACE_S - 1.0 });
+        let st = h.pending.park(Pending { binding: "b".into(), kind: "approve".into(), deadline: now() - MRTR_GRACE_S - 1.0, effect: String::new() });
         let resp = json!({"human": {"action": "accept", "content": {"decision": "allow"}}});
-        assert!(matches!(h.pending.resolve(&st, "b", Some(&resp)), Resolved::Late(_)));
+        assert!(matches!(h.pending.resolve(&st, "b", Some(&resp)), Resolved::Late(_, _)));
     }
 
     #[test]
@@ -536,6 +607,46 @@ mod tests {
         let (a, n) = map_elicit("ask_help", Some(&json!({"action": "accept", "content": {"choice": "try_other", "note": "use Ctrl+S"}})));
         assert_eq!((a.as_str(), n.as_str()), ("deny", "use Ctrl+S"));
         assert_eq!(map_elicit("ask_help", Some(&json!({"action": "accept", "content": {"choice": "did_it"}}))).0, "allow");
+    }
+
+    #[test]
+    fn outcomes_say_why_a_request_ended() {
+        let o = |r: Value| map_elicit_o("approve", Some(&r)).2;
+        assert_eq!(o(json!({"action": "accept", "content": {"decision": "allow"}})), "accepted");
+        assert_eq!(o(json!({"action": "accept", "content": {"decision": "deny"}})), "denied");
+        assert_eq!(o(json!({"action": "decline"})), "declined");
+        assert_eq!(o(json!({"action": "cancel"})), "cancelled");
+        assert_eq!(map_elicit_o("approve", None).2, "no_response");
+        // every one but accepted is a refusal
+        for r in [json!({"action": "decline", "content": {"decision": "allow"}}), json!({"action": "cancel"}), json!({"action": "?"})] {
+            assert_eq!(map_elicit_o("approve", Some(&r)).0, "deny");
+        }
+        let h = Human::new("deny", 30.0, None, Arc::new(|| false));
+        assert_eq!(h.ask("x", false, "")["outcome"], "unattended");
+        assert!(outcome_words("timeout", 120.0).contains("120 s"));
+        assert_eq!(outcome_words("window_closed", 1.0), "closed the dialog without answering");
+    }
+
+    #[test]
+    fn an_answer_about_another_effect_is_not_reused() {
+        let h = Human::new("elicit", 30.0, Some(Arc::new(|_, _| None)), Arc::new(|| true));
+        let e1 = json!({"hazard": "delete", "resources": ["path:/a"]});
+        let e2 = json!({"hazard": "delete", "resources": ["path:/b"]});
+        set_call(CallCtx { mrtr: true, binding: "k".into(), answer: Some(("approve".into(), "allow".into(), String::new(), e1.to_string(), "accepted".into())), ..Default::default() });
+        let r = h.ask_kind("approve", "q", "t", json!({"effect": e1}));
+        assert_eq!(r["answer"], "allow", "the same effect: the answer counts");
+        take_call();
+        set_call(CallCtx { mrtr: true, binding: "k".into(), answer: Some(("approve".into(), "allow".into(), String::new(), e1.to_string(), "accepted".into())), ..Default::default() });
+        let r = h.ask_kind("approve", "q", "t", json!({"effect": e2}));
+        assert_eq!(r["answer"], "input_required", "the target changed: asked again");
+        assert_eq!(r["stale_answer"], true);
+        let c = take_call();
+        let st = c.request.unwrap()["requestState"].as_str().unwrap().to_string();
+        // the new request is bound to the new effect
+        match h.pending.resolve(&st, "k", Some(&json!({"human": {"action": "accept", "content": {"decision": "allow"}}}))) {
+            Resolved::Answer(_, a, _, eff, _) => { assert_eq!(a, "allow"); assert_eq!(eff, e2.to_string()); }
+            _ => panic!("expected an answer"),
+        }
     }
 
     #[test]

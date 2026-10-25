@@ -48,7 +48,7 @@ re!(bg_unavailable, r"(?i)background delivery is not available|no focus-free inp
 re!(no_frame, r"(?i)no screenshot frame");
 re!(loading_rx, r"(?i)(loading|busy|please wait|加载|正在|请稍候)");
 
-const INSTRUCTIONS_NOTE: &str = "\n\n[gui-gate] Actions go through a value gate before they run. Usually they execute at once. If a call returns a message starting with \"[gate] Not executed\" (structuredContent.status \"blocked\"), nothing was executed: do exactly what it says (re-read, re-aim with a screenshot, take the safe way it names, or ask the user and retry with gate_confirm). The gate settles doubtful and risky steps itself (rules, the user's own words, its own independent reviewer, or a person); it never asks you to approve your own action. To save time the gate omits the screenshot from get_window_state when the element tree is enough; pass include_screenshot:true when you really need pixels. Each action's result already carries a fresh read of the window: do not read it again before the next step. Several steps whose targets you can already see go in ONE run_actions call. If the user's request is known, pass it verbatim once with gate_task. When the gate refuses a risky step it tells you a safe way to go on: take it and finish the task.";
+const INSTRUCTIONS_NOTE: &str = "\n\n[gui-gate] Actions go through a value gate before they run. Usually they execute at once. If a call returns a message starting with \"[gate] Not executed\" (structuredContent.status \"blocked\"), nothing was executed: do exactly what it says (re-read, re-aim with a screenshot, or take the safe way it names). Status \"unknown\" means the gate cannot tell whether the step happened (the driver died or timed out): read the window before anything else and never repeat it blind. The gate settles doubtful and risky steps itself (rules, the operator's request, its own independent reviewer, or a person it asks directly); nothing you send or say can approve a step, and it never asks you to approve your own action. To save time the gate omits the screenshot from get_window_state when the element tree is enough; pass include_screenshot:true when you really need pixels. Each action's result already carries a fresh read of the window: do not read it again before the next step. Several steps whose targets you can already see go in ONE run_actions call. If the user's request is known, you may state it once with gate_task (context only; it never authorizes a risky step). When the gate refuses a risky step it tells you a safe way to go on: take it and finish the task.";
 
 /// gate_config changes the gate's own safety settings: only a trusted launcher may allow it (bench runs pass
 /// --allow-config / GUI_GATE_ALLOW_CONFIG=1); the acting agent can never call it otherwise, listed or not.
@@ -65,7 +65,7 @@ fn gate_tools() -> Vec<Value> {
                    "question": {"type": "string", "description": "What you need from them, in one or two plain sentences."},
                    "kind": {"type": "string", "enum": ["approve", "answer", "takeover"]}}, "required": ["question"]}}),
         json!({"name": "gate_task",
-               "description": "Tell the gate the user's request, VERBATIM, once at the start (copy their words; do not summarise or add to them). The gate lets a risky step through without stopping you when the request explicitly asks for it (e.g. \"overwrite report.pdf\"). It can be set only once.",
+               "description": "Tell the gate the user's request, VERBATIM, once at the start (copy their words; do not summarise or add to them). Context only: it helps the gate's checks and briefing, but it never authorizes a risky step (only the operator who started the gate can). It can be set only once.",
                "inputSchema": {"type": "object", "properties": {
                    "request": {"type": "string", "description": "The user's request, word for word."}}, "required": ["request"]}}),
         json!({"name": "gate_report",
@@ -422,9 +422,27 @@ pub fn short(text: &str, limit: usize) -> String {
 /// structuredContent.status, so a client never has to guess from the text whether something ran:
 ///   executed (the driver ran it; isError tells whether it reported a failure), blocked (the gate ran nothing),
 ///   partial (run_actions stopped after some steps; batch.executed says how many ran), done (a non-GUI tool answered).
+const PERMIT_TTL_S: f64 = 30.0;
+
+/// The result of an action whose outcome the gate cannot know (status "unknown").
+pub fn unknown_result(name: &str, why: &str) -> Value {
+    json!({"isError": true,
+           "content": [{"type": "text", "text": format!("[gate] Outcome unknown: {why} while `{name}` was being delivered, so the gate cannot tell whether it happened. It was NOT sent again. Read the window to see whether it took effect; send it again only if it did not (it will be decided afresh).")}],
+           "structuredContent": {"status": "unknown", "outcome": "unknown", "unknown_reason": why}})
+}
+
+pub fn outcome_unknown(r: &Value) -> bool {
+    r.get("structuredContent").and_then(|x| x.get("status")).and_then(|x| x.as_str()) == Some("unknown")
+}
+
 pub fn set_status(name: &str, r: &mut Value) {
     let sc = r.get("structuredContent").cloned().unwrap_or(json!({}));
-    let st = if sc.get("gate").and_then(|g| g.get("executed")) == Some(&json!(false)) {
+    let preset = s(&sc, "status");
+    let st = if preset == "unknown" || preset == "input_required" {
+        if preset == "unknown" { "unknown" } else { "input_required" }
+    } else if sc.get("batch").and_then(|b| b.get("unknown_step")).map(|x| !x.is_null()).unwrap_or(false) {
+        "unknown"
+    } else if sc.get("gate").and_then(|g| g.get("executed")) == Some(&json!(false)) {
         "blocked"
     } else if let Some(b) = sc.get("batch") {
         if b.get("stopped").map(|x| !x.is_null()).unwrap_or(false) { if as_i64(b.get("executed")).unwrap_or(0) > 0 { "partial" } else { "blocked" } } else { "executed" }
@@ -512,19 +530,36 @@ pub struct Shared {
     pub click_props: Vec<String>,
 }
 
+/// A one-time permission for exactly one dispatch of an approved risky action: bound to the final action's signature
+/// and its full structured effect (tool, hazard, resources, app, window, payload), short-lived, removed on use.
+#[derive(Clone, Debug)]
+pub struct Permit {
+    pub sig: String,
+    pub key: crate::effect::EffectKey,
+    pub expires: f64,
+}
+
 /// Everything a gated call reads and writes, under one lock.
 pub struct Inner {
     pub cfg: GateConfig,
     pub state: GateState,
     pub stats: Obj,
     pub aid: u64,
-    pub confirm_codes: HashMap<String, String>,
     pub want_shot: HashSet<i64>,
     pub seen_pids: HashSet<i64>,
     pub fg_sticky: bool,
     pub pixel_pids: HashSet<i64>,
     pub probe_disabled: bool,
-    pub denied_effects: HashMap<String, String>,
+    /// refused effects (a record, never a credential): (structured key, who refused); covers the same effect by any route
+    pub denials: Vec<(crate::effect::EffectKey, String)>,
+    /// one-shot dispatch permits gated() issued for an approved risky effect (see Gate::tool's final check)
+    pub permits: Vec<Permit>,
+    /// the risky effect the current gated() call has approval for, and from whom (operator task, reviewer, person)
+    pub approval: Option<(crate::effect::EffectKey, String)>,
+    /// what the agent itself said the user's request is (gate_task): context only, it never authorizes anything
+    pub agent_task: String,
+    /// signatures of actions whose outcome was unknown (driver died / timed out / unparseable): never re-sent blind
+    pub unknown_sigs: HashMap<String, String>,
     pub step_doubted: HashSet<String>,
     pub acted: bool,
     pub read_streak: u32,             // reads since the last GUI action (stall hint)
@@ -816,9 +851,6 @@ fn augment_tools(result: &mut Value, shared: &Arc<Mutex<Shared>>, toolset: &str,
         if name == "list_apps" {
             props.insert("all".into(), json!({"type": "boolean", "description": "Also list kernel threads and system daemons (hidden by default)."}));
         }
-        if is_gated(&name) {
-            props.insert("gate_confirm".into(), json!({"type": "string", "description": "Confirmation code the gate gave for a high-risk action, only after the user approved it."}));
-        }
     }
     let names: Vec<String> = tools.iter().map(|t| s(t, "name").to_string()).collect();
     let miss = updates::missing_tools(&names);
@@ -900,9 +932,9 @@ impl Gate {
         let task_source = if task_locked { Some("operator".to_string()) } else { None };
         Arc::new(Gate {
             inner: Mutex::new(Inner {
-                state: GateState::with_text_only(cfg.text_only), cfg, stats: new_stats(), aid: 0, confirm_codes: HashMap::new(),
+                state: GateState::with_text_only(cfg.text_only), cfg, stats: new_stats(), aid: 0,
                 want_shot: HashSet::new(), seen_pids: HashSet::new(), fg_sticky: false, pixel_pids: HashSet::new(),
-                probe_disabled: false, denied_effects: HashMap::new(), step_doubted: HashSet::new(), acted: false, read_streak: 0, hinted: HashSet::new(), cells_seen: HashMap::new(), term_seen: HashMap::new(), denials_consec: 0, denials_total: 0,
+                probe_disabled: false, denials: vec![], permits: vec![], approval: None, agent_task: String::new(), unknown_sigs: HashMap::new(), step_doubted: HashSet::new(), acted: false, read_streak: 0, hinted: HashSet::new(), cells_seen: HashMap::new(), term_seen: HashMap::new(), denials_consec: 0, denials_total: 0,
                 task_locked, task_source, in_batch: false, batch_ctx: Value::Null, pix_age: HashMap::new(),
                 last_auto: HashMap::new(), seen_rows: HashMap::new(), recent: vec![], plan: vec![], plan_verdict: String::new(), plan_checks: vec![], facts: vec![], briefed: false, history: vec![], verdict_nagged: false, lb: Default::default(), risk_info: Value::Null, cur_ack: false,
             }),
@@ -931,7 +963,19 @@ impl Gate {
 
     /// A driver tool call with input delivery handled: background when the desktop supports it, else a sticky
     /// fallback to foreground for the rest of the session.
+    ///
+    /// The single final dispatch check: every GUI action the gate sends to the driver passes here (the gated direct
+    /// path, its focus/occlusion/background re-sends, heal_occlusion's own clicks and key presses, batch steps, the
+    /// terminal line clearing). For the FINAL arguments the ActionCtx is rebuilt; a risky or hand-off target is
+    /// refused unless gated() issued a one-shot permit for exactly this signature and structured effect.
+    /// After a send whose outcome is unknown (driver died, timed out, unparseable answer) nothing is re-sent.
     pub fn tool(&self, inn: &mut Inner, name: &str, args: &Value, timeout: f64) -> Value {
+        let action = is_gated(name) && name != "run_command";
+        if action {
+            if let Some(refused) = self.dispatch_check(inn, name, args) {
+                return refused;
+            }
+        }
         let delivery_tool = self.shared.lock().unwrap().delivery_tools.contains(name);
         let mut args = args.clone();
         if delivery_tool && args.get("delivery_mode").is_none() {
@@ -940,7 +984,8 @@ impl Gate {
                 args["delivery_mode"] = json!("foreground");
             }
         }
-        let mut r = self.tool_raw(name, &args, timeout);
+        let mut r = self.tool_raw(name, &args, timeout, action);
+        // (the driver said nothing was sent: background input is unavailable on this desktop)
         if inn.cfg.delivery == "auto" && is_error(&r) && delivery_tool && s(&args, "delivery_mode") != "foreground"
             && bg_unavailable().is_match(&text_of(&r)) {
             if !inn.fg_sticky {
@@ -949,17 +994,96 @@ impl Gate {
             }
             inn.inc("delivery_fallbacks");
             args["delivery_mode"] = json!("foreground");
-            r = self.tool_raw(name, &args, timeout);
+            r = self.tool_raw(name, &args, timeout, action);
+        }
+        if action && outcome_unknown(&r) {
+            let sig = build_ctx(name, &args, &inn.state).signature;
+            let why = pystr(sc(&r).get("unknown_reason"));
+            inn.unknown_sigs.insert(sig.clone(), why.clone());
+            inn.inc("outcome_unknown");
+            self.log.write(json!({"ev": "outcome_unknown", "aid": inn.aid, "tool": name, "sig": sig, "why": why}));
         }
         r
     }
 
-    fn tool_raw(&self, name: &str, args: &Value, timeout: f64) -> Value {
+    /// The structured effect of a risky action as the gate sees it now (disk checks, dialog text, terminal line).
+    pub fn effect_key(&self, inn: &Inner, ctx: &ActionCtx) -> crate::effect::EffectKey {
+        let dialog = self.dialog_text(inn, ctx);
+        let targets = crate::features::risk_targets(ctx, &inn.state);
+        let line = ctx.target.pid.filter(|p| crate::sidefx::is_terminal(*p)).map(|p| inn.state.last_typed.get(&p).cloned().unwrap_or_default());
+        authz::effect_of(ctx, &targets, &dialog, line.as_deref())
+    }
+
+    /// gated() approved a risky effect (operator task, reviewer, person): permit ONE dispatch of these final
+    /// arguments, but only when their effect is exactly the approved one (a heal / re-bind / retry that lands on another
+    /// target, window or payload gets nothing and is refused at the dispatch check).
+    pub fn grant(&self, inn: &mut Inner, name: &str, args: &Value) {
+        let Some((ak, src)) = inn.approval.clone() else { return };
+        let ctx = build_ctx(name, args, &inn.state);
+        if ctx.risk.is_none() && ctx.handoff.is_none() {
+            return;
+        }
+        let k = self.effect_key(inn, &ctx);
+        if k == ak {
+            inn.permits.push(Permit { sig: ctx.signature, key: k, expires: now() + PERMIT_TTL_S });
+        } else {
+            inn.inc("permits_withheld");
+            self.log.write(json!({"ev": "permit_withheld", "aid": inn.aid, "tool": name, "approved": ak.to_json(), "final": k.to_json(), "source": src}));
+        }
+    }
+
+    /// None = may be sent. Some(refusal) = a risky / hand-off target without a matching one-shot permit.
+    fn dispatch_check(&self, inn: &mut Inner, name: &str, args: &Value) -> Option<Value> {
+        if !inn.cfg.risk_confirm {
+            return None; // the operator switched risk confirmation off for this session (a launcher setting)
+        }
+        let ctx = build_ctx(name, args, &inn.state);
+        if ctx.risk.is_none() && ctx.handoff.is_none() {
+            return None;
+        }
+        let k = self.effect_key(inn, &ctx);
+        let t = now();
+        inn.permits.retain(|p| p.expires > t);
+        if let Some(i) = inn.permits.iter().position(|p| p.sig == ctx.signature && p.key == k) {
+            inn.permits.remove(i); // one shot
+            inn.inc("permits_used");
+            return None;
+        }
+        let why = format!("{} has no approval for this exact effect ({})", ctx.risk.clone().or(ctx.handoff.clone()).unwrap_or_default(), k.short());
+        inn.inc("dispatch_refused");
+        self.log.write(json!({"ev": "dispatch_refused", "aid": inn.aid, "tool": name, "sig": ctx.signature, "effect": k.to_json(), "why": why}));
+        Some(json!({"isError": true,
+            "content": [{"type": "text", "text": format!("[gate] Not executed: the final dispatch check stopped `{name}` on \"{}\": {why}. Nothing was sent.", trunc(ctx.target.the_label(), 60))}],
+            "structuredContent": {"gate": {"decision": "deny", "tier": "dispatch", "executed": false, "reason": why, "effect": k.to_json()}}}))
+    }
+
+    /// `no_resend`: an action tool. When the driver dies or times out during it, the gate cannot tell whether the input
+    /// reached the app, so it restarts the driver but never sends the action again; the result says "unknown".
+    fn tool_raw(&self, name: &str, args: &Value, timeout: f64, no_resend: bool) -> Value {
         if !self.child().alive() {
             self.respawn();
         }
         let r = self.child().tool(name, args, timeout);
-        if is_error(&r) && (!self.child().alive() || text_of(&r) == "driver exited") {
+        let died = is_error(&r) && (!self.child().alive() || text_of(&r) == "driver exited");
+        if no_resend {
+            let why = if died {
+                Some("the driver exited during the call")
+            } else if is_error(&r) && text_of(&r).starts_with("timeout calling") {
+                Some("the driver did not answer in time")
+            } else if !r.is_object() || (r.get("content").is_none() && r.get("structuredContent").is_none() && r.get("isError").is_none()) {
+                Some("the driver's answer could not be parsed")
+            } else {
+                None
+            };
+            if let Some(why) = why {
+                if died || !self.child().alive() {
+                    self.respawn();
+                }
+                return unknown_result(name, why);
+            }
+            return r;
+        }
+        if died {
             self.respawn();
             let r2 = self.child().tool(name, args, timeout);
             if is_error(&r2) && text_of(&r2) == "driver exited" {
@@ -1125,13 +1249,13 @@ impl Gate {
         if let Some(st) = params.get("requestState") {
             let st = st.as_str().unwrap_or("");
             match self.human.pending.resolve(st, &cc.binding, params.get("inputResponses")) {
-                crate::human::Resolved::Answer(k, a, n) => {
-                    self.log.write(json!({"ev": "human_answer", "kind": k, "answer": trunc(&a, 200), "note": trunc(&n, 200)}));
-                    cc.answer = Some((k, a, n));
+                crate::human::Resolved::Answer(k, a, n, eff, o) => {
+                    self.log.write(json!({"ev": "human_answer", "kind": k, "answer": trunc(&a, 200), "note": trunc(&n, 200), "outcome": o}));
+                    cc.answer = Some((k, a, n, eff, o));
                 }
-                crate::human::Resolved::Late(k) => {
-                    self.log.write(json!({"ev": "human_answer", "kind": k, "answer": "timeout", "late": true}));
-                    cc.answer = Some((k, "timeout".into(), String::new()));
+                crate::human::Resolved::Late(k, eff) => {
+                    self.log.write(json!({"ev": "human_answer", "kind": k, "answer": "timeout", "late": true, "outcome": "timeout"}));
+                    cc.answer = Some((k, "timeout".into(), String::new(), eff, "timeout".into()));
                 }
                 crate::human::Resolved::Invalid(why) => {
                     self.log.write(json!({"ev": "human_answer_rejected", "why": why}));
@@ -1680,6 +1804,7 @@ impl Gate {
             a["x"] = json!(x);
             a["y"] = json!(y);
             a["coordinate_frame"] = json!("desktop");
+            self.grant(inn, "click", &a);
             let r = self.tool(inn, "click", &a, 30.0);
             if !is_error(&r) {
                 inn.inc("occlusion_heals");
@@ -1710,6 +1835,7 @@ impl Gate {
             };
             let mut a = base.clone();
             a["element_token"] = json!(mtok);
+            self.grant(inn, "click", &a);
             if is_error(&self.tool(inn, "click", &a, 30.0)) {
                 return Some((self.closed_menu_note(err_txt, &el.label, Some(&pm)), "closed_menu_note".into()));
             }
@@ -1722,6 +1848,7 @@ impl Gate {
             Some((Some(tok), _)) => {
                 let mut a = base.clone();
                 a["element_token"] = json!(tok.clone());
+                self.grant(inn, "click", &a);
                 let r = self.tool(inn, "click", &a, 30.0);
                 if is_error(&r) {
                     return None;
@@ -1767,18 +1894,27 @@ impl Gate {
     }
 
     // ------------------------------------------------------------------ gating
-    pub fn gated(&self, inn: &mut Inner, name: &str, mut args: Value) -> Value {
+    /// One gated action. Permits and the approval live only inside this call: whatever is left is cleared after it.
+    pub fn gated(&self, inn: &mut Inner, name: &str, args: Value) -> Value {
+        inn.permits.clear();
+        inn.approval = None;
+        let r = self.gated_inner(inn, name, args);
+        inn.permits.clear();
+        inn.approval = None;
+        r
+    }
+
+    fn gated_inner(&self, inn: &mut Inner, name: &str, mut args: Value) -> Value {
         let tg0 = Instant::now();
         let ack = false; // the acting model never approves its own step (gate_ack is accepted and ignored)
         inn.cfg.reviewer = self.reviewer.available();
-        let code = args.get("gate_confirm").map(|v| pystr(Some(v))).filter(|c| !c.is_empty());
         if let Some(o) = args.as_object_mut() {
+            // no agent-facing approval exists: a confirmation code the agent might send is dropped like gate_ack
             o.remove("gate_ack");
             o.remove("gate_confirm");
         }
         let snapped = if crate::v097::on("SNAP") { self.snap_pixel(inn, name, &mut args) } else { None };
         let mut ctx = build_ctx(name, &args, &inn.state);
-        let confirmed = code.as_ref().map(|c| inn.confirm_codes.remove(c).as_deref() == Some(ctx.signature.as_str())).unwrap_or(false);
         inn.inc("actions");
         inn.aid += 1;
         inn.risk_info = Value::Null;
@@ -1795,15 +1931,17 @@ impl Gate {
         let shadow = if inn.cfg.collect && self.check_available(inn, &ctx) { self.check(inn, &ctx, None) } else { None };
 
         let mut trail: Vec<String> = vec![];
+        // the identical action came back with an unknown outcome: never re-send it blind, read the window first
+        let unknown_prev = inn.unknown_sigs.remove(&ctx.signature);
         // a risky or hand-off step always goes through the safety rules first, whatever the baseline policy says
         let safety_first = ctx.risk.is_some() || ctx.handoff.is_some();
-        let mut dec = match if safety_first { None } else { policy_decision(&ctx, &f, &inn.cfg) } {
+        let mut dec = match if let Some(why) = &unknown_prev {
+            trail.push("outcome_unknown".into());
+            Some(Decision::new("look_light", 0.0, format!("the same action just had an unknown outcome ({why}); it may already have happened, so the gate read the window instead of sending it again: check whether it took effect, then send it again only if it is still needed"), "rule"))
+        } else if safety_first { None } else { policy_decision(&ctx, &f, &inn.cfg) } {
             Some(d) => d,
             None => {
-                let mut d = hard_rules(&ctx, &f, &inn.cfg, confirmed, false);
-                if d.as_ref().map(|d| d.option == "ask_human").unwrap_or(false) && confirmed {
-                    d = None;
-                }
+                let mut d = hard_rules(&ctx, &f, &inn.cfg, false, false);
                 if d.as_ref().map(|d| d.is(&["ask_human", "risk_review"])).unwrap_or(false) && ctx.risk.is_some() {
                     d = self.risk_gate(inn, &ctx, d.unwrap(), &mut trail);
                     if d.is_none() {
@@ -1952,7 +2090,7 @@ impl Gate {
             "risk": ctx.risk, "sig": ctx.signature, "features": fjson, "p_direct": round_to(dec.p_direct, 4),
             "decision": opt, "tier": dec.tier, "trail": trail, "reason": dec.reason, "check": check_res,
             "shadow_check": shadow, "judge": judge, "window_changed": wc, "window_added": wadd,
-            "ack": ack, "confirmed": confirmed, "risk_level": ctx.risk_level, "handoff": ctx.handoff,
+            "ack": ack, "approval": inn.approval.as_ref().map(|a| a.1.clone()), "risk_level": ctx.risk_level, "handoff": ctx.handoff,
             "risk_gate": inn.risk_info, "batch": inn.batch_ctx});
 
         // a person decides / acts, when the gate can reach one itself
@@ -1966,9 +2104,15 @@ impl Gate {
                 format!("The agent needs you: {}.\nPlease do this step yourself in the app window, then press Allow. Press Deny to stop the agent here.", dec.reason)
             };
             let kind = match opt.as_str() { "ask_human" => "approve", "handoff" => "takeover", _ => "ask_help" };
-            let meta = json!({"tool": name, "target": trunc(&what0, 80), "reason": trunc(&dec.reason, 300), "decision": opt});
+            // the answer is bound to the effect as it is now: a person's yes does not carry over to another target/window
+            let ekey = if ctx.risk.is_some() || ctx.handoff.is_some() { Some(self.effect_key(inn, &ctx)) } else { None };
+            let mut meta = json!({"tool": name, "target": trunc(&what0, 80), "reason": trunc(&dec.reason, 300), "decision": opt});
+            if let Some(k) = &ekey {
+                meta["effect"] = k.to_json();
+            }
             let h = self.human.ask_kind(kind, &q, if opt == "ask_human" { "gui-gate: approve action" } else if opt == "ask_help" { "gui-gate: the agent is stuck" } else { "gui-gate: your turn" }, meta);
             let ans = s(&h, "answer").to_string();
+            let outcome = s(&h, "outcome").to_string();
             if ans == "input_required" {
                 // MRTR: the client asks its user and retries this same call; nothing is decided or executed yet
                 inn.inc("human_parked");
@@ -1982,24 +2126,34 @@ impl Gate {
                 event["executed"] = json!(false);
                 event["human"] = h.clone();
                 self.log.write(event);
-                return text_result(format!("[gate] Not executed: {} on \"{what0}\". This step needs a person; send it again ON ITS OWN (not inside run_actions) so the gate can ask them.", dec.reason), true);
+                let mut r = text_result(format!("[gate] Not executed: {} on \"{what0}\". This step needs a person; send it again ON ITS OWN (not inside run_actions) so the gate can ask them.", dec.reason), true);
+                r["structuredContent"] = json!({"status": "input_required", "gate": {"decision": opt, "executed": false, "reason": dec.reason, "needs_person": kind}});
+                return r;
             }
             if h.get("mrtr").is_none() || h["ms"].as_f64().unwrap_or(0.0) == 0.0 {
                 inn.inc("human_asked");
             }
             event["human"] = h.clone();
+            event["human_outcome"] = json!(outcome);
+            self.log.write(json!({"ev": "human_outcome", "aid": inn.aid, "kind": kind, "outcome": outcome, "answer": trunc(&ans, 80),
+                                  "channel": h.get("channel"), "effect": ekey.as_ref().map(|k| k.to_json())}));
             if ans == "allow" && opt == "ask_human" {
                 inn.inc("human_allowed");
+                if let Some(k) = ekey {
+                    inn.approval = Some((k, "person".into()));
+                }
                 dec = Decision::new("direct", dec.p_direct, "approved by a person", "human").with_scores(&dec.scores);
                 opt = "direct".into();
                 event["decision"] = json!("direct");
                 event["tier"] = json!("human");
+                event["approval"] = json!("person");
             } else if ans == "allow" {
                 inn.inc("human_allowed");
                 event["executed"] = json!(false);
                 event["gate_ms"] = json!(round_to(tg0.elapsed().as_secs_f64() * 1000.0, 1));
                 self.log.write(event);
                 let mut res = text_result(format!("[gate] A person did this step themselves ({}). Do not repeat it; continue from the window's current state.", dec.reason), false);
+                res["structuredContent"] = json!({"human_outcome": outcome, "gate": {"decision": opt, "executed": false, "done_by_person": true}});
                 if let Some(p) = t.pid {
                     self.auto_observe(inn, p, t.window_id, &mut res, true);
                 }
@@ -2010,22 +2164,41 @@ impl Gate {
                 self.log.write(event);
                 let note = crate::human::answer_note();
                 let said = if note.is_empty() { String::new() } else { format!(" The person says: \"{note}\".") };
-                return text_result(format!("[gate] Not executed: {}. No person took this step.{said} Do not send the same action again; try a clearly different way (a keyboard shortcut, another menu path, or another element).", dec.reason), true);
+                let mut r = text_result(format!("[gate] Not executed: {}. No person took this step.{said} Do not send the same action again; try a clearly different way (a keyboard shortcut, another menu path, or another element).", dec.reason), true);
+                r["structuredContent"] = json!({"human_outcome": outcome, "gate": {"decision": opt, "executed": false, "human": ans, "human_outcome": outcome}});
+                return r;
             } else {
-                let verdict = if ans == "deny" { "declined".to_string() } else { format!("did not answer within {} s", inn.cfg.human_timeout as i64) };
+                let verdict = crate::human::outcome_words(&outcome, inn.cfg.human_timeout);
                 event["executed"] = json!(false);
                 event["gate_ms"] = json!(round_to(tg0.elapsed().as_secs_f64() * 1000.0, 1));
                 self.log.write(event);
                 let txt = self.deny_text(inn, &ctx, &dec, &format!("the person {verdict}"));
                 let mut extra = Obj::new();
                 extra.insert("human".into(), json!(ans));
-                return refusal(&dec, txt, Some(extra));
+                extra.insert("human_outcome".into(), json!(outcome));
+                let mut r = refusal(&dec, txt, Some(extra));
+                r["structuredContent"]["human_outcome"] = json!(outcome);
+                return r;
             }
         }
 
         if opt == "direct" {
             let t0 = Instant::now();
-            let mut res = if name == "run_command" { self.exec_command(inn, &args) } else { self.tool(inn, name, &args, 120.0) };
+            self.grant(inn, name, &args);
+            let mut res = if name == "run_command" {
+                // a command is not sent to the driver, but it passes the same final check
+                match self.dispatch_check(inn, name, &args) { Some(r) => r, None => self.exec_command(inn, &args) }
+            } else {
+                self.tool(inn, name, &args, 120.0)
+            };
+            if sc(&res).get("gate").and_then(|g| g.get("executed")) == Some(&json!(false)) {
+                // the final dispatch check refused it (no permit for this exact effect): nothing ran
+                event["executed"] = json!(false);
+                event["dispatch_refused"] = json!(true);
+                event["gate_ms"] = json!(round_to(tg0.elapsed().as_secs_f64() * 1000.0, 1));
+                self.log.write(event);
+                return res;
+            }
             // (also inside a batch: a healed step lets the rest of the batch run instead of stopping it)
             // m3 run: 66 token clicks refused because another control owns the element's point (stale frame, the
             // item's menu closed, a toolbar/panel on top); the gate's pixel/menu heals fixed 1 of 8 and never ran for
@@ -2035,6 +2208,7 @@ impl Gate {
                 let mut a2 = args.clone();
                 a2["delivery_mode"] = json!("background");
                 inn.inc("occlusion_bg_tried");
+                self.grant(inn, name, &a2);
                 let r2 = self.tool(inn, name, &a2, 120.0);
                 if !is_error(&r2) {
                     inn.inc("occlusion_bg");
@@ -2059,6 +2233,7 @@ impl Gate {
                 let mut a2 = args.clone();
                 a2["delivery_mode"] = json!("background");
                 inn.inc("focus_heals_bg_tried");
+                self.grant(inn, name, &a2);
                 let r2 = self.tool(inn, name, &a2, 120.0);
                 if !is_error(&r2) {
                     inn.inc("focus_heals_bg");
@@ -2078,6 +2253,7 @@ impl Gate {
                     let _ = self.tool(inn, "bring_to_front", &b, 10.0);
                     std::thread::sleep(Duration::from_millis(300));
                     inn.inc("focus_heals_tried");
+                    self.grant(inn, name, &args);
                     let r2 = self.tool(inn, name, &args, 120.0);
                     if !is_error(&r2) {
                         inn.inc("focus_heals");
@@ -2281,14 +2457,17 @@ impl Gate {
             }
             "handoff" => {
                 inn.inc("model_turns_requested");
+                extra.insert("human_outcome".into(), json!("channel_unavailable"));
+                extra.insert("needs_person".into(), json!("takeover"));
                 format!("[gate] Not executed: {}. A person must do this step, not you. Ask the user to do it themselves, wait until they say it is done, then re-read the window and continue.", dec.reason)
             }
             "ask_human" => {
+                // a person must approve it and the gate cannot reach one (no elicitation client, no desktop dialog):
+                // nothing the agent sends can approve it, so it is a refusal with the safe way on
                 inn.inc("model_turns_requested");
-                let c = rand_hex(3);
-                inn.confirm_codes.insert(c.clone(), ctx.signature.clone());
-                extra.insert("confirm_code".into(), json!(c));
-                format!("[gate] Not executed: {} on {what}. Either ask the user to approve this exact action and, only after they approve, call the same tool again with the same arguments plus gate_confirm:\"{c}\"; or, without waiting for them: {alt}.", dec.reason)
+                extra.insert("human_outcome".into(), json!("channel_unavailable"));
+                self.log.write(json!({"ev": "human_outcome", "aid": inn.aid, "kind": "approve", "outcome": "channel_unavailable"}));
+                format!("[gate] Not executed: {} on {what}. Only a person can approve this, and the gate has no way to reach one in this session; nothing you send can approve it. Do not retry it or reach the same result another way. Instead: {alt}. Say in your final answer what was left undone and why.", dec.reason)
             }
             "stop_loop" => {
                 inn.inc("model_turns_requested");
@@ -2316,6 +2495,12 @@ impl Gate {
         event["gate_ms"] = json!(round_to(gate_ms, 1));
         self.log.write(event);
         let mut res = refusal(&dec, text, Some(extra));
+        if opt == "handoff" {
+            res["structuredContent"]["status"] = json!("input_required"); // the user must do this step themselves
+        }
+        if let Some(o) = res["structuredContent"]["gate"].get("human_outcome").cloned() {
+            res["structuredContent"]["human_outcome"] = o;
+        }
         // a step the gate sent back (look again / doubted / loop) is no progress either: the agent re-sending a refused
         // step over and over is the same loop as re-sending a failing one (risk refusals have their own escalation)
         if inn.cfg.policy == "gate" && crate::loopbreak::enabled() && !inn.in_batch && !crate::decide::is_nav_key(&ctx)
@@ -2546,7 +2731,7 @@ impl Gate {
             }
             let window = t.pid.and_then(|p| inn.state.latest_for(Some(p), t.window_id)).map(|o| inn.state.get(o).text.clone()).unwrap_or_default();
             inn.inc("reviews");
-            let r = rv.check_step(&inn.cfg.task, &action, &window);
+            let r = rv.check_step(&Gate::ctx_task(inn), &action, &window);
             *judge = r.clone().unwrap_or(json!({"error": "reviewer did not answer"}));
             judge["sent"] = json!({"action": action, "window_tail": tail(&window, 4000)});
             if let Some(r) = r {
@@ -2573,33 +2758,35 @@ impl Gate {
         Decision::new(&best, dec.p_direct, format!("{} (reviewer unavailable)", dec.reason), "model").with_scores(&dec.scores)
     }
 
-    /// Authorization (+ independent reviewer for medium risk). None = let it through.
+    /// Authorization (+ independent reviewer for medium risk). None = let it through (and `inn.approval` names the exact
+    /// effect that was approved and by whom; gated() turns it into one-shot dispatch permits).
     fn risk_gate(&self, inn: &mut Inner, ctx: &ActionCtx, dec: Decision, trail: &mut Vec<String>) -> Option<Decision> {
         let t = &ctx.target;
         let risk = ctx.risk.clone().unwrap_or_default();
         let dialog = self.dialog_text(inn, ctx);
-        let key = authz::effect_key(&risk, &dialog);
-        let hz = authz::hazard_of(&risk);
-        inn.risk_info = json!({"effect": key, "hazard": hz});
-        if let Some(prev) = inn.denied_effects.get(&key).cloned() {
+        let key = self.effect_key(inn, ctx);
+        let hz = key.hazard.clone();
+        inn.risk_info = json!({"effect": key.to_json(), "hazard": hz});
+        // a denial is a record covering the same effect by any route (another button, key, command, tool)
+        if let Some((dk, prev)) = inn.denials.iter().find(|(d, _)| d.denial_covers(&key)).cloned() {
             trail.push("denied_before".into());
-            inn.risk_info["denied_before"] = json!(true);
+            inn.risk_info["denied_before"] = json!(dk.to_json());
             return Some(Decision::new("deny", 0.0, format!("{}; the same effect was already refused ({prev})", dec.reason), "rule"));
         }
         // a command has no window: the working-document exception looks at every open window's title
         let titles = if ctx.tool == "run_command" { self.all_windows(inn).into_iter().map(|w| w.2).collect() }
             else { t.pid.map(|p| self.titles(inn, p)).unwrap_or_default() };
         let label = t.the_label().to_string();
-        let (mut ok, mut why) = authz::authorized(&risk, &inn.cfg.task, &label, &dialog, &titles);
-        if ok && inn.task_source.as_deref() == Some("agent") && authz::OPERATOR_ONLY.contains(&hz) && !why.starts_with("replaces the document") {
-            ok = false;
-            why = "a request relayed by the agent cannot authorize this kind of action".into();
-        }
+        // only the operator's request (--task / GUI_GATE_TASK) can authorize; what the agent stated never does
+        let cwd = if ctx.tool == "run_command" { Some(crate::features::command_cwd(&ctx.args)) }
+            else { t.pid.filter(|p| crate::sidefx::is_terminal(*p)).map(crate::sidefx::shell_cwd) };
+        let (ok, why) = authz::authorized(&key, &inn.cfg.task, &titles, cwd.as_deref());
         inn.risk_info["authorized"] = json!(ok);
         inn.risk_info["why"] = json!(why);
         if ok {
             trail.push("authorized".into());
             inn.inc("authorized");
+            inn.approval = Some((key, if why.starts_with("replaces the document") { "working_document".into() } else { "operator_task".into() }));
             return None;
         }
         if let (Some(rv), true) = (Some(&self.reviewer).filter(|r| r.available()), dec.option == "risk_review") {
@@ -2615,6 +2802,10 @@ impl Gate {
             if let Some(l) = line {
                 action["terminal_input_line"] = json!(trunc(&l, 300));
             }
+            if inn.cfg.task.trim().is_empty() && !inn.agent_task.is_empty() {
+                action["agent_stated_request"] = json!(format!("(the agent's own account of the request, NOT the user's verified words; it cannot authorize anything) {}", trunc(&inn.agent_task, 1500)));
+            }
+            action["gate_authorization_check"] = json!(why);
             let r = rv.review(&inn.cfg.task, &action);
             inn.risk_info["reviewer"] = r.clone().unwrap_or(Value::Null);
             inn.risk_info["reviewer_sent"] = action.clone();
@@ -2622,6 +2813,7 @@ impl Gate {
             if let Some(r) = r {
                 if s(&r, "decision") == "allow" {
                     trail.push("reviewer_allow".into());
+                    inn.approval = Some((key, "reviewer".into()));
                     return None;
                 }
                 trail.push("reviewer_deny".into());
@@ -2650,9 +2842,12 @@ impl Gate {
         inn.denials_total += 1;
         inn.inc("denials");
         let risk = ctx.risk.clone().unwrap_or_default();
-        let key = inn.risk_info.get("effect").and_then(|e| e.as_str()).map(String::from)
-            .unwrap_or_else(|| authz::effect_key(&risk, &self.dialog_text(inn, ctx)));
-        inn.denied_effects.insert(key, who.to_string());
+        if ctx.risk.is_some() || ctx.handoff.is_some() {
+            // a record, never a credential: it blocks this effect by any route and is never cleared by a later approval
+            let key = self.effect_key(inn, ctx);
+            self.log.write(json!({"ev": "denial", "aid": inn.aid, "effect": key.to_json(), "who": who}));
+            inn.denials.push((key, who.to_string()));
+        }
         let cleared = match (ctx.target.pid, ctx.risk.is_some()) {
             (Some(p), true) => self.clear_terminal_line(inn, p, ctx.target.window_id).unwrap_or_default(),
             _ => String::new(),
@@ -2691,6 +2886,11 @@ impl Gate {
     }
 
     // ------------------------------------------------------------------ gate tools
+    /// The request as context (briefing, checks, roles): the operator's, else what the agent stated.
+    pub fn ctx_task(inn: &Inner) -> String {
+        if inn.cfg.task.trim().is_empty() { inn.agent_task.clone() } else { inn.cfg.task.clone() }
+    }
+
     fn set_task(&self, args: &Value) -> Value {
         let mut inn = self.inner.lock().unwrap_or_else(|e| e.into_inner());
         let req = pystr(args.get("request")).trim().to_string();
@@ -2703,11 +2903,13 @@ impl Gate {
         if inn.stat("actions") > 0.0 {
             return text_result("[gate] Too late: the request can only be given before the first action.", true);
         }
+        // context only: briefing, plan checks, the step reviewer. It never authorizes a risky step - only the operator's
+        // --task / GUI_GATE_TASK does (a model could put anything here, or copy text a web page planted).
         inn.task_source = Some("agent".into());
-        inn.cfg.task = trunc(&req, 4000);
+        inn.agent_task = trunc(&req, 4000);
         inn.task_locked = true;
         self.log.write(json!({"ev": "task", "source": "agent", "chars": req.chars().count()}));
-        text_result("[gate] Noted.", false)
+        text_result("[gate] Noted (as context; it does not authorize risky steps).", false)
     }
 
     fn set_plan(&self, args: &Value) -> Value {
@@ -2847,14 +3049,14 @@ impl Gate {
         let t0 = Instant::now();
         let (task, titles, wtext) = {
             let mut inn = self.inner.lock().unwrap_or_else(|e| e.into_inner());
-            if inn.briefed || inn.cfg.task.trim().is_empty() {
+            if inn.briefed || Gate::ctx_task(&inn).trim().is_empty() {
                 return None;
             }
             inn.briefed = true;
             let w = self.all_windows(&mut inn);
             let titles: Vec<String> = w.iter().map(|x| x.2.clone()).filter(|t| !DESKTOP_WINDOWS.contains(&t.as_str())).collect();
             let wtext = w.iter().filter(|x| !DESKTOP_WINDOWS.contains(&x.2.as_str())).map(|(p, id, t)| format!("pid {p} window {id}: \"{t}\"")).collect::<Vec<_>>().join("\n");
-            (inn.cfg.task.clone(), titles, wtext)
+            (Gate::ctx_task(&inn), titles, wtext)
         };
         let wt = wtext.clone();
         let windows = move || if wt.is_empty() { "(no app windows open)".to_string() } else { wt.clone() };
@@ -2944,7 +3146,7 @@ impl Gate {
     fn check_done(&self, args: &Value) -> Value {
         let t0 = Instant::now();
         let mut inn = self.inner.lock().unwrap_or_else(|e| e.into_inner());
-        let task = inn.cfg.task.clone();
+        let task = Gate::ctx_task(&inn);
         let start = crate::sidefx::session_start();
         let home = home();
         let mut ev: Vec<String> = vec![];
@@ -3063,8 +3265,8 @@ impl Gate {
                 kinds.push("last_failed");
             }
         }
-        if !inn.denied_effects.is_empty() {
-            let eff: Vec<String> = inn.denied_effects.keys().take(3).cloned().collect();
+        if !inn.denials.is_empty() {
+            let eff: Vec<String> = inn.denials.iter().take(3).map(|d| d.0.short()).collect();
             ev.push(format!("The gate refused (not done, and must not be reached another way): {}", eff.join("; ")));
         }
         // 0.9.7: milestone predicates, working memory, saved-document read-back
@@ -3230,7 +3432,7 @@ impl Gate {
         let t0 = Instant::now();
         let (task, text_only) = {
             let inn = self.inner.lock().unwrap_or_else(|e| e.into_inner());
-            (inn.cfg.task.clone(), inn.cfg.text_only)
+            (Gate::ctx_task(&inn), inn.cfg.text_only)
         };
         let query = pystr(args.get("query"));
         let res = match kind.as_str() {
@@ -3340,7 +3542,7 @@ impl Gate {
         let facts = inn.facts.iter().map(|(k, v)| format!("{k}={v}")).collect::<Vec<_>>().join("; ");
         let steps = inn.history.iter().rev().take(every).rev().cloned().collect::<Vec<_>>();
         let failed = inn.history.iter().filter(|h| h.contains("-> FAILED")).count();
-        let task = inn.cfg.task.clone();
+        let task = Gate::ctx_task(&inn);
         if let Some(role) = self.roles.get("compact") {
             let prompt = format!("TASK: {task}\n\nPLAN:\n{}\nFACTS: {facts}\n\nALL STEPS SO FAR (oldest first):\n{}", plan.join("\n"), inn.history.join("\n"));
             drop(inn);
@@ -3356,7 +3558,7 @@ impl Gate {
     }
 
     fn digest_text(&self, inn: &Inner, n: usize, plan: &[String], facts: &str, steps: &[String], failed: usize) -> String {
-        let mut d = format!("[gate] Progress digest after {n} steps ({failed} failed; older tool results are superseded by it):\nTask: {}", trunc(&inn.cfg.task, 200));
+        let mut d = format!("[gate] Progress digest after {n} steps ({failed} failed; older tool results are superseded by it):\nTask: {}", trunc(&Gate::ctx_task(inn), 200));
         if !plan.is_empty() { d.push_str(&format!("\nPlan:\n{}", plan.join("\n"))); }
         if !facts.is_empty() { d.push_str(&format!("\nFacts: {facts}")); }
         d.push_str(&format!("\nLast {} steps:\n- {}", steps.len(), steps.join("\n- ")));
@@ -3371,7 +3573,7 @@ impl Gate {
         }
         let role = self.roles.get("judge")?;
         let recent: Vec<String> = inn.recent.iter().rev().take(10).rev().map(|r| r.to_string()).collect();
-        let prompt = format!("TASK: {}\n\nRECENT STEPS (oldest first):\n{}\n\nGATE: loop level {level}/3, mostly {} steps without progress.", inn.cfg.task, recent.join("\n"), inn.lb.dominant_mode());
+        let prompt = format!("TASK: {}\n\nRECENT STEPS (oldest first):\n{}\n\nGATE: loop level {level}/3, mostly {} steps without progress.", Gate::ctx_task(inn), recent.join("\n"), inn.lb.dominant_mode());
         let (fin, _, calls, err) = crate::roles::probe_agent(role, crate::roles::JUDGE_LOOP_SYSTEM, &prompt, &|| String::new(), false);
         self.log.write(json!({"ev": "role", "role": "judge", "use": "loop", "calls": calls, "verdict": fin.as_ref().map(|f| pystr(f.get("verdict"))), "error": err}));
         let f = fin?;
@@ -3477,7 +3679,9 @@ impl Gate {
             inn.cfg.human_timeout
         };
         if ch == "chat" {
-            return text_result("[gate] There is no direct line to a person from here. Ask your user in your reply and wait for their answer.", false);
+            let mut r = text_result("[gate] There is no direct line to a person from here. Ask your user in your reply and wait for their answer.", false);
+            r["structuredContent"] = json!({"status": "input_required", "human_outcome": "channel_unavailable"});
+            return r;
         }
         let text = if kind != "takeover" { q.clone() } else { format!("{q}\n\nDo it in the app yourself, then confirm when you are done.") };
         let kind = if ["approve", "answer", "takeover"].contains(&kind.as_str()) { kind } else { "answer".to_string() };
@@ -3486,21 +3690,21 @@ impl Gate {
         if s(&h, "answer") == "input_required" {
             return text_result("[gate] waiting for a person", true);
         }
-        self.log.write(json!({"ev": "request_human", "kind": kind, "question": trunc(&q, 200), "human": h}));
+        self.log.write(json!({"ev": "request_human", "kind": kind, "question": trunc(&q, 200), "human": h, "human_outcome": h.get("outcome")}));
         let ans = s(&h, "answer").to_string();
         let msg = if ans == "timeout" {
             format!("No answer from a person within {} s. Do not guess; stop and report.", timeout as i64)
         } else if kind == "takeover" {
             if ans == "allow" { "The person says the step is done. Re-read the window and continue.".into() } else { "The person declined to take over. Stop and report.".into() }
         } else if kind == "approve" {
-            if ans == "allow" { "Approved.".into() } else { "Not approved. Do not do it.".into() }
+            if ans == "allow" { "Approved (this answers your question only; it does not unlock any step the gate stops).".into() } else { "Not approved. Do not do it.".into() }
         } else if ans != "deny" {
             format!("The person answered: {ans}")
         } else {
             "The person cancelled. Stop and report.".into()
         };
         json!({"content": [{"type": "text", "text": format!("[human via {}] {msg}", s(&h, "channel"))}],
-               "structuredContent": {"answer": ans, "channel": h["channel"], "ms": h["ms"]}})
+               "structuredContent": {"answer": ans, "channel": h["channel"], "ms": h["ms"], "human_outcome": h.get("outcome")}})
     }
 
     fn report(&self) -> Value {

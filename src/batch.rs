@@ -66,6 +66,8 @@ struct Batch<'a> {
     seen: Option<HashSet<String>>,
     bid: String,
     menu_open: bool,
+    /// the step whose outcome is unknown (the driver died / timed out during it): the batch stops there
+    unknown_step: Option<usize>,
 }
 
 impl<'a> Batch<'a> {
@@ -226,6 +228,12 @@ impl<'a> Batch<'a> {
         let res = g.gated(inn, tool, a.clone());
         inn.batch_ctx = Value::Null;
         let refused = sc(&res).get("gate").and_then(|x| x.get("executed")) == Some(&Value::Bool(false));
+        if crate::server::outcome_unknown(&res) {
+            self.unknown_step = Some(n);
+            self.lines.push(format!("{n}. {tool}: OUTCOME UNKNOWN - {}", trunc(text_of(&res).trim().lines().next().unwrap_or(""), 200)));
+            self.stopped = Some(format!("step {n} ({tool}) may or may not have happened (the driver did not answer); read the window before anything else"));
+            return res;
+        }
         // a command's output is its result: keep it (capped), not only the status line
         let first = if tool == "run_command" { trunc(text_of(&res).trim(), 2500) } else { trunc(text_of(&res).trim().lines().next().unwrap_or(""), 200) };
         if is_error(&res) {
@@ -437,7 +445,7 @@ pub fn pick_one(g: &Gate, inn: &mut Inner, args: &Value, steps: &[Value]) -> Val
     if let Some(role) = g.roles.get("judge") {
         let window = inn.state.latest_for(pid, wid).map(|o| trunc(&inn.state.get(o).text, 3000)).unwrap_or_default();
         let list: Vec<String> = cands.iter().map(|c| format!("{}. {} {} (estimated chance to work {:.0}%{})", c.0, c.1, trunc(&c.2.to_string(), 200), c.3 * 100.0, if c.5.is_empty() { String::new() } else { format!(", {} risk", c.5) })).collect();
-        let prompt = format!("TASK: {}\n\nWINDOW:\n{window}\n\nRECENT STEPS:\n{}\n\nCANDIDATES:\n{}", inn.cfg.task,
+        let prompt = format!("TASK: {}\n\nWINDOW:\n{window}\n\nRECENT STEPS:\n{}\n\nCANDIDATES:\n{}", crate::server::Gate::ctx_task(inn),
                              inn.recent.iter().rev().take(6).rev().map(|r| r.to_string()).collect::<Vec<_>>().join("\n"), list.join("\n"));
         let (fin, _, calls, err) = crate::roles::probe_agent(role, crate::roles::JUDGE_PICK_SYSTEM, &prompt, &|| String::new(), false);
         g.log.write(json!({"ev": "role", "role": "judge", "use": "pick", "calls": calls, "pick": fin.as_ref().and_then(|f| f.get("pick")).cloned(), "error": err}));
@@ -472,7 +480,7 @@ pub fn run_actions(g: &Gate, inn: &mut Inner, args: &Value) -> Value {
     let wid = as_i64(args.get("window_id"));
     let b = Batch {
         g, pid, wid, stop_on_new_window: args.get("stop_on_new_window") != Some(&Value::Bool(false)), executed: 0, lines: vec![],
-        stopped: None, last_pid: pid, last_wid: wid, seen: None, bid: format!("b{}", (now() * 1000.0) as u64 % 10_000_000), menu_open: false,
+        stopped: None, last_pid: pid, last_wid: wid, seen: None, bid: format!("b{}", (now() * 1000.0) as u64 % 10_000_000), menu_open: false, unknown_step: None,
     };
     let mut prog = Program { b, vars: Default::default(), nodes: 0, out: vec![] };
     inn.in_batch = true;
@@ -486,7 +494,7 @@ pub fn run_actions(g: &Gate, inn: &mut Inner, args: &Value) -> Value {
     let mut body = b.lines.clone();
     body.extend(prog.out.iter().cloned());
     let mut out = json!({"content": [{"type": "text", "text": format!("{head}\n{}", body.join("\n"))}],
-                         "structuredContent": {"batch": {"executed": b.executed, "stopped": b.stopped, "read": prog.out}}});
+                         "structuredContent": {"batch": {"executed": b.executed, "stopped": b.stopped, "read": prog.out, "unknown_step": b.unknown_step}}});
     if b.stopped.is_some() {
         out["isError"] = json!(true);
     }

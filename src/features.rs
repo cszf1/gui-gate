@@ -240,6 +240,14 @@ pub fn build_ctx(tool: &str, args: &Value, st: &GateState) -> ActionCtx {
     ActionCtx { tool: tool.into(), args: args.clone(), signature: signature(tool, &t, args), target: t, risk, steps, risk_level: level, handoff }
 }
 
+/// The canonical absolute paths a risky action would touch (the disk checks run again; only called for risky steps).
+pub fn risk_targets(ctx: &ActionCtx, st: &GateState) -> Vec<String> {
+    if ctx.risk.is_none() {
+        return vec![];
+    }
+    assess_risk_t(&ctx.tool, &ctx.args, &ctx.target, &ctx.steps, st).3
+}
+
 fn obs_blob(o: &Observation) -> String {
     let labels: Vec<&str> = o.elements.values().map(|e| e.label.as_str()).collect();
     format!("{} {}", trunc(&o.text, 8000), trunc(&labels.join(" "), 4000))
@@ -271,14 +279,28 @@ fn key_set(a: &Value, split_key: bool) -> HashSet<String> {
 /// (reason, level, handoff) from what the action touches. Rules only, plus file-system checks.
 pub fn assess_risk(tool: &str, args: &Value, t: &Target, steps: &[(String, Value, Target)], st: &GateState)
     -> (Option<String>, Option<String>, Option<String>) {
-    let mut best: (Option<String>, Option<String>) = (None, None);
-    let bump = |best: &mut (Option<String>, Option<String>), level: &str, reason: String| {
+    let (r, l, h, _) = assess_risk_t(tool, args, t, steps, st);
+    (r, l, h)
+}
+
+type Best = (Option<String>, Option<String>, Vec<String>);
+
+/// assess_risk plus the canonical paths every risky part would touch (the union: a key built from them covers all).
+pub fn assess_risk_t(tool: &str, args: &Value, t: &Target, steps: &[(String, Value, Target)], st: &GateState)
+    -> (Option<String>, Option<String>, Option<String>, Vec<String>) {
+    let mut best: Best = (None, None, vec![]);
+    let bump_t = |best: &mut Best, level: &str, reason: String, tg: Vec<String>| {
         if level == "high" || best.1.is_none() {
             if best.1.as_deref() != Some("high") {
-                *best = (Some(reason), Some(level.to_string()));
+                best.0 = Some(reason);
+                best.1 = Some(level.to_string());
             }
         }
+        best.2.extend(tg);
+        best.2.sort();
+        best.2.dedup();
     };
+    let bump = |best: &mut Best, level: &str, reason: String| bump_t(best, level, reason, vec![]);
     let mut items: Vec<(String, Value, Target)> = vec![(tool.to_string(), args.clone(), t.clone())];
     items.extend(steps.iter().cloned());
     let mut handoff: Option<String> = None;
@@ -333,7 +355,7 @@ pub fn assess_risk(tool: &str, args: &Value, t: &Target, steps: &[(String, Value
                     if !typed.is_empty() && hit {
                         bump(&mut best, "high", format!("Enter would run: {}", trunc(&typed, 60)));
                     }
-                    shell_check(&typed, pid, &mut |l, r| bump(&mut best, l, r));
+                    shell_check(&typed, pid, &mut |l, r, tg| bump_t(&mut best, l, r, tg));
                 }
             }
             if tg.pid.is_some() && sidefx::overwrite_dialog(&newest_obs_blob(st, tg.pid), "", &ks) {
@@ -344,7 +366,7 @@ pub fn assess_risk(tool: &str, args: &Value, t: &Target, steps: &[(String, Value
             if let Some(pid) = tg.pid {
                 let prev = st.last_typed.get(&pid).cloned().unwrap_or_default();
                 let line = format!("{prev}{}", text.split('\n').next().unwrap_or(""));
-                shell_check(&line, pid, &mut |l, r| bump(&mut best, l, r));
+                shell_check(&line, pid, &mut |l, r, tg| bump_t(&mut best, l, r, tg));
             }
         }
         if (tl == "click" || tl == "double_click") && !label.is_empty() && tg.pid.is_some() {
@@ -364,7 +386,8 @@ pub fn assess_risk(tool: &str, args: &Value, t: &Target, steps: &[(String, Value
                     let head = trunc(&src, 400);
                     if head.contains("dialog") || src.contains("Save") || src.contains("Export") {
                         if let Some(hit) = sidefx::save_dialog_target(&src) {
-                            bump(&mut best, "high", format!("saving here would replace the existing file {hit}"));
+                            let c = sidefx::canon(&hit);
+                            bump_t(&mut best, "high", format!("saving here would replace the existing file {hit}"), vec![c]);
                         }
                     }
                 }
@@ -382,8 +405,8 @@ pub fn assess_risk(tool: &str, args: &Value, t: &Target, steps: &[(String, Value
         bump(&mut best, "medium", tool.to_string());
     }
     if tool == "run_command" {
-        if let Some((l, r)) = crate::command::command_risk(&pystr(args.get("command")), &command_cwd(args)) {
-            bump(&mut best, &l, r);
+        if let Some((l, r, tg)) = crate::command::command_risk(&pystr(args.get("command")), &command_cwd(args)) {
+            bump_t(&mut best, &l, r, tg);
         }
     }
     if tool == "run_script" {
@@ -400,7 +423,8 @@ pub fn assess_risk(tool: &str, args: &Value, t: &Target, steps: &[(String, Value
             }
         }
     }
-    (best.0, best.1, handoff)
+    let tg = if best.1.is_some() { best.2 } else { vec![] };
+    (best.0, best.1, handoff, tg)
 }
 
 /// The directory a run_command runs in: its cwd argument (~ and $VARS expanded), else the user's home.
@@ -409,12 +433,12 @@ pub fn command_cwd(args: &Value) -> String {
     if c.trim().is_empty() { crate::util::home() } else { sidefx::p(c.trim(), &crate::util::home()) }
 }
 
-fn shell_check(cmd: &str, pid: i64, bump: &mut dyn FnMut(&str, String)) {
+fn shell_check(cmd: &str, pid: i64, bump: &mut dyn FnMut(&str, String, Vec<String>)) {
     if cmd.is_empty() || !sidefx::is_terminal(pid) {
         return;
     }
-    if let Some((l, r)) = sidefx::shell_effects(cmd, &sidefx::shell_cwd(pid)) {
-        bump(&l, r);
+    if let Some((l, r, tg)) = sidefx::shell_effects(cmd, &sidefx::shell_cwd(pid)) {
+        bump(&l, r, tg);
     }
 }
 
