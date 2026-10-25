@@ -25,6 +25,13 @@ import glob
 import json
 import os
 import statistics
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from stats import wilson  # noqa: E402
+
+DISCLAIMER = ("custom-environment result (OSWorld tasks and evaluators run natively, not the official VM / app versions / "
+              "budget): not an official OSWorld-Verified score; do not compare with leaderboard numbers")
 
 
 def jl(p):
@@ -243,6 +250,10 @@ def summarize(rows, expected):
 def md(S, rows):
     L = []
     L.append(f"# OSWorld-Verified report\n")
+    wv, wo = wilson(S['success'], S['valid']), wilson(S['success'], S['expected'])
+    partial = " PARTIAL run (not every expected task finished)." if S['rows'] < S['expected'] else ""
+    L.append(f"> {DISCLAIMER}.{partial} Wilson 95 % CI: valid {100 * wv[0]:.1f}-{100 * wv[1]:.1f} %, "
+             f"planned list {100 * wo[0]:.1f}-{100 * wo[1]:.1f} % (task correlation and valid-run selection not included).\n")
     L.append(f"- tasks expected {S['expected']}, finished rows {S['rows']}, valid {S['valid']}, infra {S['infra']} {S['infra_kinds']}")
     L.append(f"- **success {S['success']}/{S['expected']} = {S['rate_official']} %** (official-style: every expected task counts, infra/missing = 0); "
              f"{S['success']}/{S['valid']} = {S['rate_valid']} % of valid runs; score sum {S['score_sum']}")

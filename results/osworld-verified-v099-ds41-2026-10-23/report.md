@@ -1,5 +1,15 @@
 # OSWorld-Verified report
 
+> **How to read this number (added 2026-10-25, external review):** 137/255 = 53.7 % of *valid* runs (the latest
+> snapshot of this partial run; this folder's report holds the earlier 132/246 = 53.7 % snapshot) is a
+> **custom-environment partial result**, not an official OSWorld-Verified score. Wilson 95 % CI for 137/255:
+> **47.6 %–59.7 %** (132/246: 47.4 %–59.8 %), ignoring task correlation and the selection of valid runs. The run used
+> OSWorld's tasks and evaluators natively on Debian 13 / XFCE 1440x900 with Chromium, LibreOffice 25.2 and other app
+> versions (no VM, no snapshot revert), stopped before all 361 tasks finished, excluded infra failures from the
+> valid denominator, and had no direct baseline. Over the planned list it is 132/361 = 36.6 % (Wilson 31.8 %–41.7 %).
+> Do not compare it with leaderboard numbers. Fair comparisons: bench/fair_compare.py.
+
+
 - tasks expected 361, finished rows 268, valid 246, infra 22 {'relay_error': 3, 'setup_failed': 18, 'eval_error': 1}
 - **success 132/361 = 36.57 %** (official-style: every expected task counts, infra/missing = 0); 132/246 = 53.66 % of valid runs; score sum 138.33
 - stops {'agent': 229, 'max_turns': 3, 'timeout': 14}; turns mean 30.5 / median 25.0; wall mean 669.6 s / median 336.5 s; total 47.6 h
