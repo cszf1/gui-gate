@@ -134,7 +134,7 @@ class PhantomTests(unittest.TestCase):
         ev = [e for e in self.c.events() if e.get("ev") == "phantom"]
         if os.name == "nt":  # no run_command on Windows: "bash" maps to nothing
             self.assertIn('there is no tool "bash"', txt(r))
-            self.assertEqual([e["to"] for e in ev], ["click", "press_key"])
+            self.assertEqual([e.get("to") for e in ev], ["click", "press_key", None])
         else:
             self.assertIn("phantom-42", txt(r))
             self.assertEqual([e["to"] for e in ev], ["click", "press_key", "run_command"])
@@ -428,6 +428,8 @@ class RoleBriefingTests(unittest.TestCase):
             self.assertIn("(check {", t)
             r = c.call("run_command", command=f"touch {d}/done.txt")
             self.assertIn("[plan] 0/2 done; next: 1.", txt(r))
+            if os.name == "nt":  # run_command is not offered on Windows (the gate answered, nothing ran): make the file
+                open(os.path.join(d, "done.txt"), "w").close()
             r = c.call("set_plan", done=[1])
             self.assertIn("holds:", txt(r))
         finally:
