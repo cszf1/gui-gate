@@ -1,5 +1,11 @@
 # ABORTED run: OSWorld/OSGuard native bench, 2026-10-20 (invalid, keyboard input broken)
 
+> **Environment note (2026-10-25):** OSWorld numbers here are from a
+> **custom environment based on OSWorld tasks and evaluators** (native Debian 13 / XFCE, other app versions, own reset
+> and budget; bench/README.md), not comparable to the OSWorld leaderboard; descriptive only (no frozen manifest,
+> docs/eval-protocol.md).
+
+
 **This run is invalid. Do not use its numbers as results.** The user stopped it at 00:20 CST on 2026-10-21. Every
 `press_key` / `type_text` (and some clicks) into LibreOffice failed with cua-driver's *"Background delivery is not
 available: the requested target has no focus-free input backend ..."* (the box has no /dev/uinput, so only the

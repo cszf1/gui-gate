@@ -1,0 +1,1140 @@
+{
+ "all": {
+  "level": "step",
+  "branches": 1260,
+  "unfaithful_restores": 0,
+  "checkpoints": 60,
+  "families": [
+   "loading",
+   "mixed",
+   "popup",
+   "relabel"
+  ],
+  "treatments": {
+   "ask": {
+    "checkpoints": 60,
+    "delta": 0.55,
+    "ci95_family_bootstrap": [
+     0.3722222222222222,
+     0.7277777777777777
+    ],
+    "negative": 11,
+    "zero": 11,
+    "positive": 38
+   },
+   "check": {
+    "checkpoints": 60,
+    "delta": 0.23333333333333334,
+    "ci95_family_bootstrap": [
+     0.1,
+     0.38333333333333336
+    ],
+    "negative": 0,
+    "zero": 46,
+    "positive": 14
+   },
+   "extra_reason": {
+    "checkpoints": 60,
+    "delta": -0.038888888888888896,
+    "ci95_family_bootstrap": [
+     -0.16111111111111112,
+     0.13333333333333333
+    ],
+    "negative": 15,
+    "zero": 38,
+    "positive": 7
+   },
+   "look_full": {
+    "checkpoints": 60,
+    "delta": 0.6166666666666667,
+    "ci95_family_bootstrap": [
+     0.4666666666666667,
+     0.7666666666666667
+    ],
+    "negative": 0,
+    "zero": 23,
+    "positive": 37
+   },
+   "look_light": {
+    "checkpoints": 60,
+    "delta": 0.3,
+    "ci95_family_bootstrap": [
+     0.11666666666666667,
+     0.5
+    ],
+    "negative": 0,
+    "zero": 42,
+    "positive": 18
+   },
+   "matched_wait": {
+    "checkpoints": 60,
+    "delta": 0.08333333333333333,
+    "ci95_family_bootstrap": [
+     0.0,
+     0.26666666666666666
+    ],
+    "negative": 0,
+    "zero": 55,
+    "positive": 5
+   }
+  },
+  "costs": {
+   "ask": {
+    "cost_s": 20.300000000000065,
+    "tokens": 0.0,
+    "person_s": 20.0,
+    "n": 180
+   },
+   "matched_wait": {
+    "cost_s": 7.299999999999976,
+    "tokens": 0.0,
+    "person_s": 0.0,
+    "n": 180
+   },
+   "check": {
+    "cost_s": 4.583333333333333,
+    "tokens": 175.0,
+    "person_s": 0.0,
+    "n": 180
+   },
+   "look_light": {
+    "cost_s": 7.299999999999976,
+    "tokens": 300.0,
+    "person_s": 0.0,
+    "n": 180
+   },
+   "direct": {
+    "cost_s": 0.29999999999999916,
+    "tokens": 0.0,
+    "person_s": 0.0,
+    "n": 180
+   },
+   "extra_reason": {
+    "cost_s": 7.299999999999976,
+    "tokens": 400.0,
+    "person_s": 0.0,
+    "n": 180
+   },
+   "look_full": {
+    "cost_s": 9.29999999999997,
+    "tokens": 1400.0,
+    "person_s": 0.0,
+    "n": 180
+   }
+  },
+  "look_light_minus_matched_wait": {
+   "n": 60,
+   "diff": 0.21666666666666667,
+   "ci": [
+    0.11666666666666667,
+    0.31666666666666665
+   ],
+   "level": 0.95,
+   "reps": 2000
+  }
+ },
+ "test_families_only": {
+  "level": "step",
+  "branches": 630,
+  "unfaithful_restores": 0,
+  "checkpoints": 30,
+  "families": [
+   "loading",
+   "popup"
+  ],
+  "treatments": {
+   "ask": {
+    "checkpoints": 30,
+    "delta": 0.5666666666666667,
+    "ci95_family_bootstrap": [
+     0.27777777777777773,
+     0.8444444444444444
+    ],
+    "negative": 7,
+    "zero": 3,
+    "positive": 20
+   },
+   "check": {
+    "checkpoints": 30,
+    "delta": 0.2,
+    "ci95_family_bootstrap": [
+     0.0,
+     0.43333333333333335
+    ],
+    "negative": 0,
+    "zero": 24,
+    "positive": 6
+   },
+   "extra_reason": {
+    "checkpoints": 30,
+    "delta": 0.011111111111111098,
+    "ci95_family_bootstrap": [
+     -0.21111111111111114,
+     0.31111111111111106
+    ],
+    "negative": 8,
+    "zero": 17,
+    "positive": 5
+   },
+   "look_full": {
+    "checkpoints": 30,
+    "delta": 0.6333333333333333,
+    "ci95_family_bootstrap": [
+     0.4,
+     0.8666666666666667
+    ],
+    "negative": 0,
+    "zero": 11,
+    "positive": 19
+   },
+   "look_light": {
+    "checkpoints": 30,
+    "delta": 0.3,
+    "ci95_family_bootstrap": [
+     0.0,
+     0.6666666666666666
+    ],
+    "negative": 0,
+    "zero": 21,
+    "positive": 9
+   },
+   "matched_wait": {
+    "checkpoints": 30,
+    "delta": 0.16666666666666666,
+    "ci95_family_bootstrap": [
+     0.0,
+     0.43333333333333335
+    ],
+    "negative": 0,
+    "zero": 25,
+    "positive": 5
+   }
+  },
+  "costs": {
+   "look_light": {
+    "cost_s": 7.299999999999996,
+    "tokens": 300.0,
+    "person_s": 0.0,
+    "n": 90
+   },
+   "extra_reason": {
+    "cost_s": 7.299999999999996,
+    "tokens": 400.0,
+    "person_s": 0.0,
+    "n": 90
+   },
+   "matched_wait": {
+    "cost_s": 7.299999999999996,
+    "tokens": 0.0,
+    "person_s": 0.0,
+    "n": 90
+   },
+   "direct": {
+    "cost_s": 0.3000000000000005,
+    "tokens": 0.0,
+    "person_s": 0.0,
+    "n": 90
+   },
+   "look_full": {
+    "cost_s": 9.299999999999986,
+    "tokens": 1400.0,
+    "person_s": 0.0,
+    "n": 90
+   },
+   "check": {
+    "cost_s": 4.466666666666667,
+    "tokens": 170.0,
+    "person_s": 0.0,
+    "n": 90
+   },
+   "ask": {
+    "cost_s": 20.29999999999997,
+    "tokens": 0.0,
+    "person_s": 20.0,
+    "n": 90
+   }
+  },
+  "look_light_minus_matched_wait": {
+   "n": 30,
+   "diff": 0.13333333333333333,
+   "ci": [
+    0.03333333333333333,
+    0.26666666666666666
+   ],
+   "level": 0.95,
+   "reps": 2000
+  },
+  "incremental_reliability": {
+   "look_light": [
+    {
+     "n": 10,
+     "pred_lo": 0.16666666666666666,
+     "pred_hi": 0.16666666666666666,
+     "mean_pred": 0.16666666666666666,
+     "mean_observed": 0.2,
+     "ci95": [
+      0.0,
+      0.6
+     ],
+     "families": 2
+    },
+    {
+     "n": 10,
+     "pred_lo": 0.3,
+     "pred_hi": 0.3,
+     "mean_pred": 0.3,
+     "mean_observed": 0.3,
+     "ci95": [
+      0.0,
+      0.8
+     ],
+     "families": 2
+    },
+    {
+     "n": 5,
+     "pred_lo": 0.375,
+     "pred_hi": 0.375,
+     "mean_pred": 0.375,
+     "mean_observed": 0.4,
+     "ci95": [
+      0.0,
+      0.8
+     ],
+     "families": 2
+    },
+    {
+     "n": 5,
+     "pred_lo": 1.0,
+     "pred_hi": 1.0,
+     "mean_pred": 1.0,
+     "mean_observed": 0.4,
+     "ci95": [
+      0.125,
+      1.0
+     ],
+     "families": 2
+    }
+   ],
+   "extra_reason": [
+    {
+     "n": 10,
+     "pred_lo": -0.3888888888888889,
+     "pred_hi": -0.3888888888888889,
+     "mean_pred": -0.3888888888888889,
+     "mean_observed": -0.16666666666666669,
+     "ci95": [
+      -0.4666666666666667,
+      0.2333333333333333
+     ],
+     "families": 2
+    },
+    {
+     "n": 10,
+     "pred_lo": -5.551115123125783e-18,
+     "pred_hi": -5.551115123125783e-18,
+     "mean_pred": -5.551115123125783e-18,
+     "mean_observed": 0.16666666666666666,
+     "ci95": [
+      -0.13333333333333336,
+      0.6
+     ],
+     "families": 2
+    },
+    {
+     "n": 5,
+     "pred_lo": 0.0,
+     "pred_hi": 0.0,
+     "mean_pred": 0.0,
+     "mean_observed": 0.13333333333333333,
+     "ci95": [
+      0.0,
+      0.4
+     ],
+     "families": 2
+    },
+    {
+     "n": 5,
+     "pred_lo": 0.16666666666666666,
+     "pred_hi": 0.16666666666666666,
+     "mean_pred": 0.16666666666666666,
+     "mean_observed": -0.06666666666666668,
+     "ci95": [
+      -0.2,
+      0.0
+     ],
+     "families": 2
+    }
+   ],
+   "matched_wait": [
+    {
+     "n": 30,
+     "pred_lo": 0.0,
+     "pred_hi": 0.0,
+     "mean_pred": 0.0,
+     "mean_observed": 0.16666666666666666,
+     "ci95": [
+      0.0,
+      0.43333333333333335
+     ],
+     "families": 2
+    }
+   ],
+   "look_full": [
+    {
+     "n": 10,
+     "pred_lo": 0.16666666666666666,
+     "pred_hi": 0.16666666666666666,
+     "mean_pred": 0.16666666666666666,
+     "mean_observed": 0.2,
+     "ci95": [
+      0.0,
+      0.6
+     ],
+     "families": 2
+    },
+    {
+     "n": 10,
+     "pred_lo": 0.5,
+     "pred_hi": 0.5,
+     "mean_pred": 0.5,
+     "mean_observed": 0.8,
+     "ci95": [
+      0.5,
+      1.0
+     ],
+     "families": 2
+    },
+    {
+     "n": 5,
+     "pred_lo": 0.875,
+     "pred_hi": 0.875,
+     "mean_pred": 0.875,
+     "mean_observed": 1.0,
+     "ci95": [
+      1.0,
+      1.0
+     ],
+     "families": 2
+    },
+    {
+     "n": 5,
+     "pred_lo": 1.0,
+     "pred_hi": 1.0,
+     "mean_pred": 1.0,
+     "mean_observed": 0.8,
+     "ci95": [
+      0.4,
+      1.0
+     ],
+     "families": 2
+    }
+   ],
+   "check": [
+    {
+     "n": 10,
+     "pred_lo": 0.16666666666666666,
+     "pred_hi": 0.16666666666666666,
+     "mean_pred": 0.16666666666666666,
+     "mean_observed": 0.2,
+     "ci95": [
+      0.0,
+      0.6
+     ],
+     "families": 2
+    },
+    {
+     "n": 5,
+     "pred_lo": 0.25,
+     "pred_hi": 0.25,
+     "mean_pred": 0.25,
+     "mean_observed": 0.2,
+     "ci95": [
+      0.0,
+      0.6
+     ],
+     "families": 2
+    },
+    {
+     "n": 10,
+     "pred_lo": 0.3,
+     "pred_hi": 0.3,
+     "mean_pred": 0.3,
+     "mean_observed": 0.2,
+     "ci95": [
+      0.0,
+      0.6
+     ],
+     "families": 2
+    },
+    {
+     "n": 5,
+     "pred_lo": 1.0,
+     "pred_hi": 1.0,
+     "mean_pred": 1.0,
+     "mean_observed": 0.2,
+     "ci95": [
+      0.0,
+      0.6
+     ],
+     "families": 2
+    }
+   ],
+   "ask": [
+    {
+     "n": 10,
+     "pred_lo": 0.055555555555555546,
+     "pred_hi": 0.055555555555555546,
+     "mean_pred": 0.055555555555555546,
+     "mean_observed": -0.0666666666666667,
+     "ci95": [
+      -0.30000000000000004,
+      0.3
+     ],
+     "families": 2
+    },
+    {
+     "n": 10,
+     "pred_lo": 0.4333333333333333,
+     "pred_hi": 0.4333333333333333,
+     "mean_pred": 0.4333333333333333,
+     "mean_observed": 0.9,
+     "ci95": [
+      0.6,
+      1.0
+     ],
+     "families": 2
+    },
+    {
+     "n": 5,
+     "pred_lo": 0.7916666666666666,
+     "pred_hi": 0.7916666666666666,
+     "mean_pred": 0.7916666666666666,
+     "mean_observed": 1.0,
+     "ci95": [
+      1.0,
+      1.0
+     ],
+     "families": 2
+    },
+    {
+     "n": 5,
+     "pred_lo": 1.0,
+     "pred_hi": 1.0,
+     "mean_pred": 1.0,
+     "mean_observed": 0.7333333333333333,
+     "ci95": [
+      0.19999999999999998,
+      1.0
+     ],
+     "families": 2
+    }
+   ]
+  }
+ },
+ "task_level": {
+  "level": "task",
+  "branches": 1260,
+  "unfaithful_restores": 0,
+  "checkpoints": 60,
+  "families": [
+   "loading",
+   "mixed",
+   "popup",
+   "relabel"
+  ],
+  "treatments": {
+   "ask": {
+    "checkpoints": 60,
+    "delta": -0.1277777777777778,
+    "ci95_family_bootstrap": [
+     -0.23333333333333334,
+     -0.044444444444444446
+    ],
+    "negative": 9,
+    "zero": 51,
+    "positive": 0
+   },
+   "check": {
+    "checkpoints": 60,
+    "delta": -0.11666666666666667,
+    "ci95_family_bootstrap": [
+     -0.21666666666666667,
+     -0.03333333333333333
+    ],
+    "negative": 7,
+    "zero": 53,
+    "positive": 0
+   },
+   "extra_reason": {
+    "checkpoints": 60,
+    "delta": -0.12222222222222223,
+    "ci95_family_bootstrap": [
+     -0.26666666666666666,
+     -0.00555555555555556
+    ],
+    "negative": 10,
+    "zero": 49,
+    "positive": 1
+   },
+   "look_full": {
+    "checkpoints": 60,
+    "delta": -0.05,
+    "ci95_family_bootstrap": [
+     -0.15,
+     0.03333333333333333
+    ],
+    "negative": 5,
+    "zero": 53,
+    "positive": 2
+   },
+   "look_light": {
+    "checkpoints": 60,
+    "delta": -0.16666666666666666,
+    "ci95_family_bootstrap": [
+     -0.3,
+     -0.06666666666666667
+    ],
+    "negative": 11,
+    "zero": 48,
+    "positive": 1
+   },
+   "matched_wait": {
+    "checkpoints": 60,
+    "delta": -0.08333333333333333,
+    "ci95_family_bootstrap": [
+     -0.23333333333333334,
+     0.03333333333333333
+    ],
+    "negative": 6,
+    "zero": 53,
+    "positive": 1
+   }
+  },
+  "costs": {
+   "ask": {
+    "cost_s": 20.300000000000065,
+    "tokens": 0.0,
+    "person_s": 20.0,
+    "n": 180
+   },
+   "matched_wait": {
+    "cost_s": 7.299999999999976,
+    "tokens": 0.0,
+    "person_s": 0.0,
+    "n": 180
+   },
+   "check": {
+    "cost_s": 4.583333333333333,
+    "tokens": 175.0,
+    "person_s": 0.0,
+    "n": 180
+   },
+   "look_light": {
+    "cost_s": 7.299999999999976,
+    "tokens": 300.0,
+    "person_s": 0.0,
+    "n": 180
+   },
+   "direct": {
+    "cost_s": 0.29999999999999916,
+    "tokens": 0.0,
+    "person_s": 0.0,
+    "n": 180
+   },
+   "extra_reason": {
+    "cost_s": 7.299999999999976,
+    "tokens": 400.0,
+    "person_s": 0.0,
+    "n": 180
+   },
+   "look_full": {
+    "cost_s": 9.29999999999997,
+    "tokens": 1400.0,
+    "person_s": 0.0,
+    "n": 180
+   }
+  },
+  "look_light_minus_matched_wait": {
+   "n": 60,
+   "diff": -0.08333333333333333,
+   "ci": [
+    -0.18333333333333332,
+    0.016666666666666666
+   ],
+   "level": 0.95,
+   "reps": 2000
+  }
+ },
+ "split": {
+  "test_families": [
+   "loading",
+   "popup"
+  ],
+  "train_families": [
+   "mixed",
+   "relabel"
+  ],
+  "rule": "every checkpoint, branch and repeat of a family is on one side only",
+  "unseen_layout_test": [
+   "layout:animals-mixed-n8-2032",
+   "layout:animals-relabel-n8-2026",
+   "layout:cities-loading-n8-2033",
+   "layout:cities-popup-n8-2027",
+   "layout:colors-relabel-n8-2028",
+   "layout:colors-relabel-n8-2034",
+   "layout:instruments-loading-n8-2029",
+   "layout:instruments-relabel-n8-2035",
+   "layout:planets-mixed-n8-2030",
+   "layout:planets-relabel-n8-2036",
+   "layout:tools-mixed-n8-2031",
+   "layout:tools-popup-n8-2037"
+  ],
+  "unseen_rule": "unseen layouts are evaluation-only: not in the train families, not used for the predictor"
+ },
+ "backend": "sim",
+ "restore": "snapshot",
+ "unseen_layouts": {
+  "level": "step",
+  "branches": 3780,
+  "unfaithful_restores": 0,
+  "checkpoints": 180,
+  "families": [
+   "layout:animals-mixed-n8-2032",
+   "layout:animals-relabel-n8-2026",
+   "layout:cities-loading-n8-2033",
+   "layout:cities-popup-n8-2027",
+   "layout:colors-relabel-n8-2028",
+   "layout:colors-relabel-n8-2034",
+   "layout:instruments-loading-n8-2029",
+   "layout:instruments-relabel-n8-2035",
+   "layout:planets-mixed-n8-2030",
+   "layout:planets-relabel-n8-2036",
+   "layout:tools-mixed-n8-2031",
+   "layout:tools-popup-n8-2037"
+  ],
+  "treatments": {
+   "ask": {
+    "checkpoints": 180,
+    "delta": 0.5037037037037038,
+    "ci95_family_bootstrap": [
+     0.3888888888888889,
+     0.6074074074074074
+    ],
+    "negative": 19,
+    "zero": 58,
+    "positive": 103
+   },
+   "check": {
+    "checkpoints": 180,
+    "delta": 0.21666666666666667,
+    "ci95_family_bootstrap": [
+     0.12777777777777777,
+     0.3
+    ],
+    "negative": 0,
+    "zero": 141,
+    "positive": 39
+   },
+   "extra_reason": {
+    "checkpoints": 180,
+    "delta": -0.0888888888888889,
+    "ci95_family_bootstrap": [
+     -0.16666666666666669,
+     -0.009259259259259276
+    ],
+    "negative": 51,
+    "zero": 112,
+    "positive": 17
+   },
+   "look_full": {
+    "checkpoints": 180,
+    "delta": 0.5555555555555556,
+    "ci95_family_bootstrap": [
+     0.46111111111111114,
+     0.6444444444444445
+    ],
+    "negative": 0,
+    "zero": 80,
+    "positive": 100
+   },
+   "look_light": {
+    "checkpoints": 180,
+    "delta": 0.25,
+    "ci95_family_bootstrap": [
+     0.1388888888888889,
+     0.35555555555555557
+    ],
+    "negative": 0,
+    "zero": 135,
+    "positive": 45
+   },
+   "matched_wait": {
+    "checkpoints": 180,
+    "delta": 0.05,
+    "ci95_family_bootstrap": [
+     0.0,
+     0.13333333333333333
+    ],
+    "negative": 0,
+    "zero": 171,
+    "positive": 9
+   }
+  },
+  "costs": {
+   "check": {
+    "cost_s": 4.388888888888889,
+    "tokens": 166.66666666666666,
+    "person_s": 0.0,
+    "n": 540
+   },
+   "ask": {
+    "cost_s": 20.299999999999912,
+    "tokens": 0.0,
+    "person_s": 20.0,
+    "n": 540
+   },
+   "look_full": {
+    "cost_s": 9.300000000000095,
+    "tokens": 1400.0,
+    "person_s": 0.0,
+    "n": 540
+   },
+   "extra_reason": {
+    "cost_s": 7.300000000000071,
+    "tokens": 400.0,
+    "person_s": 0.0,
+    "n": 540
+   },
+   "matched_wait": {
+    "cost_s": 7.300000000000071,
+    "tokens": 0.0,
+    "person_s": 0.0,
+    "n": 540
+   },
+   "direct": {
+    "cost_s": 0.30000000000000077,
+    "tokens": 0.0,
+    "person_s": 0.0,
+    "n": 540
+   },
+   "look_light": {
+    "cost_s": 7.300000000000071,
+    "tokens": 300.0,
+    "person_s": 0.0,
+    "n": 540
+   }
+  },
+  "look_light_minus_matched_wait": {
+   "n": 180,
+   "diff": 0.2,
+   "ci": [
+    0.14444444444444443,
+    0.2611111111111111
+   ],
+   "level": 0.95,
+   "reps": 2000
+  },
+  "incremental_reliability": {
+   "check": [
+    {
+     "n": 60,
+     "pred_lo": 0.0,
+     "pred_hi": 0.16666666666666666,
+     "mean_pred": 0.12222222222222222,
+     "mean_observed": 0.08333333333333333,
+     "ci95": [
+      0.0,
+      0.2
+     ],
+     "families": 12
+    },
+    {
+     "n": 42,
+     "pred_lo": 0.25,
+     "pred_hi": 0.25,
+     "mean_pred": 0.25,
+     "mean_observed": 0.2857142857142857,
+     "ci95": [
+      0.1282051282051282,
+      0.4444444444444444
+     ],
+     "families": 12
+    },
+    {
+     "n": 60,
+     "pred_lo": 0.3,
+     "pred_hi": 0.3,
+     "mean_pred": 0.3,
+     "mean_observed": 0.2833333333333333,
+     "ci95": [
+      0.13333333333333333,
+      0.43333333333333335
+     ],
+     "families": 12
+    },
+    {
+     "n": 18,
+     "pred_lo": 1.0,
+     "pred_hi": 1.0,
+     "mean_pred": 1.0,
+     "mean_observed": 0.2777777777777778,
+     "ci95": [
+      0.08333333333333333,
+      0.5555555555555556
+     ],
+     "families": 12
+    }
+   ],
+   "ask": [
+    {
+     "n": 44,
+     "pred_lo": 0.055555555555555546,
+     "pred_hi": 0.055555555555555546,
+     "mean_pred": 0.05555555555555555,
+     "mean_observed": 0.022727272727272717,
+     "ci95": [
+      -0.12056737588652483,
+      0.1904761904761905
+     ],
+     "families": 12
+    },
+    {
+     "n": 60,
+     "pred_lo": 0.4333333333333333,
+     "pred_hi": 0.4333333333333333,
+     "mean_pred": 0.4333333333333333,
+     "mean_observed": 0.5777777777777777,
+     "ci95": [
+      0.36666666666666664,
+      0.7555555555555556
+     ],
+     "families": 12
+    },
+    {
+     "n": 16,
+     "pred_lo": 0.75,
+     "pred_hi": 0.75,
+     "mean_pred": 0.75,
+     "mean_observed": 0.6458333333333334,
+     "ci95": [
+      0.3555555555555555,
+      0.9285714285714286
+     ],
+     "families": 8
+    },
+    {
+     "n": 42,
+     "pred_lo": 0.7916666666666666,
+     "pred_hi": 0.7916666666666666,
+     "mean_pred": 0.7916666666666666,
+     "mean_observed": 0.8333333333333334,
+     "ci95": [
+      0.7111111111111111,
+      0.9393939393939394
+     ],
+     "families": 12
+    },
+    {
+     "n": 18,
+     "pred_lo": 1.0,
+     "pred_hi": 1.0,
+     "mean_pred": 1.0,
+     "mean_observed": 0.537037037037037,
+     "ci95": [
+      0.2222222222222222,
+      0.7777777777777777
+     ],
+     "families": 12
+    }
+   ],
+   "look_full": [
+    {
+     "n": 44,
+     "pred_lo": 0.16666666666666666,
+     "pred_hi": 0.16666666666666666,
+     "mean_pred": 0.16666666666666666,
+     "mean_observed": 0.11363636363636363,
+     "ci95": [
+      0.0,
+      0.26666666666666666
+     ],
+     "families": 12
+    },
+    {
+     "n": 60,
+     "pred_lo": 0.5,
+     "pred_hi": 0.5,
+     "mean_pred": 0.5,
+     "mean_observed": 0.6166666666666667,
+     "ci95": [
+      0.45,
+      0.7666666666666667
+     ],
+     "families": 12
+    },
+    {
+     "n": 16,
+     "pred_lo": 0.75,
+     "pred_hi": 0.75,
+     "mean_pred": 0.75,
+     "mean_observed": 0.6875,
+     "ci95": [
+      0.42857142857142855,
+      0.9285714285714286
+     ],
+     "families": 8
+    },
+    {
+     "n": 42,
+     "pred_lo": 0.875,
+     "pred_hi": 0.875,
+     "mean_pred": 0.875,
+     "mean_observed": 0.8571428571428571,
+     "ci95": [
+      0.717948717948718,
+      0.9722222222222222
+     ],
+     "families": 12
+    },
+    {
+     "n": 18,
+     "pred_lo": 1.0,
+     "pred_hi": 1.0,
+     "mean_pred": 1.0,
+     "mean_observed": 0.6111111111111112,
+     "ci95": [
+      0.3333333333333333,
+      0.8333333333333334
+     ],
+     "families": 12
+    }
+   ],
+   "extra_reason": [
+    {
+     "n": 44,
+     "pred_lo": -0.3888888888888889,
+     "pred_hi": -0.3888888888888889,
+     "mean_pred": -0.3888888888888889,
+     "mean_observed": -0.3030303030303031,
+     "ci95": [
+      -0.4833333333333334,
+      -0.08510638297872343
+     ],
+     "families": 12
+    },
+    {
+     "n": 76,
+     "pred_lo": -0.16666666666666669,
+     "pred_hi": -5.551115123125783e-18,
+     "mean_pred": -0.035087719298245626,
+     "mean_observed": -0.03947368421052633,
+     "ci95": [
+      -0.12719298245614036,
+      0.05472636815920397
+     ],
+     "families": 12
+    },
+    {
+     "n": 42,
+     "pred_lo": 0.0,
+     "pred_hi": 0.0,
+     "mean_pred": 0.0,
+     "mean_observed": 0.007936507936507933,
+     "ci95": [
+      -0.05185185185185186,
+      0.059829059829059825
+     ],
+     "families": 12
+    },
+    {
+     "n": 18,
+     "pred_lo": 0.16666666666666666,
+     "pred_hi": 0.16666666666666666,
+     "mean_pred": 0.16666666666666666,
+     "mean_observed": -3.0839528461809902e-18,
+     "ci95": [
+      -0.05555555555555555,
+      0.05555555555555555
+     ],
+     "families": 12
+    }
+   ],
+   "matched_wait": [
+    {
+     "n": 180,
+     "pred_lo": 0.0,
+     "pred_hi": 0.0,
+     "mean_pred": 0.0,
+     "mean_observed": 0.05,
+     "ci95": [
+      0.0,
+      0.12777777777777777
+     ],
+     "families": 12
+    }
+   ],
+   "look_light": [
+    {
+     "n": 60,
+     "pred_lo": 0.0,
+     "pred_hi": 0.16666666666666666,
+     "mean_pred": 0.12222222222222222,
+     "mean_observed": 0.08333333333333333,
+     "ci95": [
+      0.0,
+      0.2
+     ],
+     "families": 12
+    },
+    {
+     "n": 60,
+     "pred_lo": 0.3,
+     "pred_hi": 0.3,
+     "mean_pred": 0.3,
+     "mean_observed": 0.31666666666666665,
+     "ci95": [
+      0.15,
+      0.48333333333333334
+     ],
+     "families": 12
+    },
+    {
+     "n": 42,
+     "pred_lo": 0.375,
+     "pred_hi": 0.375,
+     "mean_pred": 0.375,
+     "mean_observed": 0.3333333333333333,
+     "ci95": [
+      0.17777777777777778,
+      0.48717948717948717
+     ],
+     "families": 12
+    },
+    {
+     "n": 18,
+     "pred_lo": 1.0,
+     "pred_hi": 1.0,
+     "mean_pred": 1.0,
+     "mean_observed": 0.3888888888888889,
+     "ci95": [
+      0.16666666666666666,
+      0.75
+     ],
+     "families": 12
+    }
+   ]
+  }
+ },
+ "plots": {
+  "test": {
+   "png": "reliability.png",
+   "csv": "reliability.csv",
+   "ascii": null
+  },
+  "unseen": {
+   "png": "reliability_unseen.png",
+   "csv": "reliability_unseen.csv",
+   "ascii": null
+  }
+ }
+}

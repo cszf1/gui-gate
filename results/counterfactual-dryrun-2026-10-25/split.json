@@ -1,0 +1,26 @@
+{
+ "test_families": [
+  "loading",
+  "popup"
+ ],
+ "train_families": [
+  "mixed",
+  "relabel"
+ ],
+ "rule": "every checkpoint, branch and repeat of a family is on one side only",
+ "unseen_layout_test": [
+  "layout:animals-mixed-n8-2032",
+  "layout:animals-relabel-n8-2026",
+  "layout:cities-loading-n8-2033",
+  "layout:cities-popup-n8-2027",
+  "layout:colors-relabel-n8-2028",
+  "layout:colors-relabel-n8-2034",
+  "layout:instruments-loading-n8-2029",
+  "layout:instruments-relabel-n8-2035",
+  "layout:planets-mixed-n8-2030",
+  "layout:planets-relabel-n8-2036",
+  "layout:tools-mixed-n8-2031",
+  "layout:tools-popup-n8-2037"
+ ],
+ "unseen_rule": "unseen layouts are evaluation-only: not in the train families, not used for the predictor"
+}

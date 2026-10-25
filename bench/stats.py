@@ -7,6 +7,12 @@ mcnemar_exact(a, b)             -> two-sided exact McNemar p for paired binary o
 paired_permutation(a, b)        -> two-sided sign-flip permutation p for the mean paired difference
 budget_curve(runs, budgets)     -> success-within-budget curve per policy (a run counts only if it succeeded AND its
                                    cost <= budget; failures and timeouts are never dropped)
+noninferiority(a, b, margin)    -> paired one-sided test of H0: mean(b - a) <= -margin with a one-sided bootstrap lower
+                                   bound; the margin must be PRE-REGISTERED (bench/manifest.py noninferiority_margin)
+verdict(res)                    -> the sentence a report may print for a non-inferiority result
+
+Wording rule: "no significant difference" is NOT evidence of equality or of "no drop". Only a pre-registered
+non-inferiority margin whose one-sided lower bound lies above -margin supports "not worse by more than margin".
 """
 import math
 import random
@@ -102,3 +108,55 @@ def budget_curve(runs, budgets, cost_key="wall_s"):
             pts.append((bdg, k / len(rs) if rs else 0.0, lo, hi, len(rs)))
         out[p] = pts
     return out
+
+
+def noninferiority(a, b, margin, alpha=0.05, reps=4000, seed=0, preregistered=True):
+    """Paired non-inferiority of b (new) against a (reference) over the same units (tasks; values = per-task success
+    rate over repeats, or any higher-is-better score). H0: mean(b - a) <= -margin; H1: mean(b - a) > -margin.
+    Returns the mean difference, the one-sided (1 - alpha) bootstrap lower bound (= the lower end of the two-sided
+    1 - 2*alpha percentile interval), a one-sided sign-flip permutation p of the shifted differences d + margin, and
+    the decision. `preregistered=False` (a margin picked after seeing data) marks the result exploratory."""
+    assert len(a) == len(b), "paired samples must have the same units"
+    assert margin >= 0, "margin is a non-negative tolerated drop"
+    n = len(a)
+    if n == 0:
+        return {"n": 0, "diff": None, "lower": None, "margin": margin, "p_one_sided": None, "noninferior": False,
+                "preregistered": preregistered, "alpha": alpha}
+    d = [y - x for x, y in zip(a, b)]
+    mean = sum(d) / n
+    rng = random.Random(seed)
+    boots = sorted(sum(d[rng.randrange(n)] for _ in range(n)) / n for _ in range(reps))
+    lower = _quantile(boots, alpha)
+    # one-sided permutation: shifted differences e = d + margin have mean <= 0 under H0 (boundary = 0)
+    e = [x + margin for x in d]
+    obs = sum(e)
+    nz = [x for x in e if abs(x) > 1e-12]
+    if not nz:
+        p = 1.0
+    elif 2 ** len(nz) <= reps:
+        hits = tot = 0
+        for mask in range(2 ** len(nz)):
+            hits += sum(x if (mask >> i) & 1 else -x for i, x in enumerate(nz)) >= obs - 1e-12
+            tot += 1
+        p = hits / tot
+    else:
+        hits = sum(1 for _ in range(reps) if sum(x if rng.random() < 0.5 else -x for x in nz) >= obs - 1e-12)
+        p = (hits + 1) / (reps + 1)
+    ok = lower > -margin and p < alpha
+    return {"n": n, "diff": mean, "lower": lower, "level_one_sided": 1 - alpha, "margin": margin, "p_one_sided": p,
+            "noninferior": bool(ok), "preregistered": preregistered, "alpha": alpha, "reps": reps}
+
+
+def verdict(res, what="success rate"):
+    """Report wording for a noninferiority() result. Never says 'equal' or 'no drop'."""
+    if res.get("n", 0) == 0:
+        return "no paired units: nothing can be concluded."
+    m = res["margin"]
+    tag = "" if res.get("preregistered") else " (EXPLORATORY: margin not pre-registered)"
+    if res["noninferior"]:
+        kind = "the pre-registered margin" if res.get("preregistered") else "the margin"
+        return (f"non-inferior within {kind}: the {what} difference is {res['diff']:+.3f}, one-sided "
+                f"{res['level_one_sided']:.0%} lower bound {res['lower']:+.3f} > -{m:.3f} (p = {res['p_one_sided']:.4f}){tag}.")
+    return (f"non-inferiority NOT shown: the {what} difference is {res['diff']:+.3f}, one-sided {res['level_one_sided']:.0%} "
+            f"lower bound {res['lower']:+.3f} vs margin -{m:.3f} (p = {res['p_one_sided']:.4f}). This is not evidence of a "
+            f"drop either, and a non-significant difference is never evidence of equality{tag}.")

@@ -66,7 +66,17 @@ class OSWorldCheckpoint:
     """Restore = setup + replay. Branch execution reuses harness.apply_treatment with a backend that sends the
     candidate / treatment through gui-gate on the box; that backend is not written yet (needs the box)."""
 
-    def __init__(self, task_json, pi_stream, step, gate_cmd, recorded_fp=None, paths=("/home/user",)):
+    def __init__(self, task_json, pi_stream, step, gate_cmd, recorded_fp=None, paths=("/home/user",), manifest=None,
+                 manifest_hash=None):
+        # frozen test split (bench/manifest.py): a test task is branched only with the pre-registered hash
+        import sys
+        sys.path.insert(0, BENCH)
+        import manifest as _mf
+        m = manifest if manifest is not None else _mf.default_manifest()
+        ok, split, msg = _mf.task_allowed(task_json, m, manifest_hash)
+        if not ok:
+            raise PermissionError(f"manifest guard: {msg}")
+        self.split = split
         self.task_json, self.pi_stream, self.step = task_json, pi_stream, step
         self.gate_cmd, self.recorded_fp, self.paths = gate_cmd, recorded_fp, list(paths)
         self.prefix = prefix_from_pi_stream(pi_stream, step - 1)

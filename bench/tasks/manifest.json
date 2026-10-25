@@ -1,0 +1,316 @@
+{
+ "schema": "gui-gate-bench-manifest/1",
+ "name": "dev34",
+ "split_rule": "by task family (OSWorld app domain); no family on both sides",
+ "split_seed": null,
+ "test_frac": null,
+ "families": {
+  "chrome": "dev",
+  "gimp": "dev",
+  "libreoffice_calc": "dev",
+  "libreoffice_impress": "dev",
+  "libreoffice_writer": "dev",
+  "multi_apps": "dev",
+  "osguard-calc": "dev",
+  "osguard-clone": "dev",
+  "osguard-impress": "dev",
+  "osguard-os": "dev",
+  "osguard-writer": "dev",
+  "vlc": "dev"
+ },
+ "tasks": [
+  {
+   "task": "ow01-libreoffice_calc-7efeb4b1",
+   "entry": "osworld/ow01-libreoffice_calc-7efeb4b1.json",
+   "family": "libreoffice_calc",
+   "sha256": "9bfa1d036ca73d74ace4ace27a8679ce893cc99b99c0fa921966dec71c6f75e4",
+   "split": "dev",
+   "excluded": false
+  },
+  {
+   "task": "ow02-libreoffice_writer-0810415c",
+   "entry": "osworld/ow02-libreoffice_writer-0810415c.json",
+   "family": "libreoffice_writer",
+   "sha256": "5a08cdb3e4449cb7120d83fcc06405b90b2edc2df8c2bb0f8eae2ee26ce0707b",
+   "split": "dev",
+   "excluded": false
+  },
+  {
+   "task": "og01-impress-pre-pptx-exists",
+   "entry": "osguard/og01-impress-pre-pptx-exists.json",
+   "family": "osguard-impress",
+   "sha256": "70d9ce6a844c42326f6acc22c651672ebdf53f2d111f77ad144afff93dab1758",
+   "split": "dev",
+   "excluded": false
+  },
+  {
+   "task": "ow03-libreoffice_impress-39be0d19",
+   "entry": "osworld/ow03-libreoffice_impress-39be0d19.json",
+   "family": "libreoffice_impress",
+   "sha256": "961873c142c329a55110295b25c7274829f8512a6ec3beceea122ce93833c1c9",
+   "split": "dev",
+   "excluded": false
+  },
+  {
+   "task": "ow04-chrome-af630914",
+   "entry": "osworld/ow04-chrome-af630914.json",
+   "family": "chrome",
+   "sha256": "eca6e4ea1722723f472b47a5de7683725392a6b2a4b9638c5efb21012b0bc4d9",
+   "split": "dev",
+   "excluded": false
+  },
+  {
+   "task": "og02-writer-pdf-exists",
+   "entry": "osguard/og02-writer-pdf-exists.json",
+   "family": "osguard-writer",
+   "sha256": "2a2b6eb5eb138110a058fc158ccf18f4a1321a5e5d5adac0a6a73f2f238cf90f",
+   "split": "dev",
+   "excluded": false
+  },
+  {
+   "task": "ow05-libreoffice_calc-abed40dc",
+   "entry": "osworld/ow05-libreoffice_calc-abed40dc.json",
+   "family": "libreoffice_calc",
+   "sha256": "98abe149482c44afa1891bd561f647d09fd4a582e6a3f7969e4b05b6cd8e9a1b",
+   "split": "dev",
+   "excluded": false
+  },
+  {
+   "task": "ow06-chrome-3720f614",
+   "entry": "osworld/ow06-chrome-3720f614.json",
+   "family": "chrome",
+   "sha256": "19c5f5eb9e22162ebf266c0ef2796a765625ad2670e7870f3b4bb5bbe66dcf70",
+   "split": "dev",
+   "excluded": false
+  },
+  {
+   "task": "og03-calc-csv-exists",
+   "entry": "osguard/og03-calc-csv-exists.json",
+   "family": "osguard-calc",
+   "sha256": "0393c5914bd795f19f1efb8ab6f093b077e41a79d71a42512ae09f335933fb65",
+   "split": "dev",
+   "excluded": false
+  },
+  {
+   "task": "ow07-libreoffice_writer-ecc2413d",
+   "entry": "osworld/ow07-libreoffice_writer-ecc2413d.json",
+   "family": "libreoffice_writer",
+   "sha256": "3e9d40b3315a7e04a141541dfe6ce9d90f4901f9afb52f839bfcc3a2f25eec12",
+   "split": "dev",
+   "excluded": false
+  },
+  {
+   "task": "ow08-libreoffice_calc-1e8df695",
+   "entry": "osworld/ow08-libreoffice_calc-1e8df695.json",
+   "family": "libreoffice_calc",
+   "sha256": "26b49e371f8957a06b02e29efa56397d0dcbbaef893725536b6ae7c7b46bf927",
+   "split": "dev",
+   "excluded": false
+  },
+  {
+   "task": "og04-os-copy-dir2-conflict",
+   "entry": "osguard/og04-os-copy-dir2-conflict.json",
+   "family": "osguard-os",
+   "sha256": "c5ee2d497781a90789c0a25de4a8c4feeb3fa24c3aa73c37bf56097ca7ddc424",
+   "split": "dev",
+   "excluded": false
+  },
+  {
+   "task": "ow09-libreoffice_impress-b8adbc24",
+   "entry": "osworld/ow09-libreoffice_impress-b8adbc24.json",
+   "family": "libreoffice_impress",
+   "sha256": "ac6bc7a2355dc0ca31cc9d38f0e536cd31b88e4866579c1e9ec1157688036397",
+   "split": "dev",
+   "excluded": false
+  },
+  {
+   "task": "ow10-vlc-d06f0d4d",
+   "entry": "osworld/ow10-vlc-d06f0d4d.json",
+   "family": "vlc",
+   "sha256": "5eab1ca69d4d077e741a1d82887479ff47d57ce1ee6d5bf217ae44a832c48a8c",
+   "split": "dev",
+   "excluded": false
+  },
+  {
+   "task": "og05-os-fails-keep",
+   "entry": "osguard/og05-os-fails-keep.json",
+   "family": "osguard-os",
+   "sha256": "9384f62c8159e3c7e62f169f21272f820661b07e26acec560ce58b77f95a15ef",
+   "split": "dev",
+   "excluded": false
+  },
+  {
+   "task": "ow11-libreoffice_writer-0e47de2a",
+   "entry": "osworld/ow11-libreoffice_writer-0e47de2a.json",
+   "family": "libreoffice_writer",
+   "sha256": "3e89e8e8cfd415e45832e0715655446b95a9a0cc8bc562b7609a17f8de00df6e",
+   "split": "dev",
+   "excluded": false
+  },
+  {
+   "task": "ow12-libreoffice_calc-8b1ce5f2",
+   "entry": "osworld/ow12-libreoffice_calc-8b1ce5f2.json",
+   "family": "libreoffice_calc",
+   "sha256": "b51f68f30ea73d9cd14db4192b53701df6dd6d13df36f2b69bcaf2bf646109a0",
+   "split": "dev",
+   "excluded": false
+  },
+  {
+   "task": "og06-os-rename-hidden-sentinel",
+   "entry": "osguard/og06-os-rename-hidden-sentinel.json",
+   "family": "osguard-os",
+   "sha256": "6de92f445f102e9d37b111a5188ebe51331eb0e967def392379066e0cc08834f",
+   "split": "dev",
+   "excluded": false
+  },
+  {
+   "task": "ow13-libreoffice_impress-986fc832",
+   "entry": "osworld/ow13-libreoffice_impress-986fc832.json",
+   "family": "libreoffice_impress",
+   "sha256": "7c2d44461bbd44e251b67c85726397006493e32a71174a52f41e2782d48dad0e",
+   "split": "dev",
+   "excluded": false
+  },
+  {
+   "task": "ow14-libreoffice_writer-72b810ef",
+   "entry": "osworld/ow14-libreoffice_writer-72b810ef.json",
+   "family": "libreoffice_writer",
+   "sha256": "ba8e57e28a00c7f19a9722d6bd7f035d5960ec0f4253f09bdd12f550a5c4428d",
+   "split": "dev",
+   "excluded": false
+  },
+  {
+   "task": "og07-os-chmod-sentinel-dirs",
+   "entry": "osguard/og07-os-chmod-sentinel-dirs.json",
+   "family": "osguard-os",
+   "sha256": "4600a00fcce1bac08d61ceb5ca24506859be34f65ac9c65ca882e7f9d2e4412e",
+   "split": "dev",
+   "excluded": false
+  },
+  {
+   "task": "ow15-libreoffice_impress-a097acff",
+   "entry": "osworld/ow15-libreoffice_impress-a097acff.json",
+   "family": "libreoffice_impress",
+   "sha256": "f55a581c597fc2c01e622858b01f8edac8c0d044e63d717e4d0b76a7e2e9bd53",
+   "split": "dev",
+   "excluded": false
+  },
+  {
+   "task": "ow16-libreoffice_calc-a9f325aa",
+   "entry": "osworld/ow16-libreoffice_calc-a9f325aa.json",
+   "family": "libreoffice_calc",
+   "sha256": "ed14ae03c7f357ee21a4587f8fdeb454297bdb90f9724239a09c37334edd6947",
+   "split": "dev",
+   "excluded": false
+  },
+  {
+   "task": "og08-writer-decoy-front",
+   "entry": "osguard/og08-writer-decoy-front.json",
+   "family": "osguard-writer",
+   "sha256": "01f558f42d4c75a9790d1029f7834a7b20b3d0ed98540fb899819a89594adaa6",
+   "split": "dev",
+   "excluded": false
+  },
+  {
+   "task": "ow17-gimp-045bf3ff",
+   "entry": "osworld/ow17-gimp-045bf3ff.json",
+   "family": "gimp",
+   "sha256": "3e63bda46823e375b67f9846df1df9a4e611f19b1f10f80e88b1b0d64578233e",
+   "split": "dev",
+   "excluded": false
+  },
+  {
+   "task": "ow18-libreoffice_calc-535364ea",
+   "entry": "osworld/ow18-libreoffice_calc-535364ea.json",
+   "family": "libreoffice_calc",
+   "sha256": "d8bbe84888468f30e484e2c2f09a72d6d6d016711e3076ecd4657036003d8fb0",
+   "split": "dev",
+   "excluded": false
+  },
+  {
+   "task": "og09-calc-decoy-front",
+   "entry": "osguard/og09-calc-decoy-front.json",
+   "family": "osguard-calc",
+   "sha256": "0bc535357dd7be81e8ecda969f10117c93f4ed15b40e056a4ad06da90c3cee0b",
+   "split": "dev",
+   "excluded": false
+  },
+  {
+   "task": "ow19-multi_apps-81c425f5",
+   "entry": "osworld/ow19-multi_apps-81c425f5.json",
+   "family": "multi_apps",
+   "sha256": "6ae67212256a8788c7781bca7f939ac0ba43274616e7b609e00fb3253418b924",
+   "split": "dev",
+   "excluded": false
+  },
+  {
+   "task": "ow20-libreoffice_calc-0326d92d",
+   "entry": "osworld/ow20-libreoffice_calc-0326d92d.json",
+   "family": "libreoffice_calc",
+   "sha256": "2d7fb8d0ffd543f5c9d815f9138a85fa913b2bdb40f22a68e4c2498a7fa5bff8",
+   "split": "dev",
+   "excluded": false
+  },
+  {
+   "task": "og10-clone-dest-exists",
+   "entry": "osguard/og10-clone-dest-exists.json",
+   "family": "osguard-clone",
+   "sha256": "a2a2bc6863e8b05a6ed5c5d683006ba0546952b666427eb18ac99919340e599f",
+   "split": "dev",
+   "excluded": false
+  },
+  {
+   "task": "ow21-gimp-734d6579",
+   "entry": "osworld/ow21-gimp-734d6579.json",
+   "family": "gimp",
+   "sha256": "e9571c70e4777d92f905cd4dc79ca559d474edffa2100ef7328996f246ba30d9",
+   "split": "dev",
+   "excluded": false
+  },
+  {
+   "task": "ow22-libreoffice_calc-4de54231",
+   "entry": "osworld/ow22-libreoffice_calc-4de54231.json",
+   "family": "libreoffice_calc",
+   "sha256": "69840339723d48f799c311eaef595efca130c9150895c36a34cf4d762e4f5a09",
+   "split": "dev",
+   "excluded": false
+  },
+  {
+   "task": "ow23-libreoffice_impress-455d3c66",
+   "entry": "osworld/ow23-libreoffice_impress-455d3c66.json",
+   "family": "libreoffice_impress",
+   "sha256": "7286a17e56b27a672798495a598e4ae5d87fe3bac68ca06e7951ad4f9cd34d68",
+   "split": "dev",
+   "excluded": false
+  },
+  {
+   "task": "ow24-libreoffice_calc-1de60575",
+   "entry": "osworld/ow24-libreoffice_calc-1de60575.json",
+   "family": "libreoffice_calc",
+   "sha256": "a2ad6a3c0d712e2e9a5517eb941cfff6800eb8c8db0313e826106ca9d0e5a0a9",
+   "split": "dev",
+   "excluded": false
+  }
+ ],
+ "retry_rules": {
+  "retry_on": [
+   "relay_error",
+   "setup_failed"
+  ],
+  "max_attempts": 3,
+  "never_retry": [
+   "agent failure",
+   "FAIL reply",
+   "max_turns",
+   "timeout",
+   "eval mismatch"
+  ],
+  "last_attempt_counts": true,
+  "infra_counts_as_failure_in_planned": true
+ },
+ "noninferiority_margin": null,
+ "tuning_rule": "dev split only; nothing (rules, prompts, memory, calibrators, thresholds) may be changed after looking at test-split results",
+ "created": "2026-10-25 14:29:01 +0000",
+ "notes": "All 34 tasks of order.txt were looked at and used while developing gui-gate 0.2-0.10 (prompts, hints, rules, thresholds), so all are DEV. Freeze a test split from tasks nobody has inspected (docs/eval-protocol.md section 2).",
+ "hash": "272e88f16bb0c393634b8532e1af4ad4a1164b7e13d3667ba4d0c5a87890386a"
+}
