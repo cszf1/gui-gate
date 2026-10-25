@@ -1,0 +1,1 @@
+FAIL — This machine has no Bluetooth capability: there is no adapter (`/sys/class/bluetooth` and `/sys/devices` have no Bluetooth entries), no kernel Bluetooth drivers, no `bluetooth.service`, and none of the tooling (`bluetoothctl`, `rfkill`, `hciconfig`, BlueZ/blueman) or an XFCE Bluetooth settings panel is installed, so there is nothing that can be switched on.

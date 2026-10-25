@@ -1,0 +1,1 @@
+DONE — The source video on the Desktop (`flipped_1984_Apple_Macintosh_Commercial.mp4`) was upside down (180°); I rotated it 180° with ffmpeg, re-encoded it, and saved it as `/home/user/Desktop/1984_Apple_Macintosh_Commercial.mp4` (320×236, 59.8s, H.264/AAC), verified upright in VLC and don't need the old file changed.

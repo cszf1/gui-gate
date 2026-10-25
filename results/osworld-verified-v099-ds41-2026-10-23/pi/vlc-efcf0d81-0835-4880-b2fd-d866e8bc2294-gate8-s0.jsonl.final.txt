@@ -1,0 +1,1 @@
+DONE — Extracted the paused frame (Interstellar ring station, ~02:01) from the open trailer with ffmpeg to `/home/user/Pictures/interstellar_wallpaper.png` (1920×1080) and set it as the XFCE desktop backdrop via xfconf for both monitor paths; the desktop now displays it.
