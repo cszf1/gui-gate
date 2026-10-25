@@ -155,16 +155,22 @@ class FrozenWhileAPersonAnswers(unittest.TestCase):
 
 
 class ClientOnlyTools(unittest.TestCase):
-    def test_tools_are_not_listed_and_refuse_the_model(self):
+    def test_tools_are_not_listed_and_work_unmarked(self):
+        # the desktop client (gui-pi-desktop 749555b) calls them without a marker; both are harmless for a model:
+        # next_step is advice, reset only voids state (denial records and the operator task stay)
         c = Client()
         try:
             names = [t["name"] for t in c.rpc("tools/list", {})["tools"]]
             self.assertNotIn("gate_next_step", names)
             self.assertNotIn("gate_reset", names)
-            for n in ("gate_next_step", "gate_reset"):
-                r = c.call(n)
-                self.assertTrue(r.get("isError"))
-                self.assertIn("client-only", txt(r))
+            r = c.call("gate_reset")
+            self.assertEqual(r["structuredContent"]["reset"], True)
+            r = c.call("gate_next_step")
+            self.assertIn(r["structuredContent"]["observe"], ("none", "tree", "tree+screenshot"))
+            self.assertTrue(any(e.get("ev") == "client_tool_unmarked" for e in c.events()))
+            # marked the documented way
+            m = c.rpc("tools/call", {"name": "gate_reset", "arguments": {}, "_meta": {GG: {"client_only": True}}})
+            self.assertTrue(m["structuredContent"]["reset"])
         finally:
             c.close()
 
@@ -386,6 +392,97 @@ class StrictPersonResults(unittest.TestCase):
         self.assertEqual(r["cancel_timeout_rate"], 0.0)
         self.assertIn("person_wait_s", r)
         self.assertIn("person_active_s", r)
+
+
+class ClientInterface(unittest.TestCase):
+    """The fields gui-pi-desktop 749555b reads and sends."""
+
+    def test_usage_meta_is_logged_and_summed(self):
+        c = Modern(person=Person())
+        try:
+            def call(name, usage, **a):
+                c.i += 1
+                c.p.stdin.write(json.dumps({"jsonrpc": "2.0", "id": c.i, "method": "tools/call", "params": {"name": name, "arguments": a,
+                    "_meta": {PV: "2026-07-28", CC: c.caps, CI: {"name": "e2e", "version": "0"}, "gui_pi/usage": usage}}}) + "\n")
+                c.p.stdin.flush()
+                while True:
+                    m = json.loads(c.p.stdout.readline())
+                    if m.get("id") == c.i:
+                        return m["result"]
+            call("get_window_state", {"input": 1200, "output": 80, "cache_read": 5000}, pid=4242, window_id=777)
+            call("list_windows", {"input": 0, "output": 0, "cache_read": 0, "same_message": True})
+            mu = c.call("gate_report")["structuredContent"]["model_usage"]
+            self.assertEqual((mu["input"], mu["output"], mu["cache_read"], mu["calls"], mu["messages"]), (1200, 80, 5000, 2, 1))
+            ev = [e for e in c.events() if e.get("ev") == "usage"]
+            self.assertEqual(len(ev), 2)
+            self.assertTrue(ev[1]["same_message"])
+        finally:
+            c.close()
+
+    def test_person_request_metadata(self):
+        p = Person(approve=DENY)
+        c = Modern(person=p)
+        try:
+            s = c.read()
+            c.call("click", element_token=f"{s}:1")
+            m = p.asked[0]["_meta"][GG]
+            for k in ("object", "scope", "consequence", "target"):
+                self.assertIsInstance(m[k], str, k)
+            self.assertEqual(m["effect"]["hazard"], "delete")
+            self.assertIn("resources", m["effect"])
+            self.assertIn("app", m["effect"])
+        finally:
+            c.close()
+        p = Person(answer={"action": "accept", "content": {"choice": "b"}}, takeover=DONE)
+        c = Modern(person=p)
+        try:
+            r = c.call("request_human", question="Which one?", kind="answer",
+                       options=[{"label": "Sheet A", "value": "a", "effect": "sorts sheet A"}, {"label": "Sheet B", "value": "b", "effect": "sorts sheet B"}])
+            self.assertIn("answered: b", txt(r))
+            m = p.asked[0]["_meta"][GG]
+            self.assertEqual(m["options"][0], {"label": "Sheet A", "value": "a", "effect": "sorts sheet A"})
+            self.assertTrue(m["allow_other"])
+            self.assertEqual(p.asked[0]["requestedSchema"]["properties"]["choice"]["enum"], ["a", "b"])
+            c.call("request_human", question="Please log in", kind="takeover")
+            self.assertTrue(all(isinstance(x, str) for x in p.asked[1]["_meta"][GG]["steps"]))
+        finally:
+            c.close()
+
+    def test_help_request_lists_what_was_tried(self):
+        p = Person(ask_help={"action": "accept", "content": {"choice": "try_other"}})
+        c = Modern("--no-auto-observe", person=p, env={"GUI_GATE_LOOP_BREAKER": "0"})
+        try:
+            c.read()
+            for _ in range(3):
+                c.call("click", pid=4242, window_id=777, element_index=0)
+            tried = p.asked[0]["_meta"][GG]["tried"]
+            self.assertTrue(tried and all(isinstance(x, str) for x in tried))
+        finally:
+            c.close()
+
+    def test_client_task_file_format(self):
+        d = tempfile.mkdtemp(prefix="gg-task-")
+        f = old_file(os.path.join(d, "draft.txt"))
+        tf = os.path.join(d, "task.txt")
+        with open(tf, "w") as fh:
+            fh.write("gui-pi-task/1 version=1\n--- user 1 2026-10-25T14:00:00Z initial request\nTidy up this folder.\n")
+        time.sleep(0.05)
+        c = Client("--human", "deny", "--task-file", tf)
+        try:
+            r = c.call("run_command", command="rm draft.txt", cwd=d)
+            self.assertTrue(r.get("isError"), txt(r))
+            with open(tf, "w") as fh:
+                fh.write("gui-pi-task/1 version=2\n--- user 1 2026-10-25T14:00:00Z initial request\nTidy up this folder.\n"
+                         "--- user 2 2026-10-25T14:05:00Z later message\nYes, delete draft.txt too.\n")
+            os.utime(tf, (time.time() + 10, time.time() + 10))
+            r = c.call("run_command", command="rm draft.txt", cwd=d)
+            self.assertFalse(r.get("isError"), txt(r))
+            self.assertFalse(os.path.exists(f))
+            vs = [e for e in c.events() if e.get("ev") == "task_version"]
+            self.assertEqual([e["client_version"] for e in vs], [1, 2])
+        finally:
+            c.close()
+            shutil.rmtree(d, ignore_errors=True)
 
 
 class TrustedTaskFile(unittest.TestCase):

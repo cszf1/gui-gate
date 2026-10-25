@@ -751,15 +751,24 @@ pub fn train_treatment_main(argv: &[String]) -> i32 {
 ///   extra_s: wall seconds the option adds before the step is attempted - gate-side options: their gate_ms minus the
 ///            sessions' median direct gate_ms; hand-backs: refusal -> next action event of the session (the model's
 ///            extra turn); direct = 0 by definition;
-///   tokens:  image tokens of the observations between the refusal and the next action (px / 750, an estimate:
-///            the gate does not see the model's own token counts; merge Pi usage for exact numbers);
+///   tokens:  the model's REAL tokens (input + output) of the turn(s) between the refusal and the next action when the
+///            client sent them (`_meta["gui_pi/usage"]` per call -> "usage" events; tokens_src "client_usage"), else the
+///            image tokens of the observations in between (px / 750, an estimate; tokens_src "pixel_estimate");
 ///   person_s: the person's answer time (human.ms) on ask_* / handoff decisions.
 pub fn measure_costs(paths: &[String]) -> Value {
     let mut acc: IndexMap<String, Vec<(f64, f64, f64)>> = IndexMap::new();
+    let mut src: IndexMap<String, (usize, usize)> = IndexMap::new(); // option -> (client usage, pixel estimate)
+    let (mut ui, mut uo, mut uc, mut un) = (0.0, 0.0, 0.0, 0usize);
     let mut direct_gate_ms: Vec<f64> = vec![];
     let mut gateside: Vec<(String, f64)> = vec![];
     for file in crate::tools::files_of(paths) {
         let evs = crate::tools::events(&file);
+        for e in evs.iter().filter(|e| s(e, "ev") == "usage") {
+            ui += as_f64(e.get("input")).unwrap_or(0.0);
+            uo += as_f64(e.get("output")).unwrap_or(0.0);
+            uc += as_f64(e.get("cache_read")).unwrap_or(0.0);
+            un += 1;
+        }
         for (i, e) in evs.iter().enumerate() {
             if s(e, "ev") != "action" {
                 continue;
@@ -779,10 +788,14 @@ pub fn measure_costs(paths: &[String]) -> Value {
             }
             let ts = e["ts"].as_f64().unwrap_or(0.0);
             let mut tokens = 0.0;
+            let mut real: Option<f64> = None;
             let mut gap = None;
             for e2 in &evs[i + 1..] {
                 if s(e2, "ev") == "obs" {
                     tokens += as_f64(e2.get("px")).unwrap_or(0.0) / 750.0;
+                }
+                if s(e2, "ev") == "usage" {
+                    *real.get_or_insert(0.0) += as_f64(e2.get("input")).unwrap_or(0.0) + as_f64(e2.get("output")).unwrap_or(0.0);
                 }
                 if s(e2, "ev") == "action" {
                     gap = Some((e2["ts"].as_f64().unwrap_or(ts) - ts).max(0.0));
@@ -790,6 +803,9 @@ pub fn measure_costs(paths: &[String]) -> Value {
                 }
             }
             if let Some(g) = gap.filter(|g| *g < 600.0) {
+                let sc = src.entry(o.clone()).or_default();
+                if real.is_some() { sc.0 += 1 } else { sc.1 += 1 }
+                let tokens = real.unwrap_or(tokens);
                 acc.entry(o).or_default().push(((g - person).max(0.0) + gms / 1000.0, tokens, person));
             }
         }
@@ -805,10 +821,18 @@ pub fn measure_costs(paths: &[String]) -> Value {
         let n = v.len() as f64;
         let col = |k: usize| v.iter().map(|x| match k { 0 => x.0, 1 => x.1, _ => x.2 }).collect::<Vec<f64>>();
         costs.insert(o.clone(), json!({"extra_s": round_to(col(0).iter().sum::<f64>() / n, 3), "extra_s_median": round_to(crate::value::quantile(&col(0), 0.5), 3),
-            "tokens": round_to(col(1).iter().sum::<f64>() / n, 1), "person_s": round_to(col(2).iter().sum::<f64>() / n, 2), "n": v.len()}));
+            "tokens": round_to(col(1).iter().sum::<f64>() / n, 1), "person_s": round_to(col(2).iter().sum::<f64>() / n, 2), "n": v.len(),
+            "tokens_src": match src.get(o) { Some((u, 0)) if *u > 0 => "client_usage", Some((0, _)) | None => "pixel_estimate", _ => "mixed" }}));
     }
+    costs_usage_note(&mut costs, ui, uo, uc, un);
     json!({"kind": "costs_v1", "costs": costs, "source": paths,
            "note": "means (expected cost); use with GUI_GATE_COSTS. Options with fewer than GUI_GATE_COST_MIN_N (5) measurements fall back to the prior seconds."})
+}
+
+fn costs_usage_note(costs: &mut serde_json::Map<String, Value>, i: f64, o: f64, c: f64, n: usize) {
+    if let Some(d) = costs.get_mut("direct") {
+        d["usage_total"] = json!({"input": i, "output": o, "cache_read": c, "calls": n});
+    }
 }
 
 pub fn costs_main(argv: &[String]) -> i32 {
@@ -986,6 +1010,15 @@ mod tests {
         assert_eq!(c["costs"]["direct"]["extra_s"], 0.0);
         let t = crate::value::CostTable::from_json(&c);
         assert_eq!(t.measured["look_full"].n, 1);
+        assert_eq!(c["costs"]["look_full"]["tokens_src"], "pixel_estimate");
+        // with the client's real usage on the next call, it replaces the pixel estimate
+        let mut evs2 = evs.clone();
+        evs2.insert(4, json!({"ev": "usage", "ts": 12.9, "session": "a", "input": 3000.0, "output": 200.0, "cache_read": 9000.0, "same_message": false}));
+        let p2 = write_log(&d.join("runA/gate"), "chrome-1234-gate8-s1.jsonl", &evs2);
+        let c2 = measure_costs(&[p2]);
+        assert_eq!(c2["costs"]["look_full"]["tokens"], 3200.0, "{c2}");
+        assert_eq!(c2["costs"]["look_full"]["tokens_src"], "client_usage");
+        assert_eq!(c2["costs"]["direct"]["usage_total"]["cache_read"], 9000.0);
         let _ = std::fs::remove_dir_all(&d);
     }
 }

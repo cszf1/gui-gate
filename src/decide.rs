@@ -200,7 +200,7 @@ impl GateConfig {
         if let Some(v) = env("GUI_GATE_TASK") { c.task = v; }
         if c.task.is_empty() {
             if let Some(tf) = env("GUI_GATE_TASK_FILE") {
-                if let Ok(t) = std::fs::read_to_string(&tf) { c.task = t.trim().to_string(); }
+                if let Ok(t) = std::fs::read_to_string(&tf) { c.task = crate::server::parse_task_file(&t).0; }
                 c.task_file = Some(tf);
             }
         }

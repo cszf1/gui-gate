@@ -34,6 +34,10 @@ const CORE_TOOLS: &[&str] = &["list_apps", "list_windows", "get_window_state", "
 /// only when features::is_read_only says so, otherwise an action.
 pub const GATE_LOCAL: &[&str] = &["gate_report", "gate_config", "request_human", "gate_task", "check_done", "set_plan",
     "run_actions", "inspect", "gate_next_step", "gate_reset", "__triple_click"];
+/// `_meta` key of the model's real token usage per tool call: {input, output, cache_read, same_message?}. Summing
+/// every call gives the true total (further calls of the same model message carry 0 and same_message: true).
+pub const USAGE_META: &str = "gui_pi/usage";
+
 /// Client-only tools (never listed to the model): the client marks its own calls with this `_meta` key = true.
 pub const CLIENT_META: &str = "io.github.cszf1/gui-gate/client";
 
@@ -609,6 +613,25 @@ pub fn ids_of(sig: Option<&str>) -> HashSet<String> {
     sig.unwrap_or("").split(';').filter(|x| !x.is_empty()).map(|x| x.split('@').next().unwrap_or("").to_string()).collect()
 }
 
+/// What an approved effect does, in a person's words (shown with an approve request).
+pub fn consequence_of(hazard: &str, reason: &str) -> String {
+    let what = match hazard {
+        "delete" => "deletes it; it may not be recoverable",
+        "overwrite" => "replaces the existing file; its old content is lost",
+        "move" => "moves or renames it; it is no longer where it was",
+        "send" => "sends or submits it; it cannot be taken back",
+        "purchase" => "pays or orders; money is spent",
+        "permissions" => "changes access rights",
+        "power" => "shuts down or restarts the computer",
+        "install" => "installs or removes software",
+        "logout" => "logs out of the session",
+        "command" => "runs a command with your rights",
+        "secret" => "enters a password or other secret",
+        _ => "changes something outside the task's normal steps",
+    };
+    if reason.is_empty() { what.to_string() } else { format!("{what} ({})", trunc(reason, 160)) }
+}
+
 /// A risky / hand-off step without a trusted approval may only end in a safety outcome; the value model's cost
 /// trade-off never decides it (a high lambda or an expensive person cannot turn a required ask into "direct").
 pub fn safety_decision_ok(risk_confirm: bool, approved: bool, dec: &Decision) -> bool {
@@ -617,12 +640,27 @@ pub fn safety_decision_ok(risk_confirm: bool, approved: bool, dec: &Decision) ->
 
 /// 2-4 short options for a clarifying question: the agent's own `options`, else a list written in the question
 /// ("A, B or C?", lines "- A" / "1. A"). Anything else: none (a free-text answer).
-pub fn clarify_options(given: Option<&Value>, q: &str) -> Vec<String> {
+pub fn clarify_options(given: Option<&Value>, q: &str) -> Vec<Value> {
+    let objs = clarify_labels(given, q);
+    if let Some(a) = given.and_then(|v| v.as_array()).filter(|a| a.iter().all(|x| x.is_object())) {
+        // the agent gave {label, value, effect} objects: keep them (2-4)
+        let v: Vec<Value> = a.iter().map(|o| json!({"label": trunc(&pystr(o.get("label").or(o.get("value"))), 60), "value": trunc(&pystr(o.get("value").or(o.get("label"))), 120),
+                                                   "effect": trunc(&pystr(o.get("effect")), 200)}))
+            .filter(|o| !s(o, "value").is_empty()).collect();
+        return if (2..=4).contains(&v.len()) { v } else { vec![] };
+    }
+    objs.into_iter().map(|l| json!({"label": l, "value": l, "effect": ""})).collect()
+}
+
+fn clarify_labels(given: Option<&Value>, q: &str) -> Vec<String> {
     let ok = |v: Vec<String>| -> Vec<String> {
         let v: Vec<String> = v.into_iter().map(|x| x.trim().trim_end_matches('?').trim().to_string()).filter(|x| !x.is_empty() && x.chars().count() <= 60).collect();
         if (2..=4).contains(&v.len()) { v } else { vec![] }
     };
     if let Some(a) = given.and_then(|v| v.as_array()) {
+        if a.iter().any(|x| x.is_object()) {
+            return vec![];
+        }
         return ok(a.iter().map(|x| pystr(Some(x))).collect());
     }
     let lines: Vec<String> = q.lines().filter_map(|l| {
@@ -647,6 +685,35 @@ pub fn clarify_options(given: Option<&Value>, q: &str) -> Vec<String> {
         return ok(parts);
     }
     vec![]
+}
+
+/// The desktop client's task file: a first line `gui-pi-task/1 version=N`, then per user message a line
+/// `--- user <i> <UTC ISO time> initial request|later message` and the user's text. Returns (the concatenated user
+/// texts, N). A file without that header is taken whole as the task text (version None: the gate versions it by hash).
+pub fn parse_task_file(raw: &str) -> (String, Option<u64>) {
+    let mut lines = raw.lines();
+    let first = lines.next().unwrap_or("").trim();
+    let hdr = Regex::new(r"^gui-pi-task/1(?:\s+version=(\d+))?\s*$").unwrap();
+    let Some(c) = hdr.captures(first) else { return (raw.trim().to_string(), None) };
+    let ver = c.get(1).and_then(|m| m.as_str().parse().ok());
+    let sec = Regex::new(r"^--- user \S+ \S+ (initial request|later message)\s*$").unwrap();
+    let mut parts: Vec<String> = vec![];
+    let mut cur: Option<Vec<&str>> = None;
+    for l in lines {
+        if sec.is_match(l.trim_end()) {
+            if let Some(c) = cur.take() {
+                parts.push(c.join("\n").trim().to_string());
+            }
+            cur = Some(vec![]);
+        } else if let Some(c) = cur.as_mut() {
+            c.push(l);
+        }
+    }
+    if let Some(c) = cur.take() {
+        parts.push(c.join("\n").trim().to_string());
+    }
+    parts.retain(|p| !p.is_empty());
+    (parts.join("\n"), ver)
 }
 
 /// A short content hash of an operator task version (logged; never the text itself).
@@ -773,6 +840,8 @@ pub struct Inner {
     pub task_version: u64,
     pub task_hash: String,
     pub task_stamp: Option<(std::time::SystemTime, u64)>,
+    /// the version N the desktop client wrote in the task file header (gui-pi-task/1 version=N), if any
+    pub task_client_version: Option<u64>,
     /// person requests that ended without an answer: (kind|effect) -> task version (not asked again in that version)
     pub unanswered: HashMap<String, u64>,
     pub asked_keys: HashSet<String>,
@@ -1118,6 +1187,7 @@ impl Gate {
         let task_locked = !cfg.task.is_empty();
         let task_source = if task_locked { Some("operator".to_string()) } else { None };
         let task_hash0 = if cfg.task.is_empty() { String::new() } else { task_hash(&cfg.task) };
+        let task_cv0 = cfg.task_file.as_ref().and_then(|f| std::fs::read_to_string(f).ok()).and_then(|t| parse_task_file(&t).1);
         Arc::new(Gate {
             inner: Mutex::new(Inner {
                 state: GateState::with_text_only(cfg.text_only), cfg, stats: new_stats(), aid: 0,
@@ -1127,6 +1197,7 @@ impl Gate {
                 last_auto: HashMap::new(), seen_rows: HashMap::new(), recent: vec![], plan: vec![], plan_verdict: String::new(), plan_checks: vec![], facts: vec![], briefed: false, history: vec![], verdict_nagged: false, lb: Default::default(), risk_info: Value::Null, cur_ack: false,
                 rethought: HashSet::new(), resets: 0,
                 task_version: if task_locked { 1 } else { 0 }, task_hash: task_hash0.clone(), task_stamp: None,
+                task_client_version: task_cv0,
                 unanswered: HashMap::new(), asked_keys: HashSet::new(), burden: Burden::default(),
             }),
             shared, out, log: Arc::new(EventLog::new(log_path)), child: Mutex::new(child), child_cmd,
@@ -1232,6 +1303,24 @@ impl Gate {
         }
     }
 
+    fn note_usage(&self, tool: &str, u: &Value) {
+        let n = |k: &str| u.get(k).and_then(|v| v.as_f64()).filter(|v| v.is_finite() && *v >= 0.0).unwrap_or(0.0);
+        let (i, o, c) = (n("input"), n("output"), n("cache_read"));
+        let same = u.get("same_message").and_then(|v| v.as_bool()).unwrap_or(false);
+        let aid = {
+            let mut inn = self.inner.lock().unwrap_or_else(|e| e.into_inner());
+            inn.add("usage_input", i);
+            inn.add("usage_output", o);
+            inn.add("usage_cache_read", c);
+            inn.inc("usage_calls");
+            if !same {
+                inn.inc("usage_messages");
+            }
+            inn.aid
+        };
+        self.log.write(json!({"ev": "usage", "tool": tool, "after_aid": aid, "input": i, "output": o, "cache_read": c, "same_message": same}));
+    }
+
     /// Person-burden accounting for one finished request (any kind): asks, repeated questions, waiting vs active
     /// seconds, takeover steps, no-answer rate. A request without an answer is remembered so it is not asked again for
     /// the same effect in this task version, and is logged as "no_answer" (never as the user being unwilling).
@@ -1273,11 +1362,12 @@ impl Gate {
             return;
         }
         inn.task_stamp = stamp;
-        let t = std::fs::read_to_string(&tf).map(|t| t.trim().to_string()).unwrap_or_default();
+        let (t, client_ver) = parse_task_file(&std::fs::read_to_string(&tf).unwrap_or_default());
         let h = if t.is_empty() { String::new() } else { task_hash(&t) };
-        if h == inn.task_hash && inn.task_version > 0 {
+        if h == inn.task_hash && client_ver == inn.task_client_version && inn.task_version > 0 {
             return;
         }
+        inn.task_client_version = client_ver;
         inn.task_version += 1;
         inn.task_hash = h.clone();
         inn.cfg.task = t.clone();
@@ -1288,7 +1378,7 @@ impl Gate {
         inn.permits.clear();
         inn.approval = None;
         inn.inc("task_versions");
-        self.log.write(json!({"ev": "task_version", "version": inn.task_version, "hash": h, "chars": t.chars().count(), "source": "operator_file"}));
+        self.log.write(json!({"ev": "task_version", "version": inn.task_version, "client_version": client_ver, "hash": h, "chars": t.chars().count(), "source": "operator_file"}));
     }
 
     /// Never act on a window of the gate's own dialog helper (zenity / kdialog / osascript / the GTK or PowerShell
@@ -1415,7 +1505,7 @@ impl Gate {
         {
             let inn = self.inner.lock().unwrap_or_else(|e| e.into_inner());
             if inn.task_version > 0 {
-                self.log.write(json!({"ev": "task_version", "version": inn.task_version, "hash": inn.task_hash, "chars": inn.cfg.task.chars().count(),
+                self.log.write(json!({"ev": "task_version", "version": inn.task_version, "client_version": inn.task_client_version, "hash": inn.task_hash, "chars": inn.cfg.task.chars().count(),
                                       "source": if inn.cfg.task_file.is_some() { "operator_file" } else { "operator" }}));
             }
             self.log.write(json!({"ev": "instance", "instance": crate::human::instance().0}));
@@ -1541,6 +1631,10 @@ impl Gate {
     fn handle_call(self: &Arc<Self>, msg: Value) {
         let params = msg.get("params").cloned().unwrap_or(json!({}));
         let name0 = s(&params, "name").to_string();
+        // the model's real token usage for the turn that produced this call (the desktop client sends it per call)
+        if let Some(u) = params.get("_meta").and_then(|m| m.get(USAGE_META)).filter(|u| u.is_object()) {
+            self.note_usage(&name0, u);
+        }
         let args0 = params.get("arguments").cloned().filter(|a| a.is_object()).unwrap_or(json!({}));
         // a person is asked through MRTR when this request is 2026-07-28 and its client declared elicitation
         let mut cc = crate::human::CallCtx::default();
@@ -1615,7 +1709,13 @@ impl Gate {
             self.reply(&msg, r);
             return;
         }
-        let client_call = params.get("_meta").and_then(|m| m.get(CLIENT_META)).and_then(|v| v.as_bool()) == Some(true);
+        let pm = params.get("_meta");
+        let client_marked = pm.and_then(|m| m.get(CLIENT_META)).and_then(|v| v.as_bool()) == Some(true)
+            || pm.and_then(|m| m.get(crate::human::META_KEY)).and_then(|m| m.get("client_only")).and_then(|v| v.as_bool()) == Some(true);
+        if (name == "gate_reset" || name == "gate_next_step") && !client_marked {
+            // the desktop client calls them unmarked; both are harmless for a model (advisory / only voids state)
+            self.log.write(json!({"ev": "client_tool_unmarked", "tool": name}));
+        }
         let brief_first = if name != "gate_task" && name != "gate_next_step" && name != "gate_reset" { self.briefing() } else { None };
         let me = self.clone();
         let nm = name.clone();
@@ -1629,7 +1729,6 @@ impl Gate {
                 "gate_config" => me.config(&args),
                 "request_human" => me.request_human(&args),
                 "gate_task" => me.set_task(&args),
-                "gate_reset" | "gate_next_step" if !client_call => text_result(format!("[gate] {nm} is a client-only tool (the desktop shell calls it itself, marked with _meta \"{CLIENT_META}\": true); it is not available to the model."), true),
                 "gate_reset" => me.reset(),
                 "gate_next_step" => me.next_step(&args),
                 "check_done" => me.check_done(&args),
@@ -2449,6 +2548,25 @@ impl Gate {
             let mut meta = json!({"tool": name, "target": trunc(&what0, 80), "reason": trunc(&dec.reason, 300), "decision": opt});
             if let Some(k) = &ekey {
                 meta["effect"] = k.to_json();
+            }
+            match kind {
+                "approve" => {
+                    let res: Vec<String> = ekey.as_ref().map(|k| k.resources.iter().map(|r| r.split_once(':').map(|x| x.1.to_string()).unwrap_or(r.clone())).collect()).unwrap_or_default();
+                    meta["object"] = json!(if res.is_empty() { what0.clone() } else { trunc(&res.join(", "), 300).to_string() });
+                    meta["scope"] = json!(format!("this one {} on this target, once (window {}); if the target, window or content changes you are asked again",
+                                                  name.replace('_', " "), t.window_id.map(|w| w.to_string()).unwrap_or_else(|| "-".into())));
+                    meta["consequence"] = json!(consequence_of(ekey.as_ref().map(|k| k.hazard.as_str()).unwrap_or("other"), ctx.risk.as_deref().unwrap_or("")));
+                }
+                "takeover" => {
+                    meta["steps"] = json!([trunc(&dec.reason, 200), "Do this step yourself in the app window", "Then confirm here; the gate re-reads the window and never repeats the step"]);
+                }
+                _ => {
+                    let mut tried: Vec<String> = inn.history.iter().rev().take(3).rev().cloned().collect();
+                    if !trail.is_empty() {
+                        tried.push(format!("gate: {}", trail.join(" > ")));
+                    }
+                    meta["tried"] = json!(tried);
+                }
             }
             // a request that ended without an answer (timeout, cancel, closed) is not asked again for the same effect
             // while the operator task is the same version
@@ -4192,7 +4310,7 @@ impl Gate {
         let options = if kind == "answer" { clarify_options(args.get("options"), &q) } else { vec![] };
         let mut text = if kind != "takeover" { q.clone() } else { format!("{q}\n\nDo it in the app yourself, then confirm when you are done.") };
         if !options.is_empty() {
-            text.push_str(&format!("\nOptions: {}", options.iter().enumerate().map(|(i, o)| format!("{}) {o}", i + 1)).collect::<Vec<_>>().join("  ")));
+            text.push_str(&format!("\nOptions: {}", options.iter().enumerate().map(|(i, o)| format!("{}) {}", i + 1, s(o, "label"))).collect::<Vec<_>>().join("  ")));
         }
         let title = match kind.as_str() { "approve" => "gui-gate: approve?", "takeover" => "gui-gate: your turn", _ => "gui-gate: question" };
         let ask_key = format!("{kind}|q:{}", authz::norm(&q));
@@ -4214,6 +4332,10 @@ impl Gate {
         let mut meta = json!({"tool": "request_human", "reason": "asked by the agent"});
         if !options.is_empty() {
             meta["options"] = json!(options);
+            meta["allow_other"] = json!(true);
+        }
+        if kind == "takeover" {
+            meta["steps"] = json!([trunc(&q, 300), "Do it yourself in the app window", "Then confirm here; the agent continues from the window as you left it"]);
         }
         let h = self.human.ask_kind(&kind, &text, title, meta);
         if s(&h, "answer") == "input_required" {
@@ -4258,6 +4380,8 @@ impl Gate {
         st.insert("features_097".into(), json!(crate::v097::active()));
         st.insert("roles".into(), json!(self.roles.configured()));
         st.insert("person_burden".into(), inn.burden.json());
+        st.insert("model_usage".into(), json!({"input": g("usage_input"), "output": g("usage_output"), "cache_read": g("usage_cache_read"),
+            "calls": g("usage_calls"), "messages": g("usage_messages"), "source": if g("usage_calls") > 0.0 { "client" } else { "none (image tokens are an estimate)" }}));
         st.insert("task_version".into(), json!(inn.task_version));
         let pb = inn.burden.json();
         let lines = [
@@ -4273,6 +4397,7 @@ impl Gate {
 
             format!("screenshot format={} bytes {} -> {} ({} ms re-encoding)", self.shot.name(), g("img_bytes_in"), g("img_bytes_out"), round_to(g("img_ms"), 1)),
             format!("0.9.7 features={:?} roles={:?}", crate::v097::active(), self.roles.configured()),
+            format!("model usage (from the client): input={} output={} cache_read={} over {} calls", g("usage_input"), g("usage_output"), g("usage_cache_read"), g("usage_calls")),
             format!("person burden: asks={} repeat ratio={} wait={} s active={} s takeover steps={} cancel/timeout rate={} not asked again={}",
                     pb["asks"], pb["repeat_ratio"], pb["person_wait_s"], pb["person_active_s"], pb["takeover_steps"], pb["cancel_timeout_rate"], pb["not_asked_again"]),
         ];
@@ -4575,6 +4700,32 @@ mod tests {
         assert_eq!(plan_line(&p).unwrap(), "[plan] 1/2 done; next: 2. b");
         let p = vec![("a".to_string(), true)];
         assert!(plan_line(&p).unwrap().contains("all milestones done"));
+    }
+
+    #[test]
+    fn task_file_format_of_the_desktop_client() {
+        let raw = "gui-pi-task/1 version=3\n--- user 1 2026-10-25T14:00:00Z initial request\nSort the sheet.\n--- user 2 2026-10-25T14:05:00Z later message\nAlso delete old.csv\nplease\n";
+        let (t, v) = parse_task_file(raw);
+        assert_eq!(v, Some(3));
+        assert_eq!(t, "Sort the sheet.\nAlso delete old.csv\nplease");
+        let (t, v) = parse_task_file("delete old.csv\n");
+        assert_eq!((t.as_str(), v), ("delete old.csv", None));
+        let (t, v) = parse_task_file("gui-pi-task/1\n--- user 1 2026-10-25T14:00:00Z initial request\nx\n");
+        assert_eq!((t.as_str(), v), ("x", None));
+    }
+
+    #[test]
+    fn clarify_options_and_safety_rule() {
+        let o = clarify_options(None, "Should I save it as report.pdf or report_v2.pdf?");
+        assert_eq!(o.iter().map(|x| s(x, "value").to_string()).collect::<Vec<_>>(), vec!["report.pdf", "report_v2.pdf"]);
+        assert!(clarify_options(None, "What should the title be?").is_empty());
+        assert_eq!(clarify_options(Some(&json!(["a", "b", "c", "d", "e"])), "q").len(), 0, "at most 4");
+        // a safety-required ask is never a value-model outcome without approval
+        let d = Decision::new("direct", 0.9, "x", "model");
+        assert!(!safety_decision_ok(true, false, &d));
+        assert!(safety_decision_ok(true, true, &d));
+        assert!(safety_decision_ok(true, false, &Decision::new("ask_human", 0.0, "x", "rule")));
+        assert!(!safety_decision_ok(true, false, &Decision::new("look_light", 0.0, "x", "model")));
     }
 
     #[test]
