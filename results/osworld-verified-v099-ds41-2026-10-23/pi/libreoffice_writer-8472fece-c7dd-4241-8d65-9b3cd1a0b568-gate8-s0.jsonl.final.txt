@@ -1,0 +1,1 @@
+DONE — In the open `Dolch_Sight_Words_Primer.docx` (LibreOffice Writer) I colored all 52 word-list entries by first letter: the 11 vowel-initial words (all, am, are, at, ate, eat, into, on, our, out, under) red and the 41 consonant-initial words blue (title/description left black), then saved in Word format and verified the file on disk (11 × FF0000, 41 × 0000FF runs).

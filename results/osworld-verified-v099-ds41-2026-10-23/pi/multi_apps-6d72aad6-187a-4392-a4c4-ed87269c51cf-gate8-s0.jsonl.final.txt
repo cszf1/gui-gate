@@ -1,0 +1,3 @@
+FAIL
+
+Two independent blockers, both verified on this machine: (1) there is no Impress/presentation file anywhere on the filesystem to convert (whole-disk search for `*.odp/*.pptx/*.ppt/*.otp/*.sxi` excluding LibreOffice's own templates returned nothing; Desktop, Documents, Downloads are empty), and (2) LibreOffice Impress 25.2 has no built-in video export — its only export entries are PDF, image formats, HTML and SWF (no mp4/webm encoder filter exists in the registry), so the required route (built-in export only, no ffmpeg/terminal/extensions) does not exist.

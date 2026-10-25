@@ -1,0 +1,1 @@
+DONE — Bookmarked the open "The Illustrated Transformer" page (Ctrl+D/star), moved it from "Other bookmarks" into the **Bookmarks bar** folder, made the bar visible (Ctrl+Shift+B). Verified: the bar shows the bookmark and `/data/home/.config/google-chrome/Default/Bookmarks` has it under `roots.bookmark_bar`.

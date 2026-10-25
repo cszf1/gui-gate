@@ -1,0 +1,1 @@
+DONE — Converted computer.png in GIMP to palette-based mode via Image > Mode > Indexed... (optimum 256-color palette, no dithering); overwriting the original was declined, so the indexed result was exported as /data/home/Desktop/computer_indexed.png (verified 8-bit colormap PNG, 5184×3888) while the original remains at /data/home/Desktop/computer.png.

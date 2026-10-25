@@ -1,0 +1,3 @@
+FAIL — this Xfce session has no screen locker installed (no xfce4-screensaver/light-locker/xscreensaver), so the screen cannot be locked at all: `/usr/bin/xflock4` → DBus `org.xfce.Session.Manager.Lock` returns `boolean false` on every attempt (including the one my idle watcher fired at 21:59:12), and Xfce's own Settings › Screensaver / Power Manager › Security path doesn't exist here. Fixing it needs a locker package installed as root (`apt install xfce4-screensaver`).
+
+Note: I left the idle-detection wiring in place (`~/.local/bin/idle-lock.py`, started and autostarting via `~/.config/autostart/idle-lock.desktop`, 5-min threshold) — it fires `xflock4` correctly but will only produce a real lock once a locker package exists.

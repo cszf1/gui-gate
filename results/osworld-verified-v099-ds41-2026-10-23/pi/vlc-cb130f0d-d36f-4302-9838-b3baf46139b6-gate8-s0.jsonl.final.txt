@@ -1,0 +1,1 @@
+FAIL — there is no video file to adjust (VLC's playlist is empty and a full-disk search found no media under /home/user), and the machine has no ambient-light sensor or camera to measure room lighting, while VLC offers only manual brightness/contrast sliders with no automatic room-lighting matching feature.

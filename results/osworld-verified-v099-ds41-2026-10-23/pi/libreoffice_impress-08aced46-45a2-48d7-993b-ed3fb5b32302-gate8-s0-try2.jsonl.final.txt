@@ -1,0 +1,1 @@
+DONE — Set slide 2's title text to "Note" and right-aligned it (visible top-right on the green slide in Impress, saved to /data/home/Desktop/22_6.pptx; XML confirms `<a:pPr algn="r">` with run text "Note").

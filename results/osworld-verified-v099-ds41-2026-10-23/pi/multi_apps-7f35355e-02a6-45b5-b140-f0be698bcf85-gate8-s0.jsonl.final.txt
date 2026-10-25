@@ -1,0 +1,1 @@
+DONE — Exported the sheet to `/data/home/Desktop/stock.csv` via LibreOffice's CSV filter, then ran `/data/home/Desktop/median_stock_price.py` (fills the 12 empty Stock Price cells with the average 39.20125 and computes the median), writing `25.27` to `/data/home/Desktop/result.txt`.

@@ -1,0 +1,1 @@
+Export the table to a CSV file and then write code to find the median Stock Price after filling empty Stock Price values with the average Stock Price. Save only the numeric result in "result.txt".

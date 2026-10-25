@@ -1,0 +1,1 @@
+DONE — Opened the United Airlines "Checked Bag Fee Calculator" page (`https://www.united.com/en/us/checked-bag-fee-calculator/any-flights`) via Bags → Checked bags → "Calculate bag fees"; the From/To flight search form with dates, cabin and "View bag charges" is loaded and displayed.

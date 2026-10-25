@@ -1,0 +1,1 @@
+DONE — Batch-processed all three Desktop images (heron, panda, squirrel .jpeg) with a single GIMP 3.0.4 Script-Fu batch run (`gimp-drawable-brightness-contrast`, brightness = 50 in GIMP's legacy brightness scale, contrast 0) and exported them in place; mean luma rose from 102→132, 99→131 and 122→148 respectively (originals backed up in /tmp/desktop_orig_backup).

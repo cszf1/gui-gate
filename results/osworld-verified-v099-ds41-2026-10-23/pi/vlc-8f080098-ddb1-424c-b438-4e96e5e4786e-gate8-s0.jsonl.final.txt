@@ -1,0 +1,1 @@
+DONE — Extracted the audio from `/data/home/Desktop/Baby Justin Bieber.mp4` with ffmpeg and saved it as `/data/home/Desktop/Baby Justin Bieber.mp3` (4.96 MB, MP3 44.1 kHz stereo, 3:39 — same duration as the video).

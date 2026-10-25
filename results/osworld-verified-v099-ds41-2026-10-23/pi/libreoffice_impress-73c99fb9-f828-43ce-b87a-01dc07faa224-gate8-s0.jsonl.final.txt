@@ -1,0 +1,1 @@
+DONE — Typed "Page 1" into Slide 2's content (body) placeholder in LibreOffice Impress and saved the file (verified "Page 1" now present in ppt/slides/slide2.xml, title and table unchanged).

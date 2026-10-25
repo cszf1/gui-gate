@@ -1,0 +1,1 @@
+FAIL — The task needs root privileges: creating user `charles`, setting a password, creating `/home/test1`, and editing `/etc/ssh/sshd_config` all require root, but `/etc/passwd` and `/home` are not writable by the current user and the gate refused every `sudo` command (declined by the person), with no permitted alternative route.

@@ -1,0 +1,10 @@
+{"t": 1.854, "type": "turn_start", "role": null, "tool": null}
+{"t": 1.854, "type": "message_start", "role": "system", "tool": null}
+{"t": 1.854, "type": "message_end", "role": "system", "tool": null}
+{"t": 1.854, "type": "message_start", "role": "user", "tool": null}
+{"t": 1.854, "type": "message_end", "role": "user", "tool": null}
+{"t": 3.386, "type": "message_start", "role": "assistant", "tool": null}
+{"t": 4.379, "type": "message_end", "role": "assistant", "tool": null}
+{"t": 4.379, "type": "tool_execution_start", "role": null, "tool": "mcp__gui__set_plan"}
+{"t": 4.38, "type": "tool_execution_start", "role": null, "tool": "mcp__gui__run_command"}
+{"t": 4.395, "type": "tool_execution_end", "role": null, "tool": "mcp__gui__set_plan"}

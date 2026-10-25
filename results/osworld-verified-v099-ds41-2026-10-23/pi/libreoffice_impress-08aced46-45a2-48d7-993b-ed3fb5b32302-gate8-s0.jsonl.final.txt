@@ -1,0 +1,1 @@
+DONE — Set slide 2's title placeholder text to "Note" and right-aligned it (Format alignment applied in Impress, then the deck's slide2.xml saved with `algn="r"`; verified via a PDF render where "Note" sits at the right edge, and the file is reloaded in the open Impress window at `/data/home/Desktop/22_6.pptx`).

@@ -1,0 +1,1 @@
+DONE — Read the six titles from references.docx, fetched each paper's dblp record (picking the published EMNLP/ACL/NeurIPS/NAACL entries, not the CoRR/arXiv ones) via the already-open Chromium's dblp session, and wrote all six BibTeX entries separated by blank lines to /home/user/Desktop/references.bib (90% verified in VS Code, no unsaved changes).
