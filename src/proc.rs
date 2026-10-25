@@ -136,6 +136,25 @@ pub fn live_count() -> usize {
     LIVE.iter().filter(|s| s.load(Ordering::SeqCst) != 0).count()
 }
 
+/// Variables a child process (agent commands, launched apps, the driver, role probes) must never inherit: model keys,
+/// the shell's ask-a-person token, and the gate's own configuration (the agent must not read or change them).
+pub fn is_secret_var(k: &str) -> bool {
+    let u = k.to_ascii_uppercase();
+    u.starts_with("GUI_GATE_") || u.starts_with("GUI_PI_") || u.ends_with("_KEY") || u.ends_with("_API_KEY") || u.contains("TOKEN")
+        || u.ends_with("_SECRET") || u.contains("PASSWORD") || u == "PI_CODING_AGENT_DIR"
+}
+
+/// Remove every secret variable from a child's environment (it keeps the rest of the gate's environment).
+pub fn scrub_env(c: &mut Command) {
+    for (k, _) in std::env::vars_os() {
+        if let Some(ks) = k.to_str() {
+            if is_secret_var(ks) {
+                c.env_remove(&k);
+            }
+        }
+    }
+}
+
 /// The shell the gate runs agent commands with: `bash -c CMD` in a new process group (unix). None on Windows.
 pub fn shell(cmd: &str) -> Option<Command> {
     #[cfg(unix)]
@@ -144,6 +163,7 @@ pub fn shell(cmd: &str) -> Option<Command> {
         let mut c = Command::new("bash");
         c.arg("-c").arg(cmd);
         c.process_group(0);
+        scrub_env(&mut c);
         Some(c)
     }
     #[cfg(not(unix))]
@@ -263,6 +283,7 @@ pub fn run_argv_env(argv: &[&str], envs: &[(&str, &str)], timeout_s: f64) -> (Op
     use std::process::Stdio;
     let Some((prog, rest)) = argv.split_first() else { return (None, String::new(), "empty command".into()) };
     let mut c = Command::new(prog);
+    scrub_env(&mut c);
     c.envs(envs.iter().copied());
     c.args(rest).stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::piped());
     #[cfg(unix)]

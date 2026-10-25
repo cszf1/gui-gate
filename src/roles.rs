@@ -65,11 +65,11 @@ fn py_write_rx() -> &'static Regex {
 }
 
 const RO_CMDS: &[&str] = &["ls", "cat", "head", "tail", "stat", "file", "which", "whereis", "type", "find", "grep", "egrep", "fgrep",
-    "wc", "du", "df", "dpkg-query", "echo", "printf", "pwd", "id", "whoami", "uname", "lsb_release", "printenv", "readlink",
+    "wc", "du", "df", "dpkg-query", "echo", "printf", "pwd", "id", "whoami", "uname", "lsb_release", "readlink",
     "realpath", "basename", "dirname", "sort", "uniq", "cut", "tr", "lspci", "lsusb", "lsblk", "fc-list", "identify", "ffprobe",
     "exiftool", "zipinfo", "jq", "md5sum", "sha256sum", "xxd", "od", "strings", "tree", "getent", "ps", "pgrep", "xprop", "xwininfo",
     "hostname", "date", "locale", "test", "[", "true", "false", "column", "nl", "comm", "diff", "cmp", "less", "more", "xdpyinfo",
-    "pdfinfo", "lsof", "free", "nproc", "uptime", "env"];
+    "pdfinfo", "lsof", "free", "nproc", "uptime"];
 
 /// Positional (non-option) arguments of a command line, after the command word.
 fn positionals(argv: &[String]) -> Vec<&String> {

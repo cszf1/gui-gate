@@ -60,6 +60,7 @@ options:
   --delivery {auto,background,foreground}  input delivery
   --toolset {core,all}                core (default): only the tools a GUI task needs
   --no-auto-observe                   do not return the fresh window tree after each action
+  --allow-config                      let the client call gate_config (bench / trusted launchers only)
   --text-only                         the acting model cannot see images (also GUI_GATE_TEXT_ONLY=1): no
                                       screenshots, tree-only advice, notes when content is not in the tree
   --task TEXT | --task-file PATH      the user's request, verbatim (or GUI_GATE_TASK / GUI_GATE_TASK_FILE)
@@ -160,6 +161,7 @@ fn main() {
             "--delivery" => { let v = val(); choices("--delivery", &v, &["auto", "background", "foreground"]); cfg.delivery = v; }
             "--toolset" => { let v = val(); choices("--toolset", &v, &["core", "all"]); cfg.toolset = v; }
             "--no-auto-observe" => cfg.auto_observe = false,
+            "--allow-config" => {} // read by server::config_allowed (trusted launchers only)
             "--text-only" => cfg.text_only = true,
             "--task" => cfg.task = val(),
             "--task-file" => task_file = Some(val()),

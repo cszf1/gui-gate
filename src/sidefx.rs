@@ -365,7 +365,9 @@ pub fn mark_session_start() {
 /// True when the path was created/changed during this gate session (the agent's own work, so moving it is harmless).
 pub fn session_owned(path: &str, start: Option<std::time::SystemTime>) -> bool {
     let Some(start) = start else { return false };
-    fs::symlink_metadata(path).and_then(|m| m.modified()).map(|t| t >= start).unwrap_or(false)
+    // created in this session (birth time). A user's older file that was merely modified is not ours; where the file
+    // system has no birth time nothing is treated as ours.
+    fs::symlink_metadata(path).and_then(|m| m.created()).map(|t| t >= start).unwrap_or(false)
 }
 
 /// `mv` (or `rsync --remove-source-files`) of an existing path that predates this session: the user's data
@@ -408,7 +410,9 @@ fn move_away(argv: &[String], cwd: &str) -> Option<Effect> {
 }
 
 fn run_find(args: &[String], cwd: &str) -> Option<Vec<u8>> {
-    let mut child = Command::new(&args[0]).args(&args[1..]).current_dir(cwd).stdin(Stdio::null())
+    let mut cmd = Command::new(&args[0]);
+    crate::proc::scrub_env(&mut cmd);
+    let mut child = cmd.args(&args[1..]).current_dir(cwd).stdin(Stdio::null())
         .stdout(Stdio::piped()).stderr(Stdio::null()).spawn().ok()?;
     let mut out = child.stdout.take()?;
     let reader = std::thread::spawn(move || {
