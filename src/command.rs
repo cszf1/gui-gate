@@ -454,6 +454,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(unix)] // bash command analysis: run_command is not offered on Windows
     fn soffice_convert_over_an_existing_file() {
         let d = fx();
         let r = command_risk("soffice --headless --convert-to pdf report.docx", &d).unwrap();
@@ -474,6 +475,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(unix)] // bash command analysis: run_command is not offered on Windows
     fn runs_with_timeout_and_tail() {
         let d = fx();
         let r = run("echo hello; echo oops >&2; exit 3", &d, 10.0);

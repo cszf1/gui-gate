@@ -854,6 +854,12 @@ pub fn overwrite_dialog(blob: &str, label: &str, keys: &HashSet<String>) -> bool
     CONFIRM_LABELS.contains(&lab.as_str()) || ["return", "enter", "kp_enter", "y", "alt+y"].iter().any(|k| keys.contains(*k))
 }
 
+/// "C:\\dir", "c:/dir" or "\\\\server\\share": an absolute Windows path.
+pub fn win_abs(p: &str) -> bool {
+    let b = p.as_bytes();
+    (b.len() >= 3 && b[0].is_ascii_alphabetic() && b[1] == b':' && (b[2] == b'\\' || b[2] == b'/')) || p.starts_with("\\\\")
+}
+
 /// An existing file that a file dialog's Save/Export button would replace, read from the dialog's own fields.
 pub fn save_dialog_target(text: &str) -> Option<String> {
     if text.is_empty() {
@@ -866,9 +872,10 @@ pub fn save_dialog_target(text: &str) -> Option<String> {
             continue;
         }
         let pth = expanduser(&v);
-        if pth.starts_with('/') {
+        // a Windows file dialog shows "C:\\Users\\..." (or a UNC "\\\\server\\share"): absolute too
+        if pth.starts_with('/') || win_abs(&pth) {
             if is_dir(&pth) { dirs.push(pth) } else { full.push(pth) }
-        } else if !v.contains('/') && !v.contains('\n') {
+        } else if !v.contains('/') && !v.contains('\\') && !v.contains('\n') {
             names.push(v);
         }
     }
@@ -917,6 +924,16 @@ pub fn save_dialog_target(text: &str) -> Option<String> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn windows_absolute_paths() {
+        for p in ["C:\\Users\\a", "d:/x", "\\\\server\\share\\f"] {
+            assert!(super::win_abs(p), "{p}");
+        }
+        for p in ["/home/a", "Report.pdf", "C:", "1:\\x", "ab:\\x"] {
+            assert!(!super::win_abs(p), "{p}");
+        }
+    }
+
     use super::*;
 
     fn setup() -> String {
@@ -960,6 +977,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(unix)] // bash command analysis: run_command is not offered on Windows
     fn recursive_copy_and_parents() {
         let d = setup();
         assert_eq!(lvl(shell_effects("cp -r src out", &d)).as_deref(), Some("high"));
@@ -978,6 +996,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(unix)] // bash command analysis: run_command is not offered on Windows
     fn find_xargs_and_sh_c() {
         let d = setup();
         assert_eq!(lvl(shell_effects("find src -name '*.ipynb' -print0 | xargs -0 -I{} cp --parents \"{}\" out/", &d)).as_deref(), Some("high"));
@@ -989,6 +1008,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(unix)] // bash command analysis: run_command is not offered on Windows
     fn cd_in_the_same_line_moves_the_cwd() {
         let d = setup();
         let r = shell_effects(&format!("cd {d} && mv dir2 dir2.bak"), "/").unwrap();
@@ -1006,6 +1026,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(unix)] // bash command analysis: run_command is not offered on Windows
     fn mv_moves_existing_data_away() {
         let d = setup();
         let r = shell_effects("mv dir2 dir2.bak && git clone https://x/y dir2", &d).unwrap();
@@ -1072,6 +1093,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(unix)] // bash command analysis: run_command is not offered on Windows
     fn export_over_existing() {
         let d = setup();
         fs::write(format!("{d}/Report.pdf"), "signed").unwrap();
@@ -1083,6 +1105,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(unix)] // bash command analysis: run_command is not offered on Windows
     fn libreoffice_export_dialog_existing_pdf() {
         let fx = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures_og02_export.txt");
         let Ok(raw) = fs::read_to_string(fx) else { return };
