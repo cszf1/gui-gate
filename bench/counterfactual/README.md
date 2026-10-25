@@ -20,13 +20,17 @@ this harness has produced real branches and the model is retrained on them.
 | `harness.py` | controller (scripted stand-in for the acting model), treatments, checkpoints, restore (snapshot / replay) with hash check, branching, continuation with a fixed policy π |
 | `analyze.py` | paired Δ per checkpoint, task-family bootstrap CIs, negative / zero / positive counts, look_light − matched_wait, incremental reliability table vs predicted Δ |
 | `dryrun.py` | offline end-to-end run (sim backend, or `--gate target/release/gui-gate`) with a task-family split |
-| `osworld.py` | OSWorld checkpoints: setup + replay of the logged Pi tool-call prefix + state fingerprint (code only, never run) |
+| `osworld.py` | OSWorld checkpoints: setup + replay of the logged Pi tool-call prefix + state fingerprint (code only, never run); refuses a frozen test-split task without the manifest hash (`bench/manifest.py`) |
+| `layouts.py` | the frozen **unseen-layout test set** (12 variants: new caption vocabularies, button orders, hazard profiles); evaluation only, never for tuning; `bench/leakage_lint.py` checks tuned artefacts for its ids/captions |
 
 ```bash
 python3 bench/counterfactual/dryrun.py --out /tmp/cf --seeds 3 --repeats 2                        # in-process twin
 python3 bench/counterfactual/dryrun.py --out /tmp/cf --gate target/release/gui-gate --restore replay # through the real gate
 python3 bench/counterfactual/analyze.py /tmp/cf/branches.jsonl --level task --pred preds.jsonl
+python3 bench/counterfactual/dryrun.py --out /tmp/cf --unseen-layouts 12      # + held-out layouts, preds.jsonl, reliability.png
+python3 bench/counterfactual/analyze.py /tmp/cf/branches.jsonl --pred /tmp/cf/preds.jsonl --plot rel.png   # PNG or CSV + ASCII
 ```
+A committed dry run: `results/counterfactual-dryrun-2026-10-25/`. Protocol: `docs/eval-protocol.md`.
 
 ## Protocol
 
@@ -81,6 +85,8 @@ timers) is not restored — that is why strict branching uses the fixture twin a
 ## From branches to the gate
 
 `analyze.py --pred` compares predicted Δ (e.g. the `value.delta` the gate logged for that state) with the observed
-paired Δ per equal-mass bin. A retrained treatment model (`gui-gate train --model treatment` on branch logs with the
+paired Δ per equal-mass bin (ties in the prediction are never split across bins, so the order of observed values
+inside a tie cannot fake a slope), with task-family bootstrap CIs per bin; `--plot` draws the diagram; prediction
+lines with `q` also get Brier / NLL. A retrained treatment model (`gui-gate train --model treatment` on branch logs with the
 options actually taken) becomes the gate's default only once its weights are loaded; until then the gate runs the
 hand-set legacy prior (src/value.rs).

@@ -30,8 +30,9 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from stats import wilson  # noqa: E402
 
-DISCLAIMER = ("custom-environment result (OSWorld tasks and evaluators run natively, not the official VM / app versions / "
-              "budget): not an official OSWorld-Verified score; do not compare with leaderboard numbers")
+DISCLAIMER = ("custom environment based on OSWorld tasks and evaluators (run natively, not the official VM / app versions / "
+              "budget): a custom-environment result, not an official OSWorld-Verified score; not comparable to the "
+              "OSWorld leaderboard")
 
 
 def jl(p):
