@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased (goes into 0.10.2)
+
+Fixes from the gui-pi-desktop 0.3.0 live test on a Linux desktop (2026-10-25).
+- Person results: a declined / cancelled form now keeps the client's reason (`_meta["io.github.cszf1/gui-gate"].reason`
+  or a top-level `reason`): `timed_out` -> `human_outcome: "timeout"`, `expired` (the client never showed it: another
+  question was open) -> `"expired"`, `closed` -> `"window_closed"`, `unavailable` -> `"channel_unavailable"`. Before,
+  every timeout was recorded as `declined`. `expired` is a no-answer outcome (never a training label, not a refusal
+  by the person). `request_human` says "No answer: the person did not answer within N s ..." instead of "cancelled".
+- Takeover / ask_help texts no longer name buttons ("press Allow / Deny") that the client's popup does not have.
+- `run_actions`: before every step after the first the gate re-reads the step's window. While it shows a loading cue
+  or the step's target is disabled the batch waits up to 3 s, then stops there (`N. tool: NOT RUN - ...`); a
+  window/dialog that appeared after the previous step also stops it. Tokens of the batch are re-bound to the fresh
+  read by label. Before, a batch clicked disabled buttons during a load and reported every step "ok".
+
 ## 0.10.1 (2026-10-25)
 
 Follow-up to the external review of 2026-10-25 (security boundary, person requests, value model, evaluation) and the

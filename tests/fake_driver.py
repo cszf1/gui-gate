@@ -23,6 +23,10 @@ state = {
     "fail_next": 0,
     "count": 0,
     "keys": [],
+    "disabled": [],     # labels shown disabled (enabled: false)
+    "busy_reads": 0,    # the next N reads show a "Loading..." row and every button disabled ("Load data" sets load_reads)
+    "load_reads": 0,
+    "late_popup": 0,    # a dialog that appears on the N-th list_windows after "Open later" is clicked
 }
 TOOLS = [{"name": n, "inputSchema": {"type": "object", "properties": {"pid": {"type": "integer"},
          **({"delivery_mode": {"type": "string"}} if n in ("click", "type_text", "press_key", "hotkey") else {})}}}
@@ -91,6 +95,11 @@ def call(name, a):
         if w not in state["win_elems"]:
             w = WID
         els = state["win_elems"][w] if w != WID else state["elements"]
+        busy = w == WID and state["busy_reads"] > 0
+        if busy:
+            state["busy_reads"] -= 1
+            els = els + [("text", "Loading...")]
+        dis = lambda r, l: (busy and r == "button") or l in state["disabled"]
         state["snap_win"][sid] = w
         rows = "\n".join(f'    - [{i}] {r} "{l}" [actions=[click]]' for i, (r, l) in enumerate(els))
         md = f'- frame = "{os.environ.get("FAKE_FRAME_TITLE") or "Fixture"}"\n{rows}\n'
@@ -102,7 +111,7 @@ def call(name, a):
             sc["capture_id"] = "cap_" + sid
         if a.get("tree_format") == "elements":
             sc["elements"] = [{"element_index": i, "element_token": f"{sid}:{i}", "role": r, "label": l,
-                               "enabled": True, "frame": {"x": 10, "y": 10 + 40 * i, "w": 200, "h": 34}}
+                               "enabled": not dis(r, l), "frame": {"x": 10, "y": 10 + 40 * i, "w": 200, "h": 34}}
                               for i, (r, l) in enumerate(els)]
             # like cua-driver: the rows are only in structuredContent.elements
             del sc["tree_markdown"]
@@ -143,7 +152,11 @@ def call(name, a):
             if lab == "Open dialog":
                 state["windows"].append({"window_id": WID + 5, "pid": PID, "x": 60, "y": 60, "width": 200,
                                          "height": 100, "is_on_screen": True, "title": "Dialog"})
-            if lab == "Increment":
+            if lab == "Load data":
+                state["busy_reads"] = state["load_reads"]
+            if lab == "Open later":
+                state["late_popup"] = 2
+            if lab == "Increment" and lab not in state["disabled"] and not state["busy_reads"]:
                 state["count"] += 1
                 state["elements"][2] = ("text", f"count={state['count']}")
             return text(f'Clicked element [{idx}] {role} "{lab}".', sc={"effect": "unverifiable", "route": "accessibility"})
@@ -154,6 +167,11 @@ def call(name, a):
             return text(f"Clicked at {a['x']},{a['y']}", sc={"effect": "unverifiable", "route": "pixel"})
         return text("missing target", err=True)
     if name == "list_windows":
+        if state["late_popup"]:
+            state["late_popup"] -= 1
+            if not state["late_popup"]:
+                state["windows"].append({"window_id": WID + 5, "pid": PID, "x": 60, "y": 60, "width": 200,
+                                         "height": 100, "is_on_screen": True, "title": "Dialog"})
         ws = [w for w in state["windows"] if "pid" not in a or w["pid"] == a["pid"]]
         return text(f"Found {len(ws)} windows", sc={"windows": ws})
     if name == "verify_state":
@@ -176,6 +194,9 @@ def call(name, a):
                                      "height": 100, "is_on_screen": True})
         if "fail_next" in a:
             state["fail_next"] = a["fail_next"]
+        for k in ("disabled", "load_reads", "busy_reads"):
+            if k in a:
+                state[k] = a[k]
         if "fg_fail_next" in a:
             state["fg_fail_next"] = a["fg_fail_next"]
         if "occlude_next" in a:

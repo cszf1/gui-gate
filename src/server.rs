@@ -778,7 +778,7 @@ impl Burden {
 }
 
 /// Outcomes that mean "no answer" (never "the user is unwilling"): logged as no_answer, excluded from value training.
-pub const NO_ANSWER_OUTCOMES: &[&str] = &["timeout", "cancelled", "declined", "window_closed", "no_response", "channel_unavailable"];
+pub const NO_ANSWER_OUTCOMES: &[&str] = &["timeout", "expired", "cancelled", "declined", "window_closed", "no_response", "channel_unavailable"];
 
 /// Everything a gated call reads and writes, under one lock.
 pub struct Inner {
@@ -2536,11 +2536,11 @@ impl Gate {
                 // what was tried: the session's last steps and the gate's own trail for this one
                 let tried: Vec<String> = inn.history.iter().rev().take(3).rev().cloned().collect();
                 let tried = if tried.is_empty() { "nothing yet".to_string() } else { tried.join("; ") };
-                format!("The agent is stuck: its last steps did not work ({}).\nIt is trying to {} \"{what0}\".\nTried so far: {tried} (gate: {}).\nYou can do it for the agent (do the step in the app window, then choose \"Do it for me\"), or give it a hint and let it try again.", dec.reason, name.replace('_', " "), trail.join(" > "))
+                format!("The agent is stuck: its last steps did not work ({}).\nIt is trying to {} \"{what0}\".\nTried so far: {tried} (gate: {}).\nYou can do the step yourself in the app window and confirm here that you did it, or give the agent a hint and let it try another way.", dec.reason, name.replace('_', " "), trail.join(" > "))
             } else if opt == "ask_human" {
                 format!("The agent wants to {} \"{what0}\".\nWhy the gate stopped it: {}.\nAllow it?", name.replace('_', " "), dec.reason)
             } else {
-                format!("The agent needs you: {}.\nPlease do this step yourself in the app window, then press Allow. Press Deny to stop the agent here.", dec.reason)
+                format!("The agent needs you: {}.\nPlease do this step yourself in the app window, then confirm here that it is done. If you will not do it, say so here and the agent stops at this step.", dec.reason)
             };
             let kind = match opt.as_str() { "ask_human" => "approve", "handoff" => "takeover", _ => "ask_help" };
             // the answer is bound to the effect as it is now: a person's yes does not carry over to another target/window
@@ -4347,8 +4347,13 @@ impl Gate {
         }
         self.log.write(json!({"ev": "request_human", "kind": kind, "question": trunc(&q, 200), "human": h, "human_outcome": h.get("outcome")}));
         let ans = s(&h, "answer").to_string();
-        let msg = if ans == "timeout" {
-            format!("No answer from a person within {} s. Do not guess; stop and report.", timeout as i64)
+        let outcome = s(&h, "outcome").to_string();
+        let no_answer = ans == "timeout" || (outcome != "declined" && NO_ANSWER_OUTCOMES.contains(&outcome.as_str()));
+        let msg = if no_answer {
+            // say what really happened: no answer (timed out / expired / closed / unreachable) is not "the person said no"
+            let why = if ans == "timeout" && outcome.is_empty() { "timeout".to_string() } else { outcome.clone() };
+            format!("No answer: the person {}. Do not guess and do not describe this as the person's refusal; stop and report that the question went unanswered.",
+                    crate::human::outcome_words(&why, timeout))
         } else if kind == "takeover" {
             if ans == "allow" { "The person says the step is done. Re-read the window and continue.".into() } else { "The person declined to take over. Stop and report.".into() }
         } else if kind == "approve" {

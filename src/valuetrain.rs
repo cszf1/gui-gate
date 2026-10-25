@@ -1177,7 +1177,7 @@ mod tests {
 
     #[test]
     fn no_answer_is_never_a_training_label() {
-        for o in ["timeout", "cancelled", "declined", "window_closed", "no_response", "not_asked_again"] {
+        for o in ["timeout", "expired", "cancelled", "declined", "window_closed", "no_response", "not_asked_again"] {
             let e = json!({"ev": "action", "executed": false, "decision": "ask_help", "trail": ["ask_help"], "tier": "model", "human_outcome": o});
             assert_eq!(option_taken(&e), None, "{o}");
         }
