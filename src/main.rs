@@ -28,6 +28,7 @@ mod tools;
 mod updates;
 mod util;
 mod value;
+mod valuetrain;
 mod v097;
 mod roles;
 mod inspect;
@@ -39,7 +40,7 @@ mod proc;
 use decide::GateConfig;
 use util::*;
 
-const HELP: &str = "usage: gui-gate [setup|doctor|update|cleanup|uninstall|check-reviewer|train|compare|replay] [options]
+const HELP: &str = "usage: gui-gate [setup|doctor|update|cleanup|uninstall|check-reviewer|train|compare|replay|costs] [options]
 
 Cua Driver behind a pre-action value gate (MCP stdio server).
 
@@ -108,6 +109,7 @@ fn main() {
             "train" => Some(tools::train_main(rest)),
             "compare" => Some(tools::compare_main(rest)),
             "replay" => Some(tools::replay_main(rest)),
+            "costs" => Some(valuetrain::costs_main(rest)),
             "memory" => Some(memory::main_cli(rest)),
             "atspi-probe" => Some(atspi_probe(rest)),
             _ => None,
