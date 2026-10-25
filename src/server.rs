@@ -313,6 +313,83 @@ pub fn tree_delta(seen: &HashSet<String>, cur: &[&str], thr: f64) -> Option<Vec<
     Some(keep.into_iter().collect())
 }
 
+/// The structured patch from the base tree the client holds (`base`, in order, as of `base_snap`) to `cur`:
+///  changed   rows of `cur` that are not in the base (new or edited), with their line number in `cur`;
+///  removed   base rows that are gone (exact text);
+///  reordered rows present in both whose relative order changed (line in `cur`, line in the base).
+/// Applying it: drop `removed` from the base, place `changed` and `reordered` at their lines, and fill the other lines
+/// with the remaining base rows in their base order; the result is exactly `cur` (rows_total lines).
+pub fn structured_diff(base_snap: &str, base: &[String], cur: &[&str], snap: &str) -> Value {
+    let mut pos: HashMap<&str, Vec<usize>> = HashMap::new();
+    for (j, l) in base.iter().enumerate() {
+        pos.entry(l.as_str()).or_default().push(j);
+    }
+    for v in pos.values_mut() {
+        v.reverse();
+    }
+    let mut changed = vec![];
+    let mut common: Vec<(usize, usize)> = vec![]; // (line in cur, line in base)
+    for (i, l) in cur.iter().enumerate() {
+        match pos.get_mut(l).and_then(|v| v.pop()) {
+            Some(j) => common.push((i, j)),
+            None => changed.push(json!({"line": i, "text": l})),
+        }
+    }
+    let used: HashSet<usize> = common.iter().map(|c| c.1).collect();
+    let removed: Vec<&str> = base.iter().enumerate().filter(|(j, _)| !used.contains(j)).map(|(_, l)| l.as_str()).collect();
+    // longest increasing run of base positions = the rows that kept their relative order; the rest moved
+    let n = common.len();
+    let (mut tails, mut prev): (Vec<usize>, Vec<Option<usize>>) = (vec![], vec![None; n]);
+    for k in 0..n {
+        let v = common[k].1;
+        let at = tails.partition_point(|&t| common[t].1 < v);
+        if at > 0 {
+            prev[k] = Some(tails[at - 1]);
+        }
+        if at == tails.len() { tails.push(k) } else { tails[at] = k }
+    }
+    let mut keep = HashSet::new();
+    let mut cur_k = tails.last().copied();
+    while let Some(k) = cur_k {
+        keep.insert(k);
+        cur_k = prev[k];
+    }
+    let reordered: Vec<Value> = (0..n).filter(|k| !keep.contains(k)).map(|k| json!({"line": common[k].0, "base_line": common[k].1, "text": cur[common[k].0]})).collect();
+    json!({"base_snapshot_id": base_snap, "snapshot_id": snap, "full": false, "rows_total": cur.len(),
+           "changed": changed, "removed": removed, "reordered": reordered})
+}
+
+/// Rebuild the current tree from a base and a structured_diff (what a client does; used by the tests).
+pub fn apply_diff(base: &[String], d: &Value) -> Vec<String> {
+    let total = d["rows_total"].as_u64().unwrap_or(0) as usize;
+    let mut out: Vec<Option<String>> = vec![None; total];
+    let removed: Vec<String> = d["removed"].as_array().map(|a| a.iter().map(|x| pystr(Some(x))).collect()).unwrap_or_default();
+    let mut moved_base: HashSet<usize> = HashSet::new();
+    for k in ["changed", "reordered"] {
+        for c in d[k].as_array().cloned().unwrap_or_default() {
+            let i = c["line"].as_u64().unwrap_or(0) as usize;
+            if i < total {
+                out[i] = Some(pystr(c.get("text")));
+            }
+            if let Some(j) = c.get("base_line").and_then(|x| x.as_u64()) {
+                moved_base.insert(j as usize);
+            }
+        }
+    }
+    let mut rem = removed.clone();
+    let mut rest = base.iter().enumerate().filter(|(j, l)| {
+        if moved_base.contains(j) { return false; }
+        if let Some(p) = rem.iter().position(|r| r == *l) { rem.remove(p); return false; }
+        true
+    }).map(|(_, l)| l.clone());
+    for slot in out.iter_mut() {
+        if slot.is_none() {
+            *slot = rest.next();
+        }
+    }
+    out.into_iter().map(|x| x.unwrap_or_default()).collect()
+}
+
 /// GUI_GATE_STALL_HINTS=0 turns off the read-stall hints.
 /// Driver advice that assumes eyes ("confirm with a screenshot") rewritten for a text-only client.
 pub fn text_only_rewrite(res: &mut Value) {
@@ -576,7 +653,7 @@ pub struct Inner {
     pub pix_age: HashMap<i64, i64>,
     pub last_auto: HashMap<i64, Value>,
     /// tree rows the agent has already been shown, per "pid:window_id" (for auto-observe diffs): (snapshot, rows)
-    pub seen_rows: HashMap<String, (String, HashSet<String>)>,
+    pub seen_rows: HashMap<String, (String, Vec<String>)>,
     /// the last few executed actions, summarised for the reviewer
     pub recent: Vec<Value>,
     pub lb: crate::loopbreak::LoopTrack,
@@ -2644,15 +2721,18 @@ impl Gate {
         // changes only: rows the agent already saw for this window (same text, same [N]) are left out
         let mut delta_note = String::new();
         let mut lines: Vec<&str> = all_lines.clone();
+        let mut diff = json!({"base_snapshot_id": Value::Null, "snapshot_id": snap0, "full": true, "rows_total": all_lines.len()});
         if inn.cfg.tree_diff && note.is_empty() {
-            if let Some((prev_snap, seen)) = inn.seen_rows.get(&wkey_s) {
-                if let Some(idx) = tree_delta(seen, &all_lines, 0.5) {
+            if let Some((prev_snap, base)) = inn.seen_rows.get(&wkey_s) {
+                let seen: HashSet<String> = base.iter().cloned().collect();
+                if let Some(idx) = tree_delta(&seen, &all_lines, 0.5) {
                     let shown: Vec<&str> = idx.iter().map(|&i| all_lines[i]).collect();
                     delta_note = format!(" Only rows that changed since snapshot {prev_snap} are shown ({} of {} rows, with their parents); every other row is unchanged and keeps its [N], so {snap0}:N tokens work for those too.",
                                          shown.len(), all_lines.len());
                     if shown.is_empty() {
                         delta_note = format!(" Nothing in the tree changed since snapshot {prev_snap} ({} rows); its [N] are valid as {snap0}:N.", all_lines.len());
                     }
+                    diff = structured_diff(prev_snap, base, &all_lines, &snap0);
                     lines = shown;
                     inn.inc("tree_diffs");
                 }
@@ -2662,14 +2742,23 @@ impl Gate {
         if lines.len() > MAX_TREE_LINES {
             more = format!("\n... ({} more rows; call get_window_state for the full tree)", lines.len() - MAX_TREE_LINES);
             lines.truncate(MAX_TREE_LINES);
+            diff["truncated"] = json!(true);
         }
         if inn.cfg.tree_diff {
-            // what the agent has now seen of this window: shown rows + earlier rows that are still identical
-            let prev: HashSet<String> = inn.seen_rows.get(&wkey_s).filter(|_| note.is_empty()).map(|x| x.1.clone()).unwrap_or_default();
-            let shown: HashSet<&str> = lines.iter().copied().collect();
-            let seen: HashSet<String> = all_lines.iter().filter(|l| shown.contains(*l) || prev.contains(**l)).map(|l| l.to_string()).collect();
-            inn.seen_rows.insert(wkey_s.clone(), (snap0.clone(), seen));
+            // the base the next diff is relative to: the whole current tree in order (every row was either shown now
+            // or unchanged since the base the client already holds). A truncated send leaves the client without a
+            // complete tree, so no base is kept and the next look is a full tree.
+            if more.is_empty() {
+                inn.seen_rows.insert(wkey_s.clone(), (snap0.clone(), all_lines.iter().map(|l| l.to_string()).collect()));
+            } else {
+                inn.seen_rows.remove(&wkey_s);
+            }
         }
+        if !res.get("structuredContent").map(|v| v.is_object()).unwrap_or(false) {
+            res["structuredContent"] = json!({});
+        }
+        diff["window"] = json!(wkey_s);
+        res["structuredContent"]["diff"] = diff;
         inn.add("auto_obs_chars", lines.iter().map(|l| l.len() + 1).sum::<usize>() as f64);
         inn.add("auto_obs_chars_full", all_lines.iter().take(MAX_TREE_LINES).map(|l| l.len() + 1).sum::<usize>() as f64);
         let mut busy = if loading_rx().is_match(&md) { " The UI still looks busy.".to_string() } else { String::new() };
