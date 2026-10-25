@@ -1,0 +1,3 @@
+The attachment is confirmed in the compose window: attachment pane shows **1 Attachment (22.8 KB)** → `aws-bill.pdf` from `file:///data/home/aws-bill.pdf`, and Thunderbird is auto-saving it to Drafts. The window remains open and unsent.
+
+DONE — Attached ~/aws-bill.pdf to the open "New-month AWS Bill" compose window via the Attach button (1 attachment, aws-bill.pdf, 22.8 KB); the draft is left open and unsent.

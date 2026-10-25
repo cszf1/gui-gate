@@ -34,3 +34,6 @@
 {"ts":1792901288.671,"session":"11e4828a","ev":"obs","tool":"get_window_state","auto":true,"ms":502.0,"screenshot":true,"px":0,"snapshot":"s0000000a","pid":298017,"trimmed":false,"new_window":false,"rows":422,"rows_sent":120,"diff":false}
 {"ts":1792901288.697,"session":"11e4828a","ev":"img","format":"jpeg q60","images":1,"converted":1,"bytes_in":460293,"bytes_out":155852,"ms":25.9,"aid":11,"tool":"scroll"}
 {"ts":1792901334.494,"session":"11e4828a","ev":"plan","feasible":true,"milestones":3,"done":3,"checks":1,"facts":0,"notes":0}
+{"ts":1792901445.405,"session":"11e4828a","ev":"role","role":"verifier","calls":9,"probes":8,"error":null,"decision":"done"}
+{"ts":1792901445.405,"session":"11e4828a","ev":"check_done","gaps":0,"kinds":[],"named":0,"ms":66486.0}
+{"ts":1792901453.661,"session":"11e4828a","ev":"shutdown","jobs_killed":0}

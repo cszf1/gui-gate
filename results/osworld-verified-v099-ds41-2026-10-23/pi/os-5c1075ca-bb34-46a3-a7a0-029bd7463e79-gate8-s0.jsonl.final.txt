@@ -1,0 +1,1 @@
+DONE — Found 3 `*failed.ipynb` files under `/data/home/test_environment` and copied them with `cp --parents` into `/data/home/fails`, preserving the hierarchy (`fails/test_environment/dir1/a_failed.ipynb`, `.../dir2/subdir1/c_failed.ipynb`, `.../dir3/e_failed.ipynb`); verified each copy is byte-identical to its source, with no extra files.

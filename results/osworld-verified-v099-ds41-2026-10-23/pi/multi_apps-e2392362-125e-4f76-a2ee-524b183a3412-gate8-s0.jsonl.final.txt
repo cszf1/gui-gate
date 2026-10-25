@@ -1,0 +1,1 @@
+DONE — In `~/Code/Website/academicpages.github.io/_config.yml` I set the site name anchor (`name : &name "Test Account"`), the sidebar `author.name : "Test Account"`, and `author.email : "Test@gmail.com"`, keeping the YAML quoting/indentation intact (a backup of the original is at /tmp/_config.yml.bak).

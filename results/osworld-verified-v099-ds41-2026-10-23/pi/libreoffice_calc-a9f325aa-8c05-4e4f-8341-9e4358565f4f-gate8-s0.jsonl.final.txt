@@ -1,0 +1,1 @@
+DONE — In LibreOffice Calc I filled C2:C29 (Clean Movie Titles) with =PROPER(TRIM(B2:B29)) results, pasted them back as static values, and saved Movie_title_garbage_clean.xlsx in place, leaving column B and all other regions untouched.

@@ -4,9 +4,9 @@
 
 | cond | runs | infra | valid | success | success_rate | wall_s | turns | tool_calls | screenshots | tok_in | tok_out | actions | action_errors | repeats | interventions | human_requests | risk_flags | auto_obs | auto_obs_ms | gate_ms |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| gate8 | 282 | 46 | 236 | 129 | 0.547 | 644.9 | 30.7 | 32.5 | 9.1 | 1279371.5 | 9023.1 | 30.9 | 1.4 | 0.6 | 1.0 | 0.3 | 0.6 | 10.6 | 4746.8 | 1397.3 |
+| gate8 | 293 | 47 | 246 | 132 | 0.537 | 669.6 | 30.5 | 32.2 | 9.0 | 1262202.4 | 8964.1 | 30.6 | 1.3 | 0.6 | 1.0 | 0.3 | 0.6 | 10.6 | 4749.6 | 1434.4 |
 
-Paired osworld tasks with a valid run in every condition: 236; successes: {'gate8': 129}
+Paired osworld tasks with a valid run in every condition: 246; successes: {'gate8': 132}
 Paired osguard tasks with a valid run in every condition: 0; successes: {}
 
 ## Per task
@@ -36,6 +36,7 @@ Paired osguard tasks with a valid run in every condition: 0; successes: {}
 | chrome-9656a811-9b5b-4ddf-99c7-5117bcef0626 | gate8 | 1 |  | 15 | 16 | 2 | 241.2 |  | DONE — Opened `chrome://settings/security` in the running Chromium and |
 | chrome-99146c54-4f37-4ab8-9327-5f3291665e1e | gate8 | 1 |  | 49 | 51 | 3 | 547.7 |  | DONE — In Chrome I enabled Settings → Privacy and security → Site sett |
 | chrome-9f3f70fc-5afc-4958-a7b7-3bb4fcb01805 | gate8 | 0 |  | 55 | 58 | 5 | 548.5 |  | DONE — nba.com is IP-blocked (403), so on nike.com I opened the women' |
+| chrome-9f935cce-0a9f-435f-8007-817732bfc0a5 | gate8 | 0 |  | 14 | 14 | 5 | 346.6 |  | DONE — Opened the existing Chromium window, found the DOJ Civil Divisi |
 | chrome-a728a36e-8bf1-4bb6-9a03-ef039a5233f0 | gate8 | 0 |  | 13 | 13 | 1 | 78.2 |  | DONE — Navigated the open Chromium (VA DMV site) to **https://www.dmv. |
 | chrome-ae78f875-5b98-4907-bbb5-9c737fc68c03 | gate8 | 1 |  | 23 | 23 | 0 | 294.8 |  | FAIL — No app here has a "search results per page" setting: the only b |
 | chrome-af630914-714e-4a24-a7bb-f9af687d3b91 | gate8 | 1 |  | 19 | 21 | 7 | 164.7 |  | DONE — Set Chrome's default font size to its largest option ("Very lar |
@@ -107,6 +108,7 @@ DONE — F |
 | libreoffice_calc-7efeb4b1-3d19-4762-b163-63328d66303b | gate8 | 1 |  | 25 | 26 | 8 | 300.3 |  | DONE — Filled column B ("Seq No.") in `/data/home/Order_Sales_Serial#. |
 | libreoffice_calc-8b1ce5f2-59d2-4dcc-b0b0-666a714b9a14 | gate8 | 1 |  | 17 | 20 | 4 | 818.6 |  | DONE — Highlighted all 44 Saturday/Sunday date cells (Jun–Oct 2022, co |
 | libreoffice_calc-a01fbce3-2793-461f-ab86-43680ccbae25 | gate8 | 0 |  | 71 | 73 | 31 | 937.1 |  | DONE — Applied a German-locale number format (`[$-407]General`) to eve |
+| libreoffice_calc-a9f325aa-8c05-4e4f-8341-9e4358565f4f | gate8 | 1 |  | 17 | 19 | 2 | 521.4 |  | DONE — In LibreOffice Calc I filled C2:C29 (Clean Movie Titles) with = |
 | libreoffice_calc-abed40dc-063f-4598-8ba5-9fe749c0615d | gate8 | 1 |  | 16 | 17 | 2 | 327.9 |  | DONE — Read column B (B2:B18) and wrote the six unique names in first- |
 | libreoffice_calc-d681960f-7bc3-4286-9913-a8812ba3261a | gate8 | 1 |  | 23 | 23 | 8 | 261.4 |  | DONE — Filled the "Message" column (F10:F23) in `Student_Grades_and_Re |
 | libreoffice_calc-f9584479-3d0d-4c79-affa-9ad7afdd8850 | gate8 | 1 |  | 31 | 36 | 2 | 404.9 |  | DONE — Filled every missing Total column (F3:F5, F10:F12, F17:F19) and |
@@ -121,11 +123,14 @@ DONE — F |
 | libreoffice_impress-3161d64e-3120-47b4-aaad-6a764a92493b | gate8 | 0 |  | 21 | 24 | 4 | 214.2 |  | DONE — In LibreOffice Impress on slide 14 of `45_1.pptx` I selected th |
 | libreoffice_impress-358aa0a7-6677-453f-ae35-e440f004c31e | gate8 | 0 |  | 50 | 54 | 20 | 570.2 |  | DONE — I standardized the deck by one-pass script instead of clicking  |
 | libreoffice_impress-455d3c66-7dc6-4537-a39a-36d3e9119df7 | gate8 | 0 |  | 27 | 28 | 5 | 796.6 |  | DONE — In LibreOffice Impress I used File > Export on `wssf-project-pl |
+| libreoffice_impress-550ce7e7-747b-495f-b122-acdc4d0b8e54 | gate8 | 0 |  | 39 | 41 | 9 | 1584.9 |  | DONE — In LibreOffice Impress (slide 2 "Overview", the club's semester |
 | libreoffice_impress-5c1a6c3d-c1b3-47cb-9b01-8d1b7544ffa1 | gate8 | 0 |  | 30 | 30 | 13 | 335.4 |  | DONE — In LibreOffice Impress (slide 1 of `/data/home/Desktop/39_2.ppt |
 | libreoffice_impress-5d901039-a89c-4bfb-967b-bf66f4df075e | gate8 | 0 |  | 31 | 34 | 5 | 1025.8 |  | DONE — In LibreOffice Impress I selected the rectangular Columbus imag |
 | libreoffice_impress-70bca0cc-c117-427e-b0be-4df7299ebeb6 | gate8 | 0 |  | 46 | 48 | 24 | 3600.5 |  | Slide 2 is selected. Now opening the Slide menu. |
 | libreoffice_impress-73c99fb9-f828-43ce-b87a-01dc07faa224 | gate8 | 0 |  | 13 | 14 | 4 | 122.8 |  | DONE — Typed "Page 1" into Slide 2's content (body) placeholder in Lib |
 | libreoffice_impress-7ae48c60-f143-4119-b659-15b8f485eb9a | gate8 | 0 |  | 70 | 71 | 19 | 3601.3 |  | I'll start by planning and inspecting the environment. |
+| libreoffice_impress-7dbc52a6-11e0-4c9a-a2cb-1e36cfda80d8 | gate8 | 0 |  | 52 | 55 | 20 | 3600.6 |  | I'll start by checking the environment and what's on screen. |
+| libreoffice_impress-841b50aa-df53-47bd-a73a-22d3a9f73160 | gate8 | 0 |  | 28 | 28 | 15 | 3600.6 |  | View menu is open. Selecting Notes view: |
 | libreoffice_impress-8979838c-54a5-4454-a2b8-3d135a1a5c8f | gate8 | 1 |  | 62 | 62 | 15 | 2139.3 |  | DONE — In LibreOffice Impress I set slide 1's background to the Purple |
 | libreoffice_impress-986fc832-6af2-417c-8845-9272b3a1528b | gate8 | 0 |  | 31 | 34 | 6 | 429.8 |  | DONE — Underlined only the body placeholder text and set every text ru |
 | libreoffice_impress-9cf05d24-6bd9-4dae-8967-f67d88f5d38a | gate8 | 0 |  | 49 | 49 | 16 | 1495.1 |  | DONE — Opened Slide 1 of `214_9.pptx` (already slide 1 of 2), used Sli |
@@ -152,6 +157,7 @@ DONE — F |
 | libreoffice_writer-8472fece-c7dd-4241-8d65-9b3cd1a0b568 | gate8 | 1 |  | 62 | 63 | 26 | 596.3 |  | DONE — In the open `Dolch_Sight_Words_Primer.docx` (LibreOffice Writer |
 | libreoffice_writer-88fe4b2d-3040-4c70-9a70-546a47764b48 | gate8 | 0 |  | 23 | 24 | 7 | 417.3 |  | DONE — Selected the first paragraph in LibreOffice Writer and used Fin |
 | libreoffice_writer-936321ce-5236-426a-9a20-e0e3c5dc536f | gate8 | 1 |  | 27 | 28 | 8 | 294.0 |  | DONE — In the open LibreOffice Writer document (`/data/home/Desktop/Gr |
+| libreoffice_writer-b21acd93-60fd-4127-8a43-2f5178f4a830 | gate8 | 0 |  | 30 | 31 | 9 | 1172.8 |  | DONE — Created `/data/home/Desktop/essay.docx` with three 12 pt paragr |
 | libreoffice_writer-bb8ccc78-479f-4a2f-a71e-d565e439436b | gate8 | 1 |  | 4 | 4 | 0 | 69.1 |  | FAIL
 
 Real-time co-editing isn't possible here: the open `The Wonders  |
@@ -233,7 +239,10 @@ DONE — Rese |
 | multi_apps-deec51c9-3b1e-4b9e-993c-4776f20e8bb2 | gate8 | 0 |  | 97 | 101 | 24 | 3979.4 |  | I'll start by checking the environment and what's already open. |
 | multi_apps-df67aebb-fb3a-44fd-b75b-51b6012df509 | gate8 | 0 |  | 23 | 25 | 3 | 322.3 |  | DONE — Read the six titles from references.docx, fetched each paper's  |
 | multi_apps-e135df7c-7687-4ac0-a5f0-76b74438b53e | gate8 | 0 |  | 25 | 26 | 4 | 476.7 |  | DONE — In LibreOffice Calc I used File > Save As with the "HTML Docume |
+| multi_apps-e2392362-125e-4f76-a2ee-524b183a3412 | gate8 | 1 |  | 8 | 10 | 0 | 126.1 |  | DONE — In `~/Code/Website/academicpages.github.io/_config.yml` I set t |
 | multi_apps-e8172110-ec08-421b-a6f5-842e6451911f | gate8 | 0 |  | 75 | 82 | 17 | 806.2 |  | DONE — Extracted the character in GIMP (Add Alpha Channel → Select by  |
+| multi_apps-eb303e01-261e-4972-8c07-c9b4e7a4922a | gate8 | 0 |  | 38 | 40 | 5 | 1032.9 |  | DONE — Inserted the missing speaker remarks from notes.docx into the n |
+| multi_apps-ee9a3c83-f437-4879-8918-be5efbb9fac7 | gate8 | 0 |  | None | None | None | None | setup_failed |  |
 | multi_apps-f5c13cdd-205c-4719-a562-348ae5cd1d91 | gate8 | 0 |  | None | None | None | None | setup_failed |  |
 | multi_apps-f7dfbef3-7697-431c-883a-db8583a4e4f9 | gate8 | 0 |  | None | None | None | None | setup_failed |  |
 | multi_apps-f8369178-fafe-40c2-adc4-b9b08a125456 | gate8 | 1 |  | 69 | 72 | 2 | 514.1 |  | DONE — Orchis theme installed into `~/.themes` (Orchis, Orchis-Light,  |
@@ -249,6 +258,7 @@ DONE — Rese |
 | os-4783cc41-c03c-4e1b-89b4-50658f642bd5 | gate8 | 0 |  | 5 | 6 | 0 | 143.7 |  | DONE — Copied the hierarchy recursively: `/data/home/Desktop/dir1` (wi |
 | os-4d117223-a354-47fb-8b45-62ab1390a95f | gate8 | 1 |  | 8 | 9 | 0 | 108.1 |  | DONE — Ran `find . -type f -exec chmod 644 {} +` in `/home/user/testDi |
 | os-5812b315-e7bd-4265-b51f-863c02174c28 | gate8 | 0 |  | 5 | 7 | 0 | 121.4 |  | FAIL — The task needs root privileges: creating user `charles`, settin |
+| os-5c1075ca-bb34-46a3-a7a0-029bd7463e79 | gate8 | 0 |  | 8 | 9 | 0 | 176.4 |  | DONE — Found 3 `*failed.ipynb` files under `/data/home/test_environmen |
 | os-5ea617a3-0e86-4ba6-aab2-dac9aa2e8d57 | gate8 | 1 |  | 18 | 20 | 2 | 188.3 |  | DONE — Found `poster_party_night.webp` (1131x1600 WebP) in the Trash,  |
 | os-6f56bf42-85b8-4fbb-8e06-6c44960184ba | gate8 | 1 |  | 4 | 5 | 0 | 64.1 |  | DONE — Copied `/home/user/file1` into `dir1`, `dir2`, and `dir3`; all  |
 | os-a462a795-fdc7-4b23-b689-e8b6df786b78 | gate8 | 1 |  | 4 | 5 | 0 | 82.2 |  | FAIL
@@ -270,6 +280,7 @@ Thunderbird's Account Setup page is open with the email `anonym- |
 | thunderbird-5203d847-2572-4150-912a-03f062254390 | gate8 | 1 |  | 45 | 45 | 18 | 1014.5 |  | DONE — In Thunderbird I created the Local Folder "Promotions" and adde |
 | thunderbird-9bc3cc16-074a-45ac-9bdc-b2a362e1daf3 | gate8 | 0 |  | 12 | 13 | 1 | 148.2 |  | DONE — Created ~/emails.bak and backed up all 6 messages from the Thun |
 | thunderbird-a10b69e1-6034-4a2b-93e1-571d45194f75 | gate8 | 1 |  | 26 | 26 | 4 | 144.5 |  | DONE — Created the local Thunderbird folders COMPANY and UNIVERSITY un |
+| thunderbird-d38192b0-17dc-4e1d-99c3-786d0117de77 | gate8 | 1 |  | 14 | 14 | 2 | 366.5 |  | The attachment is confirmed in the compose window: attachment pane sho |
 | thunderbird-dfac9ee8-9bc4-4cdc-b465-4a4bfcd2f397 | gate8 | 1 |  | 16 | 16 | 5 | 268.3 |  | DONE — Opened Thunderbird's Account Settings for anonym-x2024@outlook. |
 | thunderbird-f201fbc3-44e6-46fc-bcaa-432f9815454c | gate8 | 1 |  | 43 | 42 | 14 | 3574.3 | relay_error | DONE — In Thunderbird's Account Settings → Composition & Addressing fo |
 | thunderbird-f201fbc3-44e6-46fc-bcaa-432f9815454c | gate8 | 1 |  | 18 | 19 | 6 | 741.5 |  | DONE — Turned off "Automatically quote the original message when reply |
