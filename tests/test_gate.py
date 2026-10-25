@@ -10,6 +10,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+os.environ.setdefault("GUI_GATE_CHILD_ENV", "FAKE_*,PYTHONPATH")  # the fake driver's settings reach it through the allowlisted child env
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)

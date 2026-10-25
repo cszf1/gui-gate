@@ -144,12 +144,49 @@ pub fn is_secret_var(k: &str) -> bool {
         || u.ends_with("_SECRET") || u.contains("PASSWORD") || u == "PI_CODING_AGENT_DIR"
 }
 
-/// Remove every secret variable from a child's environment (it keeps the rest of the gate's environment).
+/// Exact variable names a child (driver, app, agent command, probe) may inherit: what a desktop session, a shell,
+/// locale and proxies need. Everything else is dropped.
+const CHILD_ENV_NAMES: &[&str] = &[
+    "PATH", "HOME", "USER", "LOGNAME", "SHELL", "PWD", "TERM", "COLORTERM", "LANG", "LANGUAGE", "TZ", "TMPDIR",
+    "DISPLAY", "WAYLAND_DISPLAY", "XAUTHORITY", "DBUS_SESSION_BUS_ADDRESS", "AT_SPI_BUS_ADDRESS", "NO_AT_BRIDGE",
+    "DESKTOP_SESSION", "SESSION_MANAGER", "SSH_AUTH_SOCK",
+    "http_proxy", "https_proxy", "no_proxy", "all_proxy", "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "ALL_PROXY",
+    // Windows
+    "SYSTEMROOT", "SystemRoot", "SYSTEMDRIVE", "SystemDrive", "WINDIR", "windir", "COMSPEC", "ComSpec", "PATHEXT",
+    "TEMP", "TMP", "USERPROFILE", "USERNAME", "USERDOMAIN", "APPDATA", "LOCALAPPDATA", "PROGRAMDATA", "ProgramData",
+    "ProgramFiles", "ProgramFiles(x86)", "ProgramW6432", "CommonProgramFiles", "PUBLIC", "HOMEDRIVE", "HOMEPATH",
+    "NUMBER_OF_PROCESSORS", "PROCESSOR_ARCHITECTURE", "OS", "PSModulePath",
+    // macOS
+    "__CF_USER_TEXT_ENCODING",
+];
+/// Name prefixes a child may inherit (locale, XDG dirs, toolkit settings, the driver's own settings).
+const CHILD_ENV_PREFIXES: &[&str] = &["LC_", "XDG_", "GTK_", "GDK_", "QT_", "CUA_", "CUA_DRIVER_"];
+
+/// Whether a child may inherit `k`: on the allowlist (or named by the launcher in GUI_GATE_CHILD_ENV, a
+/// comma-separated list read from the gate's own start-up environment; `NAME*` is a prefix) and never a secret.
+pub fn child_may_inherit(k: &str, extra: &[String]) -> bool {
+    if is_secret_var(k) {
+        return false;
+    }
+    CHILD_ENV_NAMES.contains(&k) || CHILD_ENV_PREFIXES.iter().any(|p| k.starts_with(p))
+        || extra.iter().any(|e| e == k || (e.ends_with('*') && k.starts_with(&e[..e.len() - 1])))
+}
+
+fn child_env_extra() -> &'static Vec<String> {
+    static X: std::sync::OnceLock<Vec<String>> = std::sync::OnceLock::new();
+    X.get_or_init(|| std::env::var("GUI_GATE_CHILD_ENV").unwrap_or_default().split(',')
+        .map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect())
+}
+
+/// Give a child an explicit allowlisted environment: start empty, copy only allowed, non-secret variables.
+/// Call before any `env()` the caller sets on purpose.
 pub fn scrub_env(c: &mut Command) {
-    for (k, _) in std::env::vars_os() {
+    let extra = child_env_extra();
+    c.env_clear();
+    for (k, v) in std::env::vars_os() {
         if let Some(ks) = k.to_str() {
-            if is_secret_var(ks) {
-                c.env_remove(&k);
+            if child_may_inherit(ks, extra) {
+                c.env(&k, v);
             }
         }
     }
@@ -392,5 +429,25 @@ mod tests {
             std::fs::read_to_string(e.path().join("stat")).ok().and_then(|s| s.rsplit(')').next().map(|r| r.split_whitespace().nth(2).map(|g| g == pg.to_string()).unwrap_or(false))).unwrap_or(false)
         }).count()).unwrap_or(0);
         assert_eq!(left, 0);
+    }
+}
+
+#[cfg(test)]
+mod env_tests {
+    use super::*;
+    #[test]
+    fn child_env_is_an_allowlist() {
+        let none: Vec<String> = vec![];
+        for ok in ["PATH", "HOME", "DISPLAY", "LC_ALL", "XDG_RUNTIME_DIR", "DBUS_SESSION_BUS_ADDRESS", "https_proxy"] {
+            assert!(child_may_inherit(ok, &none), "{ok}");
+        }
+        for bad in ["GUI_GATE_REVIEW_KEY", "GUI_PI_MAIN_KEY", "OPENAI_API_KEY", "GITHUB_TOKEN", "AWS_SECRET_ACCESS_KEY",
+                    "LD_PRELOAD", "NODE_OPTIONS", "PYTHONPATH", "RANDOM_THING", "XDG_TOKEN"] {
+            assert!(!child_may_inherit(bad, &none), "{bad}");
+        }
+        assert!(child_may_inherit("JAVA_HOME", &["JAVA_HOME".to_string()]));
+        assert!(!child_may_inherit("MY_API_KEY", &["MY_API_KEY".to_string()]));
+        assert!(child_may_inherit("FAKE_PNG", &["FAKE_*".to_string()]));
+        assert!(!child_may_inherit("FAKE_TOKEN", &["FAKE_*".to_string()]));
     }
 }
