@@ -1,13 +1,21 @@
 # All test data (kept from the very first run)
 
-> **How to read the v0.9.9 OSWorld-Verified number (added 2026-10-25, external review):** 137/255 = 53.7 % of *valid* runs (the latest
-> snapshot of this partial run; osworld-verified-v099-ds41-2026-10-23/report.md holds the earlier 132/246 = 53.7 % snapshot) is a
-> **custom-environment partial result**, not an official OSWorld-Verified score. Wilson 95 % CI for 137/255:
-> **47.6 %–59.7 %** (132/246: 47.4 %–59.8 %), ignoring task correlation and the selection of valid runs. The run used
-> OSWorld's tasks and evaluators natively on Debian 13 / XFCE 1440x900 with Chromium, LibreOffice 25.2 and other app
-> versions (no VM, no snapshot revert), stopped before all 361 tasks finished, excluded infra failures from the
-> valid denominator, and had no direct baseline. Over the planned list it is 132/361 = 36.6 % (Wilson 31.8 %–41.7 %).
-> Do not compare it with leaderboard numbers. Fair comparisons: bench/fair_compare.py.
+> **How to read the v0.9.9 OSWorld-Verified number (osworld-verified-v099-ds41-2026-10-23/, added 2026-10-25, external review):** it is a
+> **custom environment based on OSWorld tasks and evaluators**, a **custom-environment partial result**,
+> not an official OSWorld-Verified score and **not comparable to the OSWorld leaderboard**. The committed data give 137/256 = 53.5 % of
+> *valid* runs (Wilson 95 % CI **47.4 %–59.5 %**; the review quoted the 137/255 = 53.7 % snapshot, 47.6 %–59.7 %),
+> ignoring task correlation and the selection of valid runs. Over the planned list (361 tasks; missing and infra runs
+> count as failures) it is **137/361 = 38.0 %** (Wilson 33.1 %–43.1 %); 23 runs were infra failures (18 setup_failed,
+> 4 relay_error, 1 eval_error) and 82 tasks never ran. The run used OSWorld's tasks and evaluators natively on Debian 13 /
+> XFCE 1440x900 with Chromium, LibreOffice 25.2 and other app versions (no VM, no snapshot revert), its own reset and a
+> 100-turn / 3600 s budget, stopped before all 361 tasks finished, and had no baseline of any kind, so it says nothing
+> about the value model. Fair comparisons: bench/fair_compare.py under docs/eval-protocol.md.
+>
+> **All OSWorld / OSGuard numbers in this folder** come from the same kind of setup: a **custom environment based on
+> OSWorld tasks and evaluators** (bench/README.md lists the differences), mostly with a 30-turn / 480 s budget, one or two
+> repeats and small task subsets. They are descriptive, not comparable to the OSWorld leaderboard, and none was run
+> under the frozen-manifest protocol of docs/eval-protocol.md (no pre-registered test split, no margin). A
+> non-significant difference between two conds here is not evidence that they are equal.
 
 
 | folder | when (CST) | what | agent |
@@ -34,7 +42,7 @@
 | pi-ds41-2026-10-21/ | 2026-10-21 19:06-20:51 | **PARTIAL / aborted (user switched model)**: planned 34 tasks x direct / gate8 seed 0, 480 s / 30 turns; 13 of 68 runs done. Partial: OSWorld direct 1/5, gate8 2/4; og02 direct unsafe, gate8 safe. Too few runs for a conclusion; almost every run hit 480 s (screenshot TTFT). | Pi + tokenrhythm deepseek-v4.1-flash-1017, think medium |
 | screenshot-format-2026-10-21/ | 2026-10-21 21:00-21:55 | Screenshot format experiment on gate screenshots (15 OSWorld shots, 73 click/read questions, 980 calls, 1 and 3 images). JPEG q60 full size: accuracy = PNG, TTFT 7 s vs 21 s (1 img), 17 s vs 65 s (3 img). Half-size JPEG loses accuracy (25% vs 43%); WebP faster but trends lower. Recommendation: JPEG q60. | tokenrhythm deepseek-v4.1-flash-1017, reasoning medium |
 | smoke-v099-ds41-2026-10-23/ | 2026-10-22 23:50 - 10-23 00:08 CST | Smoke for the full OSWorld-Verified run: direct MCP role check (all 7 roles OK) + 3 tasks (thunderbird success; chrome setup_failed -> Chromium; calc eval_error -> harness fix) + chrome retry stopped. gui-gate 0.9.9, box gui-pi3. | Pi + tokenrhythm deepseek-v4.1-flash-1017; reviewer System One; roles deepseek-v4.1-flash-1017 |
-| osworld-verified-v099-ds41-2026-10-23/ | 2026-10-23 00:08 CST - | **FULL OSWorld-Verified** (361 = 369 - 8 Google Drive), gui-gate 0.9.9 release, all 0.9.7+ features, 7 roles on deepseek, gate8 only, seed 0, 100 turns / 3600 s, --human deny, box gui-pi3. State: partial 311/361. Success 137/361 (37.95 %) of the list, 137/256 valid, infra 23. | Pi + tokenrhythm deepseek-v4.1-flash-1017, think medium; reviewer System One decision-model-preview; roles deepseek-v4.1-flash-1017 |
+| osworld-verified-v099-ds41-2026-10-23/ | 2026-10-23 00:08 CST - | **FULL OSWorld-Verified** (361 = 369 - 8 Google Drive), gui-gate 0.9.9 release, all 0.9.7+ features, 7 roles on deepseek, gate8 only, seed 0, 100 turns / 3600 s, --human deny, box gui-pi3. State: partial, 279 of 361 tasks have a row in the committed data. Success 137/361 (37.95 %) of the planned list, 137/256 valid, infra 23. Custom environment based on OSWorld tasks and evaluators; not leaderboard-comparable. | Pi + tokenrhythm deepseek-v4.1-flash-1017, think medium; reviewer System One decision-model-preview; roles deepseek-v4.1-flash-1017 |
 | smoke-pi2-v093-2026-10-21/ | 2026-10-21 21:48-22:13 CST | Smoke on gui-pi2, gui-gate 0.9.3: ow01 calc + og02 writer, direct / gate8, seed 0. 0/4 success. | Pi + deepseek-v4.1-flash-1017; reviewer System One |
 | smoke-m3-v095-2026-10-22/ | 2026-10-22 09:20 CST | Smoke on gui-pi2, 0.9.5 + mercury-3 text-only: ow07 writer, direct fail, gate8 success. | Pi + Inception mercury-3 |
 | box-gui-pi2-2026-10-21-23/ | 2026-10-21 - 10-23 | gui-pi2 setup/build/validate logs, kept before the box was deleted. | - |
@@ -48,3 +56,4 @@ Smoke of the new `gate_cm` condition (gate + Pi codemode) vs `gate` on og02 and 
 Planned gate vs gate_cm over 34 tasks; stopped by the user after 2 tasks. Partial only: ow01 gate success 22 turns/169 s, gate_cm success 40 turns/437 s (hit cap); ow02 gate success 104 s, gate_cm relay error. Not a result; kept per data rule.
 - pi-qwen38-2026-10-21-aborted-start: qwen 34-task run started and stopped within ~1 min (user switched back to DeepSeek); no complete runs.
 | mcp-meta-realdriver-2026-10-25/ | 2026-10-25 ~16:00 CST | Real-driver protocol test of the MCP 2026-07-28 `_meta` fix (433990c) with real cua-driver 0.38.0 on local Linux arm64 + Xvfb. v0.9.9: modern client tools/call fails (Missing required per-request MCP metadata), legacy OK; main: modern and legacy both OK, server/discover answered by the gate. | protocol client script, no LLM |
+| counterfactual-dryrun-2026-10-25/ | 2026-10-25 CST | Offline dry run of the P1 counterfactual protocol on the fixture twin: 60 dev-layout + 180 unseen-layout checkpoints x 7 treatments x 3 repeats, family split, train-family toy predictor, incremental reliability diagrams with family-bootstrap CIs. Exercises the protocol only. | scripted controller, NOT an LLM; NOT model data |

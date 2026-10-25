@@ -1,0 +1,103 @@
+Incremental reliability, TEST families (ASCII fallback; dry run, NOT model data)
+
+ask: predicted (x) vs observed paired increment (y), range -0.30..+1.00; '.' = perfect, '-' = zero
+                         |          *    .|
+                         *            ... |
+                         |         ...    |
+                         |       ..       *
+                         |    ...         |
+                           ...            |
+                        ...               |
+                     ...                  |
+             |    ...                     |
+             | ...                        |
+            .|.                            
+  --------..-*-----------------------------
+       ...   |                             
+    ...      |                             
+  ..         |                             
+
+check: predicted (x) vs observed paired increment (y), range -0.10..+1.00; '.' = perfect, '-' = zero
+                                         ..
+                                      ...  
+                                   ...     
+                                 ..        
+                              ...          
+            |  | |         ...            |
+            |  | |      ...               |
+            |  | |   ...                  |
+            |  | |...                     |
+            |  |.|                        |
+            *..* *                        *
+          ..|  | |                        |
+       ...  |  | |                        |
+  --...-----|--|-|------------------------|
+  ..                                       
+
+extra_reason: predicted (x) vs observed paired increment (y), range -0.47..+0.60; '.' = perfect, '-' = zero
+                    |                    ..
+                    |                 ...  
+                    |              ...     
+                    |           ...        
+                    |         ..           
+     |              |      ...             
+     |              *   ...                
+     |              |...                   
+  ---|------------..|-----|----------------
+     |         ...  |     *                
+     *      ...     |     |                
+     |    ..                               
+     | ...                                 
+    .|.                                    
+  .. |                                     
+
+look_full: predicted (x) vs observed paired increment (y), range -0.10..+1.00; '.' = perfect, '-' = zero
+                        |            *   .|
+                        |             ... |
+                        |          ...    |
+                        *        ..       *
+                        |     ...         |
+            |           |  ...            |
+            |           |..               |
+            |        ...                  |
+            |     ...                     |
+            |  ...                         
+            *..                            
+          ..|                              
+       ...  |                              
+  --...-----|------------------------------
+  ..                                       
+
+look_light: predicted (x) vs observed paired increment (y), range -0.10..+1.00; '.' = perfect, '-' = zero
+                                         .|
+                                      ... |
+                                   ...    |
+                 | |             ..       |
+                 | |          ...         |
+            |    | |       ...            |
+            |    | |    ...               |
+            |    | | ...                  |
+            |    |.*.                     *
+            |  ..* |                      |
+            *..  | |                      |
+          ..|    | |                      |
+       ...  |    | |                       
+  --...-----|----|-|-----------------------
+  ..                                       
+
+matched_wait: predicted (x) vs observed paired increment (y), range -0.10..+0.43; '.' = perfect, '-' = zero
+          |                              ..
+          |                           ...  
+          |                        ...     
+          |                     ...        
+          |                   ..           
+          |                ...             
+          |             ...                
+          *          ...                   
+          |       ...                      
+          |    ...                         
+          | ...                            
+  --------|.-------------------------------
+       ...                                 
+    ...                                    
+  ..                                       

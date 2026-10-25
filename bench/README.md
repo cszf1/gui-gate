@@ -21,6 +21,10 @@ new at the top of `$HOME`. `/home/user` is a symlink to the box user's home.
 | `run_bench.sh` | the matrix: task × condition (direct / full / gate) × seed, resumable |
 | `score.py` | per-run and per-condition tables; `--pack` writes a git-friendly copy (base64 images stripped) |
 
+Results from this bench are from a **custom environment based on OSWorld tasks and evaluators**, not comparable to
+the OSWorld leaderboard (even with `--max-turns 100`). Evaluation protocol (research vs product experiment, frozen
+manifest, ablation chain, labels, pilot sizes, wording): `docs/eval-protocol.md`.
+
 Environment differences from the OSWorld VM (read before comparing numbers with published OSWorld scores):
 Debian 13 + XFCE at 1440×900 (not Ubuntu GNOME 1920×1080), LibreOffice 25.2, Chromium instead of
 Google Chrome, GIMP 3, xfce4-terminal. One compatibility rewrite is applied: LibreOffice ≥ 24 titles
@@ -29,7 +33,8 @@ from " - LibreOffice" to " — LibreOffice". Nothing else in any task is changed
 
 ## 0.9.6 options (run_bench.sh)
 - `--max-turns N` (or `PI_MAX_TURNS`): turn cap per run. Default **30** keeps runs comparable with every earlier
-  result in `results/`; OSWorld's official setting is **100** steps (`--max-turns 100` for leaderboard-comparable runs).
+  result in `results/`; OSWorld's official setting is **100** steps (`--max-turns 100` matches that step budget; the
+  environment still differs, so the numbers stay custom-environment results).
 - `PI_TOOLS_096=0`: ablation without the 0.9.6 tools (`run_command`, `check_done`, `set_plan` are switched off in the
   gate through the MCP server env) and without their prompt lines. Default 1: the prompt asks for set_plan first
   (feasibility verdict -> FAIL), run_command for file/terminal work, run_actions for known step sequences, and
@@ -52,3 +57,18 @@ from " - LibreOffice" to " — LibreOffice". Nothing else in any task is changed
 - `weights/costs-osworld-verified-v099.json`: option costs measured from the v0.9.9 run (`gui-gate costs`), usable as
   `VP_COSTS` / `GUI_GATE_COSTS`. `weights/value-observational-2026-10-25.json`: an observational treatment model for
   analysis only (not loaded by default).
+
+## Protocol tooling (docs/eval-protocol.md)
+- `manifest.py`: frozen task manifest (family split dev/test, exclusion reasons, retry rules, pre-registered margin,
+  hash). `run_bench.sh --manifest M --manifest-hash H` refuses a test-split list without the exact hash;
+  `bench/tasks/manifest.json` (default) marks the 34 development tasks as dev. `manifest.py denominators` reports
+  planned and valid denominators with infra failures per policy and kind.
+- `schedule.py` / `run_bench.sh --interleave abba`: policies interleaved task by task (ABBA / Williams order);
+  repeats are recorded as independent repeats with `api_seed_accepted`.
+- `cost_accounting.py`: per run Pi turns vs real GUI actions, reviewer and role calls, screenshots, tokens, cost,
+  wall time incl. failures/timeouts (merged into `score.py` rows); time comparisons over all runs.
+- `stats.noninferiority` / `fair_compare.py --manifest M` (or `--margin`): paired one-sided non-inferiority.
+- `leakage_lint.py`: answer files not reachable from the agent's run dirs; tuned artefacts free of test ids/answers.
+- `counterfactual/layouts.py`: frozen unseen-layout test set; `dryrun.py --unseen-layouts N`; `analyze.py --plot`.
+- `human_pilot.py`: real-user pilot analysis (threshold vs value asking, counterbalanced `assign`).
+- `context_ablation.py` + conds `ctx_full ctx_current ctx_new`: context ablation from gate + Pi logs.

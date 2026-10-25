@@ -17,6 +17,8 @@ import shutil
 import sys
 from collections import defaultdict
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 B64 = re.compile(r'"data":"[A-Za-z0-9+/=]{200,}"')
 
 
@@ -47,6 +49,7 @@ def score_run(out, r):
     pi = r.get("pi") or {}
     row.update(wall_s=pi.get("wall_s"), stop=pi.get("stop"))
     ev = jload(os.path.join(out, "eval", tag + ".eval.json")) or {}
+    row["run_wall_s"] = r.get("run_wall_s")
     if r.get("infra") == "setup_failed":
         return row
     if not ev.get("ok"):
@@ -105,6 +108,17 @@ def score_run(out, r):
         elif ev_ == "retro_repeat":
             g["repeats"] += 1
     row.update({k: round(v, 1) for k, v in g.items()})
+    # full cost accounting (bench/cost_accounting.py): real GUI actions vs Pi turns, reviewer / role calls, both
+    # screenshot counts, whole-run wall time incl. setup and evaluation
+    try:
+        import cost_accounting
+        ca = cost_accounting.run_costs(out, tag, r)
+        row.update({k: ca.get(k) for k in ("gui_actions", "gui_actions_blocked", "commands", "reviewer_calls",
+                                           "role_calls_total", "screenshots_gate", "role_tok_in", "role_tok_out",
+                                           "cost_usd", "run_wall_s")})
+        row["role_calls"] = ca.get("role_calls")
+    except Exception as e:  # never lose a scored row over accounting
+        row["cost_accounting_error"] = repr(e)[:120]
     return row
 
 

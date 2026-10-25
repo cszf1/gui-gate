@@ -2,7 +2,11 @@
 """Fair baseline comparison of value policies on the same engineering base (P2).
 
 usage: python3 bench/fair_compare.py RUN_DIR [RUN_DIR...] [--baseline vp_direct] [--policies a,b,...]
-                                     [--planned TASKLIST] [--cost wall_s|tok_in|turns] [--md OUT.md] [--json OUT.json]
+                                     [--planned TASKLIST | --manifest M.json --split test] [--margin 0.05]
+                                     [--cost wall_s|run_wall_s|tok_in|turns|gui_actions] [--md OUT.md] [--json OUT.json]
+--manifest: the planned list is the manifest's runnable split, and the margin defaults to the manifest's
+            pre-registered noninferiority_margin. --margin without a manifest is reported as exploratory.
+Infra failures are counted per policy and per kind (infra_by_kind); none is dropped from the planned denominator.
 
 Reads runs_scored.jsonl (bench/score.py) of every RUN_DIR. One row per (task, cond, seed) = the LAST attempt.
 Two denominators, both reported:
@@ -19,11 +23,12 @@ Seeds are repeat labels: the model API takes no sampling seed, so these are inde
 import json
 import os
 import sys
+from collections import Counter
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import stats  # noqa: E402
 
-COSTS = ("wall_s", "tok_in", "turns")
+COSTS = ("wall_s", "run_wall_s", "tok_in", "turns", "gui_actions")
 
 
 def load(dirs):
@@ -51,7 +56,7 @@ def table(best, policies, tasks, seeds, cost):
     return out
 
 
-def summarize(rows, policies, baseline, cost, budgets):
+def summarize(rows, policies, baseline, cost, budgets, margin=None, preregistered=True):
     res = {"policies": {}, "paired": {}, "budget_curve": {}}
     for p in policies:
         rs = [r for r in rows if r["policy"] == p]
@@ -63,7 +68,8 @@ def summarize(rows, policies, baseline, cost, budgets):
             "planned_runs": len(rs), "success": k, "rate": k / len(rs) if rs else 0.0, "wilson95": stats.wilson(k, len(rs)),
             "valid_runs": len(valid), "valid_success": kv, "valid_rate": kv / len(valid) if valid else None,
             "valid_wilson95": stats.wilson(kv, len(valid)) if valid else None,
-            "infra_or_missing": len(rs) - len(valid), f"mean_{cost}": sum(costs) / len(costs) if costs else None}
+            "infra_or_missing": len(rs) - len(valid), f"mean_{cost}": sum(costs) / len(costs) if costs else None,
+            "infra_by_kind": dict(Counter(str(r["infra"]) for r in rs if r["infra"]))}
     tasks = sorted({r["task"] for r in rows})
     for p in policies:
         if p == baseline:
@@ -78,6 +84,10 @@ def summarize(rows, policies, baseline, cost, budgets):
         mc = stats.mcnemar_exact([look[(baseline, t, s)] for t, s in pairs], [look[(p, t, s)] for t, s in pairs])
         res["paired"][p] = {"vs": baseline, "tasks": len(tasks), "diff_bootstrap": stats.paired_bootstrap(a, b, seed=1),
                             "permutation": stats.paired_permutation(a, b, seed=1), "mcnemar_task_seed": mc}
+        if margin is not None:
+            ni = stats.noninferiority(a, b, margin, seed=1, preregistered=preregistered)
+            res["paired"][p]["noninferiority"] = ni
+            res["paired"][p]["noninferiority_verdict"] = stats.verdict(ni)
     res["budget_curve"] = {p: [list(x) for x in v] for p, v in stats.budget_curve(rows, budgets, cost).items()}
     return res
 
@@ -107,6 +117,15 @@ def to_md(res, cost):
         bt = d["diff_bootstrap"]
         L.append(f"| {p} | {d['vs']} | {d['tasks']} | {bt['diff']:+.3f} | {bt['ci'][0]:+.3f}..{bt['ci'][1]:+.3f} | "
                  f"{d['permutation']['p']:.4f} | {d['mcnemar_task_seed']['n01']}/{d['mcnemar_task_seed']['n10']} | {d['mcnemar_task_seed']['p']:.4f} |")
+    ni = [(p, d) for p, d in res["paired"].items() if "noninferiority" in d]
+    if ni:
+        L += ["", "## Non-inferiority (paired, one-sided, task level)", "",
+              "| policy | vs | margin | diff | one-sided lower | p | verdict |", "|---|---|---|---|---|---|---|"]
+        for p, d in ni:
+            x = d["noninferiority"]
+            L.append(f"| {p} | {d['vs']} | {x['margin']:.3f}{'' if x['preregistered'] else ' (exploratory)'} | {x['diff']:+.3f} | "
+                     f"{x['lower']:+.3f} | {x['p_one_sided']:.4f} | {'non-inferior' if x['noninferior'] else 'not shown'} |")
+        L += [""] + [f"- {p}: {d['noninferiority_verdict']}" for p, d in ni]
     L += ["", f"## Budget curve (success within {cost} budget, planned runs)", ""]
     pols = list(res["budget_curve"])
     if pols:
@@ -136,14 +155,30 @@ def main(a):
     baseline = opt("--baseline", "vp_direct" if "vp_direct" in policies else policies[0])
     if baseline not in policies:
         policies = [baseline] + policies
-    if opt("--planned"):
+    margin, prereg = None, True
+    if opt("--manifest"):
+        import manifest as mf
+        man = mf.load(opt("--manifest"))
+        errs = mf.validate(man)
+        if errs:
+            raise SystemExit("fair_compare: manifest invalid: " + "; ".join(errs[:3]))
+        tasks = [r["task"] for r in mf.runnable(man, opt("--split", "test"))]
+        margin = man.get("noninferiority_margin")
+    if opt("--margin") is not None:
+        m2 = float(opt("--margin"))
+        prereg = margin is not None and abs(m2 - margin) < 1e-12
+        margin = m2
+    if opt("--manifest"):
+        pass  # tasks = the manifest's runnable split (above)
+    elif opt("--planned"):
         tasks = [os.path.basename(x.strip())[:-5] if x.strip().endswith(".json") else x.strip() for x in open(opt("--planned")) if x.strip()]
     else:
         tasks = sorted({k[0] for k in best if k[1] in policies})
     seeds = sorted({k[2] for k in best if k[1] in policies}) or [0]
     rows = table(best, policies, tasks, seeds, cost)
-    res = summarize(rows, policies, baseline, cost, budgets_for(rows, cost))
+    res = summarize(rows, policies, baseline, cost, budgets_for(rows, cost), margin, prereg)
     res["planned_tasks"], res["repeats"], res["cost"] = len(tasks), seeds, cost
+    res["manifest_hash"] = man["hash"] if opt("--manifest") else None
     md = to_md(res, cost)
     if opt("--md"):
         open(opt("--md"), "w").write(md)

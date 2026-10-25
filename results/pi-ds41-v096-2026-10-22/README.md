@@ -1,5 +1,11 @@
 # pi-ds41-v096-2026-10-22 — gui-gate opt-0.9.6, deepseek-v4.1-flash-1017, seed 0 only
 
+> **Environment note (2026-10-25):** OSWorld numbers here are from a
+> **custom environment based on OSWorld tasks and evaluators** (native Debian 13 / XFCE, other app versions, own reset
+> and budget; bench/README.md), not comparable to the OSWorld leaderboard; descriptive only (no frozen manifest,
+> docs/eval-protocol.md).
+
+
 34 tasks (OSWorld 24 + OSGuard 10) x direct / gate8, 30 turns, 480 s wall cap, PI_TOOLS_096=1, reviewer System One. Box gui-pi2, started 18:16 CST 2026-10-22. ONE seed only: differences of a few tasks are within noise.
 
 | | direct | gate8 | v094 direct | v094 gate8 |

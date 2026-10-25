@@ -1,5 +1,11 @@
 # pi-ds41-v094-2026-10-21 — full run, gui-gate 0.9.4 (JPEG q60 screenshots)
 
+> **Environment note (2026-10-25):** OSWorld numbers here are from a
+> **custom environment based on OSWorld tasks and evaluators** (native Debian 13 / XFCE, other app versions, own reset
+> and budget; bench/README.md), not comparable to the OSWorld leaderboard; descriptive only (no frozen manifest,
+> docs/eval-protocol.md).
+
+
 Complete: 34 tasks x 2 conditions, all 68 valid runs (2 direct runs hit relay errors and were retried; infra rows excluded).
 
 - Box **gui-pi2** (InstaBox, Debian 13), run dir /data/workspace/runs/pi-ds41-v094-2026-10-21, started 2026-10-21 22:16 CST, finished ~03:17 CST 2026-10-22
