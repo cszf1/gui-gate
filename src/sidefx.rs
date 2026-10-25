@@ -58,9 +58,51 @@ const SHELLS: &[&str] = &["bash", "sh", "zsh", "fish", "dash", "ksh"];
 pub fn is_terminal(pid: i64) -> bool {
     let comm = fs::read_to_string(format!("/proc/{pid}/comm"));
     let cmd = fs::read_to_string(format!("/proc/{pid}/cmdline"));
-    let (Ok(comm), Ok(cmd)) = (comm, cmd) else { return false };
+    let (Ok(comm), Ok(cmd)) = (comm, cmd) else { return cfg!(target_os = "macos") && ps_is_terminal(pid) };
     let first = cmd.split('\0').next().unwrap_or("").to_string();
     terminal_comm().is_match(comm.trim()) || (!first.is_empty() && terminal_comm().is_match(&first))
+}
+
+/// macOS has no /proc: the process table comes from `ps` (Terminal.app is ".../Terminal.app/Contents/MacOS/Terminal",
+/// iTerm2 "iTerm2"; only the executable's own name is matched). Cached for a few seconds per pid.
+fn ps_is_terminal(pid: i64) -> bool {
+    static CACHE: OnceLock<std::sync::Mutex<HashMap<i64, (Instant, bool)>>> = OnceLock::new();
+    let cache = CACHE.get_or_init(Default::default);
+    if let Some((t, v)) = cache.lock().unwrap().get(&pid) {
+        if t.elapsed() < Duration::from_secs(5) {
+            return *v;
+        }
+    }
+    let out = Command::new("ps").args(["-o", "comm=", "-p", &pid.to_string()]).stderr(Stdio::null()).output();
+    let v = out.ok().filter(|o| o.status.success())
+        .map(|o| exe_name(String::from_utf8_lossy(&o.stdout).trim()))
+        .map(|n| !n.is_empty() && terminal_comm().is_match(&n)).unwrap_or(false);
+    cache.lock().unwrap().insert(pid, (Instant::now(), v));
+    v
+}
+
+/// The executable's own name from a `ps` comm column (a full path on macOS; "-zsh" for a login shell).
+fn exe_name(comm: &str) -> String {
+    comm.rsplit('/').next().unwrap_or("").trim_start_matches('-').to_string()
+}
+
+/// `ps -A -o pid=,ppid=,comm=` -> (children by parent, executable name by pid).
+fn parse_ps_table(text: &str) -> (HashMap<i64, Vec<i64>>, HashMap<i64, String>) {
+    let mut kids: HashMap<i64, Vec<i64>> = HashMap::new();
+    let mut comm = HashMap::new();
+    for l in text.lines() {
+        let mut it = l.split_whitespace();
+        let (Some(p), Some(pp)) = (it.next().and_then(|x| x.parse::<i64>().ok()), it.next().and_then(|x| x.parse::<i64>().ok())) else { continue };
+        let rest: Vec<&str> = it.collect();
+        kids.entry(pp).or_default().push(p);
+        comm.insert(p, exe_name(&rest.join(" ")));
+    }
+    (kids, comm)
+}
+
+/// `lsof -a -p PID -d cwd -Fn` -> the working directory (the line starting with "n").
+fn parse_lsof_cwd(text: &str) -> Option<String> {
+    text.lines().find_map(|l| l.strip_prefix('n')).filter(|p| p.starts_with('/')).map(String::from)
 }
 
 /// Working directory of the newest shell running under a terminal emulator.
@@ -68,6 +110,7 @@ pub fn shell_cwd(term_pid: i64) -> String {
     let home = crate::util::home();
     let mut kids: HashMap<i64, Vec<i64>> = HashMap::new();
     let mut comm: HashMap<i64, String> = HashMap::new();
+    let proc_fs = Path::new("/proc/self").exists();
     if let Ok(rd) = fs::read_dir("/proc") {
         for d in rd.flatten() {
             let name = d.file_name().to_string_lossy().to_string();
@@ -78,6 +121,11 @@ pub fn shell_cwd(term_pid: i64) -> String {
             let Some(ppid) = rest.get(1).and_then(|x| x.parse::<i64>().ok()) else { continue };
             kids.entry(ppid).or_default().push(pid);
             comm.insert(pid, st[lp + 1..rp].to_string());
+        }
+    }
+    if !proc_fs && cfg!(target_os = "macos") {
+        if let Ok(o) = Command::new("ps").args(["-A", "-o", "pid=,ppid=,comm="]).stderr(Stdio::null()).output() {
+            (kids, comm) = parse_ps_table(&String::from_utf8_lossy(&o.stdout));
         }
     }
     let mut best: Option<i64> = None;
@@ -95,7 +143,9 @@ pub fn shell_cwd(term_pid: i64) -> String {
         }
     }
     match best {
-        Some(b) => fs::read_link(format!("/proc/{b}/cwd")).map(|p| p.to_string_lossy().to_string()).unwrap_or(home),
+        Some(b) if proc_fs => fs::read_link(format!("/proc/{b}/cwd")).map(|p| p.to_string_lossy().to_string()).unwrap_or(home),
+        Some(b) => Command::new("lsof").args(["-a", "-p", &b.to_string(), "-d", "cwd", "-Fn"]).stderr(Stdio::null()).output().ok()
+            .and_then(|o| parse_lsof_cwd(&String::from_utf8_lossy(&o.stdout))).unwrap_or(home),
         None => home,
     }
 }
@@ -927,6 +977,20 @@ pub fn save_dialog_target(text: &str) -> Option<String> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn macos_process_table_and_cwd_parsing() {
+        let t = "  1     0 /sbin/launchd\n 501   1 /System/Applications/Utilities/Terminal.app/Contents/MacOS/Terminal\n 777 501 login\n 778 777 -zsh\n 900 778 /bin/sleep\n";
+        let (kids, comm) = parse_ps_table(t);
+        assert_eq!(comm[&501], "Terminal");
+        assert_eq!(comm[&778], "zsh");
+        assert_eq!(kids[&777], vec![778]);
+        assert!(terminal_comm().is_match(&comm[&501]));
+        assert!(terminal_comm().is_match(&exe_name("/Applications/iTerm.app/Contents/MacOS/iTerm2")));
+        assert!(!terminal_comm().is_match(&exe_name("/Applications/Safari.app/Contents/MacOS/Safari")));
+        assert_eq!(parse_lsof_cwd("p778\nfcwd\nn/Users/me/work dir\n").as_deref(), Some("/Users/me/work dir"));
+        assert_eq!(parse_lsof_cwd("p778\n"), None);
+    }
+
     #[test]
     fn windows_absolute_paths() {
         for p in ["C:\\Users\\a", "d:/x", "\\\\server\\share\\f"] {

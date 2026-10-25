@@ -4,7 +4,7 @@ use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::io::{BufRead, BufReader, Write};
 use std::process::{Child, ChildStdin, Command, Stdio};
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::mpsc::{channel, Sender};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
@@ -38,6 +38,9 @@ pub struct ChildMCP {
     stdin: Mutex<Option<ChildStdin>>,
     pending: Arc<Mutex<HashMap<String, Sender<Value>>>>,
     ids: AtomicU64,
+    /// the driver's stdout ended (set under the `pending` lock, so a call registered after it fails at once instead of
+    /// waiting for its whole timeout: the driver can close stdout a moment before the OS reports the exit)
+    closed: Arc<AtomicBool>,
 }
 
 impl ChildMCP {
@@ -68,6 +71,8 @@ impl ChildMCP {
         let stdin = child.stdin.take();
         let pending: Arc<Mutex<HashMap<String, Sender<Value>>>> = Arc::new(Mutex::new(HashMap::new()));
         let p2 = pending.clone();
+        let closed = Arc::new(AtomicBool::new(false));
+        let closed2 = closed.clone();
         std::thread::spawn(move || {
             let rd = BufReader::new(stdout);
             for line in rd.lines() {
@@ -89,16 +94,20 @@ impl ChildMCP {
                 on_unsolicited(msg);
             }
             // child exited: fail every pending call
-            let pend: Vec<Sender<Value>> = p2.lock().unwrap().drain().map(|(_, v)| v).collect();
+            let pend: Vec<Sender<Value>> = {
+                let mut g = p2.lock().unwrap();
+                closed2.store(true, Ordering::SeqCst);
+                g.drain().map(|(_, v)| v).collect()
+            };
             for tx in pend {
                 let _ = tx.send(json!({"error": {"code": -32000, "message": "driver exited"}}));
             }
         });
-        Ok(Arc::new(ChildMCP { child: Mutex::new(child), stdin: Mutex::new(stdin), pending, ids: AtomicU64::new(1) }))
+        Ok(Arc::new(ChildMCP { child: Mutex::new(child), stdin: Mutex::new(stdin), pending, ids: AtomicU64::new(1), closed }))
     }
 
     pub fn alive(&self) -> bool {
-        matches!(self.child.lock().unwrap().try_wait(), Ok(None))
+        !self.closed.load(Ordering::SeqCst) && matches!(self.child.lock().unwrap().try_wait(), Ok(None))
     }
 
     fn write(&self, msg: &Value) -> std::io::Result<()> {
@@ -113,7 +122,13 @@ impl ChildMCP {
     pub fn call(&self, method: &str, params: Option<Value>, timeout: f64) -> Value {
         let mid = format!("gate-{}", self.ids.fetch_add(1, Ordering::SeqCst));
         let (tx, rx) = channel();
-        self.pending.lock().unwrap().insert(mid.clone(), tx);
+        {
+            let mut g = self.pending.lock().unwrap();
+            if self.closed.load(Ordering::SeqCst) {
+                return json!({"error": {"code": -32000, "message": "driver exited"}});
+            }
+            g.insert(mid.clone(), tx);
+        }
         let mut msg = json!({"jsonrpc": "2.0", "id": mid, "method": method});
         if let Some(p) = params {
             msg["params"] = p;
