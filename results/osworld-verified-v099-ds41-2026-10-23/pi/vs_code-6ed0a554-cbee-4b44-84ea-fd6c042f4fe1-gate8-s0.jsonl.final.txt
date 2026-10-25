@@ -1,0 +1,1 @@
+DONE — In VS Code I used *Workspaces: Add Folder to Workspace…* twice (for `/home/user/data1` and `/home/user/data2`); both now appear as roots in the Explorer of `project (Workspace)` and are saved in `/data/home/project.code-workspace` as `/home/user/data1` and `/home/user/data2`.

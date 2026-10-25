@@ -1,0 +1,1 @@
+DONE — In VLC's Tools → Preferences (Show settings: All → Playlist) I unchecked "Play and exit" and saved, so `/home/user/.config/vlc/vlcrc` now records `play-and-exit=0` and VLC stays open when a video ends.

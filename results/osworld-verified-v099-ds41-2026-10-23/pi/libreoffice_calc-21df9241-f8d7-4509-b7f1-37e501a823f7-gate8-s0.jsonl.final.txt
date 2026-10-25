@@ -1,0 +1,1 @@
+DONE — In the open LibreOffice Calc workbook (Sheet1), I set B2:B8 to `=ROUND(A2/1000000,1)&" M"` (millions) and C2:C8 to `=ROUND(A2/1000000000,1)&" B"` (billions), one decimal with half-up rounding (e.g. 150,000,000 → "0.2 B") and a space before the unit, then saved the file in xlsx format.

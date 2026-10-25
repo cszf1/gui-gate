@@ -1,0 +1,1 @@
+DONE — In `/home/user/SalesRep.xlsx` (LibreOffice Calc) I added row 12 "Total" (=SUM(B2:B11)…=SUM(G2:G11)), row 13 "Growth" with Feb–Jun month-on-month % formulas (percent-formatted, Jan left blank), a column chart titled **Total** of the monthly totals, and a line chart titled **Growth** plotting only Feb–Jun, then saved the file.

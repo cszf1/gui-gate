@@ -1,0 +1,1 @@
+DONE — I turned off character highlighting for the whole document (Format > Character > Highlighting > None), which also cleared the yellow carrying character styles, saved it in ODF format, and verified the saved /home/user/Desktop/sample-recruitment-phone-script.odt contains no yellow (#ffff00) backgrounds in content.xml or styles.xml, with bold/italic/links intact.

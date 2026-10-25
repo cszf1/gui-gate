@@ -1,0 +1,1 @@
+DONE — Opened `chrome://settings/security` in the running Chromium and set **Safe Browsing → Standard protection**, so it now warns about potentially harmful/unsafe sites (profile saved `"safebrowsing":{"enabled":true}`).

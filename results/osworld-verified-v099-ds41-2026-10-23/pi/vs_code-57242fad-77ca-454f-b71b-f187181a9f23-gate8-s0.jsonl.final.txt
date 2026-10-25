@@ -1,0 +1,1 @@
+DONE — In VS Code I created a new file, typed `print("Hello, World!")`, and saved it via Save As to `/home/user/Desktop/test.py` (confirmed on disk, 23 bytes, tab shows `test.py` with no unsaved marker).

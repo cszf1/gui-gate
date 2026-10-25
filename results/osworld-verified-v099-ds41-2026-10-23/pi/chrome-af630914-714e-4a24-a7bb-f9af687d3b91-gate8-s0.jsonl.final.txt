@@ -1,0 +1,1 @@
+DONE — Set Chrome's default font size to its largest option ("Very large") via chrome://settings/appearance → Font size dropdown; the profile now persists `default_font_size: 24` (largest preset) in `/data/home/.config/google-chrome/Default/Preferences`.

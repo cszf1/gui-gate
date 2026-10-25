@@ -1,0 +1,1 @@
+DONE — Opened a terminal at /data/workspace/osworld/OSWorld, Thunar at the same folder, and Chrome with https://github.com plus https://docs.python.org/3/ in two tabs.
