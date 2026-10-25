@@ -1,0 +1,1 @@
+DONE — In VS Code's Settings UI (Ctrl+,) I searched `focusEditorOnBreak` and unchecked **Debug: Focus Editor On Break**, which wrote `"debug.focusEditorOnBreak": false` to `/data/home/.config/Code/User/settings.json`, so the debug console keeps focus instead of jumping back to the editor.

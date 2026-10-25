@@ -1,0 +1,1 @@
+DONE — Searched Google Maps (Chrome) for all five Hong Kong restaurants and filled /data/home/Desktop/MUST_VISIT.xlsx with each one's name, address, phone, and website (saved in place from the open Calc window; Niras is marked "N/A" for website since its Maps listing — permanently closed — has none).

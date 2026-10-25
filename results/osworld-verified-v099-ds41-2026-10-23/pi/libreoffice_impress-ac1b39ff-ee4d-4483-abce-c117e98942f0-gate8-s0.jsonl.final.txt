@@ -1,0 +1,1 @@
+DONE — On slide 3 of `55_10.pptx` I selected the table (Tab-cycled to it) and nudged it down with Shift+Down until its bottom edge sits ~0.3" from the slide bottom, then saved (Ctrl+S); verified in the PDF render and in the saved slide3.xml (y=5461560 EMU).

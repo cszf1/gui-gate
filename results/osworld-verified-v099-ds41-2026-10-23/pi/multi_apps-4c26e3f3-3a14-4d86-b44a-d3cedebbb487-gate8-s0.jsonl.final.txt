@@ -1,0 +1,1 @@
+DONE — Extracted slide 2's background image (`ppt/media/image3.png`, 2433×1622) from `PPT-Template_widescreen.pptx`, brightened it (mean luminance 39.9 → 57.3, no clipping, same dimensions/RGBA), saved it as `/data/home/Desktop/background.png`, and opened the result in GIMP to confirm the brighter image.

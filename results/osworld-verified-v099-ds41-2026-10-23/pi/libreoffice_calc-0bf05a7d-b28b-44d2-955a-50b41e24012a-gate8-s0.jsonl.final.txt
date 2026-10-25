@@ -1,0 +1,1 @@
+DONE — Filled column D ('New 7 Digit ID') in /data/home/Customers_New_7digit_Id.xlsx for rows 2–30 with each 'Old ID' value zero-padded to seven digits (e.g. 76→0000076, 13500→0013500), left all other cells untouched, and saved the file in xlsx format.

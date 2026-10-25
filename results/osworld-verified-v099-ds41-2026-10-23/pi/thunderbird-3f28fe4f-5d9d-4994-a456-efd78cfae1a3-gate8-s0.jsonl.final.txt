@@ -1,0 +1,1 @@
+DONE — Set the anonym-x2024@outlook.com identity's signature in Thunderbird Account Settings to plain text ("Anonym" / "XYZ Lab", "Use HTML" unchecked); saved prefs confirm `mail.identity.id1.htmlSigFormat=false` with `htmlSigText="Anonym\nXYZ Lab"`, and a test compose showed the signature inserted.
