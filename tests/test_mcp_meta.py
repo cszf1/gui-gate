@@ -7,6 +7,7 @@ import unittest
 from test_gate import BIN, Client, FAKE, FAKE_REVIEWER, ROOT, txt
 import subprocess
 import tempfile
+os.environ.setdefault("GUI_GATE_CHILD_ENV", "FAKE_*,PYTHONPATH")  # the fake driver's settings reach it through the allowlisted child env
 
 MODERN = "2026-07-28"
 PV, CC = "io.modelcontextprotocol/protocolVersion", "io.modelcontextprotocol/clientCapabilities"

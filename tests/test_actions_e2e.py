@@ -17,6 +17,7 @@ import unittest
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from test_gate import BIN, FAKE, FAKE_REVIEWER, ROOT, txt  # noqa: E402
 from test_v04 import _Rev  # noqa: E402
+os.environ.setdefault("GUI_GATE_CHILD_ENV", "FAKE_*,PYTHONPATH")  # the fake driver's settings reach it through the allowlisted child env
 
 PV, CC, CI = "io.modelcontextprotocol/protocolVersion", "io.modelcontextprotocol/clientCapabilities", "io.modelcontextprotocol/clientInfo"
 GG = "io.github.cszf1/gui-gate"
