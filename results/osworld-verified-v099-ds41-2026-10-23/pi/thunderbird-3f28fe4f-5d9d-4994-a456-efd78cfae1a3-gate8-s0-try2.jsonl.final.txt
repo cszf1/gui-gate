@@ -1,0 +1,1 @@
+DONE — Set the plain-text signature for anonym-x2024@outlook.com in Thunderbird's Account Settings (Identity → Signature text) to two lines "Anonym" / "XYZ Lab"; it's committed to prefs.js (`mail.identity.id1.htmlSigText`), with HTML signature off, and verified appearing in a new plain-text compose window.

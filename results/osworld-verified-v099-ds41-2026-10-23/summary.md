@@ -4,9 +4,9 @@
 
 | cond | runs | infra | valid | success | success_rate | wall_s | turns | tool_calls | screenshots | tok_in | tok_out | actions | action_errors | repeats | interventions | human_requests | risk_flags | auto_obs | auto_obs_ms | gate_ms |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| gate8 | 270 | 44 | 226 | 122 | 0.54 | 639.9 | 30.6 | 32.4 | 9.1 | 1286033.7 | 9012.9 | 30.7 | 1.3 | 0.6 | 0.9 | 0.3 | 0.6 | 10.6 | 4757.0 | 1376.3 |
+| gate8 | 282 | 46 | 236 | 129 | 0.547 | 644.9 | 30.7 | 32.5 | 9.1 | 1279371.5 | 9023.1 | 30.9 | 1.4 | 0.6 | 1.0 | 0.3 | 0.6 | 10.6 | 4746.8 | 1397.3 |
 
-Paired osworld tasks with a valid run in every condition: 226; successes: {'gate8': 122}
+Paired osworld tasks with a valid run in every condition: 236; successes: {'gate8': 129}
 Paired osguard tasks with a valid run in every condition: 0; successes: {}
 
 ## Per task
@@ -21,6 +21,7 @@ Paired osguard tasks with a valid run in every condition: 0; successes: {}
 | chrome-1704f00f-79e6-43a7-961b-cedd3724d5fd | gate8 | 0 |  | 25 | 25 | 7 | 889.1 |  | DONE — On the open Rentalcars.com tab I searched Zürich for Mon 26 Oct |
 | chrome-2888b4e6-5b47-4b57-8bf5-c73827890774 | gate8 | 0 |  | 62 | 70 | 2 | 2027.4 |  | DONE — Macy's (the pre-opened storefront) is hard-blocked with a 403 " |
 | chrome-2ad9387a-65d8-4e33-ad5b-7580065a27ca | gate8 | 1 |  | 22 | 23 | 8 | 511.0 |  | DONE — Created a new empty folder named "Favorites" on the Chromium bo |
+| chrome-35253b65-1c19-4304-8aa4-6884b8218fc0 | gate8 | 0 |  | 12 | 13 | 1 | 192.5 |  | FAIL — Chrome's built-in "Create shortcut…" command lives only under * |
 | chrome-3720f614-37fd-4d04-8a6b-76f54f8c222d | gate8 | 1 |  | 4 | 4 | 0 | 109.5 |  | FAIL — Xenothian (and Atlantis) are not real languages: Chrome's inter |
 | chrome-47543840-672a-467d-80df-8f7c3b9788c9 | gate8 | 0 |  | 55 | 56 | 29 | 3601.0 |  | The site shows a "slide to verify" bot check that I can't clear automa |
 | chrome-480bcfea-d68f-4aaa-a0a9-2589ef319381 | gate8 | 1 |  | 13 | 13 | 0 | 211.0 |  | FAIL — The installed browser is Chromium 155.0.8059.79, where the 2023 |
@@ -54,12 +55,14 @@ Paired osguard tasks with a valid run in every condition: 0; successes: {}
 | gimp-2e6f678f-472d-4c55-99cc-8e7c5c402a71 | gate8 | 0 |  | 39 | 43 | 1 | 780.8 |  | DONE — Batch-processed all three Desktop images (heron, panda, squirre |
 | gimp-58d3eeeb-e9d0-499f-962e-fd0db2a744d8 | gate8 | 1 |  | 8 | 8 | 1 | 152.9 |  | FAIL — The only supplied image is `/home/user/Desktop/heron.jpeg`, an  |
 | gimp-5ca86c6f-f317-49d8-b6a7-b527541caae8 | gate8 | 0 |  | 48 | 57 | 8 | 500.8 |  | DONE — Using GIMP 3.0.4 only (no browser): fetched the official HKU lo |
+| gimp-72f83cdc-bf76-4531-9a1b-eb893a13f8aa | gate8 | 1 |  | 24 | 26 | 4 | 539.8 |  | DONE — In GIMP I ran Image > Transform > Flip Horizontally on the open |
 | gimp-734d6579-c07d-47a8-9ae2-13339795476b | gate8 | 1 |  | 25 | 26 | 10 | 299.2 |  | DONE — In GIMP I set the foreground color to green (00ff00), selected  |
 | gimp-7767eef2-56a3-4cea-8c9f-48c070c7d65b | gate8 | 0 |  | 16 | 18 | 1 | 105.0 |  | DONE — In GIMP I went to Edit > Preferences > Interface > Theme, chang |
 | gimp-7b7617bd-57cc-468e-9c91-40c4ec2bcb3d | gate8 | 0 |  | 16 | 17 | 4 | 127.2 |  | DONE — In GIMP 3.0.4 I opened Edit > Preferences, set "Minimal number  |
 | gimp-8ea73f6f-9689-42ad-8c60-195bbf06a7ba | gate8 | 0 |  | 85 | 95 | 11 | 3601.2 |  |  |
 | gimp-a746add2-cab0-4740-ac36-c3769d9bfb46 | gate8 | 0 |  | 12 | 12 | 3 | 282.4 |  | DONE — In GIMP 3.0.4 I dismissed the color-profile/welcome dialogs and |
 | gimp-b148e375-fe0b-4bec-90e7-38632b0d73c2 | gate8 | 0 |  | 24 | 24 | 5 | 452.3 |  | DONE — In GIMP I added a new layer to `white_background.xcf` via Layer |
+| gimp-e19bd559-633b-4b02-940f-d946248f088e | gate8 | 1 |  | 12 | 14 | 2 | 134.8 |  | FAIL — /home/user/Desktop (and Pictures/Downloads/Documents) contain n |
 | gimp-e2dd0213-26db-4349-abe5-d5667bfd725c | gate8 | 1 |  | 49 | 49 | 16 | 602.3 |  | The "Thanks World" text layer now sits in the left portion of the 2192 |
 | gimp-f4aec372-4fb0-4df5-a52b-79e0e2a5d6ce | gate8 | 0 |  | 71 | 73 | 16 | 3600.5 |  | The name field has focus with the basename selected. I'll type the new |
 | gimp-f723c744-e62c-4ae6-98d1-750d3cd7d79d | gate8 | 1 |  | 39 | 41 | 13 | 285.5 |  | DONE — Opened `berries.png` in GIMP, applied Colors > Brightness-Contr |
@@ -73,6 +76,7 @@ DONE — F |
 | libreoffice_calc-04d9aeaf-7bed-4024-bedb-e10e6f00eb7f | gate8 | 1 |  | 19 | 19 | 1 | 525.9 | relay_error | DONE — Added Sheet2 to /home/user/SmallBalanceSheet.xlsx with headers  |
 | libreoffice_calc-04d9aeaf-7bed-4024-bedb-e10e6f00eb7f | gate8 | 1 |  | 31 | 32 | 7 | 1445.2 |  | DONE — Created "Sheet2" in /data/home/SmallBalanceSheet.xlsx with head |
 | libreoffice_calc-0a2e43bf-b26c-4631-a966-af9dfa12c9e5 | gate8 | 1 |  | 38 | 38 | 10 | 365.2 |  | DONE — In the open SalesRep.xlsx (LibreOffice Calc) I added row 12 lab |
+| libreoffice_calc-0bf05a7d-b28b-44d2-955a-50b41e24012a | gate8 | 1 |  | 35 | 35 | 11 | 538.8 |  | DONE — Filled column D ('New 7 Digit ID') in /data/home/Customers_New_ |
 | libreoffice_calc-0cecd4f3-74de-457b-ba94-29ad6b5dafb6 | gate8 | 1 |  | 40 | 40 | 12 | 321.3 |  | DONE — In the open `copy_sheet_insert.xlsx` I renamed Sheet1 to "LARS  |
 | libreoffice_calc-12382c62-0cd1-4bf2-bdc8-1d20bf9b2371 | gate8 | 1 |  | 32 | 32 | 10 | 302.7 |  | DONE — Created sheet "Sheet2" in WeeklySales.xlsx and added a clustere |
 | libreoffice_calc-1273e544-688f-496b-8d89-3e0f40aa0606 | gate8 | 1 |  | 25 | 26 | 7 | 180.4 |  | DONE — Created "Sheet2" in NetIncome.xlsx (name box-select A1:A20 on S |
@@ -130,6 +134,7 @@ DONE — F |
 | libreoffice_impress-a434992a-89df-4577-925c-0c58b747f0f4 | gate8 | 0 |  | 47 | 48 | 21 | 3600.6 |  | I'll start by checking the environment and what's open. |
 | libreoffice_impress-a53f80cd-4a90-4490-8310-097b011433f6 | gate8 | 0 |  | 77 | 77 | 42 | 784.3 |  | DONE — In LibreOffice Impress I set the slide 2 ("How to Use This Pres |
 | libreoffice_impress-a669ef01-ded5-4099-9ea9-25e99b569840 | gate8 | 1 |  | 47 | 49 | 18 | 732.1 |  | DONE — On slide 3 ("Concept Map") of `/data/home/Desktop/Writing-Outli |
+| libreoffice_impress-ac1b39ff-ee4d-4483-abce-c117e98942f0 | gate8 | 0 |  | 38 | 40 | 8 | 876.5 |  | DONE — On slide 3 of `55_10.pptx` I selected the table (Tab-cycled to  |
 | libreoffice_impress-af2d657a-e6b3-4c6a-9f67-9e3ed015974c | gate8 | 0 |  | 23 | 25 | 8 | 163.8 |  | DONE — Typed "Happy Family" into slide 1's title placeholder in the op |
 | libreoffice_impress-b8adbc24-cef2-4b15-99d5-ecbe7ff445eb | gate8 | 0 |  | 76 | 78 | 28 | 666.0 |  | DONE — On slide 2 I set the title text to "Online Shopping" and matche |
 | libreoffice_impress-bf4e9888-f10f-47af-8dba-76413038b73c | gate8 | 0 |  | 48 | 50 | 5 | 753.1 |  | FAIL — the deck was built correctly (6 blank slides, pic1–pic6 in orde |
@@ -155,6 +160,7 @@ Real-time co-editing isn't possible here: the open `The Wonders  |
 | libreoffice_writer-e246f6d8-78d7-44ac-b668-fcf47946cb50 | gate8 | 1 |  | 38 | 36 | 13 | 623.5 | relay_error | DONE — In LibreOffice Writer I used Find & Replace with a formatting f |
 | libreoffice_writer-e528b65e-1107-4b8c-8988-490e4fece599 | gate8 | 1 |  | 16 | 18 | 1 | 187.4 |  | DONE — Opened the document in LibreOffice Writer, selected all body te |
 | libreoffice_writer-ecc2413d-8a48-416e-a3a2-d30106ca36cb | gate8 | 1 |  | 17 | 19 | 4 | 645.8 |  | **DONE** — In LibreOffice Writer I placed the cursor at the end of pag |
+| libreoffice_writer-f178a4a9-d090-4b56-bc4c-4b72a61a035d | gate8 | 1 |  | 65 | 68 | 15 | 826.4 |  | DONE — Installed genuine Times New Roman (regular/bold/italic/bold‑ita |
 | multi_apps-00fa164e-2612-4439-992e-157d019a8436 | gate8 | 1 |  | 43 | 48 | 17 | 543.9 |  | DONE — Copied rows A1:L2 (header `model … avg` plus the `Gpt-4` row wi |
 | multi_apps-09a37c51-e625-49f4-a514-20a773797a8a | gate8 | 0 |  | 77 | 96 | 39 | 822.8 |  | DONE — I cut the backpacker out of the mountain/sky photo (isolating t |
 | multi_apps-185f29bd-5da0-40a6-b69c-ba7f4e0324ef | gate8 | 0 |  | None | None | None | None | setup_failed |  |
@@ -176,6 +182,7 @@ Real-time co-editing isn't possible here: the open `The Wonders  |
 | multi_apps-42f4d1c7-4521-4161-b646-0a8934e36081 | gate8 | 1 |  | 94 | 100 | 22 | 1883.7 |  | DONE — Installed the **Lisp** extension in VS Code (mattn.lisp 0.1.12) |
 | multi_apps-47f7c0ce-a5fb-4100-a5e6-65cd0e7429e5 | gate8 | 0 |  | 65 | 68 | 28 | 3600.9 |  | I'll start by planning and surveying the environment. |
 | multi_apps-48c46dc7-fe04-4505-ade7-723cba1aa6f6 | gate8 | 0 |  | 9 | 12 | 0 | 105.3 |  | DONE — Opened a terminal at /data/workspace/osworld/OSWorld, Thunar at |
+| multi_apps-4c26e3f3-3a14-4d86-b44a-d3cedebbb487 | gate8 | 1 |  | 74 | 74 | 12 | 3280.2 |  | DONE — Extracted slide 2's background image (`ppt/media/image3.png`, 2 |
 | multi_apps-510f64c8-9bcc-4be1-8d30-638705850618 | gate8 | 0 |  | None | None | None | None | setup_failed |  |
 | multi_apps-51f5801c-18b3-4f25-b0c3-02f85507a078 | gate8 | 1 |  | 28 | 31 | 5 | 772.0 |  | The only "gap" was a keyword scan for the literal word "notes" in the  |
 | multi_apps-58565672-7bfe-48ab-b828-db349231de6b | gate8 | 0 |  | 12 | 12 | 2 | 274.3 |  | DONE — Read the AWS invoice email in the Thunderbird "Bills" folder, t |
@@ -217,6 +224,7 @@ DONE — Rese |
 | multi_apps-bc2b57f3-686d-4ec9-87ce-edf850b7e442 | gate8 | 1 |  | 38 | 40 | 12 | 335.1 |  | DONE — Read reminder.docx (the only requirement: all sheets in one Cal |
 | multi_apps-c2751594-0cd5-4088-be1b-b5f2f9ec97c4 | gate8 | 0 |  | 17 | 18 | 2 | 266.4 |  | DONE — Found the most recent (only) email in the Thunderbird Notes fol |
 | multi_apps-ce2b64a2-ddc1-4f91-8c7d-a88be7121aac | gate8 | 0 |  | 7 | 8 | 3 | 2072.6 |  | FAIL — I identified the pictures but could not complete the task: the  |
+| multi_apps-d1acdb87-bb67-4f30-84aa-990e56a09c92 | gate8 | 0 |  | 43 | 46 | 6 | 502.4 |  | DONE — Searched Google Maps (Chrome) for all five Hong Kong restaurant |
 | multi_apps-d9b7c649-c975-4f53-88f5-940b29c47247 | gate8 | 1 |  | 29 | 33 | 5 | 486.0 |  | DONE — Read the 5 newest messages (25, 27, 28, 29, 30 Jan 2024) from t |
 | multi_apps-da52d699-e8d2-4dc5-9191-a2199e0b6a9b | gate8 | 1 |  | 23 | 25 | 0 | 207.8 |  | DONE — Read the 2022 reading log from the desktop spreadsheet (Calc),  |
 | multi_apps-da922383-bfa4-4cd3-bbad-6bebab3d7742 | gate8 | 0 |  | 38 | 41 | 16 | 375.4 |  | DONE — Opened both blog tabs in Chromium, used Ctrl+P → "Save as PDF"  |
@@ -256,6 +264,8 @@ The user `Charles` does not exist on this machine, so I could no |
 | thunderbird-15c3b339-88f7-4a86-ab16-e71c58dcb01e | gate8 | 0 |  | 11 | 11 | 3 | 119.5 |  | FAIL
 
 Thunderbird's Account Setup page is open with the email `anonym- |
+| thunderbird-3f28fe4f-5d9d-4994-a456-efd78cfae1a3 | gate8 | 1 |  | 33 | 33 | 16 | 1530.2 | relay_error | DONE — Set the anonym-x2024@outlook.com identity's signature in Thunde |
+| thunderbird-3f28fe4f-5d9d-4994-a456-efd78cfae1a3 | gate8 | 1 |  | 17 | 19 | 5 | 540.0 |  | DONE — Set the plain-text signature for anonym-x2024@outlook.com in Th |
 | thunderbird-5203d847-2572-4150-912a-03f062254390 | gate8 | 1 |  | 60 | 61 | 20 | 971.1 | relay_error | DONE — In Thunderbird I created a local folder "Promotions" under Loca |
 | thunderbird-5203d847-2572-4150-912a-03f062254390 | gate8 | 1 |  | 45 | 45 | 18 | 1014.5 |  | DONE — In Thunderbird I created the Local Folder "Promotions" and adde |
 | thunderbird-9bc3cc16-074a-45ac-9bdc-b2a362e1daf3 | gate8 | 0 |  | 12 | 13 | 1 | 148.2 |  | DONE — Created ~/emails.bak and backed up all 6 messages from the Thun |
@@ -264,6 +274,7 @@ Thunderbird's Account Setup page is open with the email `anonym- |
 | thunderbird-f201fbc3-44e6-46fc-bcaa-432f9815454c | gate8 | 1 |  | 43 | 42 | 14 | 3574.3 | relay_error | DONE — In Thunderbird's Account Settings → Composition & Addressing fo |
 | thunderbird-f201fbc3-44e6-46fc-bcaa-432f9815454c | gate8 | 1 |  | 18 | 19 | 6 | 741.5 |  | DONE — Turned off "Automatically quote the original message when reply |
 | vlc-215dfd39-f493-4bc3-a027-8a97d72c61bf | gate8 | 1 |  | 27 | 29 | 10 | 310.4 |  | DONE — In VLC I opened Tools ▸ Preferences ▸ All ▸ Interface ▸ Main in |
+| vlc-386dbd0e-0241-4a0a-b6a2-6704fba26b1c | gate8 | 0 |  | None | None | None | None | setup_failed |  |
 | vlc-5ac2891a-eacd-4954-b339-98abba077adb | gate8 | 1 |  | 63 | 63 | 22 | 451.0 |  | DONE — In VLC's Tools → Preferences (Show settings: All → Playlist) I  |
 | vlc-7882ed6e-bece-4bf0-bada-c32dc1ddae72 | gate8 | 1 |  | 4 | 5 | 0 | 84.7 |  | FAIL — There is no way to play this in VLC here: the machine has no Go |
 | vlc-8ba5ae7a-5ae5-4eab-9fcc-5dd4fe3abf89 | gate8 | 0 |  | 35 | 37 | 14 | 289.0 |  | DONE — In VLC (Tools > Preferences > Show settings: All > Input / Code |
@@ -287,6 +298,7 @@ Thunderbird's Account Setup page is open with the email `anonym- |
 | vs_code-7c4cc09e-7a92-40dd-8338-b2286535c4ed | gate8 | 1 |  | 4 | 5 | 0 | 122.6 |  | FAIL — VS Code here (1.143.0) ships English-only UI strings (0 Arabic  |
 | vs_code-847a96b6-df94-4927-97e6-8cc9ea66ced7 | gate8 | 1 |  | 3 | 3 | 0 | 71.2 |  | FAIL — VS Code binds one workspace file per window: opening `/home/use |
 | vs_code-930fdb3b-11a8-46fe-9bac-577332e2640e | gate8 | 1 |  | 29 | 32 | 13 | 292.7 |  | DONE — Added a `ctrl+j` binding (with `when: terminalFocus`) to VS Cod |
+| vs_code-9439a27b-18ae-42d8-9778-5f68f891805e | gate8 | 1 |  | 14 | 14 | 6 | 132.2 |  | DONE — In VS Code's Settings UI (Ctrl+,) I searched `focusEditorOnBrea |
 | vs_code-982d12a5-beab-424f-8d38-d2a48429e511 | gate8 | 1 |  | 14 | 16 | 6 | 97.9 |  | DONE — Opened VS Code's Command Palette (Ctrl+Shift+P) → "Preferences: |
 | vs_code-9d425400-e9b2-4424-9a4b-d4c7abac4140 | gate8 | 1 |  | 10 | 11 | 5 | 83.2 |  | DONE — Opened VS Code's Settings (Ctrl+,), searched "wrap tabs", ticke |
 | vs_code-c6bf789c-ba3a-4209-971d-b63abf0ab733 | gate8 | 1 |  | 20 | 22 | 10 | 610.3 |  | DONE — Added `"files.exclude": { "**/__pycache__": true }` to VS Code' |

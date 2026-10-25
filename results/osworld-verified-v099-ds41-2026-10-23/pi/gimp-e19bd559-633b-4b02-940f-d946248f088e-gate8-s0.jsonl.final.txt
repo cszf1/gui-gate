@@ -1,0 +1,1 @@
+FAIL — /home/user/Desktop (and Pictures/Downloads/Documents) contain no photo at all, so there is nothing whose brightness could be toned down.

@@ -1,22 +1,22 @@
 {
  "summary": {
   "expected": 361,
-  "rows": 246,
-  "valid": 226,
-  "infra": 20,
-  "success": 122,
-  "score_sum": 128.33,
-  "rate_official": 33.8,
-  "rate_valid": 53.98,
+  "rows": 257,
+  "valid": 236,
+  "infra": 21,
+  "success": 129,
+  "score_sum": 135.33,
+  "rate_official": 35.73,
+  "rate_valid": 54.66,
   "infra_kinds": {
    "relay_error": 3,
-   "setup_failed": 16,
+   "setup_failed": 17,
    "eval_error": 1
   },
   "domains": {
    "libreoffice_impress": {
-    "tasks": 27,
-    "valid": 27,
+    "tasks": 28,
+    "valid": 28,
     "success": 5,
     "score_sum": 5.925318705016887,
     "infra": 0
@@ -29,135 +29,135 @@
     "infra": 3
    },
    "multi_apps": {
-    "tasks": 65,
-    "valid": 50,
-    "success": 22,
-    "score_sum": 25.488890566084056,
+    "tasks": 67,
+    "valid": 52,
+    "success": 23,
+    "score_sum": 26.488890566084056,
     "infra": 15
    },
    "libreoffice_writer": {
-    "tasks": 16,
-    "valid": 15,
-    "success": 12,
-    "score_sum": 12.0,
+    "tasks": 17,
+    "valid": 16,
+    "success": 13,
+    "score_sum": 13.0,
     "infra": 1
    },
    "vs_code": {
-    "tasks": 19,
-    "valid": 19,
-    "success": 15,
-    "score_sum": 15.0,
+    "tasks": 20,
+    "valid": 20,
+    "success": 16,
+    "score_sum": 16.0,
     "infra": 0
    },
    "libreoffice_calc": {
-    "tasks": 35,
-    "valid": 34,
-    "success": 29,
-    "score_sum": 29.0,
+    "tasks": 36,
+    "valid": 35,
+    "success": 30,
+    "score_sum": 30.0,
     "infra": 1
    },
    "vlc": {
-    "tasks": 11,
+    "tasks": 12,
     "valid": 11,
     "success": 8,
     "score_sum": 8.986725670201269,
-    "infra": 0
+    "infra": 1
    },
    "chrome": {
-    "tasks": 33,
-    "valid": 33,
+    "tasks": 34,
+    "valid": 34,
     "success": 12,
     "score_sum": 12.932778548312529,
     "infra": 0
    },
    "gimp": {
-    "tasks": 15,
-    "valid": 15,
-    "success": 6,
-    "score_sum": 6.0,
+    "tasks": 17,
+    "valid": 17,
+    "success": 8,
+    "score_sum": 8.0,
     "infra": 0
    },
    "thunderbird": {
-    "tasks": 8,
-    "valid": 8,
-    "success": 5,
-    "score_sum": 5.0,
+    "tasks": 9,
+    "valid": 9,
+    "success": 6,
+    "score_sum": 6.0,
     "infra": 0
    }
   },
   "stops": {
-   "agent": 211,
+   "agent": 221,
    "max_turns": 3,
    "timeout": 12
   },
-  "turns_mean": 30.6,
+  "turns_mean": 30.7,
   "turns_median": 25.0,
-  "wall_mean_s": 639.9,
-  "wall_median_s": 325.6,
-  "wall_total_h": 42.02,
-  "tok_in": 11464479,
-  "tok_cache": 279179136,
-  "tok_out": 2036907,
-  "screenshots": 2067,
-  "tool_calls": 7316,
+  "wall_mean_s": 644.9,
+  "wall_median_s": 333.8,
+  "wall_total_h": 44.12,
+  "tok_in": 11948439,
+  "tok_cache": 289983232,
+  "tok_out": 2129446,
+  "screenshots": 2137,
+  "tool_calls": 7665,
   "tools": {
-   "run_command": 1867,
-   "run_actions": 1378,
-   "get_window_state": 1146,
-   "click": 898,
-   "set_plan": 495,
-   "list_windows": 421,
-   "press_key": 396,
-   "inspect": 266,
-   "check_done": 217,
+   "run_command": 1956,
+   "run_actions": 1431,
+   "get_window_state": 1205,
+   "click": 934,
+   "set_plan": 516,
+   "list_windows": 441,
+   "press_key": 437,
+   "inspect": 278,
+   "check_done": 225,
    "scroll": 92,
-   "type_text": 71,
-   "list_apps": 54,
-   "request_human": 10,
+   "type_text": 76,
+   "list_apps": 57,
+   "request_human": 12,
    "update_plan": 1,
    "mcp__gui_run_actions": 1,
    "mcp__gui_set_plan": 1,
    "mcp__gui_inspect": 1,
    "mcp__gui_press_key": 1
   },
-  "request_human_calls": 10,
-  "final_fail_answers": 24,
+  "request_human_calls": 12,
+  "final_fail_answers": 26,
   "reviewer": {
-   "calls": 79,
+   "calls": 87,
    "decisions": {
-    "deny": 53,
-    "allow": 26
+    "deny": 56,
+    "allow": 31
    },
-   "ms_mean": 882.0,
-   "ms_median": 697.4
+   "ms_mean": 875.8,
+   "ms_median": 696.9
   },
   "roles": {
    "feasibility": {
-    "invocations": 226,
-    "http_calls": 1330,
+    "invocations": 236,
+    "http_calls": 1389,
     "errors": 5,
-    "ms_mean": 67040.8,
+    "ms_mean": 67009.3,
     "ms_median": 55966.1,
-    "timed": 226,
-    "runs_using": 226
+    "timed": 236,
+    "runs_using": 236
    },
    "planner": {
-    "invocations": 226,
-    "http_calls": 772,
+    "invocations": 236,
+    "http_calls": 809,
     "errors": 3,
     "ms_mean": null,
     "ms_median": null,
     "timed": 0,
-    "runs_using": 226
+    "runs_using": 236
    },
    "verifier": {
-    "invocations": 216,
-    "http_calls": 1500,
+    "invocations": 224,
+    "http_calls": 1563,
     "errors": 12,
-    "ms_mean": 69819.3,
-    "ms_median": 53814.9,
-    "timed": 216,
-    "runs_using": 205
+    "ms_mean": 70547.5,
+    "ms_median": 54342.4,
+    "timed": 224,
+    "runs_using": 213
    },
    "judge": {
     "invocations": 0,
@@ -178,13 +178,13 @@
     "runs_using": 4
    },
    "compact": {
-    "invocations": 660,
-    "http_calls": 660,
+    "invocations": 693,
+    "http_calls": 693,
     "errors": 1,
-    "ms_mean": 9975.9,
-    "ms_median": 9100.5,
-    "timed": 660,
-    "runs_using": 183
+    "ms_mean": 10088.8,
+    "ms_median": 9240.0,
+    "timed": 693,
+    "runs_using": 192
    },
    "grounder": {
     "invocations": 9,
@@ -197,12 +197,12 @@
    }
   },
   "gate": {
-   "actions": 6939,
-   "executed": 6726,
-   "interventions": 213,
-   "human_events": 73,
-   "loop_notes": 13,
-   "loop_refused": 7
+   "actions": 7303,
+   "executed": 7078,
+   "interventions": 225,
+   "human_events": 81,
+   "loop_notes": 14,
+   "loop_refused": 8
   }
  },
  "tasks": [
@@ -26272,6 +26272,1162 @@
      "batch": 11,
      "inspect": 1,
      "img": 1,
+     "check_done": 1,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "libreoffice_writer-f178a4a9-d090-4b56-bc4c-4b72a61a035d",
+   "domain": "libreoffice_writer",
+   "tag": "libreoffice_writer-f178a4a9-d090-4b56-bc4c-4b72a61a035d-gate8-s0",
+   "attempts": 1,
+   "infra": null,
+   "stop": "agent",
+   "wall_s": 826.4,
+   "turns_monitor": 65,
+   "score": 1.0,
+   "success": true,
+   "final_fail": false,
+   "turns": 65,
+   "tool_calls": 68,
+   "screenshots": 15,
+   "tok_in": 87195,
+   "tok_cache": 3035776,
+   "tok_out": 21342,
+   "pi_error": null,
+   "final": "DONE \u2014 Installed genuine Times New Roman (regular/bold/italic/bold\u2011italic) to `~/.local/share/fonts/times` so fontconfig and LibreOffice recognize it, then set LibreOffice Writer's default fonts via T",
+   "request_human": 0,
+   "tools": {
+    "set_plan": 2,
+    "run_command": 19,
+    "list_windows": 2,
+    "get_window_state": 12,
+    "run_actions": 15,
+    "click": 7,
+    "press_key": 10,
+    "check_done": 1
+   },
+   "gate": {
+    "actions": 80,
+    "executed": 77,
+    "interventions": 3,
+    "decisions": {
+     "direct": 77,
+     "ask_human": 1,
+     "look_full": 2
+    },
+    "reviewer": [],
+    "reviewer_decisions": {},
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 6,
+      "errors": 0,
+      "ms": [
+       104883.6
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 7,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 1,
+      "http_calls": 9,
+      "errors": 0,
+      "ms": [
+       38730.8
+      ]
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 8,
+      "http_calls": 8,
+      "errors": 0,
+      "ms": [
+       10369.0,
+       8482.0,
+       4342.0,
+       9359.0,
+       17060.0,
+       11208.0,
+       5384.0,
+       32130.0
+      ]
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 1,
+    "loop_notes": 0,
+    "loop_refused": 1,
+    "events": {
+     "client": 1,
+     "plan": 2,
+     "briefing": 1,
+     "command": 18,
+     "action": 80,
+     "obs": 41,
+     "img": 15,
+     "batch": 15,
+     "role": 9,
+     "delivery_fallback": 1,
+     "streak_hint": 1,
+     "loop_breaker": 1,
+     "tree_extra": 1,
+     "check_done": 1,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "chrome-35253b65-1c19-4304-8aa4-6884b8218fc0",
+   "domain": "chrome",
+   "tag": "chrome-35253b65-1c19-4304-8aa4-6884b8218fc0-gate8-s0",
+   "attempts": 1,
+   "infra": null,
+   "stop": "agent",
+   "wall_s": 192.5,
+   "turns_monitor": 12,
+   "score": 0.0,
+   "success": false,
+   "final_fail": true,
+   "turns": 12,
+   "tool_calls": 13,
+   "screenshots": 1,
+   "tok_in": 25968,
+   "tok_cache": 185856,
+   "tok_out": 6074,
+   "pi_error": null,
+   "final": "FAIL \u2014 Chrome's built-in \"Create shortcut\u2026\" command lives only under **\u22ee \u2192 Cast, save, and share \u2192 Create shortcut\u2026** (the \"More tools\" submenu has no such entry). That menu item was refused by the ga",
+   "request_human": 2,
+   "tools": {
+    "list_apps": 1,
+    "list_windows": 1,
+    "set_plan": 1,
+    "run_command": 1,
+    "get_window_state": 2,
+    "click": 3,
+    "request_human": 2,
+    "press_key": 2
+   },
+   "gate": {
+    "actions": 6,
+    "executed": 5,
+    "interventions": 1,
+    "decisions": {
+     "direct": 5,
+     "deny": 1
+    },
+    "reviewer": [
+     648.1
+    ],
+    "reviewer_decisions": {
+     "deny": 1
+    },
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 6,
+      "errors": 0,
+      "ms": [
+       90865.1
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 2,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 2,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "briefing": 1,
+     "obs": 7,
+     "plan": 1,
+     "command": 1,
+     "action": 6,
+     "img": 1,
+     "request_human": 2,
+     "delivery_fallback": 1,
+     "retro_repeat": 1,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "gimp-e19bd559-633b-4b02-940f-d946248f088e",
+   "domain": "gimp",
+   "tag": "gimp-e19bd559-633b-4b02-940f-d946248f088e-gate8-s0",
+   "attempts": 1,
+   "infra": null,
+   "stop": "agent",
+   "wall_s": 134.8,
+   "turns_monitor": 12,
+   "score": 1.0,
+   "success": true,
+   "final_fail": true,
+   "turns": 12,
+   "tool_calls": 14,
+   "screenshots": 2,
+   "tok_in": 16771,
+   "tok_cache": 146688,
+   "tok_out": 3556,
+   "pi_error": null,
+   "final": "FAIL \u2014 /home/user/Desktop (and Pictures/Downloads/Documents) contain no photo at all, so there is nothing whose brightness could be toned down.",
+   "request_human": 0,
+   "tools": {
+    "set_plan": 2,
+    "run_command": 9,
+    "list_windows": 1,
+    "inspect": 1,
+    "get_window_state": 1
+   },
+   "gate": {
+    "actions": 9,
+    "executed": 9,
+    "interventions": 0,
+    "decisions": {
+     "direct": 9
+    },
+    "reviewer": [],
+    "reviewer_decisions": {},
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 9,
+      "errors": 0,
+      "ms": [
+       38313.3
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 2,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 1,
+      "http_calls": 1,
+      "errors": 0,
+      "ms": [
+       10142.0
+      ]
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 0,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "command": 9,
+     "action": 9,
+     "briefing": 1,
+     "plan": 2,
+     "obs": 2,
+     "inspect": 1,
+     "img": 2,
+     "role": 1,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "vs_code-9439a27b-18ae-42d8-9778-5f68f891805e",
+   "domain": "vs_code",
+   "tag": "vs_code-9439a27b-18ae-42d8-9778-5f68f891805e-gate8-s0",
+   "attempts": 1,
+   "infra": null,
+   "stop": "agent",
+   "wall_s": 132.2,
+   "turns_monitor": 14,
+   "score": 1.0,
+   "success": true,
+   "final_fail": false,
+   "turns": 14,
+   "tool_calls": 14,
+   "screenshots": 6,
+   "tok_in": 26479,
+   "tok_cache": 217728,
+   "tok_out": 2859,
+   "pi_error": null,
+   "final": "DONE \u2014 In VS Code's Settings UI (Ctrl+,) I searched `focusEditorOnBreak` and unchecked **Debug: Focus Editor On Break**, which wrote `\"debug.focusEditorOnBreak\": false` to `/data/home/.config/Code/Use",
+   "request_human": 0,
+   "tools": {
+    "set_plan": 2,
+    "run_command": 2,
+    "list_windows": 1,
+    "run_actions": 2,
+    "get_window_state": 2,
+    "click": 4,
+    "check_done": 1
+   },
+   "gate": {
+    "actions": 10,
+    "executed": 10,
+    "interventions": 0,
+    "decisions": {
+     "direct": 10
+    },
+    "reviewer": [],
+    "reviewer_decisions": {},
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 3,
+      "errors": 0,
+      "ms": [
+       34944.2
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 3,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 1,
+      "http_calls": 2,
+      "errors": 0,
+      "ms": [
+       12719.7
+      ]
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 1,
+      "http_calls": 1,
+      "errors": 0,
+      "ms": [
+       12336.0
+      ]
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 0,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "command": 2,
+     "action": 10,
+     "briefing": 1,
+     "plan": 2,
+     "obs": 9,
+     "delivery_fallback": 1,
+     "batch": 2,
+     "img": 6,
+     "role": 2,
+     "check_done": 1,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "multi_apps-d1acdb87-bb67-4f30-84aa-990e56a09c92",
+   "domain": "multi_apps",
+   "tag": "multi_apps-d1acdb87-bb67-4f30-84aa-990e56a09c92-gate8-s0",
+   "attempts": 1,
+   "infra": null,
+   "stop": "agent",
+   "wall_s": 502.4,
+   "turns_monitor": 43,
+   "score": 0.0,
+   "success": false,
+   "final_fail": false,
+   "turns": 43,
+   "tool_calls": 46,
+   "screenshots": 6,
+   "tok_in": 85247,
+   "tok_cache": 1501184,
+   "tok_out": 14534,
+   "pi_error": null,
+   "final": "DONE \u2014 Searched Google Maps (Chrome) for all five Hong Kong restaurants and filled /data/home/Desktop/MUST_VISIT.xlsx with each one's name, address, phone, and website (saved in place from the open Ca",
+   "request_human": 0,
+   "tools": {
+    "set_plan": 3,
+    "run_command": 17,
+    "list_windows": 1,
+    "inspect": 6,
+    "get_window_state": 5,
+    "run_actions": 13,
+    "check_done": 1
+   },
+   "gate": {
+    "actions": 95,
+    "executed": 93,
+    "interventions": 2,
+    "decisions": {
+     "direct": 93,
+     "ask_human": 2
+    },
+    "reviewer": [
+     713.7,
+     669.2,
+     651.3,
+     1650.2
+    ],
+    "reviewer_decisions": {
+     "allow": 4
+    },
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 9,
+      "errors": 0,
+      "ms": [
+       90449.1
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 6,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 1,
+      "http_calls": 7,
+      "errors": 0,
+      "ms": [
+       32207.4
+      ]
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 7,
+      "http_calls": 7,
+      "errors": 0,
+      "ms": [
+       7448.0,
+       4523.0,
+       9611.0,
+       15261.0,
+       12429.0,
+       24022.0,
+       23103.0
+      ]
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 2,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "plan": 3,
+     "briefing": 1,
+     "command": 15,
+     "action": 95,
+     "obs": 19,
+     "role": 8,
+     "inspect": 6,
+     "tree_extra": 17,
+     "img": 6,
+     "batch": 13,
+     "delivery_fallback": 1,
+     "retro_repeat": 5,
+     "check_done": 1,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "libreoffice_calc-0bf05a7d-b28b-44d2-955a-50b41e24012a",
+   "domain": "libreoffice_calc",
+   "tag": "libreoffice_calc-0bf05a7d-b28b-44d2-955a-50b41e24012a-gate8-s0",
+   "attempts": 1,
+   "infra": null,
+   "stop": "agent",
+   "wall_s": 538.8,
+   "turns_monitor": 35,
+   "score": 1.0,
+   "success": true,
+   "final_fail": false,
+   "turns": 35,
+   "tool_calls": 35,
+   "screenshots": 11,
+   "tok_in": 46349,
+   "tok_cache": 934272,
+   "tok_out": 7633,
+   "pi_error": null,
+   "final": "DONE \u2014 Filled column D ('New 7 Digit ID') in /data/home/Customers_New_7digit_Id.xlsx for rows 2\u201330 with each 'Old ID' value zero-padded to seven digits (e.g. 76\u21920000076, 13500\u21920013500), left all other",
+   "request_human": 0,
+   "tools": {
+    "set_plan": 2,
+    "list_windows": 1,
+    "get_window_state": 2,
+    "click": 7,
+    "press_key": 11,
+    "type_text": 4,
+    "run_actions": 2,
+    "run_command": 5,
+    "check_done": 1
+   },
+   "gate": {
+    "actions": 41,
+    "executed": 40,
+    "interventions": 1,
+    "decisions": {
+     "direct": 40,
+     "ask_human": 1
+    },
+    "reviewer": [],
+    "reviewer_decisions": {},
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 6,
+      "errors": 0,
+      "ms": [
+       87762.6
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 7,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 1,
+      "http_calls": 9,
+      "errors": 0,
+      "ms": [
+       83093.7
+      ]
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 4,
+      "http_calls": 4,
+      "errors": 0,
+      "ms": [
+       7214.0,
+       16210.0,
+       17955.0,
+       10136.0
+      ]
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 1,
+    "loop_notes": 1,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "plan": 2,
+     "briefing": 1,
+     "obs": 25,
+     "tree_extra": 25,
+     "img": 8,
+     "action": 41,
+     "delivery_fallback": 1,
+     "loop_breaker": 1,
+     "role": 5,
+     "batch": 2,
+     "command": 4,
+     "check_done": 1,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "vlc-386dbd0e-0241-4a0a-b6a2-6704fba26b1c",
+   "domain": "vlc",
+   "tag": "vlc-386dbd0e-0241-4a0a-b6a2-6704fba26b1c-gate8-s0",
+   "attempts": 1,
+   "infra": "setup_failed",
+   "stop": null,
+   "wall_s": null,
+   "turns_monitor": null,
+   "error": "Exception(\"Setup step 4 failed: _open_setup - Failed to open file '/home/user/Desktop/lecture.pdf'. An error occurred while trying to send the request or the server responded with an error: 500 Server Error: INTERNAL SERVER ERROR for url: http://127.0.0.1:5000/setup/open_file\")"
+  },
+  {
+   "task": "libreoffice_impress-ac1b39ff-ee4d-4483-abce-c117e98942f0",
+   "domain": "libreoffice_impress",
+   "tag": "libreoffice_impress-ac1b39ff-ee4d-4483-abce-c117e98942f0-gate8-s0",
+   "attempts": 1,
+   "infra": null,
+   "stop": "agent",
+   "wall_s": 876.5,
+   "turns_monitor": 38,
+   "score": 0.0,
+   "success": false,
+   "final_fail": false,
+   "turns": 38,
+   "tool_calls": 40,
+   "screenshots": 8,
+   "tok_in": 57603,
+   "tok_cache": 1218176,
+   "tok_out": 12588,
+   "pi_error": null,
+   "final": "DONE \u2014 On slide 3 of `55_10.pptx` I selected the table (Tab-cycled to it) and nudged it down with Shift+Down until its bottom edge sits ~0.3\" from the slide bottom, then saved (Ctrl+S); verified in th",
+   "request_human": 0,
+   "tools": {
+    "set_plan": 2,
+    "list_apps": 1,
+    "list_windows": 1,
+    "get_window_state": 8,
+    "run_command": 7,
+    "press_key": 13,
+    "run_actions": 3,
+    "click": 3,
+    "inspect": 1,
+    "check_done": 1
+   },
+   "gate": {
+    "actions": 35,
+    "executed": 33,
+    "interventions": 2,
+    "decisions": {
+     "direct": 33,
+     "look_light": 1,
+     "deny": 1
+    },
+    "reviewer": [
+     677.4,
+     826.3
+    ],
+    "reviewer_decisions": {
+     "deny": 2
+    },
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 5,
+      "errors": 0,
+      "ms": [
+       49668.2
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 4,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 1,
+      "http_calls": 9,
+      "errors": 0,
+      "ms": [
+       93097.7
+      ]
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 3,
+      "http_calls": 3,
+      "errors": 0,
+      "ms": [
+       7454.0,
+       5781.0,
+       11801.0
+      ]
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 0,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "plan": 2,
+     "briefing": 1,
+     "obs": 28,
+     "img": 7,
+     "command": 6,
+     "action": 35,
+     "delivery_fallback": 1,
+     "batch": 3,
+     "role": 4,
+     "inspect": 1,
+     "tree_extra": 1,
+     "check_done": 1,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "multi_apps-4c26e3f3-3a14-4d86-b44a-d3cedebbb487",
+   "domain": "multi_apps",
+   "tag": "multi_apps-4c26e3f3-3a14-4d86-b44a-d3cedebbb487-gate8-s0",
+   "attempts": 1,
+   "infra": null,
+   "stop": "agent",
+   "wall_s": 3280.2,
+   "turns_monitor": 74,
+   "score": 1.0,
+   "success": true,
+   "final_fail": false,
+   "turns": 74,
+   "tool_calls": 74,
+   "screenshots": 12,
+   "tok_in": 69515,
+   "tok_cache": 2673664,
+   "tok_out": 14182,
+   "pi_error": null,
+   "final": "DONE \u2014 Extracted slide 2's background image (`ppt/media/image3.png`, 2433\u00d71622) from `PPT-Template_widescreen.pptx`, brightened it (mean luminance 39.9 \u2192 57.3, no clipping, same dimensions/RGBA), save",
+   "request_human": 0,
+   "tools": {
+    "set_plan": 2,
+    "list_windows": 9,
+    "run_command": 21,
+    "get_window_state": 18,
+    "click": 8,
+    "run_actions": 6,
+    "press_key": 5,
+    "inspect": 4,
+    "check_done": 1
+   },
+   "gate": {
+    "actions": 51,
+    "executed": 48,
+    "interventions": 3,
+    "decisions": {
+     "direct": 48,
+     "ask_human": 2,
+     "look_full": 1
+    },
+    "reviewer": [
+     682.8
+    ],
+    "reviewer_decisions": {
+     "allow": 1
+    },
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 9,
+      "errors": 0,
+      "ms": [
+       84332.6
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 2,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 1,
+      "http_calls": 9,
+      "errors": 0,
+      "ms": [
+       94430.5
+      ]
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 5,
+      "http_calls": 5,
+      "errors": 0,
+      "ms": [
+       5376.0,
+       11115.0,
+       9266.0,
+       5116.0,
+       18633.0
+      ]
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 2,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "plan": 2,
+     "briefing": 1,
+     "obs": 41,
+     "command": 19,
+     "action": 51,
+     "img": 12,
+     "batch": 6,
+     "delivery_fallback": 1,
+     "role": 6,
+     "retro_repeat": 2,
+     "inspect": 4,
+     "tree_extra": 1,
+     "check_done": 1,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "gimp-72f83cdc-bf76-4531-9a1b-eb893a13f8aa",
+   "domain": "gimp",
+   "tag": "gimp-72f83cdc-bf76-4531-9a1b-eb893a13f8aa-gate8-s0",
+   "attempts": 1,
+   "infra": null,
+   "stop": "agent",
+   "wall_s": 539.8,
+   "turns_monitor": 24,
+   "score": 1.0,
+   "success": true,
+   "final_fail": false,
+   "turns": 24,
+   "tool_calls": 26,
+   "screenshots": 4,
+   "tok_in": 29755,
+   "tok_cache": 487168,
+   "tok_out": 5278,
+   "pi_error": null,
+   "final": "DONE \u2014 In GIMP I ran Image > Transform > Flip Horizontally on the open 1280\u00d7851 berry image and overwrote `/data/home/Desktop/berry.png`; pixel comparison against the original confirms the saved file ",
+   "request_human": 0,
+   "tools": {
+    "list_windows": 1,
+    "list_apps": 1,
+    "set_plan": 2,
+    "get_window_state": 5,
+    "run_command": 7,
+    "click": 4,
+    "run_actions": 4,
+    "type_text": 1,
+    "check_done": 1
+   },
+   "gate": {
+    "actions": 18,
+    "executed": 18,
+    "interventions": 0,
+    "decisions": {
+     "direct": 18
+    },
+    "reviewer": [],
+    "reviewer_decisions": {},
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 2,
+      "errors": 0,
+      "ms": [
+       30043.6
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 2,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 1,
+      "http_calls": 9,
+      "errors": 0,
+      "ms": [
+       270302.1
+      ]
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 2,
+      "http_calls": 2,
+      "errors": 0,
+      "ms": [
+       11733.0,
+       18078.0
+      ]
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 0,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "briefing": 1,
+     "obs": 11,
+     "plan": 2,
+     "img": 4,
+     "command": 7,
+     "action": 18,
+     "batch": 4,
+     "delivery_fallback": 1,
+     "role": 3,
+     "check_done": 1,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "thunderbird-3f28fe4f-5d9d-4994-a456-efd78cfae1a3",
+   "domain": "thunderbird",
+   "tag": "thunderbird-3f28fe4f-5d9d-4994-a456-efd78cfae1a3-gate8-s0-try2",
+   "attempts": 2,
+   "infra": null,
+   "stop": "agent",
+   "wall_s": 540.0,
+   "turns_monitor": 17,
+   "score": 1.0,
+   "success": true,
+   "final_fail": false,
+   "turns": 17,
+   "tool_calls": 19,
+   "screenshots": 5,
+   "tok_in": 39078,
+   "tok_cache": 403584,
+   "tok_out": 4493,
+   "pi_error": null,
+   "final": "DONE \u2014 Set the plain-text signature for anonym-x2024@outlook.com in Thunderbird's Account Settings (Identity \u2192 Signature text) to two lines \"Anonym\" / \"XYZ Lab\"; it's committed to prefs.js (`mail.iden",
+   "request_human": 0,
+   "tools": {
+    "set_plan": 3,
+    "list_windows": 2,
+    "get_window_state": 4,
+    "run_actions": 8,
+    "run_command": 1,
+    "check_done": 1
+   },
+   "gate": {
+    "actions": 19,
+    "executed": 19,
+    "interventions": 0,
+    "decisions": {
+     "direct": 19
+    },
+    "reviewer": [],
+    "reviewer_decisions": {},
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 4,
+      "errors": 0,
+      "ms": [
+       51707.4
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 2,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 1,
+      "http_calls": 9,
+      "errors": 0,
+      "ms": [
+       97091.6
+      ]
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 2,
+      "http_calls": 2,
+      "errors": 0,
+      "ms": [
+       14490.0,
+       19911.0
+      ]
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 0,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "plan": 3,
+     "briefing": 1,
+     "obs": 13,
+     "img": 5,
+     "action": 19,
+     "batch": 8,
+     "delivery_fallback": 1,
+     "role": 3,
+     "command": 4,
      "check_done": 1,
      "shutdown": 1
     }
