@@ -781,6 +781,28 @@ mod tests {
     }
 
     #[test]
+    fn treatment_is_default_only_when_its_weights_are_loaded() {
+        let mut cfg = GateConfig::default();
+        assert_eq!(cfg.value_model, "legacy");
+        let p = std::env::temp_dir().join(format!("gg-tm-{}.json", rand_hex(4)));
+        std::fs::write(&p, json!({"name": "w", "weights": {"bias": 1.0}, "treatment": model().to_json()}).to_string()).unwrap();
+        cfg.load_weights(p.to_str().unwrap()).unwrap();
+        assert_eq!(cfg.value_model, "treatment");
+        assert_eq!(cfg.check_model, "voi");
+        let _ = choose(&ctx("click", "token", "Bold"), &feats(), &cfg, false, false);
+        assert_eq!(take_last()["kind"], "treatment_v1");
+        cfg.value_model_req = "legacy".into();
+        cfg.resolve_value_model();
+        assert_eq!(cfg.value_model, "legacy");
+        let mut none = GateConfig::default();
+        none.value_model_req = "treatment".into();
+        none.resolve_value_model();
+        assert_eq!(none.value_model, "legacy", "no weights: the legacy prior stays active");
+        assert!(TreatmentModel::load(p.to_str().unwrap()).is_ok());
+        let _ = std::fs::remove_file(p);
+    }
+
+    #[test]
     fn model_json_roundtrip() {
         let mut m = model();
         m.boot.push(m.coef.clone());
