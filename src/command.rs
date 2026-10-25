@@ -32,15 +32,14 @@ re!(code_shell, r#"(?i)\b(os\.system|subprocess\.\w+|os\.popen|check_output|chil
 re!(path_lit, r#"['"]((?:~|/|\.{1,2}/)?[^'"\n\\]{0,200}?\.[A-Za-z0-9]{1,6})['"]"#);
 re!(write_call, r#"(?i)(\.save\s*\(|\.to_(csv|excel|json|parquet|html)\s*\(|\.write_(text|bytes)\s*\(|open\s*\([^)]*['"][wax]b?\+?['"]|\.saveas\s*\(|\.write\s*\(\s*['"]|savefig\s*\(|\.export\s*\(|wb\.close|writeFileSync|copyfile|copy2?\s*\()"#);
 
-pub type Effect = (String, String);
+pub type Effect = sidefx::Effect;
 
 const INTERPRETERS: &[&str] = &["python", "python3", "python2", "perl", "node", "ruby", "php"];
 
 fn worse(a: Option<Effect>, b: Option<Effect>) -> Option<Effect> {
-    match (&a, &b) {
-        (None, _) => b,
-        (_, None) => a,
-        (Some(x), Some(y)) => if y.0 == "high" && x.0 != "high" { b } else { a },
+    match b {
+        None => a,
+        Some(b) => sidefx::merge(a, b),
     }
 }
 
@@ -141,10 +140,10 @@ fn code_overwrites(code: &str, cwd: &str) -> Vec<String> {
 fn code_effects(code: &str, cwd: &str) -> Option<Effect> {
     let mut worst = None;
     if let Some(m) = shell_high_all().find(code) {
-        worst = worse(worst, Some(("high".into(), format!("run_command would run: script code with a dangerous command ({})", trunc(m.as_str(), 30)))));
+        worst = worse(worst, Some(("high".into(), format!("run_command would run: script code with a dangerous command ({})", trunc(m.as_str(), 30)), vec![])));
     }
     if let Some(m) = code_delete().find(code) {
-        worst = worse(worst, Some(("medium".into(), format!("script code deletes or moves files ({})", trunc(m.as_str().trim(), 30)))));
+        worst = worse(worst, Some(("medium".into(), format!("script code deletes or moves files ({})", trunc(m.as_str().trim(), 30)), vec![])));
     }
     if code_shell().is_match(code) {
         // a shell command inside the code: judge the string literals it passes as commands like typed ones
@@ -157,7 +156,7 @@ fn code_effects(code: &str, cwd: &str) -> Option<Effect> {
     let ow = code_overwrites(code, cwd);
     if !ow.is_empty() {
         let names: Vec<String> = ow.iter().take(3).map(|x| sidefx::relpath(x, cwd)).collect();
-        worst = worse(worst, Some(("medium".into(), format!("script code would overwrite existing file(s): {}", names.join(", ")))));
+        worst = worse(worst, Some(("medium".into(), format!("script code would overwrite existing file(s): {}", names.join(", ")), ow.iter().map(|x| sidefx::canon(x)).collect())));
     }
     worst
 }
@@ -167,11 +166,11 @@ pub fn command_risk(cmd: &str, cwd: &str) -> Option<Effect> {
     let (shell, bodies) = split_heredocs(cmd);
     let flat = shell.replace("\\;", " ").replace('\n', " ; ");
     if sidefx::tokenize(&flat).is_none() {
-        return Some(("medium".into(), "run_command: the gate could not parse this command (unbalanced quotes), so it cannot see what it touches".into()));
+        return Some(("medium".into(), "run_command: the gate could not parse this command (unbalanced quotes), so it cannot see what it touches".into(), vec![]));
     }
     let mut worst: Option<Effect> = None;
     if let Some(m) = shell_high_no_rm().find(&shell) {
-        worst = worse(worst, Some(("high".into(), format!("run_command would run: {}", trunc(m.as_str(), 60)))));
+        worst = worse(worst, Some(("high".into(), format!("run_command would run: {}", trunc(m.as_str(), 60)), vec![])));
     }
     worst = worse(worst, sidefx::shell_effects(&shell, cwd));
     let (code, scripts) = inline_code(&shell, cwd);
@@ -444,9 +443,9 @@ mod tests {
             let r: serde_json::Value = serde_json::from_str(line).unwrap();
             let (cmd, cwd, task) = (r["cmd"].as_str().unwrap(), r["cwd"].as_str().unwrap(), r["task"].as_str().unwrap_or(""));
             let eff = command_risk(cmd, cwd);
-            let (lvl, reason) = eff.clone().unwrap_or(("-".into(), "-".into()));
+            let (lvl, reason, _) = eff.clone().unwrap_or(("-".into(), "-".into(), vec![]));
             let (hz, ok) = match &eff {
-                Some((_, rs)) => (crate::authz::hazard_of(rs).to_string(), crate::authz::authorized(rs, task, "", "", &[]).0.to_string()),
+                Some(e) => (crate::authz::hazard_of(&e.1).to_string(), crate::authz::authorized(&crate::authz::command_key(e, cmd), task, &[], Some(cwd)).0.to_string()),
                 None => ("-".into(), "-".into()),
             };
             out.push_str(&format!("{}\t{lvl}\t{hz}\t{ok}\t{}\n", r["id"].as_str().unwrap(), reason.replace('\t', " ")));
@@ -464,10 +463,14 @@ mod tests {
         assert_eq!(lvl(command_risk("soffice --headless --convert-to pdf --outdir /tmp/gg-new-out report.docx", &d)), "-");
         assert_eq!(lvl(command_risk("soffice --headless --convert-to csv:\"Text - txt - csv (StarCalc)\":44,34,76 data.xlsx", &d)), "-");
         // the user's words authorize it like any overwrite
-        let (ok, _) = crate::authz::authorized(&r.1, "Export report.docx to PDF and overwrite report.pdf", "", "", &[]);
-        assert!(ok);
-        let (ok, _) = crate::authz::authorized(&r.1, "Export the current document into PDF, keep the file name", "", "", &[]);
+        let k = crate::authz::command_key(&r, "soffice --headless --convert-to pdf report.docx");
+        assert_eq!(k.resources, vec![format!("path:{}", crate::sidefx::canon(&format!("{d}/report.pdf")))]);
+        let (ok, why) = crate::authz::authorized(&k, "Export report.docx to PDF and overwrite report.pdf", &[], Some(&d));
+        assert!(ok, "{why}");
+        let (ok, _) = crate::authz::authorized(&k, "Export the current document into PDF, keep the file name", &[], Some(&d));
         assert!(!ok);
+        let (ok, _) = crate::authz::authorized(&k, "Export report.docx to PDF and overwrite /elsewhere/report.pdf", &[], Some(&d));
+        assert!(!ok, "a report.pdf in another folder is another file");
     }
 
     #[test]

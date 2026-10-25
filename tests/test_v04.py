@@ -36,11 +36,27 @@ class V04GateTests(unittest.TestCase):
             last = self.c.call("click", element_token=f"{s}:1")
         self.assertIn("stop here and tell the user", txt(last))
 
-    def test_task_wording_authorizes(self):
+    def test_task_wording_without_a_matchable_target_does_not_authorize(self):
+        # "delete the file" + a "Delete file" button: the gate cannot match the button's object to the request, so the
+        # words alone never cover it (a person / the reviewer decides; here nobody approves)
         self.c = Client("--human", "deny", "--task", "Please delete the file in this window")
         s = self.c.read()
         r = self.c.call("click", element_token=f"{s}:1")
+        self.assertTrue(r.get("isError"), txt(r))
+        ev = [e for e in self.c.events() if e.get("ev") == "action"][-1]
+        self.assertNotIn("authorized", ev["trail"])
+        self.assertIn("cannot match", ev["risk_gate"]["why"])
+
+    def test_task_naming_the_file_authorizes(self):
+        import tempfile, time
+        d = tempfile.mkdtemp()
+        f = os.path.join(d, "old-notes.txt")
+        open(f, "w").write("x")
+        os.utime(f, (time.time() - 3600, time.time() - 3600))
+        self.c = Client("--human", "deny", "--task", f"Please delete {f}")
+        r = self.c.call("run_command", command=f"rm {f}", cwd=d)
         self.assertFalse(r.get("isError"), txt(r))
+        self.assertFalse(os.path.exists(f))
         ev = [e for e in self.c.events() if e.get("ev") == "action"][-1]
         self.assertIn("authorized", ev["trail"])
 

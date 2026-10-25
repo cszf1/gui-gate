@@ -363,7 +363,7 @@ class FeasibilityFirstTests(unittest.TestCase):
         c = Client("--human", "deny", env={"GUI_GATE_SKILLS": "1"})
         try:
             r = c.call("gate_task", request="Change the Chrome font size to 20")
-            self.assertIn("[gate] Noted.", txt(r))
+            self.assertIn("[gate] Noted", txt(r))
             self.assertIn("[chrome]", txt(r))
         finally:
             c.close()
