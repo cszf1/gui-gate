@@ -15,7 +15,21 @@ use std::process::{Command, Stdio};
 use std::sync::OnceLock;
 use std::time::{Duration, Instant};
 
-pub type Effect = (String, String); // (level, reason)
+/// (level, reason, targets): targets are the canonical absolute paths the effect would touch (may be empty when the
+/// gate cannot tell, e.g. `find -exec rm` without a resolvable root). authz builds structured effect keys from them.
+pub type Effect = (String, String, Vec<String>);
+
+/// Canonical absolute form of a path for effect keys (symlinks resolved when the path exists).
+pub fn canon(p: &str) -> String {
+    realpath(p).to_string_lossy().to_string()
+}
+
+fn canon_all(v: &[String]) -> Vec<String> {
+    let mut out: Vec<String> = v.iter().map(|x| canon(x)).collect();
+    out.sort();
+    out.dedup();
+    out
+}
 
 macro_rules! re {
     ($name:ident, $pat:expr) => {
@@ -297,7 +311,7 @@ fn cp_like(argv: &[String], cwd: &str) -> Option<Effect> {
     }
     let names: Vec<String> = clob.iter().take(3).map(|c| relpath(c, cwd)).collect();
     let more = if clob.len() > 3 { " ..." } else { "" };
-    Some(("high".into(), format!("`{tool}` would overwrite existing file(s): {}{more}", names.join(", "))))
+    Some(("high".into(), format!("`{tool}` would overwrite existing file(s): {}{more}", names.join(", ")), canon_all(&clob)))
 }
 
 /// `soffice --headless --convert-to FMT [--outdir D] files...` writes D/<stem>.<fmt> without asking: an existing file
@@ -336,6 +350,7 @@ fn soffice_convert(argv: &[String], cwd: &str) -> Option<Effect> {
         return None;
     }
     let mut hit = vec![];
+    let mut abs = vec![];
     for src in expand(&inputs, cwd) {
         let b = basename(&src);
         let e = splitext_ext(&b);
@@ -343,12 +358,13 @@ fn soffice_convert(argv: &[String], cwd: &str) -> Option<Effect> {
         let tgt = join(&outdir, &format!("{stem}.{ext}"));
         if nonempty_file(&tgt) && realpath(&tgt) != realpath(&src) {
             hit.push(relpath(&tgt, cwd));
+            abs.push(tgt);
         }
     }
     if hit.is_empty() {
         return None;
     }
-    Some(("high".into(), format!("`soffice --convert-to` would overwrite existing file(s): {}", hit.join(", "))))
+    Some(("high".into(), format!("`soffice --convert-to` would overwrite existing file(s): {}", hit.join(", ")), canon_all(&abs)))
 }
 
 static SESSION_START: OnceLock<std::time::SystemTime> = OnceLock::new();
@@ -406,7 +422,7 @@ fn move_away(argv: &[String], cwd: &str) -> Option<Effect> {
     let names: Vec<String> = moved.iter().take(3).map(|c| relpath(c, cwd)).collect();
     let more = if moved.len() > 3 { " ..." } else { "" };
     Some(("high".into(), format!("`{tool}` would move the existing {}{more} away (to {}); it is no longer where it was",
-        names.join(", "), relpath(&p(&dest, cwd), cwd))))
+        names.join(", "), relpath(&p(&dest, cwd), cwd)), canon_all(&moved)))
 }
 
 fn run_find(args: &[String], cwd: &str) -> Option<Vec<u8>> {
@@ -436,9 +452,18 @@ fn run_find(args: &[String], cwd: &str) -> Option<Vec<u8>> {
     reader.join().ok()
 }
 
+fn find_roots(argv: &[String], cwd: &str) -> Vec<String> {
+    let mut roots: Vec<String> = argv[1..].iter().take_while(|a| !a.starts_with('-') && !["(", "!"].contains(&a.as_str()))
+        .map(|a| p(a, cwd)).collect();
+    if roots.is_empty() {
+        roots.push(cwd.to_string());
+    }
+    canon_all(&roots)
+}
+
 fn find_exec(argv: &[String], cwd: &str) -> Option<Effect> {
     let Some(k) = argv.iter().position(|a| ["-exec", "-execdir", "-ok", "-okdir"].contains(&a.as_str())) else {
-        return if argv.iter().any(|a| a == "-delete") { Some(("high".into(), "`find -delete` deletes files".into())) } else { None };
+        return if argv.iter().any(|a| a == "-delete") { Some(("high".into(), "`find -delete` deletes files".into(), find_roots(argv, cwd))) } else { None };
     };
     let inner_all = &argv[k + 1..];
     let end = inner_all.iter().position(|a| a == ";" || a == "\\;" || a == "+").unwrap_or(inner_all.len());
@@ -446,10 +471,10 @@ fn find_exec(argv: &[String], cwd: &str) -> Option<Effect> {
     let head = inner.first().map(|x| basename(x)).unwrap_or_default();
     if inner.is_empty() || !["cp", "mv", "rsync", "install"].contains(&head.as_str()) {
         if head == "rm" {
-            return Some(("high".into(), "`find -exec rm` deletes files".into()));
+            return Some(("high".into(), "`find -exec rm` deletes files".into(), find_roots(&argv[..k], cwd)));
         }
         if head == "chmod" {
-            return chmod(inner, true);
+            return chmod(inner, true, cwd);
         }
         return None;
     }
@@ -462,32 +487,36 @@ fn find_exec(argv: &[String], cwd: &str) -> Option<Effect> {
     let files: Vec<String> = out.split(|b| *b == 0).filter(|f| !f.is_empty()).take(2000)
         .map(|f| String::from_utf8_lossy(f).to_string()).collect();
     let mut hits = vec![];
+    let mut tg = vec![];
     for f in files {
         let av: Vec<String> = inner.iter().map(|a| if a == "{}" { f.clone() } else { a.clone() }).collect();
         if let Some(r) = cp_like(&av, cwd) {
             hits.push(r.1);
+            tg.extend(r.2);
         }
     }
     if hits.is_empty() {
         return None;
     }
     let more = if hits.len() > 1 { format!(" (and {} more)", hits.len() - 1) } else { String::new() };
-    Some(("high".into(), format!("{}{more}", hits[0])))
+    Some(("high".into(), format!("{}{more}", hits[0]), canon_all(&tg)))
 }
 
-fn chmod(argv: &[String], via_find: bool) -> Option<Effect> {
+fn chmod(argv: &[String], via_find: bool, cwd: &str) -> Option<Effect> {
     let rec = argv[1..].iter().any(|a| a == "-R" || a == "--recursive" || (a.starts_with('-') && a.contains('R') && !a.starts_with("--")));
     let mode = argv[1..].iter().find(|a| !a.starts_with('-')).cloned().unwrap_or_default();
     if via_find || !rec {
         return None;
     }
+    let paths: Vec<String> = argv[1..].iter().filter(|a| !a.starts_with('-')).skip(1).map(|a| p(a, cwd)).collect();
+    let tg = canon_all(&paths);
     if chmod_mode().is_match(&mode) {
         let d = mode.chars().nth(mode.len() - 3).and_then(|c| c.to_digit(8)).unwrap_or(1);
         if d % 2 == 0 {
-            return Some(("high".into(), format!("`chmod -R {mode}` also hits directories and removes their execute bit (they become unopenable)")));
+            return Some(("high".into(), format!("`chmod -R {mode}` also hits directories and removes their execute bit (they become unopenable)"), tg));
         }
     }
-    Some(("medium".into(), format!("`chmod -R {mode}` changes directories too, not only files")))
+    Some(("medium".into(), format!("`chmod -R {mode}` changes directories too, not only files"), tg))
 }
 
 const PUNCT: &str = "();<>|&";
@@ -709,7 +738,20 @@ fn commands(cmdline: &str) -> Vec<(Vec<String>, Vec<String>)> {
     out
 }
 
-/// (level, reason) for the worst file-system effect of a typed shell command, or None.
+/// Keep the worse of two effects (high beats medium; the first one wins a tie) and the targets of both: a key built
+/// from it covers everything risky the command line touches.
+pub fn merge(a: Option<Effect>, b: Effect) -> Option<Effect> {
+    let Some(mut a) = a else { return Some(b) };
+    let mut tg = std::mem::take(&mut a.2);
+    tg.extend(b.2.iter().cloned());
+    tg.sort();
+    tg.dedup();
+    let mut w = if b.0 == "high" && a.0 != "high" { b } else { a };
+    w.2 = tg;
+    Some(w)
+}
+
+/// (level, reason, targets) for the worst file-system effect of a typed shell command, or None.
 pub fn shell_effects(cmdline: &str, cwd: &str) -> Option<Effect> {
     let mut worst: Option<Effect> = None;
     let mut cwd_s = cwd.to_string();
@@ -727,9 +769,7 @@ pub fn shell_effects(cmdline: &str, cwd: &str) -> Option<Effect> {
         // `sh -c "..."` / `bash -c '...'`: check the inner script the same way
         if argv.len() >= 3 && SHELLS.contains(&basename(&argv[0]).as_str()) && argv[1] == "-c" {
             if let Some(rr) = shell_effects(&argv[2], cwd) {
-                if worst.is_none() || (rr.0 == "high" && worst.as_ref().unwrap().0 != "high") {
-                    worst = Some(rr);
-                }
+                worst = merge(worst, rr);
             }
             continue;
         }
@@ -739,9 +779,7 @@ pub fn shell_effects(cmdline: &str, cwd: &str) -> Option<Effect> {
             } else if let Some(unrolled) = xargs_from_echo(&prev_cmd, &argv) {
                 // `echo dir1 dir2 | xargs -n 1 cp file1`: judge the commands xargs would build
                 if let Some(rr) = shell_effects(&unrolled, cwd) {
-                    if worst.is_none() || (rr.0 == "high" && worst.as_ref().unwrap().0 != "high") {
-                        worst = Some(rr);
-                    }
+                    worst = merge(worst, rr);
                 }
                 continue;
             }
@@ -759,7 +797,7 @@ pub fn shell_effects(cmdline: &str, cwd: &str) -> Option<Effect> {
         for t0 in &redir {
             let tgt = p(t0, cwd);
             if t0 != "/dev/null" && nonempty_file(&tgt) {
-                r = Some(("high".into(), format!("`>` would overwrite existing file {}", relpath(&tgt, cwd))));
+                r = Some(("high".into(), format!("`>` would overwrite existing file {}", relpath(&tgt, cwd)), vec![canon(&tgt)]));
             }
         }
         while !argv.is_empty() && (["sudo", "env", "nohup", "time", "do", "then"].contains(&argv[0].as_str())
@@ -772,7 +810,7 @@ pub fn shell_effects(cmdline: &str, cwd: &str) -> Option<Effect> {
                 "cp" | "install" => cp_like(&argv, cwd),
                 "mv" | "rsync" => cp_like(&argv, cwd).or_else(|| move_away(&argv, cwd)),
                 "find" => find_exec(&argv, cwd),
-                "chmod" => chmod(&argv, false),
+                "chmod" => chmod(&argv, false, cwd),
                 "soffice" | "libreoffice" | "lowriter" | "localc" | "loimpress" | "soffice.bin" => soffice_convert(&argv, cwd),
                 "rm" => {
                     let tg: Vec<String> = argv[1..].iter().filter(|a| !a.starts_with('-')).cloned().collect();
@@ -780,11 +818,12 @@ pub fn shell_effects(cmdline: &str, cwd: &str) -> Option<Effect> {
                     let start = SESSION_START.get().copied();
                     let unresolved = expand(&tg, cwd).iter().any(|x| x.contains('$') || x.contains('`'));
                     if unresolved {
-                        Some(("high".into(), format!("`rm` deletes {} (a path the gate cannot resolve)", tg.iter().take(3).cloned().collect::<Vec<_>>().join(" "))))
+                        Some(("high".into(), format!("`rm` deletes {} (a path the gate cannot resolve)", tg.iter().take(3).cloned().collect::<Vec<_>>().join(" ")), vec![]))
                     } else if expand(&tg, cwd).iter().any(|x| exists(x) && !session_owned(x, start)) {
                         let rec = argv[1..].iter().any(|a| a.starts_with('-') && a.to_lowercase().contains('r'));
+                        let gone: Vec<String> = expand(&tg, cwd).into_iter().filter(|x| exists(x) && !session_owned(x, start)).collect();
                         Some((if rec { "high" } else { "medium" }.into(),
-                              format!("`rm` deletes {}", tg.iter().take(3).cloned().collect::<Vec<_>>().join(" "))))
+                              format!("`rm` deletes {}", tg.iter().take(3).cloned().collect::<Vec<_>>().join(" ")), canon_all(&gone)))
                     } else {
                         None
                     }
@@ -793,9 +832,7 @@ pub fn shell_effects(cmdline: &str, cwd: &str) -> Option<Effect> {
             };
         }
         if let Some(rr) = r {
-            if worst.is_none() || (rr.0 == "high" && worst.as_ref().unwrap().0 != "high") {
-                worst = Some(rr);
-            }
+            worst = merge(worst, rr);
         }
     }
     worst
@@ -999,11 +1036,11 @@ mod tests {
             let r: serde_json::Value = serde_json::from_str(line).unwrap();
             let (cmd, cwd, task) = (r["cmd"].as_str().unwrap(), r["cwd"].as_str().unwrap(), r["task"].as_str().unwrap_or(""));
             let eff = shell_effects(cmd, cwd);
-            let (lvl, reason) = eff.clone().unwrap_or(("-".into(), "-".into()));
+            let (lvl, reason, _) = eff.clone().unwrap_or(("-".into(), "-".into(), vec![]));
             let (hz, ok, why) = match &eff {
-                Some((_, rs)) => {
-                    let (ok, why) = crate::authz::authorized(rs, task, "", "", &[]);
-                    (crate::authz::hazard_of(rs).to_string(), ok.to_string(), why)
+                Some(e) => {
+                    let (ok, why) = crate::authz::authorized(&crate::authz::command_key(e, cmd), task, &[], Some(cwd));
+                    (crate::authz::hazard_of(&e.1).to_string(), ok.to_string(), why)
                 }
                 None => ("-".into(), "-".into(), "-".into()),
             };
