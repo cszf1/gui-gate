@@ -39,7 +39,7 @@ impl EventLog {
                 m.insert(k, v);
             }
         }
-        let _ = writeln!(f, "{}", Value::Object(m));
+        let _ = writeln!(f, "{}", redact_secrets(&Value::Object(m).to_string()));
         let _ = f.flush();
     }
 }

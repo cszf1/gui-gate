@@ -173,6 +173,8 @@ class ApprovalsAreCredentials(unittest.TestCase):
             c.close()
 
     def test_an_approval_is_not_reused_after_the_target_changes(self):
+        """0.10.1: while the person is asked, the agent cannot change the line at all (input is frozen); the
+        effect-binding of the answer itself (a changed effect is asked again) is human::tests::an_answer_about_another_effect_is_not_reused."""
         tmp = tempfile.mkdtemp(prefix="gg-sec-")
         old = os.path.join(tmp, "userdir")
         os.makedirs(old)
@@ -187,19 +189,21 @@ class ApprovalsAreCredentials(unittest.TestCase):
             m = c.raw("tools/call", {"name": "press_key", "arguments": enter})
             r1 = m["result"]
             self.assertEqual(r1["resultType"], "input_required")
-            # before the approval comes back, the line now also deletes another folder
-            c.call("type_text", pid=term.pid, window_id=777, text=f" {os.path.dirname(old2)}")
-            m2 = c.raw("tools/call", {"name": "press_key", "arguments": enter,
-                                      "inputResponses": {"human": ALLOW}, "requestState": r1["requestState"]})
-            r2 = m2["result"]
-            self.assertEqual(r2.get("resultType"), "input_required", r2)  # asked again about the new effect
-            meta = r2["inputRequests"]["human"]["params"]["_meta"][GG]
-            self.assertIn("asked_again", meta)
-            self.assertNotEqual(r2["requestState"], r1["requestState"])
-            keys = json.loads(txt(c.call("fake_state")))["keys"]
-            self.assertNotIn("Return", keys)
+            # before the approval comes back, the agent tries to make the line also delete another folder: frozen
+            r = c.call("type_text", pid=term.pid, window_id=777, text=f" {os.path.dirname(old2)}")
+            self.assertEqual(r["structuredContent"]["status"], "blocked", txt(r))
+            self.assertIn("a person is answering", txt(r))
+            # ... and any other action too, including clicks on any window and launch_app
+            for name, a in (("click", {"pid": term.pid, "window_id": 777, "x": 5, "y": 5}), ("launch_app", {"app_name": "gedit"}),
+                            ("bring_to_front", {"pid": term.pid})):
+                r = c.call(name, **a)
+                self.assertEqual(r["structuredContent"]["status"], "blocked", (name, txt(r)))
+            st = json.loads(txt(c.call("fake_state")))
+            self.assertNotIn("Return", st["keys"])
+            self.assertEqual(st["passed"], [])
+            self.assertEqual(st["front"], [])
             m3 = c.raw("tools/call", {"name": "press_key", "arguments": enter,
-                                      "inputResponses": {"human": DENY}, "requestState": r2["requestState"]})
+                                      "inputResponses": {"human": DENY}, "requestState": r1["requestState"]})
             self.assertTrue(m3["result"].get("isError"))
             self.assertNotIn("Return", json.loads(txt(c.call("fake_state")))["keys"])
         finally:

@@ -27,7 +27,7 @@ state = {
 TOOLS = [{"name": n, "inputSchema": {"type": "object", "properties": {"pid": {"type": "integer"},
          **({"delivery_mode": {"type": "string"}} if n in ("click", "type_text", "press_key", "hotkey") else {})}}}
          for n in ["fake_state", "get_window_state", "click", "type_text", "press_key", "hotkey", "list_windows", "verify_state",
-                   "run_steps", "fake_mutate", "launch_app", "fake_crash", "bring_to_front"]]
+                   "run_steps", "fake_mutate", "launch_app", "fake_crash", "bring_to_front", "set_clipboard"]]
 
 
 def snap_id(n):
@@ -77,6 +77,8 @@ def call(name, a):
                     f"(active=0x2, focus_within_target=true); no input was sent.", err=True)
     if name == "bring_to_front":
         state.setdefault("front", []).append(a.get("pid"))
+    if name in ("launch_app", "set_clipboard"):
+        state.setdefault("passed", []).append([name, a])
     # FAKE_NO_BG=1: like a desktop without a focus-free input backend (no /dev/uinput)
     if (os.environ.get("FAKE_NO_BG") and name in ("type_text", "press_key", "hotkey")
             and a.get("delivery_mode") != "foreground"):
@@ -91,7 +93,7 @@ def call(name, a):
         els = state["win_elems"][w] if w != WID else state["elements"]
         state["snap_win"][sid] = w
         rows = "\n".join(f'    - [{i}] {r} "{l}" [actions=[click]]' for i, (r, l) in enumerate(els))
-        md = f'- frame = "Fixture"\n{rows}\n'
+        md = f'- frame = "{os.environ.get("FAKE_FRAME_TITLE") or "Fixture"}"\n{rows}\n'
         shot = a.get("include_screenshot", True)
         state["last_shot"] = shot
         sc = {"snapshot_id": sid, "pid": PID, "window_id": w, "tree_markdown": md, "truncated": False,
@@ -163,7 +165,7 @@ def call(name, a):
         state["keys"].append("+".join(list(a.get("modifiers") or []) + [a.get("key", "")]))
     if name == "fake_state":
         return text(json.dumps({"keys": state["keys"], "clicked": state["clicked"], "front": state.get("front", []),
-                                "modes": state.get("modes", [])}))
+                                "modes": state.get("modes", []), "passed": state.get("passed", [])}))
     if name == "fake_crash":
         os._exit(3)
     if name == "fake_mutate":
@@ -244,7 +246,7 @@ def main():
             name = m["params"]["name"]
             if name == "fake_state":
                 res = text(json.dumps({"keys": state["keys"], "clicked": state["clicked"], "front": state.get("front", []),
-                                       "modes": state.get("modes", []), "inits": state.get("inits", 0),
+                                       "modes": state.get("modes", []), "passed": state.get("passed", []), "inits": state.get("inits", 0),
                                        "seen": state["seen"][-50:]}))
             else:
                 res = call(name, m["params"].get("arguments") or {})
