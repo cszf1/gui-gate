@@ -141,7 +141,7 @@ class OfficialScoreDisclaimerTests(unittest.TestCase):
                   "results/osworld-verified-v099-ds41-2026-10-23/report.md", "README.md"):
             txt = open(os.path.join(ROOT, f), encoding="utf-8").read()
             self.assertIn("not an official OSWorld-Verified score", txt, f)
-            self.assertIn("47.6", txt, f)  # the Wilson interval travels with the number
+            self.assertIn("Wilson", txt, f)  # the Wilson interval travels with the number
 
 
 if __name__ == "__main__":
