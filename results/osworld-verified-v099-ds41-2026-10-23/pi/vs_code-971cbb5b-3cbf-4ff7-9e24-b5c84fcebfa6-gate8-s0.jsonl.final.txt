@@ -1,0 +1,1 @@
+FAIL — VS Code has no built-in setting that creates and saves a named file (`test.py`) on launch; `workbench.startupEditor` can only open the Welcome page/README or an unnamed, unsaved Untitled buffer, so this would require an extension or an external launcher workaround, both excluded by the task.

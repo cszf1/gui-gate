@@ -1,0 +1,1 @@
+DONE — Inserted `/home/user/Desktop/Baseball.mp3` onto slide 1 (title slide) of `Mady_and_Mia_Baseball.pptx` in LibreOffice Impress via Insert → Audio or Video (embedded, not linked, so it's now `ppt/media/media2.mp3` inside the file), then saved in PowerPoint format; the audio icon "Media object 1" is visible on the slide and survives a reload from disk.

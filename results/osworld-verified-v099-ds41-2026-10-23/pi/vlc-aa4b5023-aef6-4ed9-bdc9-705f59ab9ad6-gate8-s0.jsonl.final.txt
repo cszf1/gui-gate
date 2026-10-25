@@ -1,0 +1,1 @@
+DONE — the source (`flipped_1984_Apple_Macintosh_Commercial.mp4`) was vertically mirrored, so I applied an ffmpeg `vflip` (keeping audio and the 59.83 s length), saved it as `~/Desktop/1984_Apple_Macintosh_Commercial.mp4`, verified sampled frames are upright, and opened it in VLC.

@@ -1,0 +1,1 @@
+DONE — Selected everything on the last slide (slide 5, "Conclusion") in LibreOffice Impress, set the font family to Times New Roman via Format ▸ Character ▸ Fonts, and saved the presentation back to /home/user/Desktop/24_8.pptx (verified: slide5.xml now declares `Times New Roman` as its Latin typeface).

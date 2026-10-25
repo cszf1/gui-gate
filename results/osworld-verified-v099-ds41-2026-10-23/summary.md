@@ -4,9 +4,9 @@
 
 | cond | runs | infra | valid | success | success_rate | wall_s | turns | tool_calls | screenshots | tok_in | tok_out | actions | action_errors | repeats | interventions | human_requests | risk_flags | auto_obs | auto_obs_ms | gate_ms |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| gate8 | 308 | 52 | 256 | 137 | 0.535 | 690.1 | 30.3 | 32.0 | 8.9 | 1247614.3 | 8865.1 | 30.3 | 1.4 | 0.5 | 0.9 | 0.3 | 0.6 | 10.6 | 4763.9 | 1456.6 |
+| gate8 | 320 | 54 | 266 | 143 | 0.538 | 718.8 | 30.3 | 32.0 | 8.9 | 1235232.0 | 8848.0 | 30.2 | 1.4 | 0.5 | 1.0 | 0.4 | 0.6 | 10.5 | 4699.4 | 1429.6 |
 
-Paired osworld tasks with a valid run in every condition: 256; successes: {'gate8': 137}
+Paired osworld tasks with a valid run in every condition: 266; successes: {'gate8': 143}
 Paired osguard tasks with a valid run in every condition: 0; successes: {}
 
 ## Per task
@@ -156,7 +156,11 @@ DONE — F |
 | libreoffice_impress-af2d657a-e6b3-4c6a-9f67-9e3ed015974c | gate8 | 0 |  | 23 | 25 | 8 | 163.8 |  | DONE — Typed "Happy Family" into slide 1's title placeholder in the op |
 | libreoffice_impress-b8adbc24-cef2-4b15-99d5-ecbe7ff445eb | gate8 | 0 |  | 76 | 78 | 28 | 666.0 |  | DONE — On slide 2 I set the title text to "Online Shopping" and matche |
 | libreoffice_impress-bf4e9888-f10f-47af-8dba-76413038b73c | gate8 | 0 |  | 48 | 50 | 5 | 753.1 |  | FAIL — the deck was built correctly (6 blank slides, pic1–pic6 in orde |
+| libreoffice_impress-c59742c0-4323-4b9d-8a02-723c251deaa0 | gate8 | 1 |  | 34 | 35 | 10 | 1285.4 |  | DONE — Inserted `/home/user/Desktop/Baseball.mp3` onto slide 1 (title  |
+| libreoffice_impress-c82632a4-56b6-4db4-9dd1-3820ee3388e4 | gate8 | 0 |  | 38 | 39 | 20 | 4012.0 |  | I'll start by checking the environment and what's open. |
 | libreoffice_impress-ce88f674-ab7a-43da-9201-468d38539e4a | gate8 | 1 |  | 17 | 18 | 9 | 280.3 |  | DONE — In LibreOffice Impress I set Slide ▸ Slide Properties ▸ Orienta |
+| libreoffice_impress-e4ef0baf-4b52-4590-a47e-d4d464cca2d7 | gate8 | 0 |  | 56 | 58 | 15 | 2898.2 |  | DONE — Edited `/data/home/Desktop/42_2.pptx` in LibreOffice Impress: b |
+| libreoffice_impress-edb61b14-a854-4bf5-a075-c8075c11293a | gate8 | 1 |  | 28 | 29 | 11 | 1086.3 |  | DONE — Selected everything on the last slide (slide 5, "Conclusion") i |
 | libreoffice_impress-f23acfd2-c485-4b7c-a1e7-d4303ddfe864 | gate8 | 0 |  | 14 | 16 | 7 | 180.9 |  | DONE — Added a new bulleted paragraph "Art reflects the culture and hi |
 | libreoffice_writer-0a0faba3-5580-44df-965d-f562a99b291c | gate8 | 0 |  | 50 | 54 | 14 | 1548.2 |  | DONE — In the open Writer document I set a right-aligned tab stop at t |
 | libreoffice_writer-0b17a146-2934-46c7-8727-73ff6b6483e8 | gate8 | 1 |  | 52 | 53 | 26 | 534.6 |  | DONE — In the open LibreOffice Writer document (`/data/home/Desktop/H2 |
@@ -182,6 +186,7 @@ Real-time co-editing isn't possible here: the open `The Wonders  |
 | libreoffice_writer-f178a4a9-d090-4b56-bc4c-4b72a61a035d | gate8 | 1 |  | 65 | 68 | 15 | 826.4 |  | DONE — Installed genuine Times New Roman (regular/bold/italic/bold‑ita |
 | multi_apps-00fa164e-2612-4439-992e-157d019a8436 | gate8 | 1 |  | 43 | 48 | 17 | 543.9 |  | DONE — Copied rows A1:L2 (header `model … avg` plus the `Gpt-4` row wi |
 | multi_apps-09a37c51-e625-49f4-a514-20a773797a8a | gate8 | 0 |  | 77 | 96 | 39 | 822.8 |  | DONE — I cut the backpacker out of the mountain/sky photo (isolating t |
+| multi_apps-0e5303d4-8820-42f6-b18d-daf7e633de21 | gate8 | 0 |  | None | None | None | None | setup_failed |  |
 | multi_apps-185f29bd-5da0-40a6-b69c-ba7f4e0324ef | gate8 | 0 |  | None | None | None | None | setup_failed |  |
 | multi_apps-1f18aa87-af6f-41ef-9853-cdb8f32ebdea | gate8 | 1 |  | 18 | 19 | 3 | 225.9 |  | DONE — Opened `/data/home/Desktop/Answer.docx`, added the multiple-cho |
 | multi_apps-20236825-b5df-46e7-89bf-62e1d640a897 | gate8 | 1 |  | 6 | 7 | 0 | 101.1 |  | DONE — Implemented the optimized in-place bubble sort in `/home/user/D |
@@ -229,6 +234,7 @@ DONE — Rese |
 | multi_apps-8df7e444-8e06-4f93-8a1a-c5c974269d82 | gate8 | 0 |  | 9 | 11 | 0 | 121.5 |  | DONE — Read the Desktop guidelines, exported the essay to PDF (`/home/ |
 | multi_apps-8e116af7-7db7-4e35-a68b-b0939c066c78 | gate8 | 1 |  | 14 | 19 | 6 | 268.2 |  | DONE — Read all five receipts in ~/Desktop (grocery $186.93, Cash Out  |
 | multi_apps-91190194-f406-4cd6-b3f9-c43fac942b22 | gate8 | 1 |  | 57 | 60 | 18 | 600.3 |  | DONE — Launched GIMP 3.0.4 from the terminal with `/data/home/Desktop/ |
+| multi_apps-9219480b-3aed-47fc-8bac-d2cffc5849f7 | gate8 | 1 |  | 63 | 69 | 14 | 3600.5 |  | Making the pygame dependency available to the user permanently (no roo |
 | multi_apps-937087b6-f668-4ba6-9110-60682ee33441 | gate8 | 1 |  | 14 | 15 | 4 | 239.3 |  | DONE — VLC 3.0.24 is installed and I set it as the default video playe |
 | multi_apps-98e8e339-5f91-4ed2-b2b2-12647cb134f4 | gate8 | 0 |  | 56 | 58 | 7 | 727.9 | relay_error | DONE — I concatenated the five `.txt` files from `/data/home/Desktop/d |
 | multi_apps-98e8e339-5f91-4ed2-b2b2-12647cb134f4 | gate8 | 1 |  | 47 | 49 | 14 | 1035.6 |  | DONE — Concatenated all five .txt files from the VS Code project `/dat |
@@ -273,12 +279,14 @@ DONE — Rese |
 | os-4d117223-a354-47fb-8b45-62ab1390a95f | gate8 | 1 |  | 8 | 9 | 0 | 108.1 |  | DONE — Ran `find . -type f -exec chmod 644 {} +` in `/home/user/testDi |
 | os-5812b315-e7bd-4265-b51f-863c02174c28 | gate8 | 0 |  | 5 | 7 | 0 | 121.4 |  | FAIL — The task needs root privileges: creating user `charles`, settin |
 | os-5c1075ca-bb34-46a3-a7a0-029bd7463e79 | gate8 | 0 |  | 8 | 9 | 0 | 176.4 |  | DONE — Found 3 `*failed.ipynb` files under `/data/home/test_environmen |
+| os-5ced85fc-fa1a-4217-95fd-0fb530545ce2 | gate8 | 1 |  | 7 | 6 | 0 | 57.9 |  | DONE — created `/home/user/output.txt` with `sed` appending `<br/>` to |
 | os-5ea617a3-0e86-4ba6-aab2-dac9aa2e8d57 | gate8 | 1 |  | 18 | 20 | 2 | 188.3 |  | DONE — Found `poster_party_night.webp` (1131x1600 WebP) in the Trash,  |
 | os-6f56bf42-85b8-4fbb-8e06-6c44960184ba | gate8 | 1 |  | 4 | 5 | 0 | 64.1 |  | DONE — Copied `/home/user/file1` into `dir1`, `dir2`, and `dir3`; all  |
 | os-a462a795-fdc7-4b23-b689-e8b6df786b78 | gate8 | 1 |  | 4 | 5 | 0 | 82.2 |  | FAIL
 
 The user `Charles` does not exist on this machine, so I could no |
 | os-a4d98375-215b-4a4d-aee9-3d4370fccc41 | gate8 | 0 |  | 25 | 26 | 0 | 616.3 |  | FAIL — this Xfce session has no screen locker installed (no xfce4-scre |
+| os-b3d4a89c-53f2-4d6b-8b6a-541fb5d205fa | gate8 | 1 |  | 6 | 7 | 0 | 136.3 |  | FAIL — This machine has no Bluetooth capability: there is no adapter ( |
 | os-bedcedc4-4d72-425e-ad62-21960b11fe0d | gate8 | 0 |  | 5 | 5 | 0 | 111.5 |  | FAIL — The "Dim screen when inactive" option does not exist on this ma |
 | os-e0df059f-28a6-4169-924f-b9623e7184cc | gate8 | 1 |  | 5 | 6 | 0 | 90.2 |  | DONE — Renamed `/data/home/Desktop/todo_list_Jan_1` to `/data/home/Des |
 | os-ec4e3f68-9ea4-4c18-a5c9-69f89d1178b3 | gate8 | 0 |  | 24 | 30 | 2 | 496.2 |  | FAIL — vim is not in this desktop's favorites, so there is nothing to  |
@@ -308,9 +316,12 @@ Thunderbird's Account Setup page is open with the email `anonym- |
 | vlc-9195653c-f4aa-453d-aa95-787f6ccfaae9 | gate8 | 1 |  | 48 | 48 | 21 | 2644.5 | relay_error | DONE — Set VLC’s “Maximum Volume displayed” to 200% in Advanced Prefer |
 | vlc-9195653c-f4aa-453d-aa95-787f6ccfaae9 | gate8 | 1 |  | 21 | 25 | 6 | 560.8 |  | DONE — Set VLC’s `qt-max-volume` to 200, restarted VLC, and verified t |
 | vlc-a5bbbcd5-b398-4c91-83d4-55e1e31bbb81 | gate8 | 1 |  | 16 | 17 | 3 | 292.4 |  | DONE — Enabled "Start in minimal view mode" (qt-minimal-view=1) in VLC |
+| vlc-aa4b5023-aef6-4ed9-bdc9-705f59ab9ad6 | gate8 | 1 |  | 16 | 16 | 5 | 470.9 | relay_error | DONE — the source (`flipped_1984_Apple_Macintosh_Commercial.mp4`) was  |
+| vlc-aa4b5023-aef6-4ed9-bdc9-705f59ab9ad6 | gate8 | 0 |  | 40 | 40 | 15 | 803.9 |  | DONE — The source video on the Desktop (`flipped_1984_Apple_Macintosh_ |
 | vlc-bba3381f-b5eb-4439-bd9e-80c22218d5a7 | gate8 | 0 |  | 16 | 18 | 1 | 236.0 |  | DONE — Opened the Apple HLS URL in the already-running VLC via Media > |
 | vlc-cb130f0d-d36f-4302-9838-b3baf46139b6 | gate8 | 1 |  | 6 | 8 | 1 | 50.7 |  | FAIL — there is no video file to adjust (VLC's playlist is empty and a |
 | vlc-d06f0d4d-2cd5-4ede-8de9-598629438c6e | gate8 | 1 |  | 45 | 49 | 11 | 552.3 |  | DONE — VLC's Qt interface has a hidden "Define the colors of the volum |
+| vlc-efcf0d81-0835-4880-b2fd-d866e8bc2294 | gate8 | 0 |  | 15 | 15 | 5 | 485.0 |  | DONE — Extracted the paused frame (Interstellar ring station, ~02:01)  |
 | vlc-f3977615-2b45-4ac5-8bba-80c17dbe2a37 | gate8 | 1 |  | 28 | 31 | 5 | 301.2 |  | Fixed — the cause was VLC's "Use only one instance when started from f |
 | vs_code-0512bb38-d531-4acf-9e7e-0add90816068 | gate8 | 1 |  | 45 | 50 | 17 | 460.1 |  | DONE — Installed the local VSIX `/home/user/test.vsix` into VS Code (` |
 | vs_code-0ed39f63-6049-43d4-ba4d-5fa2fe04a951 | gate8 | 1 |  | 16 | 17 | 5 | 323.4 |  | DONE — Opened `/home/user/Desktop/vscode_replace_text.txt` in VS Code, |
@@ -325,6 +336,7 @@ Thunderbird's Account Setup page is open with the email `anonym- |
 | vs_code-847a96b6-df94-4927-97e6-8cc9ea66ced7 | gate8 | 1 |  | 3 | 3 | 0 | 71.2 |  | FAIL — VS Code binds one workspace file per window: opening `/home/use |
 | vs_code-930fdb3b-11a8-46fe-9bac-577332e2640e | gate8 | 1 |  | 29 | 32 | 13 | 292.7 |  | DONE — Added a `ctrl+j` binding (with `when: terminalFocus`) to VS Cod |
 | vs_code-9439a27b-18ae-42d8-9778-5f68f891805e | gate8 | 1 |  | 14 | 14 | 6 | 132.2 |  | DONE — In VS Code's Settings UI (Ctrl+,) I searched `focusEditorOnBrea |
+| vs_code-971cbb5b-3cbf-4ff7-9e24-b5c84fcebfa6 | gate8 | 1 |  | 6 | 6 | 0 | 172.6 |  | FAIL — VS Code has no built-in setting that creates and saves a named  |
 | vs_code-982d12a5-beab-424f-8d38-d2a48429e511 | gate8 | 1 |  | 14 | 16 | 6 | 97.9 |  | DONE — Opened VS Code's Command Palette (Ctrl+Shift+P) → "Preferences: |
 | vs_code-9d425400-e9b2-4424-9a4b-d4c7abac4140 | gate8 | 1 |  | 10 | 11 | 5 | 83.2 |  | DONE — Opened VS Code's Settings (Ctrl+,), searched "wrap tabs", ticke |
 | vs_code-c6bf789c-ba3a-4209-971d-b63abf0ab733 | gate8 | 1 |  | 20 | 22 | 10 | 610.3 |  | DONE — Added `"files.exclude": { "**/__pycache__": true }` to VS Code' |

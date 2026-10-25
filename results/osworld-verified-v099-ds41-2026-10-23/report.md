@@ -1,50 +1,39 @@
 # OSWorld-Verified report
 
-> **How to read this number (added 2026-10-25, external review; made consistent with this folder's data):** this is a
-> **custom environment based on OSWorld tasks and evaluators**, a **custom-environment partial result**,
-> not an official OSWorld-Verified score and **not comparable to the OSWorld leaderboard**. The committed data give 137/256 = 53.5 % of
-> *valid* runs (Wilson 95 % CI **47.4 %–59.5 %**; the review quoted the 137/255 = 53.7 % snapshot, 47.6 %–59.7 %),
-> ignoring task correlation and the selection of valid runs. Over the planned list (361 tasks; missing and infra runs
-> count as failures) it is **137/361 = 38.0 %** (Wilson 33.1 %–43.1 %); 23 runs were infra failures (18 setup_failed,
-> 4 relay_error, 1 eval_error) and 82 tasks never ran. The run used OSWorld's tasks and evaluators natively on Debian 13 /
-> XFCE 1440x900 with Chromium, LibreOffice 25.2 and other app versions (no VM, no snapshot revert), its own reset and a
-> 100-turn / 3600 s budget, stopped before all 361 tasks finished, and had no baseline of any kind, so it says nothing
-> about the value model. Fair comparisons: bench/fair_compare.py under docs/eval-protocol.md.
-
-- tasks expected 361, finished rows 279, valid 256, infra 23 {'relay_error': 4, 'setup_failed': 18, 'eval_error': 1}
-- **success 137/361 = 37.95 %** (official-style: every expected task counts, infra/missing = 0); 137/256 = 53.52 % of valid runs; score sum 143.33
-- stops {'agent': 237, 'max_turns': 3, 'timeout': 16}; turns mean 30.3 / median 24.0; wall mean 690.1 s / median 340.2 s; total 51.19 h
-- tokens: input 12,882,114 + cache read 306,507,136, output 2,269,475; screenshots returned 2276; tool calls 8202
-- request_human calls 14 (human=deny); FAIL answers 28
-- gate: {'actions': 7759, 'executed': 7517, 'interventions': 242, 'human_events': 89, 'loop_notes': 15, 'loop_refused': 8}
-- reviewer (System One): {'calls': 95, 'decisions': {'deny': 59, 'allow': 36}, 'ms_mean': 947.2, 'ms_median': 702.6}
+- tasks expected 361, finished rows 290, valid 266, infra 24 {'relay_error': 4, 'setup_failed': 19, 'eval_error': 1}
+- **success 143/361 = 39.61 %** (official-style: every expected task counts, infra/missing = 0); 143/266 = 53.76 % of valid runs; score sum 149.33
+- stops {'agent': 245, 'max_turns': 3, 'timeout': 18}; turns mean 30.3 / median 24.5; wall mean 718.8 s / median 350.6 s; total 55.23 h
+- tokens: input 13,254,707 + cache read 315,316,992, output 2,353,572; screenshots returned 2366; tool calls 8506
+- request_human calls 14 (human=deny); FAIL answers 30
+- gate: {'actions': 8020, 'executed': 7764, 'interventions': 256, 'human_events': 98, 'loop_notes': 17, 'loop_refused': 8}
+- reviewer (System One): {'calls': 97, 'decisions': {'deny': 61, 'allow': 36}, 'ms_mean': 947.7, 'ms_median': 702.6}
 
 | role | runs using | invocations | HTTP calls | errors | mean ms | median ms |
 |---|---|---|---|---|---|---|
-| feasibility | 256 | 256 | 1494 | 5 | 67508.2 | 56303.2 |
-| planner | 256 | 256 | 872 | 3 | None | None |
-| verifier | 229 | 240 | 1679 | 13 | 70919.6 | 54829.6 |
+| feasibility | 266 | 266 | 1550 | 5 | 68012.2 | 56303.2 |
+| planner | 266 | 266 | 898 | 3 | None | None |
+| verifier | 237 | 248 | 1737 | 13 | 71098.6 | 55358.8 |
 | judge | 0 | 0 | 0 | 0 | None | None |
 | search | 5 | 5 | 5 | 0 | 13897.6 | 10481.4 |
-| compact | 206 | 733 | 733 | 1 | 10165.4 | 9280.0 |
+| compact | 212 | 755 | 755 | 1 | 10225.5 | 9359.0 |
 | grounder | 9 | 10 | 10 | 0 | 10042.4 | 5958.5 |
 
 (feasibility ms = the whole briefing incl. planner; compact/judge ms = gap to the previous gate event, approximate)
 
 | domain | tasks | valid | success | rate (of tasks) | score sum | infra |
 |---|---|---|---|---|---|---|
-| libreoffice_impress | 31 | 31 | 5 | 16.1 % | 5.93 | 0 |
-| os | 18 | 15 | 8 | 44.4 % | 8.0 | 3 |
-| multi_apps | 71 | 55 | 25 | 35.2 % | 28.49 | 16 |
+| libreoffice_impress | 35 | 35 | 7 | 20.0 % | 7.93 | 0 |
+| os | 20 | 17 | 10 | 50.0 % | 10.0 | 3 |
+| multi_apps | 73 | 56 | 26 | 35.6 % | 29.49 | 17 |
 | libreoffice_writer | 18 | 17 | 13 | 72.2 % | 13.0 | 1 |
-| vs_code | 20 | 20 | 16 | 80.0 % | 16.0 | 0 |
+| vs_code | 21 | 21 | 17 | 81.0 % | 17.0 | 0 |
 | libreoffice_calc | 41 | 39 | 33 | 80.5 % | 33.0 | 2 |
-| vlc | 13 | 12 | 8 | 61.5 % | 8.99 | 1 |
+| vlc | 15 | 14 | 8 | 53.3 % | 8.99 | 1 |
 | chrome | 39 | 39 | 13 | 33.3 % | 13.93 | 0 |
 | gimp | 18 | 18 | 9 | 50.0 % | 9.0 | 0 |
 | thunderbird | 10 | 10 | 7 | 70.0 % | 7.0 | 0 |
 
-tools: {'run_command': 2047, 'run_actions': 1524, 'get_window_state': 1308, 'click': 1023, 'set_plan': 558, 'press_key': 480, 'list_windows': 474, 'inspect': 291, 'check_done': 241, 'scroll': 96, 'type_text': 80, 'list_apps': 61, 'request_human': 14, 'update_plan': 1, 'mcp__gui_run_actions': 1, 'mcp__gui_set_plan': 1, 'mcp__gui_inspect': 1, 'mcp__gui_press_key': 1}
+tools: {'run_command': 2150, 'run_actions': 1563, 'get_window_state': 1356, 'click': 1052, 'set_plan': 577, 'press_key': 497, 'list_windows': 494, 'inspect': 307, 'check_done': 249, 'scroll': 96, 'type_text': 83, 'list_apps': 63, 'request_human': 14, 'update_plan': 1, 'mcp__gui_run_actions': 1, 'mcp__gui_set_plan': 1, 'mcp__gui_inspect': 1, 'mcp__gui_press_key': 1}
 
 ## infra rows
 
@@ -78,3 +67,4 @@ tools: {'run_command': 2047, 'run_actions': 1524, 'get_window_state': 1308, 'cli
 - vlc-386dbd0e-0241-4a0a-b6a2-6704fba26b1c: setup_failed (attempts 1) Exception("Setup step 4 failed: _open_setup - Failed to open file '/home/user/Desktop/lecture.pdf'. An error occurred while trying to send the request or the server responded with an error: 500 Server Error: INTERNAL SERVER ERROR for url: http://127.0.0.1:5000/setup/open_file")
 - multi_apps-ee9a3c83-f437-4879-8918-be5efbb9fac7: setup_failed (attempts 1) Exception('Setup step 4 failed: _execute_setup - Setup command request failed: HTTP 500')
 - libreoffice_calc-2bd59342-0664-4ccb-ba87-79379096cc08: relay_error (attempts 3) 503: {"code":"LITELLM_UNAVAILABLE","message":"模型服务暂时不可用，请稍后重试","traceId":"trace_06b17e68-c6d5-4c7a-b6f3-a06dca5b09fd"}
+- multi_apps-0e5303d4-8820-42f6-b18d-daf7e633de21: setup_failed (attempts 1) Exception('Setup step 6 failed: _launch_setup - Failed to launch application: HTTP 500')

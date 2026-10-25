@@ -1,0 +1,1 @@
+DONE — Edited `/data/home/Desktop/42_2.pptx` in LibreOffice Impress: both pictures on slide 3 now have a height of exactly 20 cm, and every text frame on slide 6 is set to 40 pt (verified in the saved file), with the file saved and reopened in Impress.

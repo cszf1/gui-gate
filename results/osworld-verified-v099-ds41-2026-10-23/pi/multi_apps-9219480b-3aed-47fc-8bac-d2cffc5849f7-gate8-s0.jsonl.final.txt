@@ -1,0 +1,1 @@
+Making the pygame dependency available to the user permanently (no root needed):

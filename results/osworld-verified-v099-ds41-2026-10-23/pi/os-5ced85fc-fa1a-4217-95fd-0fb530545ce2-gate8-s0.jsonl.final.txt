@@ -1,0 +1,1 @@
+DONE — created `/home/user/output.txt` with `sed` appending `<br/>` to each line of `1\n2\n3`, so it now reads `1<br/>\n2<br/>\n3<br/>`.
