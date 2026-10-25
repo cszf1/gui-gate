@@ -476,8 +476,10 @@ pub fn run_actions(g: &Gate, inn: &mut Inner, args: &Value) -> Value {
     };
     let mut prog = Program { b, vars: Default::default(), nodes: 0, out: vec![] };
     inn.in_batch = true;
+    crate::human::set_in_batch(true);
     prog.run(inn, &steps, 0, None, true);
     inn.in_batch = false;
+    crate::human::set_in_batch(false);
     let b = &prog.b;
     let head = format!("[gate] run_actions: {} GUI action(s) ran.{}", b.executed,
         match &b.stopped { Some(s) => format!(" STOPPED: {s}. Steps after it did NOT run."), None => " All done.".into() });

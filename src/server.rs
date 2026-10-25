@@ -718,7 +718,9 @@ fn strip_modern_meta(msg: &mut Value) {
 /// The 2026-07-28 result envelope: resultType "complete" and the gate as serverInfo (tool content untouched).
 fn modern_envelope(result: &mut Value, method: &str, sh: &Shared) {
     let Some(o) = result.as_object_mut() else { return };
-    o.insert("resultType".into(), json!("complete"));
+    if o.get("resultType").and_then(|v| v.as_str()) != Some("input_required") {
+        o.insert("resultType".into(), json!("complete"));
+    }
     let meta = o.entry("_meta").or_insert_with(|| json!({}));
     if !meta.is_object() {
         *meta = json!({});
@@ -1089,6 +1091,44 @@ impl Gate {
         let params = msg.get("params").cloned().unwrap_or(json!({}));
         let name0 = s(&params, "name").to_string();
         let args0 = params.get("arguments").cloned().filter(|a| a.is_object()).unwrap_or(json!({}));
+        // a person is asked through MRTR when this request is 2026-07-28 and its client declared elicitation
+        let mut cc = crate::human::CallCtx::default();
+        cc.mrtr = is_modern(&msg) && params.get("_meta").and_then(|m| m.get(CC_KEY)).and_then(|c| c.get("elicitation")).is_some();
+        cc.binding = crate::human::binding_of(&name0, &args0);
+        if let Some(st) = params.get("requestState") {
+            let st = st.as_str().unwrap_or("");
+            match self.human.pending.resolve(st, &cc.binding, params.get("inputResponses")) {
+                crate::human::Resolved::Answer(k, a, n) => {
+                    self.log.write(json!({"ev": "human_answer", "kind": k, "answer": trunc(&a, 200), "note": trunc(&n, 200)}));
+                    cc.answer = Some((k, a, n));
+                }
+                crate::human::Resolved::Late(k) => {
+                    self.log.write(json!({"ev": "human_answer", "kind": k, "answer": "timeout", "late": true}));
+                    cc.answer = Some((k, "timeout".into(), String::new()));
+                }
+                crate::human::Resolved::Invalid(why) => {
+                    self.log.write(json!({"ev": "human_answer_rejected", "why": why}));
+                    self.out.send(&rpc_error(msg["id"].clone(), -32602, &format!("Invalid requestState: {why}"), None));
+                    return;
+                }
+            }
+        }
+        crate::human::set_call(cc);
+        let msg_for_reply = msg.clone();
+        let me0 = self.clone();
+        let take_input = move || -> bool {
+            let c = crate::human::take_call();
+            if let Some(req) = c.request {
+                me0.reply(&msg_for_reply, req);
+                return true;
+            }
+            false
+        };
+        self.handle_call_inner(msg, params, name0, args0, take_input);
+    }
+
+    fn handle_call_inner(self: &Arc<Self>, msg: Value, params: Value, name0: String, args0: Value, take_input: impl FnOnce() -> bool) {
+        let _ = &params;
         // 0.9.7 phantom tools: a name the agent invented (triple_click, run_bash, type ...) is mapped to a real tool
         let (name, args, alias_note) = match self.phantom(&name0, &args0) {
             Ok(x) => x,
@@ -1145,6 +1185,9 @@ impl Gate {
                 text_result(format!("[gate] internal error: {what}"), true)
             }
         };
+        if take_input() {
+            return; // a person is being asked (MRTR): the client retries this call with the answer
+        }
         let mut result = result;
         if let Some(n) = alias_note {
             push_text(&mut result, format!("[gate] {n}."));
@@ -1782,6 +1825,7 @@ impl Gate {
             match dec.option.as_str() {
                 "check" => {
                     checked = true;
+                    trail.push("check".into());
                     check_res = self.check(inn, &ctx, Some(&mut args));
                     ctx = build_ctx(name, &args, &inn.state);
                     f = features(&ctx, &inn.state, wc, wadd, check_res, None);
@@ -1798,6 +1842,7 @@ impl Gate {
                 }
                 "wait" => {
                     waited = true;
+                    trail.push("wait".into());
                     let mut slept = 0.0;
                     while slept < 1.5 {
                         std::thread::sleep(Duration::from_millis(250));
@@ -1882,10 +1927,29 @@ impl Gate {
             } else {
                 format!("The agent needs you: {}.\nPlease do this step yourself in the app window, then press Allow. Press Deny to stop the agent here.", dec.reason)
             };
-            inn.inc("human_asked");
-            let h = self.human.ask(&q, false, if opt == "ask_human" { "gui-gate: approve action" } else { "gui-gate: your turn" });
-            event["human"] = h.clone();
+            let kind = match opt.as_str() { "ask_human" => "approve", "handoff" => "takeover", _ => "ask_help" };
+            let meta = json!({"tool": name, "target": trunc(&what0, 80), "reason": trunc(&dec.reason, 300), "decision": opt});
+            let h = self.human.ask_kind(kind, &q, if opt == "ask_human" { "gui-gate: approve action" } else if opt == "ask_help" { "gui-gate: the agent is stuck" } else { "gui-gate: your turn" }, meta);
             let ans = s(&h, "answer").to_string();
+            if ans == "input_required" {
+                // MRTR: the client asks its user and retries this same call; nothing is decided or executed yet
+                inn.inc("human_parked");
+                event["human"] = h.clone();
+                event["executed"] = json!(false);
+                event["human_pending"] = json!(kind);
+                self.log.write(event);
+                return text_result("[gate] waiting for a person", true);
+            }
+            if ans == "batch" {
+                event["executed"] = json!(false);
+                event["human"] = h.clone();
+                self.log.write(event);
+                return text_result(format!("[gate] Not executed: {} on \"{what0}\". This step needs a person; send it again ON ITS OWN (not inside run_actions) so the gate can ask them.", dec.reason), true);
+            }
+            if h.get("mrtr").is_none() || h["ms"].as_f64().unwrap_or(0.0) == 0.0 {
+                inn.inc("human_asked");
+            }
+            event["human"] = h.clone();
             if ans == "allow" && opt == "ask_human" {
                 inn.inc("human_allowed");
                 dec = Decision::new("direct", dec.p_direct, "approved by a person", "human").with_scores(&dec.scores);
@@ -1906,7 +1970,9 @@ impl Gate {
                 event["executed"] = json!(false);
                 event["gate_ms"] = json!(round_to(tg0.elapsed().as_secs_f64() * 1000.0, 1));
                 self.log.write(event);
-                return text_result(format!("[gate] Not executed: {}. No person took this step. Do not send the same action again; try a clearly different way (a keyboard shortcut, another menu path, or another element).", dec.reason), true);
+                let note = crate::human::answer_note();
+                let said = if note.is_empty() { String::new() } else { format!(" The person says: \"{note}\".") };
+                return text_result(format!("[gate] Not executed: {}. No person took this step.{said} Do not send the same action again; try a clearly different way (a keyboard shortcut, another menu path, or another element).", dec.reason), true);
             } else {
                 let verdict = if ans == "deny" { "declined".to_string() } else { format!("did not answer within {} s", inn.cfg.human_timeout as i64) };
                 event["executed"] = json!(false);
@@ -3375,9 +3441,13 @@ impl Gate {
         if ch == "chat" {
             return text_result("[gate] There is no direct line to a person from here. Ask your user in your reply and wait for their answer.", false);
         }
-        let text = if kind != "takeover" { q.clone() } else { format!("{q}\n\nDo it in the app yourself, then press Allow when you are done.") };
+        let text = if kind != "takeover" { q.clone() } else { format!("{q}\n\nDo it in the app yourself, then confirm when you are done.") };
+        let kind = if ["approve", "answer", "takeover"].contains(&kind.as_str()) { kind } else { "answer".to_string() };
         let title = match kind.as_str() { "approve" => "gui-gate: approve?", "takeover" => "gui-gate: your turn", _ => "gui-gate: question" };
-        let h = self.human.ask(&text, kind == "answer", title);
+        let h = self.human.ask_kind(&kind, &text, title, json!({"tool": "request_human", "reason": "asked by the agent"}));
+        if s(&h, "answer") == "input_required" {
+            return text_result("[gate] waiting for a person", true);
+        }
         self.log.write(json!({"ev": "request_human", "kind": kind, "question": trunc(&q, 200), "human": h}));
         let ans = s(&h, "answer").to_string();
         let msg = if ans == "timeout" {
