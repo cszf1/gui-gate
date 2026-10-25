@@ -16,13 +16,19 @@ FRUITS = ["Apple", "Banana", "Cherry", "Grape", "Kiwi", "Lemon", "Mango", "Peach
 
 
 class FixtureEnv:
-    def __init__(self, seed=0, length=10, p_relabel=0.25, p_loading=0.2, p_popup=0.12, loading_s=0.8):
+    def __init__(self, seed=0, length=10, p_relabel=0.25, p_loading=0.2, p_popup=0.12, loading_s=0.8, layout=None):
+        """layout (layouts.py): a held-out layout variant - other captions (vocab), another initial button order, and
+        optionally another number of buttons. None = the original GateFixture layout (state identical to before)."""
         self.rng = random.Random(seed)
+        vocab = FRUITS if layout is None else list(layout["vocab"])
+        labels = FRUITS[:] if layout is None else [vocab[i] for i in layout["order"]]
         self.st = {
             "seed": seed, "length": length, "p": [p_relabel, p_loading, p_popup], "loading_s": loading_s,
-            "seq": [self.rng.choice(FRUITS) for _ in range(length)], "k": 0, "labels": FRUITS[:],
+            "seq": [self.rng.choice(vocab) for _ in range(length)], "k": 0, "labels": labels,
             "busy_until": 0.0, "popup": False, "t": 0.0, "clicks": 0, "wrong": 0, "ignored": 0,
         }
+        if layout is not None:
+            self.st["layout"] = layout["id"]
 
     # ---- state
     def dump(self):

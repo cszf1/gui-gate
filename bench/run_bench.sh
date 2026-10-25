@@ -20,6 +20,18 @@
 #     learned policy's intervention rate), VP_COSTS (measured costs from `gui-gate costs`) are passed through.
 #   --repeats N: seeds 0..N-1 (independent repeats: the model API takes no sampling seed). Score with
 #     bench/score.py, compare with bench/fair_compare.py (paired CIs, McNemar / permutation, budget curve).
+#   --manifest M.json / --manifest-hash H (bench/manifest.py): a task list that touches the frozen TEST split runs only
+#     with the pre-registered hash and only as the exact runnable test split (exit 3 otherwise, before anything runs).
+#     Default manifest: bench/tasks/manifest.json. Every runs.jsonl row records manifest_hash and split.
+#   --interleave abba|blocked (default blocked = the old order): abba runs all conds of a task back to back and
+#     reverses their order on every other task and repeat (bench/schedule.py), for paired comparisons of policies or
+#     systems under the same drift. Repeats are "independent repeats" (repeat_kind); api_seed_accepted is true only
+#     when the operator verified the provider honours a seed (PI_API_SEED_ACCEPTED=1).
+#   context conds (P2 context ablation): ctx_full ctx_current ctx_new are gate8 exactly; only the Pi context handling
+#     differs: ctx_full = no context extension, ctx_current = bench/pi_ext/obs_prune.ts (the current compression),
+#     ctx_new = the extension in PI_CONTEXT_NEW_EXT (required). Analyse with bench/context_ablation.py.
+#   Cost accounting: run_wall_s (setup + agent + eval, failures and timeouts included) is recorded per run;
+#     bench/score.py adds role / reviewer calls, real GUI actions vs Pi turns, screenshots, tokens (bench/cost_accounting.py).
 #   gate8 (>= 0.8): gate + the task text + the gate's own reviewer model; the acting model never approves itself
 #   Every cond runs gui-gate, and gui-gate >= 0.9.3 refuses to start without a reviewer model, so ALL conds use the
 #   reviewer from ~/.config/gui-gate/reviewer.env (GUI_GATE_REVIEWER_URL/_MODEL/_KEY_FILE/_USER_AGENT); the run
@@ -32,6 +44,9 @@ while [ $# -gt 0 ]; do
     --max-turns) MAXT_ARG=$2; shift 2;;
     --max-turns=*) MAXT_ARG=${1#*=}; shift;;
     --repeats) REPEATS_ARG=$2; shift 2;;
+    --manifest) MANIFEST_ARG=$2; shift 2;;
+    --manifest-hash) MANIFEST_HASH_ARG=$2; shift 2;;
+    --interleave) INTERLEAVE_ARG=$2; shift 2;;
     *) break;;
   esac
 done
@@ -60,7 +75,29 @@ APPHINTS=${PI_APP_HINTS:-1}
 OBS_PRUNE=${PI_OBS_PRUNE:-0}
 HERE=$(cd "$(dirname "$0")" && pwd)
 OSW=/data/workspace/osworld
+INTERLEAVE=${INTERLEAVE_ARG:-blocked}
+case "$INTERLEAVE" in abba|blocked) ;; *) echo "run_bench: --interleave abba|blocked" >&2; exit 2;; esac
+API_SEED_ACCEPTED=false; [ "${PI_API_SEED_ACCEPTED:-0}" = 1 ] && API_SEED_ACCEPTED=true
+for c in $CONDS; do
+  [ "$c" = ctx_new ] && [ ! -f "${PI_CONTEXT_NEW_EXT:-}" ] && { echo "run_bench: ctx_new needs PI_CONTEXT_NEW_EXT=<pi extension file>" >&2; exit 2; }
+done
 mkdir -p $OUT/pi $OUT/gate $OUT/eval $OUT/shots
+# frozen manifest guard (bench/manifest.py): refuse a test-split list without the exact pre-registered hash
+GUARD=$(python3 "$HERE/manifest.py" guard --list "$LIST" ${MANIFEST_ARG:+--manifest "$MANIFEST_ARG"} ${MANIFEST_HASH_ARG:+--hash "$MANIFEST_HASH_ARG"})
+GUARD_RC=$?
+echo "$GUARD" > $OUT/manifest_guard.json
+if [ $GUARD_RC -ne 0 ]; then echo "run_bench: refused by the manifest guard: $GUARD" >&2; exit 3; fi
+SPLIT=$(echo "$GUARD" | python3 -c "import json,sys;print(json.load(sys.stdin)['split'])")
+MHASH=$(echo "$GUARD" | python3 -c "import json,sys;print(json.load(sys.stdin).get('hash') or '')")
+# test split: the agent's run directories must not reach evaluator answers, and nothing tuned may contain them
+if [ "$SPLIT" = test ]; then
+  mkdir -p $OUT/task $OUT/cmcwd
+  ART=(); for f in "$HERE/app_hints.md" "${VP_VALUE_WEIGHTS:-}" "${VP_COSTS:-}" ~/.gui-gate/memory ~/.config/gui-gate/skills; do
+    [ -n "$f" ] && [ -e "$f" ] && ART+=(--artifact "$f"); done
+  ANS=(); [ -d "$OSW/cache" ] && ANS+=(--answer-dir "$OSW/cache")
+  python3 "$HERE/leakage_lint.py" --tasks "$LIST" --agent-dir /tmp --agent-dir "$OUT/task" --agent-dir "$OUT/cmcwd" "${ANS[@]}" "${ART[@]}" \
+    --json $OUT/leakage_lint.json > /dev/null || { echo "run_bench: leakage lint failed (see $OUT/leakage_lint.json)" >&2; exit 3; }
+fi
 export DISPLAY=${DISPLAY:-:1} XDG_RUNTIME_DIR=/run/user/$(id -u) DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$(id -u)/bus \
   GDK_BACKEND=x11 NO_AT_BRIDGE=0
 [ -f ~/.pi/agent/proxy.env ] && . ~/.pi/agent/proxy.env
@@ -80,8 +117,14 @@ REALHOME=$(readlink -f /home/user 2>/dev/null); HOMENOTE=""
 MCP=~/.pi/agent/mcp.json
 [ -f $OUT/mcp.json.orig ] || cp $MCP $OUT/mcp.json.orig
 trap 'cp $OUT/mcp.json.orig $MCP' EXIT
+run_meta() {  # fields every runs.jsonl row carries (uses T0, s from run_one; POS from the run loop)
+  local w=$(python3 -c "import sys;print(round(float(sys.argv[2])-float(sys.argv[1]),1))" "$T0" "$(date +%s.%N)" 2>/dev/null || echo null)
+  printf '"repeat":%s,"repeat_kind":"independent","api_seed_accepted":%s,"interleave":"%s","order":%s,"split":"%s","manifest_hash":"%s","run_wall_s":%s' \
+    "$s" "$API_SEED_ACCEPTED" "$INTERLEAVE" "${POS:-0}" "$SPLIT" "$MHASH" "$w"
+}
 run_one() {  # task cond seed attempt
   local task=$1 c=$2 s=$3 att=$4 GENV=""
+  local T0=$(date +%s.%N)
   local name=$(basename $task .json) tag=$(basename $task .json)-$2-s$3
   [ "$att" -gt 1 ] && tag=$tag-try$att
   case $c in
@@ -94,13 +137,19 @@ run_one() {  # task cond seed attempt
       mkdir -p $OUT/task
       $PY -c "import json,sys;print(json.load(open(sys.argv[1]))['instruction'])" $HERE/tasks/$task > $OUT/task/$tag.txt
       GA='"--policy","gate","--decider","model","--human-timeout","30","--batch","actions","--task-file","'$OUT/task/$tag.txt'"';;
-    gate8|vp_*)
+    ctx_*|gate8|vp_*)
       mkdir -p $OUT/task
       $PY -c "import json,sys;print(json.load(open(sys.argv[1]))['instruction'])" $HERE/tasks/$task > $OUT/task/$tag.txt
       GA='"--policy","gate","--task-file","'$OUT/task/$tag.txt'"';;
   esac
   local TOOLS='mcp__gui__*' CWD=/tmp HINT="" EXT=()
   [ "$OBS_PRUNE" = 1 ] && EXT=(--extension "$HERE/pi_ext/obs_prune.ts")
+  local CTX=""
+  case $c in
+    ctx_full) CTX=full; EXT=();;
+    ctx_current) CTX=current; EXT=(--extension "$HERE/pi_ext/obs_prune.ts");;
+    ctx_new) CTX=new; EXT=(--extension "$PI_CONTEXT_NEW_EXT");;
+  esac
   if [ "$c" = gate_cm ]; then
     TOOLS='mcp__gui__*,codemode'; CWD=$OUT/cmcwd; mkdir -p $CWD/.pi
     echo '{"codemode":{"mode":"on"}}' > $CWD/.pi/settings.json
@@ -162,7 +211,7 @@ When the task is complete, reply DONE and one line on what you did. If the task 
     setup_ok=$($PY -c "import json;print(json.load(open('$OUT/eval/$tag.setup.json')).get('ok'))" 2>/dev/null)
   fi
   if [ "$setup_ok" != "True" ]; then
-    echo "{\"tag\":\"$tag\",\"task\":\"$name\",\"cond\":\"$c\",\"seed\":$s,\"attempt\":$att,\"infra\":\"setup_failed\"}" >> $OUT/runs.jsonl
+    echo "{\"tag\":\"$tag\",\"task\":\"$name\",\"cond\":\"$c\",\"seed\":$s,\"attempt\":$att,\"infra\":\"setup_failed\",$(run_meta)}" >> $OUT/runs.jsonl
     return 0
   fi
   local st=$(cd $CWD && $PY $HERE/pi_monitor.py --out $OUT/pi/$tag.jsonl --max-turns $MAXT --timeout $TMO -- \
@@ -174,7 +223,7 @@ When the task is complete, reply DONE and one line on what you did. If the task 
   if echo "$st" | grep -q '"stop": "agent"' && grep -q 'thinking must be passed back\|"stopReason":"error"' $OUT/pi/$tag.jsonl 2>/dev/null; then
     infra='"relay_error"'
   fi
-  echo "{\"tag\":\"$tag\",\"task\":\"$name\",\"cond\":\"$c\",\"seed\":$s,\"attempt\":$att,\"infra\":$infra,\"screen\":\"$scr\",\"think\":\"$THINK\",\"model\":\"$model\",\"gg\":\"$ggv\",\"text_only\":$TEXT_ONLY,\"obs_prune\":$OBS_PRUNE,\"max_turns\":$MAXT,\"tools096\":$TOOLS096,\"tools097\":$TOOLS097,\"mcp_timeout\":\"$MCPTMO\",\"app_hints\":$APPHINTS,\"value_policy\":\"$VPOL\",\"value_weights\":\"${VP_VALUE_WEIGHTS:-}\",\"pi\":$st}" >> $OUT/runs.jsonl
+  echo "{\"tag\":\"$tag\",\"task\":\"$name\",\"cond\":\"$c\",\"seed\":$s,\"attempt\":$att,\"infra\":$infra,\"screen\":\"$scr\",\"think\":\"$THINK\",\"model\":\"$model\",\"gg\":\"$ggv\",\"text_only\":$TEXT_ONLY,\"obs_prune\":$OBS_PRUNE,\"max_turns\":$MAXT,\"tools096\":$TOOLS096,\"tools097\":$TOOLS097,\"mcp_timeout\":\"$MCPTMO\",\"app_hints\":$APPHINTS,\"value_policy\":\"$VPOL\",\"value_weights\":\"${VP_VALUE_WEIGHTS:-}\",\"context\":\"$CTX\",$(run_meta),\"pi\":$st}" >> $OUT/runs.jsonl
   [ "$infra" = '"relay_error"' ] && return 9
   return 0
 }
@@ -185,16 +234,19 @@ cat > $MCP <<J
 {"mcpServers":{"gui":{"command":"$HOME/.local/bin/gui-gate","args":[$GA,"--human","deny"]}}}
 J
 if ! pi mcp list > $OUT/preflight.txt 2>&1; then echo "preflight failed: Pi cannot connect the gui server"; cat $OUT/preflight.txt; exit 3; fi
-for s in $SEEDS; do
-  while read -r task; do
-    [ -z "$task" ] && continue
-    for c in $CONDS; do
-      if grep -q "\"tag\":\"$(basename $task .json)-$c-s$s\"" $OUT/runs.jsonl 2>/dev/null; then continue; fi  # resume
-      run_one $task $c $s 1; rc=$?; att=1
-      while [ $rc -eq 9 ] && [ $att -lt ${PI_ATTEMPTS:-3} ]; do att=$((att+1)); run_one $task $c $s $att; rc=$?; done
-      echo "$(date +%T) $task $c" >> $OUT/progress.log
-    done
-  done < $LIST
-done
+run_cell() {  # task cond seed: resume-aware, infra retries per the manifest's retry rules (relay errors only here)
+  local task=$1 c=$2 s=$3
+  if grep -q "\"tag\":\"$(basename $task .json)-$c-s$s\"" $OUT/runs.jsonl 2>/dev/null; then return 0; fi  # resume
+  run_one $task $c $s 1; local rc=$? att=1
+  while [ $rc -eq 9 ] && [ $att -lt ${PI_ATTEMPTS:-3} ]; do att=$((att+1)); run_one $task $c $s $att; rc=$?; done
+  echo "$(date +%T) $task $c s$s" >> $OUT/progress.log
+}
+python3 "$HERE/schedule.py" --tasks "$LIST" --conds "$CONDS" --repeats "$SEEDS" --mode "$INTERLEAVE" --out $OUT/schedule.txt || exit 2
+POS=0
+while read -r s task c; do
+  [ -z "$task" ] && continue
+  run_cell $task $c $s
+  POS=$((POS+1))
+done < $OUT/schedule.txt
 $PY $HERE/osworld_native.py reset > /dev/null 2>&1
 echo ALLDONE > $OUT/STATUS

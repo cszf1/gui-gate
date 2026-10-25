@@ -44,6 +44,17 @@ FAMILIES = {  # hazard profiles = task families (all checkpoints of one family s
 }
 
 
+
+def env_kwargs(family):
+    """FixtureEnv kwargs of a family: a hazard profile name, or "layout:<id>" = a held-out layout variant
+    (layouts.py) with its own hazard profile. Every layout variant is its own family."""
+    if family.startswith("layout:"):
+        import layouts
+        lay = layouts.get(family.split(":", 1)[1])
+        return dict(FAMILIES[lay["hazards"]], layout=lay)
+    return dict(FAMILIES[family])
+
+
 # ---------------------------------------------------------------- the scripted controller (stand-in acting model)
 
 class Controller:
@@ -84,13 +95,13 @@ class Controller:
         if b["k"] >= len(b["seq"]) or not b["labels"]:
             return 0
         want = b["seq"][b["k"]]
-        return b["labels"].index(want) if want in b["labels"] else self.rng.randrange(8)
+        return b["labels"].index(want) if want in b["labels"] else self.rng.randrange(len(b["labels"]))
 
     def rethink(self, cand):
         """extra_reason without new information: doubts its belief after several blind actions and may re-guess"""
         if cand == "ok" or self.b["since_read"] < 1:
             return cand
-        return cand if self.rng.random() < 0.6 else self.rng.randrange(8)
+        return cand if self.rng.random() < 0.6 else self.rng.randrange(len(self.b["labels"] or [0] * 8))
 
     def acted(self, cand):
         if cand == "ok":
@@ -107,7 +118,7 @@ def person_answer(env_view, rng, acc=0.9):
     if env_view["k"] >= len(env_view["seq"]):
         return 0
     want = env_view["seq"][env_view["k"]]
-    return env_view["true_labels"].index(want) if rng.random() < acc else rng.randrange(8)
+    return env_view["true_labels"].index(want) if rng.random() < acc else rng.randrange(len(env_view["true_labels"]))
 
 
 # ---------------------------------------------------------------- backends
@@ -124,7 +135,7 @@ class SimBackend:
 
     @classmethod
     def fresh(cls, seed, length, family):
-        return cls(FixtureEnv(seed=seed, length=length, **FAMILIES[family]))
+        return cls(FixtureEnv(seed=seed, length=length, **env_kwargs(family)))
 
     def observe(self, full):
         return self.env.observe(popup_visible=full)
@@ -166,7 +177,7 @@ class GateBackend:
     PID, WID = 5151, 901
 
     def __init__(self, gate_bin, state=None, seed=0, length=10, family="mixed", log=None):
-        st = state or FixtureEnv(seed=seed, length=length, **FAMILIES[family]).dump()
+        st = state or FixtureEnv(seed=seed, length=length, **env_kwargs(family)).dump()
         self.state_file = tempfile.NamedTemporaryFile("w", suffix=".json", delete=False)
         json.dump(st, self.state_file)
         self.state_file.close()
