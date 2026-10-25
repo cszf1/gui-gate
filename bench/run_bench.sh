@@ -11,6 +11,15 @@
 #     bench hints, so use PI_APP_HINTS=0 with it. Model roles: put GUI_GATE_ROLE_<NAME>=reviewer (or _URL/_MODEL/_KEY_FILE)
 #     in ~/.config/gui-gate/reviewer.env; PI_GATE_ENV='"K":"V",...' adds raw gate env entries.
 #   conds: direct full gate gate_noobs gate_cm gate4 gate8 (all use --human deny)
+#   value-policy conds (P2 fair baselines, 0.9.11): vp_direct vp_light vp_full vp_reason vp_threshold vp_heuristic
+#     vp_random vp_legacy vp_learned. Every vp_* cond is gate8 exactly (same gate, tools, prompt, model, reviewer,
+#     turn cap and timeout); only the gate's value choice differs (GUI_GATE_VALUE_POLICY; safety rules, hard rules,
+#     auto-observe and heals are the same). vp_legacy = P(direct) + the hand-set legacy gains; vp_learned = the
+#     treatment-interaction model from VP_VALUE_WEIGHTS (without it the gate falls back to the legacy prior and
+#     runs.jsonl says value_weights=""). VP_THRESHOLD (default 0.7), VP_RANDOM_RATE (default 0.1, match it to the
+#     learned policy's intervention rate), VP_COSTS (measured costs from `gui-gate costs`) are passed through.
+#   --repeats N: seeds 0..N-1 (independent repeats: the model API takes no sampling seed). Score with
+#     bench/score.py, compare with bench/fair_compare.py (paired CIs, McNemar / permutation, budget curve).
 #   gate8 (>= 0.8): gate + the task text + the gate's own reviewer model; the acting model never approves itself
 #   Every cond runs gui-gate, and gui-gate >= 0.9.3 refuses to start without a reviewer model, so ALL conds use the
 #   reviewer from ~/.config/gui-gate/reviewer.env (GUI_GATE_REVIEWER_URL/_MODEL/_KEY_FILE/_USER_AGENT); the run
@@ -22,6 +31,7 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --max-turns) MAXT_ARG=$2; shift 2;;
     --max-turns=*) MAXT_ARG=${1#*=}; shift;;
+    --repeats) REPEATS_ARG=$2; shift 2;;
     *) break;;
   esac
 done
@@ -29,6 +39,10 @@ OUT=${1:-/data/workspace/runs/osworld1}
 CONDS=${2:-"direct full gate"}
 LIST=${3:-$(dirname "$0")/tasks/order.txt}
 SEEDS=${4:-"0"}
+if [ -n "${REPEATS_ARG:-}" ]; then
+  case "$REPEATS_ARG" in ''|*[!0-9]*) echo "run_bench: --repeats needs a number" >&2; exit 2;; esac
+  SEEDS=$(seq -s ' ' 0 $((REPEATS_ARG - 1)))
+fi
 THINK=${PI_THINK:-medium}
 TMO=${PI_TIMEOUT:-480}
 MAXT=${MAXT_ARG:-${PI_MAX_TURNS:-30}}
@@ -80,7 +94,7 @@ run_one() {  # task cond seed attempt
       mkdir -p $OUT/task
       $PY -c "import json,sys;print(json.load(open(sys.argv[1]))['instruction'])" $HERE/tasks/$task > $OUT/task/$tag.txt
       GA='"--policy","gate","--decider","model","--human-timeout","30","--batch","actions","--task-file","'$OUT/task/$tag.txt'"';;
-    gate8)
+    gate8|vp_*)
       mkdir -p $OUT/task
       $PY -c "import json,sys;print(json.load(open(sys.argv[1]))['instruction'])" $HERE/tasks/$task > $OUT/task/$tag.txt
       GA='"--policy","gate","--task-file","'$OUT/task/$tag.txt'"';;
@@ -98,6 +112,17 @@ Speed: when you already know the next several steps (e.g. click a field, type, p
   [ "$TOOLS096" = 1 ] || ENVS='"GUI_GATE_RUN_COMMAND":"0","GUI_GATE_CHECK_DONE":"0","GUI_GATE_PLAN":"0"'
   [ "$TOOLS097" = 1 ] && ENVS="${ENVS:+$ENVS,}\"GUI_GATE_097\":\"1\""
   [ -n "$GATE_ENV_EXTRA" ] && ENVS="${ENVS:+$ENVS,}$GATE_ENV_EXTRA"
+  local VPOL=""
+  case $c in
+    vp_direct) VPOL=direct;; vp_light) VPOL=observe_light;; vp_full) VPOL=observe_full;; vp_reason) VPOL=extra_reason;;
+    vp_threshold) VPOL=threshold;; vp_heuristic) VPOL=heuristic;; vp_random) VPOL=random;; vp_legacy|vp_learned) VPOL=learned;;
+  esac
+  if [ -n "$VPOL" ]; then
+    ENVS="${ENVS:+$ENVS,}\"GUI_GATE_VALUE_POLICY\":\"$VPOL\",\"GUI_GATE_VALUE_THRESHOLD\":\"${VP_THRESHOLD:-0.7}\",\"GUI_GATE_VALUE_RANDOM_RATE\":\"${VP_RANDOM_RATE:-0.1}\",\"GUI_GATE_VALUE_SEED\":\"$s\""
+    [ "$c" = vp_legacy ] && ENVS="$ENVS,\"GUI_GATE_VALUE_MODEL\":\"legacy\""
+    [ "$c" = vp_learned ] && [ -n "${VP_VALUE_WEIGHTS:-}" ] && ENVS="$ENVS,\"GUI_GATE_VALUE_MODEL\":\"treatment\",\"GUI_GATE_VALUE_WEIGHTS\":\"$VP_VALUE_WEIGHTS\""
+    [ -n "${VP_COSTS:-}" ] && ENVS="$ENVS,\"GUI_GATE_COSTS\":\"$VP_COSTS\""
+  fi
   [ -n "$ENVS" ] && GENV=",\"env\":{$ENVS}"
   cat > $MCP <<J
 {"mcpServers":{"gui":{"command":"$HOME/.local/bin/gui-gate","args":[$GA,"--human","deny","--log","$OUT/gate/$tag.jsonl"]$GENV$MCPT,
@@ -149,7 +174,7 @@ When the task is complete, reply DONE and one line on what you did. If the task 
   if echo "$st" | grep -q '"stop": "agent"' && grep -q 'thinking must be passed back\|"stopReason":"error"' $OUT/pi/$tag.jsonl 2>/dev/null; then
     infra='"relay_error"'
   fi
-  echo "{\"tag\":\"$tag\",\"task\":\"$name\",\"cond\":\"$c\",\"seed\":$s,\"attempt\":$att,\"infra\":$infra,\"screen\":\"$scr\",\"think\":\"$THINK\",\"model\":\"$model\",\"gg\":\"$ggv\",\"text_only\":$TEXT_ONLY,\"obs_prune\":$OBS_PRUNE,\"max_turns\":$MAXT,\"tools096\":$TOOLS096,\"tools097\":$TOOLS097,\"mcp_timeout\":\"$MCPTMO\",\"app_hints\":$APPHINTS,\"pi\":$st}" >> $OUT/runs.jsonl
+  echo "{\"tag\":\"$tag\",\"task\":\"$name\",\"cond\":\"$c\",\"seed\":$s,\"attempt\":$att,\"infra\":$infra,\"screen\":\"$scr\",\"think\":\"$THINK\",\"model\":\"$model\",\"gg\":\"$ggv\",\"text_only\":$TEXT_ONLY,\"obs_prune\":$OBS_PRUNE,\"max_turns\":$MAXT,\"tools096\":$TOOLS096,\"tools097\":$TOOLS097,\"mcp_timeout\":\"$MCPTMO\",\"app_hints\":$APPHINTS,\"value_policy\":\"$VPOL\",\"value_weights\":\"${VP_VALUE_WEIGHTS:-}\",\"pi\":$st}" >> $OUT/runs.jsonl
   [ "$infra" = '"relay_error"' ] && return 9
   return 0
 }
