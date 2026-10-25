@@ -177,11 +177,43 @@ fn file_named(res: &str, task_l: &str, cwd: Option<&str>) -> Result<(), String> 
             return Err(format!("the request names {w}, which is not {val} (same name, another folder)"));
         }
     }
-    if stem_ok(task_l) {
-        Ok(())
-    } else {
-        Err(format!("the request does not name {base}"))
+    if !stem_ok(task_l) {
+        return Err(format!("the request does not name {base}"));
     }
+    // 0.10.1: the request names the file only by its name. That covers exactly one candidate: the file of that name
+    // in the working directory (the command's cwd / the terminal's current directory). The same name elsewhere is
+    // another file the user may not have meant, so it goes to the reviewer / a person instead of being authorized.
+    if kind == "path" {
+        if let Some(c) = cwd {
+            let dir = crate::sidefx::canon(c).trim_end_matches('/').to_lowercase();
+            let parent = val.trim_end_matches('/').rsplit_once('/').map(|x| x.0).unwrap_or("").to_lowercase();
+            let parent = if parent.is_empty() { "/".to_string() } else { parent };
+            if parent != dir && !(dir.is_empty() && parent == "/") {
+                return Err(format!("the request names only the file name {base}, and the file is in {parent}, not in the working directory {dir} (the same name may mean another file)"));
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Two resources of one effect with the same file name in different folders: a name-only request is ambiguous.
+fn same_name_elsewhere(files: &[&str]) -> Option<String> {
+    let mut seen: std::collections::HashMap<String, String> = Default::default();
+    for f in files {
+        let (kind, v) = f.split_once(':').unwrap_or(("", *f));
+        if kind != "path" {
+            continue;
+        }
+        let v = v.trim_end_matches('/');
+        let base = v.rsplit('/').next().unwrap_or("").to_lowercase();
+        if let Some(other) = seen.get(&base) {
+            if other != v {
+                return Some(base);
+            }
+        }
+        seen.insert(base, v.to_string());
+    }
+    None
 }
 
 /// (authorized?, why). Only the operator's request (--task / GUI_GATE_TASK) is passed here; what the agent stated
@@ -216,6 +248,13 @@ pub fn authorized(key: &EffectKey, task: &str, titles: &[String], cwd: Option<&s
     let files = key.files();
     if files.is_empty() {
         return (false, format!("the request says \"{hit}\" but the gate cannot match what this action acts on to the request (no file it can resolve), so the words alone do not cover it"));
+    }
+    if let Some(b) = same_name_elsewhere(&files) {
+        // only refuse the wording when the request does not spell out each path
+        let spelled = files.iter().all(|f| path_words(&t).iter().any(|w| { let v = f.split_once(':').map(|x| x.1).unwrap_or(f); v.to_lowercase().ends_with(&format!("/{}", w.trim_start_matches("./").trim_start_matches('~').trim_start_matches('/'))) }));
+        if !spelled {
+            return (false, format!("the request says \"{hit}\" but {b} names files in more than one folder here; the name alone does not say which"));
+        }
     }
     for f in &files {
         if let Err(why) = file_named(f, &t, cwd) {
@@ -356,6 +395,25 @@ mod tests {
         assert!(!auth("`rm` deletes report.txt", "delete /tmp/w/b/report.txt", &["/tmp/w/a/report.txt"]));
         // every file the effect touches must be named
         assert!(!auth("`rm` deletes a.txt b.txt", "delete a.txt", &["/tmp/w/a.txt", "/tmp/w/b.txt"]));
+    }
+
+    #[test]
+    fn a_file_name_alone_covers_only_the_file_in_the_working_directory() {
+        let k = key("`rm` deletes report.txt", "", &["/tmp/w/a/report.txt"]);
+        assert!(authorized(&k, "delete report.txt", &[], Some("/tmp/w/a")).0, "the one in the working directory");
+        let (ok, why) = authorized(&k, "delete report.txt", &[], Some("/tmp/w"));
+        assert!(!ok, "same name in a subfolder is not what a name-only request covers");
+        assert!(why.contains("working directory"), "{why}");
+        assert!(authorized(&k, "delete a/report.txt", &[], Some("/tmp/w")).0, "a spelled-out relative path is exact");
+        // the same name in two folders in one effect: ambiguous without paths
+        let k2 = key("`rm` deletes report.txt", "", &["/tmp/w/a/report.txt", "/tmp/w/b/report.txt"]);
+        assert!(!authorized(&k2, "delete report.txt", &[], None).0);
+        assert!(!authorized(&k2, "delete report.txt", &[], Some("/tmp/w/a")).0);
+        assert!(authorized(&k2, "delete /tmp/w/a/report.txt and /tmp/w/b/report.txt", &[], None).0);
+        // a denial still covers by name (conservative)
+        let d = key("\"Yes\" confirms replacing an existing file", "A file named \"report.txt\" already exists.", &[]);
+        let k3 = key("saving here would replace the existing file /tmp/w/b/report.txt", "", &["/tmp/w/b/report.txt"]);
+        assert!(d.denial_covers(&k3), "a name-only denial covers the same name in any folder");
     }
 
     #[test]

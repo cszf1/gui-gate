@@ -512,7 +512,7 @@ class TerminalLineTests(unittest.TestCase):
         os.utime(self.old, (old_t, old_t))
         fake_term = os.path.join(self.tmp, "fake-xterm")
         shutil.copy("/bin/sleep", fake_term)
-        self.term = subprocess.Popen([fake_term, "300"])
+        self.term = subprocess.Popen([fake_term, "300"], cwd=self.tmp)  # the shell's working directory holds userdir
         self.c = None
 
     def tearDown(self):
@@ -559,11 +559,36 @@ class TerminalLineTests(unittest.TestCase):
 
     def test_rename_task_authorizes_move(self):
         pid = self.term.pid
-        self.c = Client("--human", "deny", "--task", f"rename the folder userdir to userdir2", env={"FAKE_PID": str(pid)})
+        # a terminal without a detectable shell child: its working directory is the user's home (HOME = the folder
+        # that holds userdir), and a name-only request covers the userdir there (0.10.1)
+        self.c = Client("--human", "deny", "--task", f"rename the folder userdir to userdir2", env={"FAKE_PID": str(pid), "HOME": self.tmp})
         self.c.call("get_window_state", pid=pid, window_id=777)
         self.c.call("type_text", pid=pid, window_id=777, text=f"mv {self.old} {self.old}2")
         r = self.c.call("press_key", pid=pid, window_id=777, key="Return")
         self.assertFalse(r.get("isError"), txt(r))
+
+    def test_name_only_task_does_not_cover_the_same_name_elsewhere(self):
+        """0.10.1: "rename userdir" names only a folder name: it covers the userdir in the shell's working directory,
+        not a userdir in another folder (that goes to a person; --human deny refuses it)."""
+        import shutil, tempfile, time
+        other = tempfile.mkdtemp()
+        far = os.path.join(other, "userdir")
+        os.makedirs(far)
+        old_t = time.time() - 3600
+        os.utime(far, (old_t, old_t))
+        pid = self.term.pid
+        self.c = Client("--human", "deny", "--task", "rename the folder userdir to userdir2", env={"FAKE_PID": str(pid), "HOME": self.tmp})
+        try:
+            self.c.call("get_window_state", pid=pid, window_id=777)
+            self.c.call("type_text", pid=pid, window_id=777, text=f"mv {far} {far}2")
+            r = self.c.call("press_key", pid=pid, window_id=777, key="Return")
+            self.assertTrue(r.get("isError"), txt(r))
+            self.assertEqual(r["structuredContent"]["status"], "blocked")
+            ev = [e for e in self.c.events() if e.get("ev") == "action" and e.get("tool") == "press_key"][-1]
+            self.assertFalse(ev["risk_gate"]["authorized"])
+            self.assertIn("working directory", ev["risk_gate"]["why"])
+        finally:
+            shutil.rmtree(other, ignore_errors=True)
 
 
 class OcclusionHealTests(unittest.TestCase):

@@ -100,6 +100,17 @@ pub struct Pending {
     pub deadline: f64,
     /// the structured effect (JSON text) the person is asked about; "" when the request has none
     pub effect: String,
+    /// when it was parked (person waiting time = answer time - this)
+    pub asked: f64,
+}
+
+thread_local! {
+    static WAITED: RefCell<f64> = const { RefCell::new(0.0) };
+}
+
+/// Seconds the person took on the MRTR request this call's retry answered (0 when none).
+pub fn waited_s() -> f64 {
+    WAITED.with(|w| *w.borrow())
 }
 
 /// The gate's table of MRTR requests: one-time, unguessable ids, bound to the call and its deadline.
@@ -171,6 +182,7 @@ impl PendingTable {
         if p.binding != binding {
             return Resolved::Invalid("requestState belongs to a different tool call");
         }
+        WAITED.with(|w| *w.borrow_mut() = (now() - p.asked).max(0.0));
         if now() > p.deadline + MRTR_GRACE_S {
             return Resolved::Late(p.kind, p.effect);
         }
@@ -205,12 +217,25 @@ pub fn schema_for(kind: &str) -> Value {
         "takeover" => json!({"type": "object", "properties": {"done": {"type": "boolean", "title": "I did it, continue",
             "description": "Do the step yourself in the app, then confirm here."}}, "required": ["done"]}),
         "ask_help" => json!({"type": "object", "properties": {
-            "choice": {"type": "string", "title": "What now?", "enum": ["did_it", "try_other"],
-                       "enumNames": ["I did this step myself, continue", "Let the agent try another way"]},
+            "choice": {"type": "string", "title": "What now?", "enum": ["did_it", "hint", "try_other"],
+                       "enumNames": ["Do it for me: I did this step myself, continue", "Give a hint (type it below), let the agent try again", "Let the agent try another way"]},
             "note": {"type": "string", "title": "A hint for the agent (optional)"}}, "required": ["choice"]}),
         _ => json!({"type": "object", "properties": {"decision": {"type": "string", "title": "Allow this action?",
             "enum": ["allow", "deny"], "enumNames": ["Allow", "Deny"]}}, "required": ["decision"]}),
     }
+}
+
+/// schema_for plus 2-4 choices for a clarifying question (the person can still type their own answer).
+pub fn schema_with_options(kind: &str, options: Option<&Value>) -> Value {
+    let mut sc = schema_for(kind);
+    if kind == "answer" {
+        if let Some(o) = options.and_then(|o| o.as_array()).filter(|o| (2..=4).contains(&o.len())) {
+            sc["properties"]["choice"] = json!({"type": "string", "title": "Pick one", "enum": o});
+            sc["properties"]["answer"]["title"] = json!("Or type your own answer");
+            sc["required"] = json!([]);
+        }
+    }
+    sc
 }
 
 /// ElicitResult -> (answer, note). Anything but an accepted, positive form is a refusal.
@@ -250,7 +275,8 @@ fn map_accepted(kind: &str, r: &Value) -> (String, String) {
     let c = r.get("content").cloned().unwrap_or(json!({}));
     match kind {
         "answer" => {
-            let a = pystr(c.get("answer")).trim().to_string();
+            let typed = pystr(c.get("answer")).trim().to_string();
+            let a = if typed.is_empty() { pystr(c.get("choice")).trim().to_string() } else { typed };
             (if a.is_empty() { "deny".into() } else { a }, String::new())
         }
         "takeover" => (if c.get("done").and_then(|v| v.as_bool()) == Some(true) { "allow".into() } else { "deny".into() }, String::new()),
@@ -549,7 +575,7 @@ impl Human {
                 let mut stale = false;
                 if let Some((k, a, _, eff, outcome)) = CALL.with(|x| x.borrow().answer.clone()) {
                     if k == kind && eff == effect_now {
-                        return json!({"answer": a, "channel": "elicit", "mrtr": true, "ms": 0.0, "outcome": outcome});
+                        return json!({"answer": a, "channel": "elicit", "mrtr": true, "ms": round_to(waited_s() * 1000.0, 1), "outcome": outcome, "kind": kind});
                     }
                     if k == kind {
                         // the target / window / payload changed since the person answered: that answer is not reused
@@ -563,7 +589,7 @@ impl Human {
                 }
                 let binding = CALL.with(|x| x.borrow().binding.clone());
                 let deadline = now() + self.timeout;
-                let state = self.pending.park(Pending { binding, kind: kind.into(), deadline, effect: effect_now });
+                let state = self.pending.park(Pending { binding, kind: kind.into(), deadline, effect: effect_now, asked: now() });
                 let mut m = if meta.is_object() { meta } else { json!({}) };
                 if stale {
                     m["asked_again"] = json!("the action's target changed since the earlier answer");
@@ -574,7 +600,7 @@ impl Human {
                 m["deadline_ms"] = json!((deadline * 1000.0) as i64);
                 let req = json!({"resultType": "input_required",
                     "inputRequests": {"human": {"method": "elicitation/create", "params": {
-                        "mode": "form", "message": text, "requestedSchema": schema_for(kind), "_meta": {META_KEY: m}}}},
+                        "mode": "form", "message": text, "requestedSchema": schema_with_options(kind, m.get("options")), "_meta": {META_KEY: m}}}},
                     "requestState": state});
                 CALL.with(|x| x.borrow_mut().request = Some(req));
                 return json!({"answer": "input_required", "channel": "elicit", "mrtr": true, "ms": 0.0, "stale_answer": stale});
@@ -623,7 +649,7 @@ impl Human {
         if outcome.is_empty() {
             outcome = if ans == "allow" { "accepted".into() } else { "denied".into() };
         }
-        json!({"answer": ans, "channel": ch, "ms": round_to(t0.elapsed().as_secs_f64() * 1000.0, 1), "outcome": outcome})
+        json!({"answer": ans, "channel": ch, "ms": round_to(t0.elapsed().as_secs_f64() * 1000.0, 1), "outcome": outcome, "kind": kind})
     }
 }
 
@@ -672,7 +698,7 @@ mod tests {
     #[test]
     fn late_answer_is_a_timeout() {
         let h = Human::new("elicit", 0.0, Some(Arc::new(|_, _| None)), Arc::new(|| true));
-        let st = h.pending.park(Pending { binding: "b".into(), kind: "approve".into(), deadline: now() - MRTR_GRACE_S - 1.0, effect: String::new() });
+        let st = h.pending.park(Pending { binding: "b".into(), kind: "approve".into(), deadline: now() - MRTR_GRACE_S - 1.0, effect: String::new(), asked: now() });
         let resp = json!({"human": {"action": "accept", "content": {"decision": "allow"}}});
         assert!(matches!(h.pending.resolve(&st, "b", Some(&resp)), Resolved::Late(_, _)));
     }

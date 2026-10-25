@@ -156,6 +156,8 @@ pub struct GateConfig {
     pub value_seed: u64,
     /// how check is valued: voi (value of information) | legacy (forced probe before a hand-back)
     pub check_model: String,
+    /// the operator's task file (--task-file / GUI_GATE_TASK_FILE): re-read when it changes; the newest version is used
+    pub task_file: Option<String>,
 }
 
 impl Default for GateConfig {
@@ -168,6 +170,7 @@ impl Default for GateConfig {
             gains: prior_gains(), calib: Some(PRIOR_CALIB), model_name: "osworld_v3".into(), fail_exp: 1.0, tree_diff: true, text_only: false,
             value_model_req: "auto".into(), value_model: "legacy".into(), treatment: None, cost_table: None,
             value_policy: "learned".into(), value_threshold: 0.7, value_random_rate: 0.1, value_seed: 0, check_model: "legacy".into(),
+            task_file: None,
         }
     }
 }
@@ -197,7 +200,8 @@ impl GateConfig {
         if let Some(v) = env("GUI_GATE_TASK") { c.task = v; }
         if c.task.is_empty() {
             if let Some(tf) = env("GUI_GATE_TASK_FILE") {
-                if let Ok(t) = std::fs::read_to_string(tf) { c.task = t.trim().to_string(); }
+                if let Ok(t) = std::fs::read_to_string(&tf) { c.task = t.trim().to_string(); }
+                c.task_file = Some(tf);
             }
         }
         if let Some(v) = env("GUI_GATE_BATCH") { c.batch = v; }

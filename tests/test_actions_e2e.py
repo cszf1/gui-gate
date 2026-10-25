@@ -370,8 +370,11 @@ class PersonActions(unittest.TestCase):
         c, r = self.stuck(p)
         try:
             self.assertEqual(p.asked[0]["_meta"][GG]["kind"], "ask_help")
-            self.assertEqual(p.asked[0]["requestedSchema"]["properties"]["choice"]["enum"], ["did_it", "try_other"])
+            # 0.10.1: help offers "do it for me" (takeover) or "give a hint" (answer), and says what was tried
+            self.assertEqual(p.asked[0]["requestedSchema"]["properties"]["choice"]["enum"], ["did_it", "hint", "try_other"])
+            self.assertIn("Tried so far:", p.asked[0]["message"])
             self.assertIn("A person did this step themselves", txt(r))
+            self.assertEqual(r["structuredContent"]["status"], "done_by_person")  # never re-sent by the gate
             self.assertEqual(c.clicked().count("Increment"), 2)  # the third was the person's
         finally:
             c.close()
