@@ -230,7 +230,10 @@ pub fn schema_with_options(kind: &str, options: Option<&Value>) -> Value {
     let mut sc = schema_for(kind);
     if kind == "answer" {
         if let Some(o) = options.and_then(|o| o.as_array()).filter(|o| (2..=4).contains(&o.len())) {
-            sc["properties"]["choice"] = json!({"type": "string", "title": "Pick one", "enum": o});
+            let val = |x: &Value| if x.is_object() { pystr(x.get("value")) } else { pystr(Some(x)) };
+            let lab = |x: &Value| if x.is_object() { pystr(x.get("label")) } else { pystr(Some(x)) };
+            sc["properties"]["choice"] = json!({"type": "string", "title": "Pick one", "enum": o.iter().map(val).collect::<Vec<_>>(),
+                                                "enumNames": o.iter().map(lab).collect::<Vec<_>>()});
             sc["properties"]["answer"]["title"] = json!("Or type your own answer");
             sc["required"] = json!([]);
         }

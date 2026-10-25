@@ -195,7 +195,7 @@ fn main() {
     if cfg.task.is_empty() || cfg.task_file.is_some() {
         if let Some(tf) = task_file {
             // the trusted task channel: the file is re-read whenever it changes (Gate::refresh_task)
-            cfg.task = std::fs::read_to_string(&tf).map(|t| t.trim().to_string()).unwrap_or_default();
+            cfg.task = std::fs::read_to_string(&tf).map(|t| server::parse_task_file(&t).0).unwrap_or_default();
             cfg.task_file = Some(tf);
         }
     }
