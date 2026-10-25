@@ -471,7 +471,10 @@ fn ids_list(sig: &str) -> Vec<String> {
 
 /// What the child reader thread needs (never the big lock: it must not wait on a gated call).
 pub struct Shared {
-    pub pending_methods: HashMap<String, String>,
+    /// request id -> (method, client used the MCP 2026-07-28 per-request `_meta` era)
+    pub pending_methods: HashMap<String, (String, bool)>,
+    /// the driver's answer to the gate's own legacy `initialize` (raw, not rewritten)
+    pub driver_init: Option<Value>,
     pub update_note: String,
     pub update_told: bool,
     pub driver_version: Option<String>,
@@ -534,7 +537,6 @@ pub struct Gate {
     pub log: Arc<EventLog>,
     child: Mutex<Arc<ChildMCP>>,
     child_cmd: Vec<String>,
-    init_params: Mutex<Option<Value>>,
     client_elicit: Arc<AtomicBool>,
     client_pending: Arc<Mutex<HashMap<String, Sender<Value>>>>,
     pub restarts: AtomicU64,
@@ -588,34 +590,161 @@ fn spawn_child(cmd: &[String], shared: Arc<Mutex<Shared>>, out: Arc<Out>, toolse
     }
 }
 
-/// Responses from the driver to the agent's own requests: rewrite initialize and tools/list.
+/// Responses from the driver to the agent's own requests: rewrite initialize and tools/list, and give modern-era
+/// requests the 2026-07-28 result envelope (the driver itself only ever sees legacy requests from the gate).
 fn from_child(mut msg: Value, shared: &Arc<Mutex<Shared>>, out: &Arc<Out>, toolset: &str, batch_mode: &str) {
     let mid = msg.get("id").map(|v| v.to_string());
     if let (Some(mid), true) = (mid, msg.get("method").is_none()) {
-        let meth = shared.lock().unwrap().pending_methods.remove(&mid);
-        match meth.as_deref() {
-            Some("tools/list") if msg.get("result").is_some() => augment_tools(&mut msg["result"], shared, toolset, batch_mode),
-            Some("initialize") if msg.get("result").is_some() => {
-                let mut sh = shared.lock().unwrap();
-                let r = &mut msg["result"];
-                let mut ins = pystr(r.get("instructions")) + INSTRUCTIONS_NOTE + &crate::v097::instructions_note();
-                if !sh.update_note.is_empty() {
-                    ins.push('\n');
-                    ins.push_str(&sh.update_note);
-                    sh.update_told = true;
+        let pend = shared.lock().unwrap().pending_methods.remove(&mid);
+        if let Some((meth, modern)) = pend {
+            if msg.get("result").map(|r| r.is_object()).unwrap_or(false) {
+                match meth.as_str() {
+                    "tools/list" => augment_tools(&mut msg["result"], shared, toolset, batch_mode),
+                    "initialize" => {
+                        let mut sh = shared.lock().unwrap();
+                        if sh.driver_init.is_none() {
+                            sh.driver_init = Some(msg["result"].clone());
+                        }
+                        rewrite_init(&mut msg["result"], &mut sh);
+                    }
+                    _ => {}
                 }
-                r["instructions"] = json!(ins);
-                let mut si = r.get("serverInfo").cloned().filter(|v| v.is_object()).unwrap_or(json!({}));
-                let dv = si.get("version").map(|v| pystr(Some(v)));
-                sh.driver_version = dv.clone();
-                si["name"] = json!(format!("gui-gate (cua-driver {})", dv.unwrap_or_else(|| "?".into())));
-                si["version"] = json!(VERSION);
-                r["serverInfo"] = si;
+                if modern {
+                    let sh = shared.lock().unwrap();
+                    modern_envelope(&mut msg["result"], &meth, &sh);
+                }
             }
-            _ => {}
         }
     }
     out.send(&msg);
+}
+
+/// The driver's initialize result as the agent sees it: gate instructions appended, gate serverInfo.
+fn rewrite_init(r: &mut Value, sh: &mut Shared) {
+    r["instructions"] = json!(gate_instructions(r, sh));
+    let mut si = r.get("serverInfo").cloned().filter(|v| v.is_object()).unwrap_or(json!({}));
+    let dv = si.get("version").map(|v| pystr(Some(v)));
+    sh.driver_version = dv.clone();
+    si["name"] = json!(format!("gui-gate (cua-driver {})", dv.unwrap_or_else(|| "?".into())));
+    si["version"] = json!(VERSION);
+    r["serverInfo"] = si;
+}
+
+fn gate_instructions(driver_init: &Value, sh: &mut Shared) -> String {
+    let mut ins = pystr(driver_init.get("instructions")) + INSTRUCTIONS_NOTE + &crate::v097::instructions_note();
+    if !sh.update_note.is_empty() {
+        ins.push('\n');
+        ins.push_str(&sh.update_note);
+        sh.update_told = true;
+    }
+    ins
+}
+
+fn gate_server_info(sh: &Shared) -> Value {
+    json!({"name": format!("gui-gate (cua-driver {})", sh.driver_version.clone().unwrap_or_else(|| "?".into())),
+           "version": VERSION})
+}
+
+// ------------------------------------------------------------------ MCP 2026-07-28 (per-request `_meta`)
+/// Modern protocol versions the gate handles end to end. The gate terminates the modern era itself: it validates
+/// the per-request metadata, talks legacy MCP (after its own `initialize`) to the driver, and adds the modern result
+/// envelope, so this does not depend on the driver's own modern support.
+pub const MODERN_VERSIONS: &[&str] = &["2026-07-28"];
+pub const PV_KEY: &str = "io.modelcontextprotocol/protocolVersion";
+pub const CC_KEY: &str = "io.modelcontextprotocol/clientCapabilities";
+
+fn rpc_error(id: Value, code: i64, message: &str, data: Option<Value>) -> Value {
+    let mut e = json!({"code": code, "message": message});
+    if let Some(d) = data {
+        e["data"] = d;
+    }
+    json!({"jsonrpc": "2.0", "id": id, "error": e})
+}
+
+/// Does this request carry modern per-request metadata?
+pub fn is_modern(msg: &Value) -> bool {
+    let meta = msg.get("params").and_then(|p| p.get("_meta"));
+    meta.map(|m| m.get(PV_KEY).is_some() || m.get(CC_KEY).is_some()).unwrap_or(false)
+        || msg.get("method").and_then(|m| m.as_str()) == Some("server/discover")
+}
+
+/// Same rules as the 2026-07-28 stdio servers (cua-driver's mcp_wire): Ok(true) for a valid modern request,
+/// Ok(false) for a legacy one, Err(error response) otherwise.
+pub fn classify(msg: &Value) -> Result<bool, Value> {
+    let id = msg.get("id").cloned().unwrap_or(Value::Null);
+    let meta = msg.get("params").and_then(|p| p.get("_meta"));
+    if !is_modern(msg) {
+        if meta.map(|m| !m.is_object()).unwrap_or(false) {
+            return Err(rpc_error(id, -32602, "MCP _meta must be an object", None));
+        }
+        return Ok(false);
+    }
+    let id_ok = id.is_string() || id.is_i64() || id.is_u64();
+    if msg.get("jsonrpc").and_then(|v| v.as_str()) != Some("2.0") || !id_ok {
+        return Err(rpc_error(Value::Null, -32600, "Invalid JSON-RPC request", None));
+    }
+    if !msg.get("params").map(|p| p.is_object()).unwrap_or(false) {
+        return Err(rpc_error(id, -32602, "MCP params must be an object", None));
+    }
+    let Some(ver) = meta.and_then(|m| m.get(PV_KEY)).and_then(|v| v.as_str()) else {
+        return Err(rpc_error(id, -32602, "Missing or invalid MCP protocolVersion metadata", None));
+    };
+    if !MODERN_VERSIONS.contains(&ver) {
+        return Err(rpc_error(id, -32022, "Unsupported protocol version",
+                             Some(json!({"supported": MODERN_VERSIONS, "requested": ver}))));
+    }
+    if !meta.and_then(|m| m.get(CC_KEY)).map(|c| c.is_object()).unwrap_or(false) {
+        return Err(rpc_error(id, -32602, "Missing or invalid MCP clientCapabilities metadata", None));
+    }
+    Ok(true)
+}
+
+/// Drop the modern keys from `params._meta` so the (gate-initialized) driver sees a plain legacy request.
+fn strip_modern_meta(msg: &mut Value) {
+    let Some(params) = msg.get_mut("params").and_then(|p| p.as_object_mut()) else { return };
+    let empty = match params.get_mut("_meta").and_then(|m| m.as_object_mut()) {
+        Some(m) => {
+            m.remove(PV_KEY);
+            m.remove(CC_KEY);
+            m.is_empty()
+        }
+        None => false,
+    };
+    if empty {
+        params.remove("_meta");
+    }
+}
+
+/// The 2026-07-28 result envelope: resultType "complete" and the gate as serverInfo (tool content untouched).
+fn modern_envelope(result: &mut Value, method: &str, sh: &Shared) {
+    let Some(o) = result.as_object_mut() else { return };
+    o.insert("resultType".into(), json!("complete"));
+    let meta = o.entry("_meta").or_insert_with(|| json!({}));
+    if !meta.is_object() {
+        *meta = json!({});
+    }
+    meta["io.modelcontextprotocol/serverInfo"] = gate_server_info(sh);
+    if method == "server/discover" || method.ends_with("/list") || method.ends_with("/read") {
+        o.entry("ttlMs").or_insert(json!(0));
+        o.entry("cacheScope").or_insert(json!("private"));
+    }
+}
+
+/// The gate's own legacy handshake with a freshly started driver, so every gate-built request is valid whatever
+/// era the agent speaks (2026-07-28 drivers reject metadata-free requests before a legacy initialize).
+fn handshake(c: &ChildMCP, shared: &Arc<Mutex<Shared>>) {
+    let r = c.call("initialize", Some(json!({"protocolVersion": "2025-06-18", "capabilities": {},
+        "clientInfo": {"name": "gui-gate", "version": VERSION}})), 30.0);
+    let _ = c.forward(&json!({"jsonrpc": "2.0", "method": "notifications/initialized"}));
+    match r.get("result").filter(|v| v.is_object()) {
+        Some(res) => {
+            let mut sh = shared.lock().unwrap();
+            sh.driver_version = res.get("serverInfo").and_then(|s| s.get("version")).map(|v| pystr(Some(v)));
+            sh.driver_init = Some(res.clone());
+        }
+        None => log_err(&format!("driver initialize failed: {}",
+                                 r.get("error").and_then(|e| e.get("message")).map(|m| pystr(Some(m))).unwrap_or_default())),
+    }
 }
 
 fn augment_tools(result: &mut Value, shared: &Arc<Mutex<Shared>>, toolset: &str, batch_mode: &str) {
@@ -705,7 +834,7 @@ impl Gate {
     pub fn new(child_cmd: Vec<String>, mut cfg: GateConfig, log_path: Option<String>) -> Arc<Gate> {
         let out = Arc::new(Out::new());
         let shared = Arc::new(Mutex::new(Shared {
-            pending_methods: HashMap::new(), update_note: String::new(), update_told: false, driver_version: None,
+            pending_methods: HashMap::new(), driver_init: None, update_note: String::new(), update_told: false, driver_version: None,
             delivery_tools: ["click", "double_click", "right_click", "drag", "type_text", "press_key", "hotkey", "set_value", "scroll"]
                 .iter().map(|s| s.to_string()).collect(),
             compat_warned: false, tool_names: vec![], click_props: vec![],
@@ -737,6 +866,7 @@ impl Gate {
         let toolset = cfg.toolset.clone();
         let batch_mode = cfg.batch.clone();
         let child = spawn_child(&child_cmd, shared.clone(), out.clone(), toolset.clone(), batch_mode.clone());
+        handshake(&child, &shared);
         let task_locked = !cfg.task.is_empty();
         let task_source = if task_locked { Some("operator".to_string()) } else { None };
         Arc::new(Gate {
@@ -748,7 +878,7 @@ impl Gate {
                 last_auto: HashMap::new(), seen_rows: HashMap::new(), recent: vec![], plan: vec![], plan_verdict: String::new(), plan_checks: vec![], facts: vec![], briefed: false, history: vec![], verdict_nagged: false, lb: Default::default(), risk_info: Value::Null, cur_ack: false,
             }),
             shared, out, log: Arc::new(EventLog::new(log_path)), child: Mutex::new(child), child_cmd,
-            init_params: Mutex::new(None), client_elicit, client_pending, restarts: AtomicU64::new(0), human,
+            client_elicit, client_pending, restarts: AtomicU64::new(0), human,
             reviewer: rv, started: now(), toolset, batch_mode, shot: crate::shot::ShotCfg::from_env(),
             roles: crate::roles::Roles::from_env(), jobs: Default::default(),
         })
@@ -758,17 +888,14 @@ impl Gate {
         self.child.lock().unwrap().clone()
     }
 
-    /// The driver died: start a new one and replay the handshake (the agent never notices).
+    /// The driver died: start a new one and redo the gate's own handshake (the agent never notices).
     fn respawn(&self) {
         let old = self.child();
         old.close();
         let c = spawn_child(&self.child_cmd, self.shared.clone(), self.out.clone(), self.toolset.clone(), self.batch_mode.clone());
         *self.child.lock().unwrap() = c.clone();
         let n = self.restarts.fetch_add(1, Ordering::SeqCst) + 1;
-        let params = self.init_params.lock().unwrap().clone()
-            .unwrap_or_else(|| json!({"protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": {"name": "gui-gate", "version": VERSION}}));
-        c.call("initialize", Some(params), 30.0);
-        let _ = c.forward(&json!({"jsonrpc": "2.0", "method": "notifications/initialized"}));
+        handshake(&c, &self.shared);
         self.log.write(json!({"ev": "driver_restart", "n": n}));
         log_err("driver restarted");
     }
@@ -860,20 +987,48 @@ impl Gate {
                 }
             }
             let has_id = msg.get("id").is_some();
+            let mut msg = msg;
+            let modern = if has_id && method.is_some() {
+                match classify(&msg) {
+                    Ok(m) => m,
+                    Err(e) => {
+                        self.out.send(&e);
+                        continue;
+                    }
+                }
+            } else {
+                false
+            };
+            if modern {
+                // 2026-07-28: client capabilities come with every request instead of initialize
+                let caps = msg["params"]["_meta"].get(CC_KEY).cloned().unwrap_or(json!({}));
+                self.client_elicit.store(caps.get("elicitation").is_some(), Ordering::SeqCst);
+            }
             if method.as_deref() == Some("initialize") {
                 let p = msg.get("params").cloned().unwrap_or(json!({}));
-                self.client_elicit.store(p.get("capabilities").and_then(|c| c.get("elicitation")).is_some(), Ordering::SeqCst);
+                if !modern {
+                    self.client_elicit.store(p.get("capabilities").and_then(|c| c.get("elicitation")).is_some(), Ordering::SeqCst);
+                }
                 self.log.write(json!({"ev": "client", "name": p.get("clientInfo").and_then(|c| c.get("name")),
                                       "reviewer": self.reviewer.backend()}));
-                *self.init_params.lock().unwrap() = Some(p);
             }
             if method.as_deref() == Some("tools/call") && has_id {
                 let me = self.clone();
                 std::thread::spawn(move || me.handle_call(msg));
                 continue;
             }
-            if matches!(method.as_deref(), Some("tools/list") | Some("initialize")) && has_id {
-                self.shared.lock().unwrap().pending_methods.insert(msg["id"].to_string(), method.clone().unwrap());
+            if has_id && matches!(method.as_deref(), Some("server/discover") | Some("initialize")) {
+                // answered by the gate from its own handshake with the driver (no second initialize to the driver)
+                if let Some(r) = self.local_answer(method.as_deref().unwrap(), modern) {
+                    self.out.send(&json!({"jsonrpc": "2.0", "id": msg["id"], "result": r}));
+                    continue;
+                }
+            }
+            if has_id && (modern || matches!(method.as_deref(), Some("tools/list") | Some("initialize"))) {
+                self.shared.lock().unwrap().pending_methods.insert(msg["id"].to_string(), (method.clone().unwrap(), modern));
+            }
+            if modern {
+                strip_modern_meta(&mut msg);
             }
             if !self.child().alive() && method.as_deref() != Some("initialize") {
                 self.respawn();
@@ -884,6 +1039,34 @@ impl Gate {
             }
         }
         self.shutdown();
+    }
+
+    /// initialize / server/discover answered by the gate from the driver's cached handshake result.
+    fn local_answer(&self, method: &str, modern: bool) -> Option<Value> {
+        let mut sh = self.shared.lock().unwrap();
+        let mut init = sh.driver_init.clone()?;
+        let mut r = if method == "server/discover" {
+            let ins = gate_instructions(&init, &mut sh);
+            json!({"supportedVersions": MODERN_VERSIONS,
+                   "capabilities": init.get("capabilities").cloned().filter(|c| c.is_object()).unwrap_or(json!({"tools": {}})),
+                   "instructions": ins})
+        } else {
+            rewrite_init(&mut init, &mut sh);
+            init
+        };
+        if modern {
+            modern_envelope(&mut r, method, &sh);
+        }
+        Some(r)
+    }
+
+    /// Send a tools/call result; modern-era requests get the 2026-07-28 envelope.
+    fn reply(&self, msg: &Value, mut result: Value) {
+        if is_modern(msg) {
+            let sh = self.shared.lock().unwrap();
+            modern_envelope(&mut result, "tools/call", &sh);
+        }
+        self.out.send(&json!({"jsonrpc": "2.0", "id": msg["id"], "result": result}));
     }
 
     /// The client closed stdin: leave nothing behind - background jobs and still-running commands are killed (whole
@@ -910,7 +1093,7 @@ impl Gate {
         let (name, args, alias_note) = match self.phantom(&name0, &args0) {
             Ok(x) => x,
             Err(res) => {
-                self.out.send(&json!({"jsonrpc": "2.0", "id": msg["id"], "result": res}));
+                self.reply(&msg, res);
                 return;
             }
         };
@@ -925,7 +1108,7 @@ impl Gate {
                 let pre = if name0 == "gate_task" { None } else { self.briefing() };
                 let mut r = text_result("[gate] Nothing was executed. First decide whether this task can be done on this computer at all: call set_plan with feasible:true and your milestones (end states), or feasible:false with the reason and reply FAIL. Use the briefing / inspect kind=env for facts. Then send this action again.", false);
                 if let Some(b) = pre { push_text(&mut r, b); }
-                self.out.send(&json!({"jsonrpc": "2.0", "id": msg["id"], "result": r}));
+                self.reply(&msg, r);
                 return;
             }
         }
@@ -1014,7 +1197,7 @@ impl Gate {
             ev["tool"] = json!(name);
             self.log.write(ev);
         }
-        self.out.send(&json!({"jsonrpc": "2.0", "id": msg["id"], "result": result}));
+        self.reply(&msg, result);
     }
 
     // ------------------------------------------------------------------ pass-through
@@ -3264,6 +3447,38 @@ impl Gate {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn mcp_2026_07_28_meta_rules() {
+        let m = |meta: Value| json!({"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": "x", "_meta": meta}});
+        assert_eq!(classify(&json!({"jsonrpc": "2.0", "id": 1, "method": "tools/list"})), Ok(false));
+        assert_eq!(classify(&m(json!({PV_KEY: "2026-07-28", CC_KEY: {}}))), Ok(true));
+        let e = classify(&m(json!({PV_KEY: "2025-06-18", CC_KEY: {}}))).unwrap_err();
+        assert_eq!(e["error"]["code"], -32022);
+        assert_eq!(e["error"]["data"]["supported"], json!(["2026-07-28"]));
+        assert_eq!(classify(&m(json!({PV_KEY: "2026-07-28"}))).unwrap_err()["error"]["code"], -32602);
+        assert_eq!(classify(&m(json!([]))).unwrap_err()["error"]["code"], -32602);
+        // server/discover is always modern: no metadata is an error
+        assert!(classify(&json!({"jsonrpc": "2.0", "id": 1, "method": "server/discover", "params": {}})).is_err());
+        let mut msg = m(json!({PV_KEY: "2026-07-28", CC_KEY: {}, "progressToken": 3}));
+        strip_modern_meta(&mut msg);
+        assert_eq!(msg["params"]["_meta"], json!({"progressToken": 3}));
+        let mut msg = m(json!({PV_KEY: "2026-07-28", CC_KEY: {}}));
+        strip_modern_meta(&mut msg);
+        assert!(msg["params"].get("_meta").is_none());
+        let sh = Shared { pending_methods: HashMap::new(), driver_init: None, update_note: String::new(), update_told: false,
+                          driver_version: Some("0.38.0".into()), delivery_tools: HashSet::new(), compat_warned: false,
+                          tool_names: vec![], click_props: vec![] };
+        let mut r = json!({"content": [], "structuredContent": {"resultType": "domain"}});
+        modern_envelope(&mut r, "tools/call", &sh);
+        assert_eq!(r["resultType"], "complete");
+        assert_eq!(r["structuredContent"]["resultType"], "domain");
+        assert_eq!(r["_meta"]["io.modelcontextprotocol/serverInfo"]["version"], VERSION);
+        assert!(r.get("ttlMs").is_none());
+        let mut r = json!({"tools": []});
+        modern_envelope(&mut r, "tools/list", &sh);
+        assert_eq!(r["ttlMs"], 0);
+    }
 
     #[test]
     fn nearest_and_opener() {
