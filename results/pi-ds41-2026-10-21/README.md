@@ -1,5 +1,11 @@
 # pi-ds41-2026-10-21 — PARTIAL / ABORTED (user switched model)
 
+> **Environment note (2026-10-25):** OSWorld numbers here are from a
+> **custom environment based on OSWorld tasks and evaluators** (native Debian 13 / XFCE, other app versions, own reset
+> and budget; bench/README.md), not comparable to the OSWorld leaderboard; descriptive only (no frozen manifest,
+> docs/eval-protocol.md).
+
+
 **Not a full result.** The user stopped this run at 20:51 CST on 2026-10-21 to switch models. 13 of 68 runs are complete (6.5 of 34 tasks).
 The cut-off run (ow05 gate8) is in `aborted/` and is not scored.
 

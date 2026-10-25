@@ -1,13 +1,15 @@
 # OSWorld-Verified full run: gui-gate v0.9.9 (all 0.9.7+ features, 7 DeepSeek roles) + Pi + deepseek-v4.1-flash, box gui-pi3
 
-> **How to read this number (added 2026-10-25, external review):** 137/255 = 53.7 % of *valid* runs (the latest
-> snapshot of this partial run; this folder's report holds the earlier 132/246 = 53.7 % snapshot) is a
-> **custom-environment partial result**, not an official OSWorld-Verified score. Wilson 95 % CI for 137/255:
-> **47.6 %–59.7 %** (132/246: 47.4 %–59.8 %), ignoring task correlation and the selection of valid runs. The run used
-> OSWorld's tasks and evaluators natively on Debian 13 / XFCE 1440x900 with Chromium, LibreOffice 25.2 and other app
-> versions (no VM, no snapshot revert), stopped before all 361 tasks finished, excluded infra failures from the
-> valid denominator, and had no direct baseline. Over the planned list it is 132/361 = 36.6 % (Wilson 31.8 %–41.7 %).
-> Do not compare it with leaderboard numbers. Fair comparisons: bench/fair_compare.py.
+> **How to read this number (added 2026-10-25, external review; made consistent with this folder's data):** this is a
+> **custom environment based on OSWorld tasks and evaluators**, a **custom-environment partial result**,
+> not an official OSWorld-Verified score and **not comparable to the OSWorld leaderboard**. The committed data give 137/256 = 53.5 % of
+> *valid* runs (Wilson 95 % CI **47.4 %–59.5 %**; the review quoted the 137/255 = 53.7 % snapshot, 47.6 %–59.7 %),
+> ignoring task correlation and the selection of valid runs. Over the planned list (361 tasks; missing and infra runs
+> count as failures) it is **137/361 = 38.0 %** (Wilson 33.1 %–43.1 %); 23 runs were infra failures (18 setup_failed,
+> 4 relay_error, 1 eval_error) and 82 tasks never ran. The run used OSWorld's tasks and evaluators natively on Debian 13 /
+> XFCE 1440x900 with Chromium, LibreOffice 25.2 and other app versions (no VM, no snapshot revert), its own reset and a
+> 100-turn / 3600 s budget, stopped before all 361 tasks finished, and had no baseline of any kind, so it says nothing
+> about the value model. Fair comparisons: bench/fair_compare.py under docs/eval-protocol.md.
 
 
 Started 2026-10-23 00:07:58 CST. Condition: gate only (bench cond `gate8` = gate policy + task text + reviewer), seed 0.

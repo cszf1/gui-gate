@@ -1,5 +1,11 @@
 # smoke-ds41-v096-2026-10-22 — live smoke of branch opt-0.9.6 (rounds 1-17 + box fixes)
 
+> **Environment note (2026-10-25):** OSWorld numbers here are from a
+> **custom environment based on OSWorld tasks and evaluators** (native Debian 13 / XFCE, other app versions, own reset
+> and budget; bench/README.md), not comparable to the OSWorld leaderboard; descriptive only (no frozen manifest,
+> docs/eval-protocol.md).
+
+
 - Box **gui-pi2** (InstaBox, Debian 13), run dir /data/workspace/runs/smoke-ds41-v096-2026-10-22, 2026-10-22 16:58-18:15 CST (summary/timing tables count the 10 valid runs per cond)
 - gui-gate built from **opt-0.9.6 b001895** (reports version 0.9.5: no version bump on this branch), screenshots full-size JPEG q60
 - Agent: Pi 1.3.0, main model **tokenrhythm deepseek-v4.1-flash-1017**, thinking **medium**, screenshots on (not text-only)

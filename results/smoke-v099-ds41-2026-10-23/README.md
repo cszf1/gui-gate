@@ -1,5 +1,11 @@
 # Smoke before the full OSWorld-Verified run (gui-gate v0.9.9, all 0.9.7+ features, 7 DeepSeek roles), box gui-pi3, 2026-10-22/23 CST
 
+> **Environment note (2026-10-25):** OSWorld numbers here are from a
+> **custom environment based on OSWorld tasks and evaluators** (native Debian 13 / XFCE, other app versions, own reset
+> and budget; bench/README.md), not comparable to the OSWorld leaderboard; descriptive only (no frozen manifest,
+> docs/eval-protocol.md).
+
+
 Same configuration as results/osworld-verified-v099-ds41-2026-10-23/ (see its README).
 
 - rolecheck/: direct MCP session against the installed gate (no LLM agent) on a LibreOffice Writer window with every
