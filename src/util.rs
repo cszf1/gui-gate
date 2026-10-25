@@ -287,3 +287,65 @@ mod crypto_tests {
         assert_eq!(redact_secrets("count=3 ok"), "count=3 ok");
     }
 }
+
+/// Secret values the gate holds (model keys from its environment, key files, the reviewer.env settings): every tool
+/// result and every log line has them replaced by [redacted], whatever route they took (a command that printed its
+/// parent's environment, a key file read by an interpreter, an error message).
+fn secret_store() -> &'static std::sync::Mutex<Vec<String>> {
+    static S: std::sync::OnceLock<std::sync::Mutex<Vec<String>>> = std::sync::OnceLock::new();
+    S.get_or_init(|| {
+        let mut v: Vec<String> = std::env::vars().filter(|(k, _)| crate::proc::is_secret_var(k) && secretish_name(k)).map(|(_, v)| v.trim().to_string()).collect();
+        v.retain(|x| x.len() >= 8);
+        std::sync::Mutex::new(v)
+    })
+}
+
+/// A variable whose VALUE is a secret (not every GUI_GATE_ setting is: a policy name or a path is not).
+fn secretish_name(k: &str) -> bool {
+    let u = k.to_ascii_uppercase();
+    u.ends_with("_KEY") || u.contains("TOKEN") || u.ends_with("_SECRET") || u.contains("PASSWORD") || u.contains("API_KEY")
+}
+
+pub fn register_secret(v: &str) {
+    let v = v.trim();
+    if v.len() >= 8 {
+        let mut g = secret_store().lock().unwrap_or_else(|e| e.into_inner());
+        if !g.iter().any(|x| x == v) {
+            g.push(v.to_string());
+        }
+    }
+}
+
+/// redact_secrets plus every secret value the gate knows.
+pub fn redact_all(s: &str) -> String {
+    let mut out = redact_secrets(s);
+    for v in secret_store().lock().unwrap_or_else(|e| e.into_inner()).iter() {
+        if out.contains(v.as_str()) {
+            out = out.replace(v.as_str(), "[redacted]");
+        }
+    }
+    out
+}
+
+/// Redact every string of a tool result (image data excluded).
+pub fn redact_value(v: &mut Value) {
+    match v {
+        Value::String(s) => {
+            let r = redact_all(s);
+            if r != *s {
+                *s = r;
+            }
+        }
+        Value::Array(a) => a.iter_mut().for_each(redact_value),
+        Value::Object(o) => {
+            let img = o.get("type").and_then(|t| t.as_str()) == Some("image");
+            for (k, x) in o.iter_mut() {
+                if img && k == "data" {
+                    continue;
+                }
+                redact_value(x);
+            }
+        }
+        _ => {}
+    }
+}

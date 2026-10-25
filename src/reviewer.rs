@@ -210,7 +210,7 @@ impl Reviewer {
                 }
                 let model = get("GUI_GATE_REVIEWER_MODEL").unwrap_or_default().trim().to_string();
                 let protocol = guess_protocol(get("GUI_GATE_REVIEWER_PROTOCOL").as_deref(), &url, &model);
-                Http { url: endpoint(&url, &protocol, &model), key, model,
+                Http { url: endpoint(&url, &protocol, &model), key: { crate::util::register_secret(&key); key }, model,
                        user_agent: get("GUI_GATE_REVIEWER_USER_AGENT").filter(|u| !u.trim().is_empty()), protocol }
             })
         };
@@ -256,7 +256,7 @@ impl Reviewer {
             return None;
         }
         Some(Reviewer {
-            http: Some(Http { url: endpoint(&url, &protocol, &model), key, model, user_agent: get("_USER_AGENT").filter(|u| !u.trim().is_empty()), protocol }),
+            http: Some(Http { url: endpoint(&url, &protocol, &model), key: { crate::util::register_secret(&key); key }, model, user_agent: get("_USER_AGENT").filter(|u| !u.trim().is_empty()), protocol }),
             timeout: Some(get("_TIMEOUT").and_then(|t| t.trim().parse().ok()).unwrap_or(60.0)),
             max_tokens: get("_MAX_TOKENS").and_then(|t| t.trim().parse().ok()).unwrap_or(2048),
             allow_p: 0.5,

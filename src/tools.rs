@@ -475,3 +475,47 @@ pub fn replay_main(argv: &[String]) -> i32 {
         "by_option": opts})).unwrap());
     0
 }
+
+/// `gui-gate report LOG...`: what asking a person cost, per session (one session = one task) and overall, from the
+/// gate's person_burden events: asks per task, repeated-question ratio, person waiting vs active seconds, takeover
+/// steps, cancel/timeout ("no answer") rate.
+pub fn burden_summary(paths: &[String]) -> Value {
+    let mut per: IndexMap<String, Value> = IndexMap::new();
+    for f in files_of(paths) {
+        for e in events(&f) {
+            if s(&e, "ev") == "person_burden" {
+                if let Some(t) = e.get("totals") {
+                    per.insert(format!("{}:{}", f, s(&e, "session")), t.clone());
+                }
+            }
+        }
+    }
+    let n = per.len() as f64;
+    let sum = |k: &str| per.values().map(|t| t.get(k).and_then(|v| v.as_f64()).unwrap_or(0.0)).sum::<f64>();
+    let asks = sum("asks");
+    let ratio = |x: f64| if asks > 0.0 { round_to(x / asks, 3) } else { 0.0 };
+    json!({"sessions_with_asks": per.len(), "asks": asks, "asks_per_task": if n > 0.0 { round_to(asks / n, 2) } else { 0.0 },
+           "repeat_ratio": ratio(sum("repeat_asks")), "person_wait_s": round_to(sum("person_wait_s"), 1),
+           "person_active_s": round_to(sum("person_active_s"), 1), "takeover_steps": sum("takeover_steps"),
+           "cancel_timeout_rate": ratio(sum("no_answer")), "not_asked_again": sum("not_asked_again"),
+           "note": "sessions without any person request are not counted in asks_per_task",
+           "per_session": Value::Object(per.into_iter().collect())})
+}
+
+pub fn report_main(argv: &[String]) -> i32 {
+    let as_json = argv.iter().any(|a| a == "--json");
+    let paths: Vec<String> = argv.iter().filter(|a| *a != "--json").cloned().collect();
+    if paths.is_empty() {
+        eprintln!("usage: gui-gate report [--json] LOG.jsonl|DIR ...");
+        return 2;
+    }
+    let r = burden_summary(&paths);
+    if as_json {
+        println!("{}", serde_json::to_string_pretty(&r).unwrap_or_default());
+    } else {
+        println!("person burden: sessions with asks={} asks={} asks/task={} repeat ratio={} wait={} s active={} s takeover steps={} cancel/timeout rate={} not asked again={}",
+                 r["sessions_with_asks"], r["asks"], r["asks_per_task"], r["repeat_ratio"], r["person_wait_s"], r["person_active_s"],
+                 r["takeover_steps"], r["cancel_timeout_rate"], r["not_asked_again"]);
+    }
+    0
+}
