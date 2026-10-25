@@ -1,0 +1,1 @@
+DONE — Sorted the records in `/data/home/Arrang_Value_min_to_max.xlsx` by Amount ascending (Data > Sort, header row preserved, whole rows kept intact: 442 → 9444) and saved the file over the original.

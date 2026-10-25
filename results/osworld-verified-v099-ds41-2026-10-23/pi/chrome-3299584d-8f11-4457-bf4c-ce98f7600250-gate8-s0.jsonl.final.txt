@@ -1,0 +1,1 @@
+DONE — Your local Chrome profile is already clean (startup = "Open the New Tab page", no funbrain in prefs, extensions, policies or launchers), so the hijack is on your Surface Pro; I wrote a step-by-step fix guide to `/home/user/Desktop/Chrome_Funbrain_Startup_Fix.txt` and opened `chrome://settings/onStartup` in Chrome to show where the setting lives.

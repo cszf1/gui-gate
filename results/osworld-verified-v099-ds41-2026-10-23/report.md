@@ -1,22 +1,22 @@
 # OSWorld-Verified report
 
-- tasks expected 361, finished rows 268, valid 246, infra 22 {'relay_error': 3, 'setup_failed': 18, 'eval_error': 1}
-- **success 132/361 = 36.57 %** (official-style: every expected task counts, infra/missing = 0); 132/246 = 53.66 % of valid runs; score sum 138.33
-- stops {'agent': 229, 'max_turns': 3, 'timeout': 14}; turns mean 30.5 / median 25.0; wall mean 669.6 s / median 336.5 s; total 47.6 h
-- tokens: input 12,451,732 + cache read 298,050,048, output 2,205,161; screenshots returned 2204; tool calls 7926
-- request_human calls 12 (human=deny); FAIL answers 26
-- gate: {'actions': 7534, 'executed': 7299, 'interventions': 235, 'human_events': 84, 'loop_notes': 14, 'loop_refused': 8}
+- tasks expected 361, finished rows 279, valid 256, infra 23 {'relay_error': 4, 'setup_failed': 18, 'eval_error': 1}
+- **success 137/361 = 37.95 %** (official-style: every expected task counts, infra/missing = 0); 137/256 = 53.52 % of valid runs; score sum 143.33
+- stops {'agent': 237, 'max_turns': 3, 'timeout': 16}; turns mean 30.3 / median 24.0; wall mean 690.1 s / median 340.2 s; total 51.19 h
+- tokens: input 12,882,114 + cache read 306,507,136, output 2,269,475; screenshots returned 2276; tool calls 8202
+- request_human calls 14 (human=deny); FAIL answers 28
+- gate: {'actions': 7759, 'executed': 7517, 'interventions': 242, 'human_events': 89, 'loop_notes': 15, 'loop_refused': 8}
 - reviewer (System One): {'calls': 95, 'decisions': {'deny': 59, 'allow': 36}, 'ms_mean': 947.2, 'ms_median': 702.6}
 
 | role | runs using | invocations | HTTP calls | errors | mean ms | median ms |
 |---|---|---|---|---|---|---|
-| feasibility | 246 | 246 | 1439 | 5 | 66618.7 | 55949.5 |
-| planner | 246 | 246 | 847 | 3 | None | None |
-| verifier | 221 | 232 | 1629 | 13 | 71343.5 | 55289.0 |
+| feasibility | 256 | 256 | 1494 | 5 | 67508.2 | 56303.2 |
+| planner | 256 | 256 | 872 | 3 | None | None |
+| verifier | 229 | 240 | 1679 | 13 | 70919.6 | 54829.6 |
 | judge | 0 | 0 | 0 | 0 | None | None |
 | search | 5 | 5 | 5 | 0 | 13897.6 | 10481.4 |
-| compact | 199 | 713 | 713 | 1 | 10129.8 | 9266.0 |
-| grounder | 8 | 9 | 9 | 0 | 9530.7 | 5423.4 |
+| compact | 206 | 733 | 733 | 1 | 10165.4 | 9280.0 |
+| grounder | 9 | 10 | 10 | 0 | 10042.4 | 5958.5 |
 
 (feasibility ms = the whole briefing incl. planner; compact/judge ms = gap to the previous gate event, approximate)
 
@@ -24,16 +24,16 @@
 |---|---|---|---|---|---|---|
 | libreoffice_impress | 31 | 31 | 5 | 16.1 % | 5.93 | 0 |
 | os | 18 | 15 | 8 | 44.4 % | 8.0 | 3 |
-| multi_apps | 70 | 54 | 24 | 34.3 % | 27.49 | 16 |
+| multi_apps | 71 | 55 | 25 | 35.2 % | 28.49 | 16 |
 | libreoffice_writer | 18 | 17 | 13 | 72.2 % | 13.0 | 1 |
 | vs_code | 20 | 20 | 16 | 80.0 % | 16.0 | 0 |
-| libreoffice_calc | 37 | 36 | 31 | 83.8 % | 31.0 | 1 |
-| vlc | 12 | 11 | 8 | 66.7 % | 8.99 | 1 |
-| chrome | 35 | 35 | 12 | 34.3 % | 12.93 | 0 |
-| gimp | 17 | 17 | 8 | 47.1 % | 8.0 | 0 |
+| libreoffice_calc | 41 | 39 | 33 | 80.5 % | 33.0 | 2 |
+| vlc | 13 | 12 | 8 | 61.5 % | 8.99 | 1 |
+| chrome | 39 | 39 | 13 | 33.3 % | 13.93 | 0 |
+| gimp | 18 | 18 | 9 | 50.0 % | 9.0 | 0 |
 | thunderbird | 10 | 10 | 7 | 70.0 % | 7.0 | 0 |
 
-tools: {'run_command': 2001, 'run_actions': 1477, 'get_window_state': 1253, 'click': 973, 'set_plan': 538, 'press_key': 466, 'list_windows': 457, 'inspect': 281, 'check_done': 233, 'scroll': 95, 'type_text': 77, 'list_apps': 58, 'request_human': 12, 'update_plan': 1, 'mcp__gui_run_actions': 1, 'mcp__gui_set_plan': 1, 'mcp__gui_inspect': 1, 'mcp__gui_press_key': 1}
+tools: {'run_command': 2047, 'run_actions': 1524, 'get_window_state': 1308, 'click': 1023, 'set_plan': 558, 'press_key': 480, 'list_windows': 474, 'inspect': 291, 'check_done': 241, 'scroll': 96, 'type_text': 80, 'list_apps': 61, 'request_human': 14, 'update_plan': 1, 'mcp__gui_run_actions': 1, 'mcp__gui_set_plan': 1, 'mcp__gui_inspect': 1, 'mcp__gui_press_key': 1}
 
 ## infra rows
 
@@ -66,3 +66,4 @@ tools: {'run_command': 2001, 'run_actions': 1477, 'get_window_state': 1253, 'cli
 - multi_apps-b5062e3e-641c-4e3a-907b-ac864d2e7652: setup_failed (attempts 1) Exception('Setup step 3 failed: _launch_setup - Failed to launch application: HTTP 500')
 - vlc-386dbd0e-0241-4a0a-b6a2-6704fba26b1c: setup_failed (attempts 1) Exception("Setup step 4 failed: _open_setup - Failed to open file '/home/user/Desktop/lecture.pdf'. An error occurred while trying to send the request or the server responded with an error: 500 Server Error: INTERNAL SERVER ERROR for url: http://127.0.0.1:5000/setup/open_file")
 - multi_apps-ee9a3c83-f437-4879-8918-be5efbb9fac7: setup_failed (attempts 1) Exception('Setup step 4 failed: _execute_setup - Setup command request failed: HTTP 500')
+- libreoffice_calc-2bd59342-0664-4ccb-ba87-79379096cc08: relay_error (attempts 3) 503: {"code":"LITELLM_UNAVAILABLE","message":"模型服务暂时不可用，请稍后重试","traceId":"trace_06b17e68-c6d5-4c7a-b6f3-a06dca5b09fd"}

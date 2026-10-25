@@ -1,0 +1,1 @@
+DONE — Inserted native LibreOffice sparklines (Insert > Sparkline, line type) in the "Chart" column F2:F23 of /data/home/OrderId_Month_Chart.xlsx, each built from that order's Jan–Mar values (C:E), and saved the workbook in xlsx format (verified: 22 sparkline entries F2–F23 in the sheet XML).

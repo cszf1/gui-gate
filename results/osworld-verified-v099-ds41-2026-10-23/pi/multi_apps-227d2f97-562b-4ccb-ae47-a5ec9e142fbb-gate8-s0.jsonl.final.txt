@@ -1,0 +1,1 @@
+DONE — Copied the image from the Desktop `.xcf` in GIMP (Select All → Copy) and pasted it into a new LibreOffice Writer document, then saved it as `/data/home/Desktop/image.docx` (Word 2010–365 format, containing `word/media/image1.png`).
