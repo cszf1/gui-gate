@@ -1795,6 +1795,7 @@ impl Gate {
         let shadow = if inn.cfg.collect && self.check_available(inn, &ctx) { self.check(inn, &ctx, None) } else { None };
 
         let mut trail: Vec<String> = vec![];
+        let _ = crate::value::take_last(); // the value log below belongs to this action only
         // a risky or hand-off step always goes through the safety rules first, whatever the baseline policy says
         let safety_first = ctx.risk.is_some() || ctx.handoff.is_some();
         let mut dec = match if safety_first { None } else { policy_decision(&ctx, &f, &inn.cfg) } {
@@ -1953,7 +1954,7 @@ impl Gate {
             "decision": opt, "tier": dec.tier, "trail": trail, "reason": dec.reason, "check": check_res,
             "shadow_check": shadow, "judge": judge, "window_changed": wc, "window_added": wadd,
             "ack": ack, "confirmed": confirmed, "risk_level": ctx.risk_level, "handoff": ctx.handoff,
-            "risk_gate": inn.risk_info, "batch": inn.batch_ctx});
+            "risk_gate": inn.risk_info, "batch": inn.batch_ctx, "value": crate::value::take_last()});
 
         // a person decides / acts, when the gate can reach one itself
         if (opt == "ask_human" || opt == "handoff" || opt == "ask_help") && self.human.resolve_channel() != "chat" {

@@ -33,49 +33,22 @@ pub fn prior_v1_weights() -> IndexMap<String, f64> {
 
 pub const PRIOR_CALIB: (f64, f64) = (0.9967, -0.04637);
 
-/// What an option fixes beyond the features it resets (see `after`): the residual chance it turns a
-/// would-be failure into a success. ask_help: a person does or explains the step.
+/// Hand-set residual gains of the LEGACY value prior (see value.rs): not estimated from data.
 fn prior_gains() -> IndexMap<String, f64> {
-    [("check", 0.03), ("heal", 0.65), ("wait", 0.2), ("look_light", 0.15), ("look_full", 0.3), ("review", 0.35),
-     ("ask_help", 0.9)]
-        .iter().map(|(k, v)| (k.to_string(), *v)).collect()
+    crate::value::legacy_gains()
 }
 
-fn pixel_gain(o: &str) -> Option<f64> {
-    match o {
-        "look_light" => Some(0.05),
-        "look_full" => Some(0.5),
-        "check" => Some(0.0),
-        _ => None,
-    }
-}
-
-/// Seconds. Options the gate resolves itself (check, heal, wait) cost well under a second; options that hand
-/// the step back to the model cost a whole model turn (about 7 s measured, model + relay); a person ~45 s.
+/// Prior seconds per option, used only when no measured cost exists (value::CostTable, `gui-gate costs`).
+/// Options the gate resolves itself (check, heal, wait) cost well under a second; options that hand the step back
+/// to the model cost a whole model turn (about 7 s measured once, model + relay); a person ~45 s.
 fn default_costs() -> IndexMap<String, f64> {
     [("direct", 0.0), ("check", 0.2), ("heal", 0.3), ("wait", 1.0), ("look_light", 7.0), ("look_full", 9.0),
-     ("review", 3.0), ("ask_human", 45.0), ("ask_help", 45.0)].iter().map(|(k, v)| (k.to_string(), *v)).collect()
+     ("review", 3.0), ("reason", 7.0), ("ask_human", 45.0), ("ask_help", 45.0)].iter().map(|(k, v)| (k.to_string(), *v)).collect()
 }
 
-/// Counterfactual features: the state this option leaves behind, scored by the same predictor.
-/// A fresh read clears staleness; waiting clears loading; re-thinking clears doubt about the target.
+/// LEGACY pseudo-counterfactual features (value::legacy_after): kept for the legacy prior and old tests only.
 pub fn after(f: &Feats, o: &str) -> Feats {
-    let mut g = f.clone();
-    let mut set = |ks: &[&'static str], v: f64| for k in ks { if let Some(x) = g.get_mut(*k) { *x = v; } };
-    match o {
-        "look_light" | "look_full" => {
-            set(&["no_obs", "token_stale", "log_obs_age", "acts_since_obs", "window_changed", "window_added", "last_popup",
-                  "elem_unknown", "last_unverif", "prev_none"], 0.0);
-            if o == "look_full" { set(&["obs_had_shot"], 1.0); }
-        }
-        "wait" => set(&["loading_cue", "last_popup"], 0.0),
-        "heal" => set(&["token_stale", "elem_unknown"], 0.0),
-        "review" => set(&["label_dup", "repeat", "sig_failed"], 0.0),
-        // a probe only tells; it fixes nothing by itself (in 332 logged probes it flagged 2 of 82 later failures)
-        "check" => {}
-        _ => {}
-    }
-    g
+    crate::value::legacy_after(f, o)
 }
 
 /// What a failed step costs, in seconds: noticing it and redoing it takes about two model turns plus clean-up,
@@ -169,6 +142,20 @@ pub struct GateConfig {
     pub tree_diff: bool,
     /// the acting model cannot see images (GUI_GATE_TEXT_ONLY=1 / --text-only): no screenshots, tree-only advice
     pub text_only: bool,
+    /// requested value model: auto (treatment when its weights are loaded, else legacy) | legacy | treatment
+    pub value_model_req: String,
+    /// active value model: "legacy" (hand-set prior) or "treatment" (value::TreatmentModel)
+    pub value_model: String,
+    pub treatment: Option<std::sync::Arc<crate::value::TreatmentModel>>,
+    /// measured option costs (GUI_GATE_COSTS); None = the prior seconds in `costs`
+    pub cost_table: Option<crate::value::CostTable>,
+    /// value policy (GUI_GATE_VALUE_POLICY): learned | direct | observe_light | observe_full | extra_reason | threshold | heuristic | random
+    pub value_policy: String,
+    pub value_threshold: f64,
+    pub value_random_rate: f64,
+    pub value_seed: u64,
+    /// how check is valued: voi (value of information) | legacy (forced probe before a hand-back)
+    pub check_model: String,
 }
 
 impl Default for GateConfig {
@@ -179,6 +166,8 @@ impl Default for GateConfig {
             human_timeout: 120.0, toolset: "core".into(), auto_observe: true, delivery: "auto".into(), task: String::new(),
             batch: "auto".into(), deny_consecutive: 3, deny_total: 8, costs: default_costs(), weights: prior_weights(),
             gains: prior_gains(), calib: Some(PRIOR_CALIB), model_name: "osworld_v3".into(), fail_exp: 1.0, tree_diff: true, text_only: false,
+            value_model_req: "auto".into(), value_model: "legacy".into(), treatment: None, cost_table: None,
+            value_policy: "learned".into(), value_threshold: 0.7, value_random_rate: 0.1, value_seed: 0, check_model: "legacy".into(),
         }
     }
 }
@@ -223,7 +212,44 @@ impl GateConfig {
                 let _ = c.load_weights(&w);
             }
         }
+        if let Some(v) = env("GUI_GATE_VALUE_WEIGHTS") {
+            match crate::value::TreatmentModel::load(&v) {
+                Ok(m) => c.treatment = Some(std::sync::Arc::new(m)),
+                Err(e) => log_err(&format!("cannot load value weights {v}: {e} (legacy value prior stays active)")),
+            }
+        }
+        if let Some(v) = env("GUI_GATE_COSTS") {
+            match crate::value::CostTable::load(&v) {
+                Ok(t) => c.cost_table = Some(t),
+                Err(e) => log_err(&format!("cannot load measured costs {v}: {e} (prior seconds are used)")),
+            }
+        }
+        if let Some(t) = c.cost_table.as_mut() {
+            if let Some(v) = env("GUI_GATE_COST_TOKEN_S").and_then(|v| v.parse().ok()) { t.token_s_per_k = v; }
+            if let Some(v) = env("GUI_GATE_COST_PERSON_W").and_then(|v| v.parse().ok()) { t.person_w = v; }
+            if let Some(v) = env("GUI_GATE_COST_MIN_N").and_then(|v| v.parse().ok()) { t.min_n = v; }
+        }
+        if let Some(v) = env("GUI_GATE_VALUE_POLICY") {
+            if crate::value::VALUE_POLICIES.contains(&v.as_str()) { c.value_policy = v; } else { log_err(&format!("unknown GUI_GATE_VALUE_POLICY {v}; using learned")); }
+        }
+        if let Some(v) = env("GUI_GATE_VALUE_THRESHOLD").and_then(|v| v.parse().ok()) { c.value_threshold = v; }
+        if let Some(v) = env("GUI_GATE_VALUE_RANDOM_RATE").and_then(|v| v.parse().ok()) { c.value_random_rate = v; }
+        if let Some(v) = env("GUI_GATE_VALUE_SEED").and_then(|v| v.parse().ok()) { c.value_seed = v; }
+        if let Some(v) = env("GUI_GATE_VALUE_MODEL") { c.value_model_req = v.to_lowercase(); }
+        c.resolve_value_model();
+        if let Some(v) = env("GUI_GATE_CHECK_MODEL") { if v == "voi" || v == "legacy" { c.check_model = v; } }
         c
+    }
+
+    /// Which value model is active: treatment only when its weights are loaded (auto / treatment), else legacy.
+    pub fn resolve_value_model(&mut self) {
+        let want_treatment = matches!(self.value_model_req.as_str(), "auto" | "treatment");
+        self.value_model = if want_treatment && self.treatment.is_some() { "treatment".into() } else { "legacy".into() };
+        if self.value_model_req == "treatment" && self.treatment.is_none() {
+            log_err("GUI_GATE_VALUE_MODEL=treatment but no treatment weights are loaded (GUI_GATE_VALUE_WEIGHTS); the legacy value prior is active");
+        }
+        // check is valued as information with the treatment model; the legacy prior keeps its forced probe
+        self.check_model = if self.value_model == "treatment" { "voi".into() } else { "legacy".into() };
     }
 
     pub fn load_weights(&mut self, path: &str) -> Result<(), String> {
@@ -241,6 +267,10 @@ impl GateConfig {
         }
         self.model_name = d.get("name").and_then(|n| n.as_str()).map(String::from)
             .unwrap_or_else(|| crate::sidefx::basename(path));
+        if let Some(t) = d.get("treatment") {
+            self.treatment = Some(std::sync::Arc::new(crate::value::TreatmentModel::from_json(t)?));
+            self.resolve_value_model();
+        }
         Ok(())
     }
 }
@@ -324,58 +354,12 @@ pub fn hard_rules(ctx: &ActionCtx, f: &Feats, cfg: &GateConfig, confirmed: bool,
     None
 }
 
-/// Tier 1 (+ grey zone): pick the option with the lowest expected cost in seconds,
+/// Tier 1: the value step (value::choose): pick the option with the lowest expected cost in seconds,
 ///   E[cost(o)] = lam * cost(o) + (1 - P_o) * fail_cost,
-/// where P_o is the predictor's success probability on the state option o leaves behind (`after`), plus that
-/// option's residual gain. One formula ranks acting now, cheap gate-side fixes, handing back to the model and
-/// asking a person; a person becomes the cheapest option only once the run is clearly stuck.
+/// with P_o from the active value model (the treatment-interaction model when trained weights are loaded, else the
+/// hand-set legacy prior), cost(o) measured from logs when available, and check valued as information (voi).
 pub fn choose(ctx: &ActionCtx, f: &Feats, cfg: &GateConfig, check_available: bool, check_done: bool) -> Decision {
-    let p = p_direct(f, cfg);
-    let pixel = ctx.target.kind == "pixel";
-    let keyboard = matches!(ctx.target.kind.as_str(), "keyboard" | "none");
-    // a pixel target is re-aimed on a screenshot: a tree-only look cannot fix it (except for a text-only client)
-    let mut avail = if pixel && !cfg.text_only { vec!["direct", "look_full"] } else { vec!["direct", "look_light", "look_full"] };
-    if cfg.reviewer && !pixel {
-        // (a pixel target needs fresh pixels; the reviewer reads the element tree, not the screen)
-        avail.push("review"); // the gate's own independent model checks the target; the acting model is not asked
-    }
-    if check_available && !check_done {
-        avail.push("check");
-    }
-    if fget(f, "loading_cue") != 0.0 || fget(f, "last_popup") != 0.0 {
-        avail.push("wait");
-    }
-    if keyboard {
-        avail.retain(|o| *o != "review");
-    }
-    if cfg.human_channel != "deny" && fget(f, "consec_fail") >= 2.0 {
-        avail.push("ask_help");
-    }
-    let cf = fail_cost(ctx, f, cfg);
-    let mut scores: IndexMap<String, f64> = IndexMap::new();
-    for o in &avail {
-        let po = if *o == "direct" {
-            p
-        } else {
-            let pa = p_direct(&after(f, o), cfg).max(p);
-            let g = if pixel { pixel_gain(o).unwrap_or_else(|| cfg.gains.get(*o).copied().unwrap_or(0.0)) } else { cfg.gains.get(*o).copied().unwrap_or(0.0) };
-            pa + g * (1.0 - pa)
-        };
-        scores.insert(o.to_string(), cfg.lam * cfg.costs.get(*o).copied().unwrap_or(0.0) + (1.0 - po) * cf);
-    }
-    let mut best = scores.iter().fold((String::new(), f64::INFINITY), |acc, (k, v)| if *v < acc.1 { (k.clone(), *v) } else { acc }).0;
-    let mut tier = "model";
-    // before handing the step back to the model (a whole turn), try the cheap gate-side probe once
-    if check_available && !check_done && ["look_light", "look_full", "review"].contains(&best.as_str()) {
-        best = "check".into();
-        tier = "grey";
-    }
-    let mut sorted: Vec<(&String, &f64)> = scores.iter().collect();
-    sorted.sort_by(|a, b| a.1.partial_cmp(b.1).unwrap());
-    let top: Vec<String> = sorted.iter().take(3).map(|(k, v)| format!("{k}={v:.1}s")).collect();
-    let stuck = if fget(f, "consec_fail") >= 1.0 { format!("; {} failed in a row", fget(f, "consec_fail")) } else { String::new() };
-    let reason = format!("P(direct)={p:.2}{stuck}; expected cost {}", top.join(", "));
-    Decision::new(&best, p, reason, tier).with_scores(&scores)
+    crate::value::choose(ctx, f, cfg, check_available, check_done)
 }
 
 /// Baselines. direct: never intervene. light/full: require a fresh read (tree / screenshot) every step.
