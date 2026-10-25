@@ -54,6 +54,24 @@ gui-gate 启动驱动后自己先和驱动做一次老式 `initialize`（驱动�
 | 1 预测模型 | 逻辑回归算 P(直接执行成功)，31 个运行时特征（含「本次会话已失败几次、是否连续失败、上一步有没有反应、点的是不是菜单」）；权重用 2934 个 OSWorld 实测动作训练，留出会话 AUC ≈ 0.76（手写权重 ≈ 0.53） | <1 ms |
 | 2 期望代价公式 | `E[代价] = λ·选项耗时(秒) + (1 − 用该选项后的成功率) × 失败代价`；成功率用同一个模型对「选项做完后的状态」重新打分；失败代价 ≈ 19 s × 难撤销程度 × (1+连续失败)^1（0.9.5 起，原为 1.5；`GUI_GATE_FAIL_EXP`） | <1 ms |
 
+### 价值模型（0.9.11 起；详见 docs/value-model.md）
+
+第 2 层的 P_o 现在来自两个**有名字的**价值模型之一，每个决策的日志行 `value` 字段写明用的是哪个：
+
+* `treatment`（处理交互模型）：`P(成功 | 特征, 实际采取的选项)`，逻辑回归 + 选项 one-hot × 特征交互，L2；
+  用 `gui-gate train --model treatment` 从日志里**实际采取的选项**及其结果训练。增量 Δ_o = q_o − q_direct
+  可以为零或为负（不再截断到 ≥ P(direct)），每个选项有自助法区间；区间跨零且是低风险步骤时取更便宜的选项。
+  **只有加载了它的训练权重（`GUI_GATE_VALUE_WEIGHTS`）时才是默认。**
+* `legacy`（旧先验，`GUI_GATE_VALUE_MODEL=legacy`）：0.9.x 的做法——把特征手工「重置」后再用 P(direct) 打分，
+  加上**手写**的残差收益，强制 P_o ≥ P(direct)。**这些收益是手设的，不是估计出来的。** 目前没有处理交互权重，
+  所以现在默认仍是它。
+
+选项代价优先用日志实测（`gui-gate costs 日志 -o costs.json` → `GUI_GATE_COSTS`，含墙钟秒、token 估计、人的秒数），
+样本不足时才回退到 7 s / 9 s / 45 s 先验；`check` 按信息价值计算（处理交互模型下默认，`GUI_GATE_CHECK_MODEL`）。
+公平对照的固定策略：`GUI_GATE_VALUE_POLICY=direct|observe_light|observe_full|extra_reason|threshold|heuristic|random|learned`，
+只替换价值选择，安全规则、硬规则、自动观察、自愈等工程底座不变（bench：`vp_*` 条件 + `bench/fair_compare.py`）。
+在拿到真实反事实分支数据（`bench/counterfactual/`）之前，处理交互模型只是观察性估计（受记录策略混杂），不能当作因果增量。
+
 选项：`direct` 直接执行 · `check` 门自己探测（0.2 s）· `heal` 修复过期 token · `wait` 等界面稳定 ·
 `look_light` / `look_full` 门自己重读界面（需要时带截图）并随拒绝一起返回，Agent 直接重新瞄准 ·
 `review` 门里唯一的大模型——独立审核模型复核拿不准的目标 · `risk_review` 审核模型裁决中等风险 ·
@@ -240,11 +258,19 @@ gui-gate --weights weights.json   # 用训练好的预测器
 
 运行中模型也可以调用 `gate_report`（本次统计）和 `gate_config`（改策略/λ）。
 
+## 结果怎么读
+
+v0.9.9 的 OSWorld-Verified 运行（`results/osworld-verified-v099-ds41-2026-10-23/`）：137/255 = 53.7 % 是**有效运行上的、
+自定义环境（原生 Debian/XFCE、无 VM、应用版本不同）的部分结果**，is not an official OSWorld-Verified score；
+Wilson 95 % 区间 47.6 %–59.7 %（未计任务相关性与有效样本选择），按计划的 361 题算是 132/361 = 36.6 %。不要和榜单数字直接比较。
+
 ## 采数据 → 训练 → 对比
 
 ```bash
 gui-gate --policy direct --collect --log runs/s1.jsonl     # 不干预地采集，标签无偏
-gui-gate train runs/ -o weights.json                       # 按会话留出、Platt 校准，输出 ECE/Brier/AUC
+gui-gate train runs/ -o weights.json --split run+family --report   # 按运行和任务族同时留出；Brier/NLL/等质量分箱 ECE + 自助法区间 + 可靠性表
+gui-gate train --model treatment runs/ -o value.json --report       # 处理交互价值模型（日志里实际采取的选项）
+gui-gate costs runs/ -o costs.json                                  # 各选项实测代价（GUI_GATE_COSTS）
 gui-gate compare runs/                                     # 各策略：执行数、失败率、观察/截图数、门开销
 ```
 
@@ -271,7 +297,7 @@ maturin build --release                     # 打包成 Python wheel（发布由
 
 源码：`server.rs` 门控主流程 · `decide.rs` 规则与预测器 · `features.rs` 特征与风险 · `sidefx.rs` 文件系统副作用检查 ·
 `authz.rs` 用户原话授权 · `batch.rs` 批量执行 · `human.rs` 找人确认 · `reviewer.rs` 独立审核员 ·
-`install.rs` / `updates.rs` 安装、自检、驱动查找与更新 · `cleanup.rs` 清理与卸载 · `proc.rs` 子进程与退出清理 · `tools.rs` 训练与对比 · `shot.rs` 截图转 JPEG。
+`install.rs` / `updates.rs` 安装、自检、驱动查找与更新 · `cleanup.rs` 清理与卸载 · `proc.rs` 子进程与退出清理 · `tools.rs` 训练与对比 · `value.rs` 价值模型 / 实测代价 / 信息价值 / 固定策略 · `valuetrain.rs` 价值模型训练与评估 · `shot.rs` 截图转 JPEG。
 
 ## 许可
 

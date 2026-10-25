@@ -1,5 +1,9 @@
 # Decision v2 (gui-gate 0.7.0 / 0.8.0): trained predictor + one expected-cost formula + one reviewer model
 
+> **0.9.11:** section 3's P_o ("the same predictor scored on the state the option leaves behind" plus residual gains) is
+> now the named *legacy* prior with hand-set, non-estimated gains; see docs/value-model.md for the treatment-interaction
+> model, measured costs, check as value of information and the fair-baseline value policies.
+
 Every GUI action passes three stages before it reaches Cua Driver.
 
 ## 1. Hard rules (no probabilities)

@@ -39,3 +39,16 @@ from " - LibreOffice" to " — LibreOffice". Nothing else in any task is changed
   name no gate tool and contain no task-specific answers.
 - `PI_OBS_PRUNE=1`: context hygiene (Pi `context` extension `bench/pi_ext/obs_prune.ts`); default 0.
 - runs.jsonl records `max_turns`, `tools096`, `app_hints`, `obs_prune`.
+
+## Value-policy baselines and counterfactual branches (0.9.11)
+- Fair baselines (P2): conds `vp_direct vp_light vp_full vp_reason vp_threshold vp_heuristic vp_random vp_legacy
+  vp_learned` are `gate8` exactly plus `GUI_GATE_VALUE_POLICY`; only the gate's value choice differs. `--repeats N`
+  runs N independent repeats. `python3 bench/fair_compare.py OUT --baseline vp_direct --planned tasks/order.txt
+  --md cmp.md` reports planned (infra/missing = failure) and valid denominators, Wilson CIs, task-level paired
+  bootstrap CIs, McNemar and permutation p, and the budget curve (success vs wall time / tokens / turns).
+  Freeze the task list, exclusion reasons and retry rules before a run; tune on a dev split, report on a held-out one.
+- Counterfactual branches (P1): `bench/counterfactual/` (README there): checkpoints, seven treatments, hash-verified
+  restore, task-family split, offline dry run through the real gate. Not run on a desktop or with a model yet.
+- `weights/costs-osworld-verified-v099.json`: option costs measured from the v0.9.9 run (`gui-gate costs`), usable as
+  `VP_COSTS` / `GUI_GATE_COSTS`. `weights/value-observational-2026-10-25.json`: an observational treatment model for
+  analysis only (not loaded by default).
