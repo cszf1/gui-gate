@@ -12,6 +12,8 @@ sys.path.insert(0, os.path.join(ROOT, "bench"))
 import stats  # noqa: E402
 import fair_compare  # noqa: E402
 
+BASH_BENCH = unittest.skipUnless(sys.platform.startswith("linux"), "the bench harness is bash + GNU coreutils on Linux (cp -T, seq; on Windows `bash` is the WSL launcher)")
+
 
 class StatsTests(unittest.TestCase):
     def test_wilson_matches_the_review_numbers(self):
@@ -117,6 +119,7 @@ class FairCompareTests(unittest.TestCase):
         self.assertEqual(res["policies"]["vp_full"]["rate"], 0.5)
 
 
+@BASH_BENCH
 class RunBenchValuePolicyTests(unittest.TestCase):
     def test_value_policy_conds_share_the_gate8_base(self):
         sh = open(os.path.join(ROOT, "bench", "run_bench.sh")).read()

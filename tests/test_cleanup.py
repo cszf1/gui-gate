@@ -108,7 +108,8 @@ class CleanupTests(unittest.TestCase):
         self.assertNotIn("/nowhere/bin", rc)
         self.assertIn("alias ll", rc)
         pi = json.load(open(self.pi))
-        self.assertEqual(pi["mcpServers"]["gui"], {"command": self.me, "args": ["--policy", "gate"]})
+        # the gate writes its own resolved path (macOS: /var -> /private/var)
+        self.assertEqual(pi["mcpServers"]["gui"], {"command": os.path.realpath(self.me), "args": ["--policy", "gate"]})
         self.assertEqual(pi["mcpServers"]["web"], {"command": "npx", "args": ["-y", "web"]})
         self.assertFalse(os.path.exists(self.pi + ".bak"))
         cx = open(self.codex).read()
@@ -173,6 +174,7 @@ class CleanupTests(unittest.TestCase):
         self.assertEqual(code, 0, rep)
         self.assertTrue(os.path.exists(os.path.join(self.h, ".config", "gui-gate", "reviewer.env")))
 
+    @unittest.skipIf(sys.platform == "darwin", "macOS bundles Cua's CuaDriver.app (its own lookup); this is the Linux lib layout")
     def test_bundled_driver_is_preferred_and_quiet(self):
         """The driver in gui-gate's own lib dir wins over one on PATH and is started with Cua's telemetry and
         update check off; GUI_GATE_DRIVER=external skips it."""

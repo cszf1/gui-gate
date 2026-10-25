@@ -10,6 +10,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "bench"))
 import osworld_native as onat  # noqa: E402
 
+BASH_BENCH = unittest.skipUnless(sys.platform.startswith("linux"), "the bench harness is bash + GNU coreutils on Linux (cp -T, seq; on Windows `bash` is the WSL launcher)")
+
 
 class ModelInfoTests(unittest.TestCase):
     def run_info(self, settings, models):
@@ -52,6 +54,7 @@ class CompatTests(unittest.TestCase):
         self.assertEqual(onat.compat(t)["config"][0]["parameters"]["window_name"], "a.xlsx \u2014 LibreOffice Calc")
 
 
+@BASH_BENCH
 class ResetCopyTests(unittest.TestCase):
     def test_cp_T_does_not_nest(self):
         d = tempfile.mkdtemp()
@@ -99,7 +102,9 @@ class ContextHygieneTests(unittest.TestCase):
         d = tempfile.mkdtemp()
         mjs = os.path.join(d, "obs_prune.mjs")
         shutil.copy(os.path.join(ROOT, "bench", "pi_ext", "obs_prune.ts"), mjs)
-        js = f"import {{prune}} from '{mjs}'; let s=''; process.stdin.on('data',d=>s+=d); process.stdin.on('end',()=>console.log(JSON.stringify(prune(JSON.parse(s)))));"
+        import pathlib
+        url = pathlib.Path(mjs).as_uri()  # node's ESM loader wants a file:// URL (C:\\... is read as a scheme on Windows)
+        js = f"import {{prune}} from '{url}'; let s=''; process.stdin.on('data',d=>s+=d); process.stdin.on('end',()=>console.log(JSON.stringify(prune(JSON.parse(s)))));"
         r = subprocess.run(["node", "--input-type=module", "-e", js], input=json.dumps(self.MSGS), capture_output=True, text=True)
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertEqual(json.loads(r.stdout), json.loads(json.dumps(ch.prune(self.MSGS))))
@@ -119,6 +124,7 @@ class BenchOptionsTests(unittest.TestCase):
         self.assertNotIn("CMYK", app_hints.hint_for("ow17-gimp-045bf3ff"))  # no task-specific answers
         self.assertEqual(app_hints.hint_for("unknown-task"), "")
 
+    @BASH_BENCH
     def test_run_bench_options(self):
         sh = open(os.path.join(ROOT, "bench", "run_bench.sh")).read()
         self.assertEqual(subprocess.run(["bash", "-n", os.path.join(ROOT, "bench", "run_bench.sh")]).returncode, 0)

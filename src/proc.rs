@@ -371,19 +371,57 @@ pub fn python() -> Option<String> {
     crate::install::which("python3").or_else(|| crate::install::which("python"))
 }
 
-/// Last change of a path: the newer of mtime and (unix) ctime - a rename or chmod changes only the ctime.
-pub fn changed_at(m: &std::fs::Metadata) -> Option<std::time::SystemTime> {
+/// Last change of a path: the newer of mtime and the change time (unix ctime; Windows NTFS ChangeTime) - a rename
+/// or chmod changes only the change time.
+pub fn changed_at(path: &std::path::Path, m: &std::fs::Metadata) -> Option<std::time::SystemTime> {
     #[cfg(unix)]
     let c = {
+        let _ = path;
         use std::os::unix::fs::MetadataExt;
         std::time::SystemTime::UNIX_EPOCH.checked_add(std::time::Duration::new(m.ctime().max(0) as u64, m.ctime_nsec().clamp(0, 999_999_999) as u32))
     };
-    #[cfg(not(unix))]
-    let c: Option<std::time::SystemTime> = None;
+    #[cfg(windows)]
+    let c = win_change_time(path);
+    #[cfg(not(any(unix, windows)))]
+    let c: Option<std::time::SystemTime> = { let _ = path; None };
     match (m.modified().ok(), c) {
         (Some(a), Some(b)) => Some(a.max(b)),
         (a, b) => a.or(b),
     }
+}
+
+/// NTFS ChangeTime (FILE_BASIC_INFO): changes on rename / attribute changes, which mtime and the creation time
+/// do not show. std exposes it only on nightly, so it is read with GetFileInformationByHandleEx.
+#[cfg(windows)]
+pub fn win_change_time(path: &std::path::Path) -> Option<std::time::SystemTime> {
+    use std::os::windows::fs::OpenOptionsExt;
+    use std::os::windows::io::AsRawHandle;
+    #[repr(C)]
+    struct FileBasicInfo {
+        creation: i64,
+        access: i64,
+        write: i64,
+        change: i64,
+        attributes: u32,
+    }
+    #[link(name = "kernel32")]
+    extern "system" {
+        fn GetFileInformationByHandleEx(h: *mut std::ffi::c_void, class: i32, info: *mut std::ffi::c_void, size: u32) -> i32;
+    }
+    const FILE_READ_ATTRIBUTES: u32 = 0x80;
+    const FILE_FLAG_BACKUP_SEMANTICS: u32 = 0x0200_0000; // needed to open a folder
+    const FILE_SHARE_ALL: u32 = 0x7;
+    let f = std::fs::OpenOptions::new().access_mode(FILE_READ_ATTRIBUTES).share_mode(FILE_SHARE_ALL)
+        .custom_flags(FILE_FLAG_BACKUP_SEMANTICS).open(path).ok()?;
+    let mut info = FileBasicInfo { creation: 0, access: 0, write: 0, change: 0, attributes: 0 };
+    let ok = unsafe { GetFileInformationByHandleEx(f.as_raw_handle() as *mut _, 0, &mut info as *mut _ as *mut _, std::mem::size_of::<FileBasicInfo>() as u32) };
+    if ok == 0 || info.change <= 0 {
+        return None;
+    }
+    // FILETIME: 100 ns ticks since 1601-01-01; the Unix epoch is 11644473600 s later
+    let ticks = info.change as u64;
+    let secs = (ticks / 10_000_000).checked_sub(11_644_473_600)?;
+    std::time::SystemTime::UNIX_EPOCH.checked_add(std::time::Duration::new(secs, ((ticks % 10_000_000) * 100) as u32))
 }
 
 #[cfg(all(test, target_os = "linux"))]

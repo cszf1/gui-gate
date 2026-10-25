@@ -216,7 +216,7 @@ pub fn env_facts(task: &str, query: &str) -> String {
     let mut paths = crate::done::task_paths(&text);
     paths.truncate(12);
     for p in &paths {
-        let cands: Vec<String> = if p.starts_with('/') || p.starts_with('~') { vec![crate::sidefx::expanduser(p)] }
+        let cands: Vec<String> = if crate::sidefx::is_abs(p) || p.starts_with('~') { vec![crate::sidefx::p(p, &home)] }
             else { vec![format!("{home}/{p}"), format!("{home}/Desktop/{p}"), format!("{home}/Documents/{p}"), format!("{home}/Downloads/{p}")] };
         match cands.iter().find(|c| std::path::Path::new(c).exists()) {
             Some(c) => {

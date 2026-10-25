@@ -137,7 +137,19 @@ pub fn round_tens(x: f64) -> f64 {
 }
 
 pub fn home() -> String {
-    std::env::var("HOME").or_else(|_| std::env::var("USERPROFILE")).unwrap_or_else(|_| ".".into())
+    let h = std::env::var("HOME").or_else(|_| std::env::var("USERPROFILE")).unwrap_or_else(|_| ".".into());
+    // Windows: one canonical spelling (forward slashes, long names, upper-case drive) so paths built from it
+    // compare equal to the paths the gate resolves from task text, dialogs and its own walks
+    #[cfg(windows)]
+    {
+        static H: std::sync::OnceLock<(String, String)> = std::sync::OnceLock::new();
+        let c = H.get_or_init(|| (h.clone(), crate::sidefx::canon(&h)));
+        if c.0 == h { c.1.clone() } else { crate::sidefx::canon(&h) }
+    }
+    #[cfg(not(windows))]
+    {
+        h
+    }
 }
 
 pub fn env(k: &str) -> Option<String> {

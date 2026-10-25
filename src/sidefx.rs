@@ -21,7 +21,59 @@ pub type Effect = (String, String, Vec<String>);
 
 /// Canonical absolute form of a path for effect keys (symlinks resolved when the path exists).
 pub fn canon(p: &str) -> String {
-    realpath(p).to_string_lossy().to_string()
+    #[cfg(windows)]
+    {
+        canon_win(p)
+    }
+    #[cfg(not(windows))]
+    {
+        realpath(p).to_string_lossy().to_string()
+    }
+}
+
+/// An absolute path: `/...` everywhere; on Windows also `C:\...`, `C:/...`, `\\server\share` and `\...`.
+pub fn is_abs(p: &str) -> bool {
+    is_abs_os(p, cfg!(windows))
+}
+
+fn is_abs_os(p: &str, win: bool) -> bool {
+    p.starts_with('/') || (win && (win_abs(p) || p.starts_with('\\')))
+}
+
+/// `\\?\C:\x` -> `C:\x`, `\\?\UNC\srv\share` -> `\\srv\share` (what std::fs::canonicalize returns on Windows).
+pub fn strip_verbatim(p: &str) -> String {
+    if let Some(r) = p.strip_prefix("\\\\?\\UNC\\") {
+        format!("\\\\{r}")
+    } else if let Some(r) = p.strip_prefix("\\\\?\\") {
+        r.to_string()
+    } else {
+        p.to_string()
+    }
+}
+
+/// Windows: the canonical form of a path the gate compares and shows: forward slashes, upper-case drive letter,
+/// `.`/`..` folded, and the longest existing part resolved by the file system (long names instead of 8.3 short
+/// names such as RUNNER~1, links resolved, no `\\?\` prefix). A path that does not exist keeps its missing tail.
+#[cfg(windows)]
+fn canon_win(p: &str) -> String {
+    let n = normpath(p);
+    let mut head = n.clone();
+    let mut tail: Vec<String> = vec![];
+    for _ in 0..64 {
+        if let Ok(c) = fs::canonicalize(&head) {
+            let c = normpath(&strip_verbatim(&c.to_string_lossy()));
+            tail.reverse();
+            return if tail.is_empty() { c } else { normpath(&format!("{}/{}", c.trim_end_matches('/'), tail.join("/"))) };
+        }
+        match head.rsplit_once('/') {
+            Some((h, t)) if !t.is_empty() => {
+                tail.push(t.to_string());
+                head = if h.is_empty() || h.ends_with(':') { format!("{h}/") } else { h.to_string() };
+            }
+            _ => break,
+        }
+    }
+    n
 }
 
 fn canon_all(v: &[String]) -> Vec<String> {
@@ -166,13 +218,44 @@ pub fn expanduser(s: &str) -> String {
     if s == "~" {
         return crate::util::home();
     }
-    if let Some(r) = s.strip_prefix("~/") {
+    if let Some(r) = s.strip_prefix("~/").or(if cfg!(windows) { s.strip_prefix("~\\") } else { None }) {
         return format!("{}/{}", crate::util::home(), r);
     }
     s.to_string()
 }
 
+/// `.` and `..` folded, one separator. On Windows (backslashes, drive letters, UNC) see `normpath_os`.
 pub fn normpath(p: &str) -> String {
+    normpath_os(p, cfg!(windows))
+}
+
+/// `win`: read `\` as a separator too and keep a `C:` / `//server/share` prefix; the result uses `/` (Windows
+/// accepts it, and every path helper here splits on `/`).
+fn normpath_os(p: &str, win: bool) -> String {
+    if !win {
+        return normpath_unix(p);
+    }
+    let s = p.replace('\\', "/");
+    let b = s.as_bytes();
+    let (prefix, rest): (String, &str) = if s.starts_with("//") {
+        // //server/share stays the root of a UNC path
+        let parts: Vec<&str> = s[2..].splitn(3, '/').collect();
+        let pre = format!("//{}", parts.iter().take(2).copied().collect::<Vec<_>>().join("/"));
+        let used = (2 + parts.iter().take(2).map(|x| x.len()).sum::<usize>() + parts.len().min(2).saturating_sub(1)).min(s.len());
+        (pre, &s[used..])
+    } else if b.len() >= 2 && b[0].is_ascii_alphabetic() && b[1] == b':' {
+        (format!("{}:", (b[0] as char).to_ascii_uppercase()), &s[2..])
+    } else {
+        (String::new(), &s[..])
+    };
+    if prefix.is_empty() {
+        return normpath_unix(rest);
+    }
+    let n = normpath_unix(if rest.is_empty() { "/" } else { rest });
+    if n == "." { format!("{prefix}/") } else { format!("{prefix}{}", if n.starts_with('/') { n } else { format!("/{n}") }) }
+}
+
+fn normpath_unix(p: &str) -> String {
     let abs = p.starts_with('/');
     let mut out: Vec<&str> = vec![];
     for part in p.split('/') {
@@ -193,7 +276,7 @@ pub fn normpath(p: &str) -> String {
 }
 
 pub fn join(a: &str, b: &str) -> String {
-    if b.starts_with('/') {
+    if is_abs(b) {
         b.to_string()
     } else if a.ends_with('/') || a.is_empty() {
         format!("{a}{b}")
@@ -207,7 +290,7 @@ pub fn basename(p: &str) -> String {
 }
 
 pub fn relpath(p: &str, start: &str) -> String {
-    let a = normpath(&if p.starts_with('/') { p.to_string() } else { join(start, p) });
+    let a = normpath(&if is_abs(p) { p.to_string() } else { join(start, p) });
     let b = normpath(start);
     let pa: Vec<&str> = a.split('/').filter(|x| !x.is_empty()).collect();
     let pb: Vec<&str> = b.split('/').filter(|x| !x.is_empty()).collect();
@@ -231,7 +314,10 @@ pub fn splitext_ext(name: &str) -> String {
 
 pub fn p(path: &str, cwd: &str) -> String {
     let e = expandvars(&expanduser(path));
-    normpath(&if e.starts_with('/') { e } else { join(cwd, &e) })
+    let n = normpath(&if is_abs(&e) { e } else { join(cwd, &e) });
+    // Windows 8.3 short names (C:/Users/RUNNER~1/...): the long form, so the same file compares equal however it
+    // was written (the home folder and the gate's own walks give long names)
+    if cfg!(windows) && n.contains('~') { canon(&n) } else { n }
 }
 
 pub fn is_dir(p: &str) -> bool {
@@ -247,7 +333,14 @@ pub fn exists(p: &str) -> bool {
 }
 
 pub fn realpath(p: &str) -> PathBuf {
-    fs::canonicalize(p).unwrap_or_else(|_| PathBuf::from(normpath(p)))
+    #[cfg(windows)]
+    {
+        PathBuf::from(canon_win(p))
+    }
+    #[cfg(not(windows))]
+    {
+        fs::canonicalize(p).unwrap_or_else(|_| PathBuf::from(normpath(p)))
+    }
 }
 
 fn expand(args: &[String], cwd: &str) -> Vec<String> {
@@ -973,6 +1066,83 @@ pub fn save_dialog_target(text: &str) -> Option<String> {
         }
     }
     None
+}
+
+#[cfg(test)]
+mod win_path_tests {
+    use super::{is_abs_os, normpath_os, strip_verbatim};
+
+    #[test]
+    fn windows_paths_normalize_on_every_os() {
+        // mixed separators, a drive letter, `.` / `..`; the result uses `/` and an upper-case drive
+        assert_eq!(normpath_os(r"C:\Users\RUNNER~1\AppData\Local\Temp\tmpj2/notes.txt", true), "C:/Users/RUNNER~1/AppData/Local/Temp/tmpj2/notes.txt");
+        assert_eq!(normpath_os(r"c:\a\.\b\..\c\", true), "C:/a/c");
+        assert_eq!(normpath_os(r"C:\", true), "C:/");
+        assert_eq!(normpath_os(r"C:\..\x", true), "C:/x");
+        assert_eq!(normpath_os(r"\\srv\share\a\..\b", true), "//srv/share/b");
+        assert_eq!(normpath_os(r"Desktop\x/../y.txt", true), "Desktop/y.txt");
+        // unix reading unchanged
+        assert_eq!(normpath_os("/a/./b/../c/", false), "/a/c");
+        assert_eq!(normpath_os(r"a\b", false), r"a\b");
+    }
+
+    #[test]
+    fn windows_absolute_paths() {
+        for p in [r"C:\Users\x", "C:/Users/x", r"\\srv\share", r"\Windows", "/tmp"] {
+            assert!(is_abs_os(p, true), "{p}");
+        }
+        for p in ["Desktop/x", r"Desktop\x", "~/x", "x.txt", "C:"] {
+            assert!(!is_abs_os(p, true), "{p}");
+        }
+        assert!(!is_abs_os(r"C:\Users", false)); // a unix name, not a path root
+        assert_eq!(strip_verbatim(r"\\?\C:\Users\runneradmin"), r"C:\Users\runneradmin");
+        assert_eq!(strip_verbatim(r"\\?\UNC\srv\share\x"), r"\\srv\share\x");
+    }
+
+    /// W1: run_command's cwd, inspect env, plan checks and check_done read a `C:\...` path as absolute (it used to be
+    /// joined after the home folder: `C:\Users\runneradmin/C:\Users\RUNNER~1\...`), and the 8.3 short name of an
+    /// existing folder resolves to its long name, so both spellings compare equal.
+    #[test]
+    #[cfg(windows)]
+    fn windows_cwd_and_short_names() {
+        let tmp = std::env::temp_dir(); // on the CI runner: C:\Users\RUNNER~1\AppData\Local\Temp
+        let d = tmp.join(format!("gg-w1-{}", std::process::id()));
+        std::fs::create_dir_all(d.join("sub")).unwrap();
+        std::fs::write(d.join("sub").join("notes.txt"), "x").unwrap();
+        let raw = d.to_string_lossy().to_string();
+        let resolved = super::p(&raw, "C:/Users/someone");
+        assert!(!resolved.starts_with("C:/Users/someone"), "{resolved}");
+        assert!(std::path::Path::new(&resolved).is_dir(), "{resolved}");
+        let mixed = format!(r"{raw}\sub/notes.txt");
+        assert!(super::exists(&super::p(&mixed, "C:/")), "{mixed}");
+        let long = super::canon(&raw);
+        let expect = super::normpath(&strip_verbatim(&std::fs::canonicalize(&raw).unwrap().to_string_lossy()));
+        assert_eq!(long, expect); // RUNNER~1 -> runneradmin when the runner's temp folder is spelled short
+        assert!(!long.contains("~1") || expect.contains("~1"), "{long}");
+        assert_eq!(super::canon(&mixed), format!("{long}/sub/notes.txt"));
+        assert_eq!(super::p(&mixed, "C:/"), super::canon(&mixed));
+        assert!(!long.starts_with("//?/") && !long.contains('\\'), "{long}");
+        // a missing tail keeps its spelling after the resolved part
+        assert_eq!(super::canon(&format!(r"{raw}\nope\x.txt")), format!("{long}/nope/x.txt"));
+        let args = serde_json::json!({"cwd": raw});
+        assert_eq!(crate::features::command_cwd(&args), long);
+        let _ = std::fs::remove_dir_all(&d);
+    }
+
+    /// check_done counts a rename as a change: NTFS ChangeTime moves on rename, mtime does not.
+    #[test]
+    #[cfg(windows)]
+    fn windows_rename_changes_the_change_time() {
+        let d = std::env::temp_dir().join(format!("gg-w1-ct-{}", std::process::id()));
+        std::fs::create_dir_all(d.join("a")).unwrap();
+        let before = crate::proc::win_change_time(&d.join("a")).expect("change time");
+        std::thread::sleep(std::time::Duration::from_millis(50));
+        std::fs::rename(d.join("a"), d.join("b")).unwrap();
+        let m = std::fs::metadata(d.join("b")).unwrap();
+        let after = crate::proc::changed_at(&d.join("b"), &m).unwrap();
+        assert!(after > before, "{before:?} {after:?}");
+        let _ = std::fs::remove_dir_all(&d);
+    }
 }
 
 #[cfg(test)]

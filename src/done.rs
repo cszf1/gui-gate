@@ -86,13 +86,13 @@ fn fmt_time(t: SystemTime) -> String {
     if age < 120 { format!("{age} s ago") } else if age < 7200 { format!("{} min ago", age / 60) } else { format!("{} h ago", age / 3600) }
 }
 
-fn changed_at(m: &std::fs::Metadata) -> Option<SystemTime> {
-    crate::proc::changed_at(m)
+fn changed_at(p: &std::path::Path, m: &std::fs::Metadata) -> Option<SystemTime> {
+    crate::proc::changed_at(p, m)
 }
 
 /// Newest change (mtime/ctime) inside a directory (depth 3, bounded).
 fn newest_inside(dir: &str, depth: usize, budget: &mut usize) -> Option<SystemTime> {
-    let mut best = std::fs::metadata(dir).ok().and_then(|m| changed_at(&m));
+    let mut best = std::fs::metadata(dir).ok().and_then(|m| changed_at(std::path::Path::new(dir), &m));
     if depth == 0 {
         return best;
     }
@@ -103,7 +103,7 @@ fn newest_inside(dir: &str, depth: usize, budget: &mut usize) -> Option<SystemTi
         }
         *budget -= 1;
         let Ok(m) = e.metadata() else { continue };
-        let t = if m.is_dir() { newest_inside(&e.path().to_string_lossy(), depth - 1, budget) } else { changed_at(&m) };
+        let t = if m.is_dir() { newest_inside(&e.path().to_string_lossy(), depth - 1, budget) } else { changed_at(&e.path(), &m) };
         if let Some(t) = t {
             if best.map(|b| t > b).unwrap_or(true) {
                 best = Some(t);
@@ -116,7 +116,7 @@ fn newest_inside(dir: &str, depth: usize, budget: &mut usize) -> Option<SystemTi
 /// Where a bare name may live: the given roots, then a bounded walk under home (depth 4).
 pub fn resolve(name: &str, roots: &[String]) -> Vec<String> {
     let home = crate::util::home();
-    if name.starts_with('/') || name.starts_with('~') {
+    if sidefx::is_abs(name) || name.starts_with('~') {
         let p = sidefx::p(name, &home);
         return if sidefx::exists(&p) { vec![p] } else { vec![] };
     }
@@ -171,7 +171,7 @@ pub fn path_evidence(name: &str, roots: &[String], start: Option<SystemTime>) ->
     for h in hits.iter().take(3) {
         let Ok(m) = std::fs::metadata(h) else { continue };
         let mut budget = 3000usize;
-        let t = if m.is_dir() { newest_inside(h, 3, &mut budget) } else { changed_at(&m) };
+        let t = if m.is_dir() { newest_inside(h, 3, &mut budget) } else { changed_at(std::path::Path::new(h), &m) };
         let changed = match (t, start) { (Some(t), Some(s)) => t >= s, _ => false };
         any_changed |= changed;
         let kind = if m.is_dir() { "folder".to_string() } else { format!("{} B", m.len()) };

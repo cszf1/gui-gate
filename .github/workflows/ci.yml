@@ -1,0 +1,37 @@
+# Every push / PR: cargo tests + the whole python suite (fake_driver end-to-end, security, bench tooling) on Linux,
+# Windows and macOS. Nothing is informational: a test that cannot apply on a platform is skipped in the test itself
+# with the reason (bash-only run_command / terminal rules / jobs on Windows; the bench harness is Linux-only).
+# No model keys; GUI_GATE_DIALOG=none so no test ever opens a real desktop dialog.
+name: ci
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+env:
+  GUI_GATE_DIALOG: none
+  GUI_GATE_NO_UPDATE_CHECK: "1"
+  PYTHONUTF8: "1"
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    defaults: {run: {shell: bash}}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: "22"}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - uses: Swatinem/rust-cache@v2
+      - name: cargo tests (incl. the Windows path / 8.3 short name / NTFS change-time tests on Windows)
+        run: cargo test --release
+      - run: cargo build --release
+      - name: python suite
+        timeout-minutes: 60
+        run: |
+          bin=target/release/gui-gate; [ "$RUNNER_OS" = Windows ] && bin=target/release/gui-gate.exe
+          GUI_GATE_BIN="$bin" python -u -m unittest discover -s tests -v

@@ -168,7 +168,7 @@ fn file_named(res: &str, task_l: &str, cwd: Option<&str>) -> Result<(), String> 
             }
             let abs = crate::sidefx::canon(&crate::sidefx::p(&w, &anchor)).to_lowercase();
             let rel_tail = format!("/{}", w.trim_start_matches("./").trim_end_matches('/'));
-            if abs == val.to_lowercase() || (!w.starts_with('/') && !w.starts_with('~') && val.to_lowercase().ends_with(&rel_tail)) {
+            if abs == val.to_lowercase() || (!crate::sidefx::is_abs(&w) && !w.starts_with('~') && val.to_lowercase().ends_with(&rel_tail)) {
                 return Ok(());
             }
             same_name.push(w);
@@ -302,7 +302,7 @@ pub fn effect_of(ctx: &ActionCtx, targets: &[String], dialog_text: &str, line: O
     let mut resources: Vec<String> = targets.iter().map(|t| format!("path:{t}")).collect();
     if resources.is_empty() {
         if let Some(tf) = target_file(&reason, dialog_text) {
-            if tf.starts_with('/') {
+            if crate::sidefx::is_abs(&tf) {
                 resources.push(format!("path:{}", crate::sidefx::canon(&tf)));
             } else {
                 resources.push(format!("name:{}", basename(&tf).to_lowercase()));
