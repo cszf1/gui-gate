@@ -82,7 +82,8 @@ fn gate_tools() -> Vec<Value> {
                "description": "Ask the person at this computer. kind=approve: a yes/no on what you are about to do. kind=answer: a short free-text answer (e.g. which option they want). kind=takeover: ask them to do a step themselves (log in, solve a captcha, anything you cannot or should not do); it returns when they are done. Use only when a person is really needed.",
                "inputSchema": {"type": "object", "properties": {
                    "question": {"type": "string", "description": "What you need from them, in one or two plain sentences."},
-                   "kind": {"type": "string", "enum": ["approve", "answer", "takeover"]}}, "required": ["question"]}}),
+                   "kind": {"type": "string", "enum": ["approve", "answer", "takeover"]},
+                   "options": {"type": "array", "items": {"type": "string"}, "description": "kind=answer: 2-4 short choices the person can pick from (they can still type their own)."}}, "required": ["question"]}}),
         json!({"name": "gate_task",
                "description": "Tell the gate the user's request, VERBATIM, once at the start (copy their words; do not summarise or add to them). Context only: it helps the gate's checks and briefing, but it never authorizes a risky step (only the operator who started the gate can). It can be set only once.",
                "inputSchema": {"type": "object", "properties": {
@@ -536,8 +537,8 @@ pub fn outcome_unknown(r: &Value) -> bool {
 pub fn set_status(name: &str, r: &mut Value) {
     let sc = r.get("structuredContent").cloned().unwrap_or(json!({}));
     let preset = s(&sc, "status");
-    let st = if preset == "unknown" || preset == "input_required" {
-        if preset == "unknown" { "unknown" } else { "input_required" }
+    let st = if preset == "unknown" || preset == "input_required" || preset == "done_by_person" {
+        if preset == "unknown" { "unknown" } else if preset == "done_by_person" { "done_by_person" } else { "input_required" }
     } else if sc.get("batch").and_then(|b| b.get("unknown_step")).map(|x| !x.is_null()).unwrap_or(false) {
         "unknown"
     } else if sc.get("gate").and_then(|g| g.get("executed")) == Some(&json!(false)) {
@@ -608,6 +609,45 @@ pub fn ids_of(sig: Option<&str>) -> HashSet<String> {
     sig.unwrap_or("").split(';').filter(|x| !x.is_empty()).map(|x| x.split('@').next().unwrap_or("").to_string()).collect()
 }
 
+/// A risky / hand-off step without a trusted approval may only end in a safety outcome; the value model's cost
+/// trade-off never decides it (a high lambda or an expensive person cannot turn a required ask into "direct").
+pub fn safety_decision_ok(risk_confirm: bool, approved: bool, dec: &Decision) -> bool {
+    !risk_confirm || approved || (dec.is(&["ask_human", "handoff", "deny", "risk_review", "stop_loop"]) && matches!(dec.tier.as_str(), "rule" | "review"))
+}
+
+/// 2-4 short options for a clarifying question: the agent's own `options`, else a list written in the question
+/// ("A, B or C?", lines "- A" / "1. A"). Anything else: none (a free-text answer).
+pub fn clarify_options(given: Option<&Value>, q: &str) -> Vec<String> {
+    let ok = |v: Vec<String>| -> Vec<String> {
+        let v: Vec<String> = v.into_iter().map(|x| x.trim().trim_end_matches('?').trim().to_string()).filter(|x| !x.is_empty() && x.chars().count() <= 60).collect();
+        if (2..=4).contains(&v.len()) { v } else { vec![] }
+    };
+    if let Some(a) = given.and_then(|v| v.as_array()) {
+        return ok(a.iter().map(|x| pystr(Some(x))).collect());
+    }
+    let lines: Vec<String> = q.lines().filter_map(|l| {
+        let t = l.trim();
+        let rx = Regex::new(r"^(?:[-*•]|\d+[.)]|[a-d][.)])\s+(.+)$").unwrap();
+        rx.captures(t).map(|c| c[1].to_string())
+    }).collect();
+    if lines.len() >= 2 {
+        return ok(lines);
+    }
+    let last = q.trim().lines().last().unwrap_or("");
+    if last.ends_with('?') && last.contains(" or ") {
+        let body = last.rsplit(|c| c == ':' || c == '-').next().unwrap_or(last);
+        let body = Regex::new(r"(?i)^\s*(should i|do you want|which( one)?|shall i|use|pick|choose)\s+").unwrap().replace(body, "").to_string();
+        let parts: Vec<String> = Regex::new(r",\s*|\s+or\s+").unwrap().split(&body).map(String::from).collect();
+        return ok(parts);
+    }
+    vec![]
+}
+
+/// A short content hash of an operator task version (logged; never the text itself).
+pub fn task_hash(t: &str) -> String {
+    hex(&sha256(t.trim().as_bytes()))[..16].to_string()
+}
+
 fn opt_s(v: Option<i64>) -> String {
     v.map(|x| x.to_string()).unwrap_or_default()
 }
@@ -639,7 +679,33 @@ pub struct Permit {
     pub sig: String,
     pub key: crate::effect::EffectKey,
     pub expires: f64,
+    /// the operator task version current when it was approved: a newer task version voids it
+    pub task_version: u64,
 }
+
+/// What it costs a person to be asked, per session (= per task).
+#[derive(Default, Clone, Debug)]
+pub struct Burden {
+    pub asks: u64,
+    pub repeats: u64,
+    pub wait_s: f64,
+    pub active_s: f64,
+    pub takeover_steps: u64,
+    pub no_answer: u64,
+    pub not_asked_again: u64,
+}
+
+impl Burden {
+    pub fn json(&self) -> Value {
+        let r = |a: u64| if self.asks > 0 { round_to(a as f64 / self.asks as f64, 3) } else { 0.0 };
+        json!({"asks": self.asks, "repeat_asks": self.repeats, "repeat_ratio": r(self.repeats), "person_wait_s": round_to(self.wait_s, 1),
+               "person_active_s": round_to(self.active_s, 1), "takeover_steps": self.takeover_steps, "no_answer": self.no_answer,
+               "cancel_timeout_rate": r(self.no_answer), "not_asked_again": self.not_asked_again})
+    }
+}
+
+/// Outcomes that mean "no answer" (never "the user is unwilling"): logged as no_answer, excluded from value training.
+pub const NO_ANSWER_OUTCOMES: &[&str] = &["timeout", "cancelled", "declined", "window_closed", "no_response", "channel_unavailable"];
 
 /// Everything a gated call reads and writes, under one lock.
 pub struct Inner {
@@ -695,6 +761,14 @@ pub struct Inner {
     /// signatures sent back once for an extra reasoning pass (extra_reason): the re-sent step is not sent back again
     pub rethought: HashSet<String>,
     pub resets: u64,
+    /// operator task versions (--task-file re-read on change): version number, hash, file stamp
+    pub task_version: u64,
+    pub task_hash: String,
+    pub task_stamp: Option<(std::time::SystemTime, u64)>,
+    /// person requests that ended without an answer: (kind|effect) -> task version (not asked again in that version)
+    pub unanswered: HashMap<String, u64>,
+    pub asked_keys: HashSet<String>,
+    pub burden: Burden,
 }
 
 pub struct Gate {
@@ -1035,6 +1109,7 @@ impl Gate {
         handshake(&child, &shared);
         let task_locked = !cfg.task.is_empty();
         let task_source = if task_locked { Some("operator".to_string()) } else { None };
+        let task_hash0 = if cfg.task.is_empty() { String::new() } else { task_hash(&cfg.task) };
         Arc::new(Gate {
             inner: Mutex::new(Inner {
                 state: GateState::with_text_only(cfg.text_only), cfg, stats: new_stats(), aid: 0,
@@ -1043,6 +1118,8 @@ impl Gate {
                 task_locked, task_source, in_batch: false, batch_ctx: Value::Null, pix_age: HashMap::new(),
                 last_auto: HashMap::new(), seen_rows: HashMap::new(), recent: vec![], plan: vec![], plan_verdict: String::new(), plan_checks: vec![], facts: vec![], briefed: false, history: vec![], verdict_nagged: false, lb: Default::default(), risk_info: Value::Null, cur_ack: false,
                 rethought: HashSet::new(), resets: 0,
+                task_version: if task_locked { 1 } else { 0 }, task_hash: task_hash0.clone(), task_stamp: None,
+                unanswered: HashMap::new(), asked_keys: HashSet::new(), burden: Burden::default(),
             }),
             shared, out, log: Arc::new(EventLog::new(log_path)), child: Mutex::new(child), child_cmd,
             client_elicit, client_pending, restarts: AtomicU64::new(0), human,
@@ -1140,11 +1217,70 @@ impl Gate {
         }
         let k = self.effect_key(inn, &ctx);
         if k == ak {
-            inn.permits.push(Permit { sig: ctx.signature, key: k, expires: now() + PERMIT_TTL_S });
+            inn.permits.push(Permit { sig: ctx.signature, key: k, expires: now() + PERMIT_TTL_S, task_version: inn.task_version });
         } else {
             inn.inc("permits_withheld");
             self.log.write(json!({"ev": "permit_withheld", "aid": inn.aid, "tool": name, "approved": ak.to_json(), "final": k.to_json(), "source": src}));
         }
+    }
+
+    /// Person-burden accounting for one finished request (any kind): asks, repeated questions, waiting vs active
+    /// seconds, takeover steps, no-answer rate. A request without an answer is remembered so it is not asked again for
+    /// the same effect in this task version, and is logged as "no_answer" (never as the user being unwilling).
+    pub fn note_burden(&self, inn: &mut Inner, kind: &str, key: &str, h: &Value) {
+        let outcome = s(h, "outcome").to_string();
+        let ans = s(h, "answer").to_string();
+        let secs = h.get("ms").and_then(|v| v.as_f64()).unwrap_or(0.0) / 1000.0;
+        inn.burden.asks += 1;
+        let repeat = !inn.asked_keys.insert(key.to_string());
+        if repeat {
+            inn.burden.repeats += 1;
+        }
+        inn.burden.wait_s += secs;
+        let answered = outcome == "accepted" || outcome == "denied";
+        if answered {
+            inn.burden.active_s += secs;
+        }
+        if (kind == "takeover" || kind == "ask_help") && ans == "allow" {
+            inn.burden.takeover_steps += 1;
+        }
+        let no_answer = NO_ANSWER_OUTCOMES.contains(&outcome.as_str());
+        if no_answer {
+            inn.burden.no_answer += 1;
+            let v = inn.task_version;
+            inn.unanswered.insert(key.to_string(), v);
+        }
+        self.log.write(json!({"ev": "person_burden", "kind": kind, "outcome": outcome, "label": if no_answer { "no_answer" } else if answered { "answered" } else { "other" },
+                              "repeat": repeat, "wait_s": round_to(secs, 2), "active_s": if answered { round_to(secs, 2) } else { 0.0 },
+                              "task_version": inn.task_version, "totals": inn.burden.json()}));
+    }
+
+    /// The trusted task channel: when the operator's task file changed since the last look, read it again; every new
+    /// version is logged with its hash and becomes the request authorization uses from now on (approvals and permits
+    /// issued under an older version are void).
+    pub fn refresh_task(&self, inn: &mut Inner) {
+        let Some(tf) = inn.cfg.task_file.clone() else { return };
+        let stamp = std::fs::metadata(&tf).ok().map(|m| (m.modified().unwrap_or(std::time::UNIX_EPOCH), m.len()));
+        if stamp == inn.task_stamp && inn.task_version > 0 {
+            return;
+        }
+        inn.task_stamp = stamp;
+        let t = std::fs::read_to_string(&tf).map(|t| t.trim().to_string()).unwrap_or_default();
+        let h = if t.is_empty() { String::new() } else { task_hash(&t) };
+        if h == inn.task_hash && inn.task_version > 0 {
+            return;
+        }
+        inn.task_version += 1;
+        inn.task_hash = h.clone();
+        inn.cfg.task = t.clone();
+        inn.task_locked = inn.task_locked || !t.is_empty();
+        if !t.is_empty() {
+            inn.task_source = Some("operator".into());
+        }
+        inn.permits.clear();
+        inn.approval = None;
+        inn.inc("task_versions");
+        self.log.write(json!({"ev": "task_version", "version": inn.task_version, "hash": h, "chars": t.chars().count(), "source": "operator_file"}));
     }
 
     /// Never act on a window of the gate's own dialog helper (zenity / kdialog / osascript / the GTK or PowerShell
@@ -1188,7 +1324,9 @@ impl Gate {
         }
         let k = self.effect_key(inn, &ctx);
         let t = now();
-        inn.permits.retain(|p| p.expires > t);
+        self.refresh_task(inn);
+        let tv = inn.task_version;
+        inn.permits.retain(|p| p.expires > t && p.task_version == tv);
         if let Some(i) = inn.permits.iter().position(|p| p.sig == ctx.signature && p.key == k) {
             inn.permits.remove(i); // one shot
             inn.inc("permits_used");
@@ -1266,6 +1404,14 @@ impl Gate {
 
     pub fn serve(self: &Arc<Self>) {
         crate::proc::install_signal_handlers();
+        {
+            let inn = self.inner.lock().unwrap_or_else(|e| e.into_inner());
+            if inn.task_version > 0 {
+                self.log.write(json!({"ev": "task_version", "version": inn.task_version, "hash": inn.task_hash, "chars": inn.cfg.task.chars().count(),
+                                      "source": if inn.cfg.task_file.is_some() { "operator_file" } else { "operator" }}));
+            }
+            self.log.write(json!({"ev": "instance", "instance": crate::human::instance().0}));
+        }
         let stdin = std::io::stdin();
         for line in stdin.lock().lines() {
             let Ok(line) = line else { break };
@@ -2124,6 +2270,13 @@ impl Gate {
                 }
             }
         };
+        // a safety-required ask is a rule, never a cost/value trade-off: unless a trusted source approved this exact
+        // effect, a risky / hand-off step can only end as ask_human / handoff / deny / risk_review (asserted)
+        if safety_first && unknown_prev.is_none() && !safety_decision_ok(inn.cfg.risk_confirm, inn.approval.is_some(), &dec) {
+            debug_assert!(false, "safety ask decided by the value model: {:?}", dec);
+            inn.inc("safety_assert");
+            dec = Decision::new("ask_human", 0.0, format!("{} (safety rule)", ctx.risk.clone().or(ctx.handoff.clone()).unwrap_or_default()), "rule");
+        }
         let soft = |d: &Decision| d.tier != "rule" && d.tier != "policy";
         if dec.is(&["look_light", "look_full", "review", "check"]) && soft(&dec) && fget(&f, "token_stale") < 0.5 && ctx.risk_level.is_none() {
             if let Some(fp) = fast_path(&ctx, &f) {
@@ -2269,7 +2422,10 @@ impl Gate {
         if (opt == "ask_human" || opt == "handoff" || opt == "ask_help") && self.human.resolve_channel() != "chat" {
             let what0 = if t.the_label().is_empty() { name.to_string() } else { t.the_label().to_string() };
             let q = if opt == "ask_help" {
-                format!("The agent is stuck: its last steps did not work ({}).\nIt is trying to {} \"{what0}\".\nPlease do this step yourself in the app window, then press Allow. Press Deny to let the agent try another way.", dec.reason, name.replace('_', " "))
+                // what was tried: the session's last steps and the gate's own trail for this one
+                let tried: Vec<String> = inn.history.iter().rev().take(3).rev().cloned().collect();
+                let tried = if tried.is_empty() { "nothing yet".to_string() } else { tried.join("; ") };
+                format!("The agent is stuck: its last steps did not work ({}).\nIt is trying to {} \"{what0}\".\nTried so far: {tried} (gate: {}).\nYou can do it for the agent (do the step in the app window, then choose \"Do it for me\"), or give it a hint and let it try again.", dec.reason, name.replace('_', " "), trail.join(" > "))
             } else if opt == "ask_human" {
                 format!("The agent wants to {} \"{what0}\".\nWhy the gate stopped it: {}.\nAllow it?", name.replace('_', " "), dec.reason)
             } else {
@@ -2282,7 +2438,17 @@ impl Gate {
             if let Some(k) = &ekey {
                 meta["effect"] = k.to_json();
             }
-            let h = self.human.ask_kind(kind, &q, if opt == "ask_human" { "gui-gate: approve action" } else if opt == "ask_help" { "gui-gate: the agent is stuck" } else { "gui-gate: your turn" }, meta);
+            // a request that ended without an answer (timeout, cancel, closed) is not asked again for the same effect
+            // while the operator task is the same version
+            let ask_key = format!("{kind}|{}", ekey.as_ref().map(|k| k.to_json().to_string()).unwrap_or_else(|| ctx.signature.clone()));
+            self.refresh_task(inn);
+            let h = if inn.unanswered.get(&ask_key) == Some(&inn.task_version) {
+                inn.burden.not_asked_again += 1;
+                inn.inc("person_not_asked_again");
+                json!({"answer": "deny", "outcome": "not_asked_again", "channel": "none", "ms": 0.0, "kind": kind})
+            } else {
+                self.human.ask_kind(kind, &q, if opt == "ask_human" { "gui-gate: approve action" } else if opt == "ask_help" { "gui-gate: the agent is stuck" } else { "gui-gate: your turn" }, meta)
+            };
             let ans = s(&h, "answer").to_string();
             let outcome = s(&h, "outcome").to_string();
             if ans == "input_required" {
@@ -2302,14 +2468,16 @@ impl Gate {
                 r["structuredContent"] = json!({"status": "input_required", "gate": {"decision": opt, "executed": false, "reason": dec.reason, "needs_person": kind}});
                 return r;
             }
-            if h.get("mrtr").is_none() || h["ms"].as_f64().unwrap_or(0.0) == 0.0 {
+            if outcome != "not_asked_again" {
                 inn.inc("human_asked");
+                self.note_burden(inn, kind, &ask_key, &h);
             }
             event["human"] = h.clone();
             event["human_outcome"] = json!(outcome);
             self.log.write(json!({"ev": "human_outcome", "aid": inn.aid, "kind": kind, "outcome": outcome, "answer": trunc(&ans, 80),
                                   "channel": h.get("channel"), "effect": ekey.as_ref().map(|k| k.to_json())}));
-            if ans == "allow" && opt == "ask_human" {
+            // strict result types: only an accepted APPROVE form approves; an answer, a takeover or a help reply never does
+            if ans == "allow" && opt == "ask_human" && kind == "approve" && s(&h, "kind") != "answer" {
                 inn.inc("human_allowed");
                 if let Some(k) = ekey {
                     inn.approval = Some((k, "person".into()));
@@ -2324,8 +2492,9 @@ impl Gate {
                 event["executed"] = json!(false);
                 event["gate_ms"] = json!(round_to(tg0.elapsed().as_secs_f64() * 1000.0, 1));
                 self.log.write(event);
+                // takeover / help done: the person did it. The gate never re-sends the original action; it re-reads.
                 let mut res = text_result(format!("[gate] A person did this step themselves ({}). Do not repeat it; continue from the window's current state.", dec.reason), false);
-                res["structuredContent"] = json!({"human_outcome": outcome, "gate": {"decision": opt, "executed": false, "done_by_person": true}});
+                res["structuredContent"] = json!({"status": "done_by_person", "human_outcome": outcome, "gate": {"decision": opt, "executed": false, "done_by_person": true}});
                 if let Some(p) = t.pid {
                     self.auto_observe(inn, p, t.window_id, &mut res, true);
                 }
@@ -2978,7 +3147,10 @@ impl Gate {
         // only the operator's request (--task / GUI_GATE_TASK) can authorize; what the agent stated never does
         let cwd = if ctx.tool == "run_command" { Some(crate::features::command_cwd(&ctx.args)) }
             else { t.pid.filter(|p| crate::sidefx::is_terminal(*p)).map(crate::sidefx::shell_cwd) };
+        self.refresh_task(inn);
         let (ok, why) = authz::authorized(&key, &inn.cfg.task, &titles, cwd.as_deref());
+        inn.risk_info["task_version"] = json!(inn.task_version);
+        inn.risk_info["task_hash"] = json!(inn.task_hash);
         inn.risk_info["authorized"] = json!(ok);
         inn.risk_info["why"] = json!(why);
         if ok {
@@ -3976,12 +4148,41 @@ impl Gate {
             r["structuredContent"] = json!({"status": "input_required", "human_outcome": "channel_unavailable"});
             return r;
         }
-        let text = if kind != "takeover" { q.clone() } else { format!("{q}\n\nDo it in the app yourself, then confirm when you are done.") };
         let kind = if ["approve", "answer", "takeover"].contains(&kind.as_str()) { kind } else { "answer".to_string() };
+        // a clarifying question carries 2-4 options when they are given or can be read off the question
+        let options = if kind == "answer" { clarify_options(args.get("options"), &q) } else { vec![] };
+        let mut text = if kind != "takeover" { q.clone() } else { format!("{q}\n\nDo it in the app yourself, then confirm when you are done.") };
+        if !options.is_empty() {
+            text.push_str(&format!("\nOptions: {}", options.iter().enumerate().map(|(i, o)| format!("{}) {o}", i + 1)).collect::<Vec<_>>().join("  ")));
+        }
         let title = match kind.as_str() { "approve" => "gui-gate: approve?", "takeover" => "gui-gate: your turn", _ => "gui-gate: question" };
-        let h = self.human.ask_kind(&kind, &text, title, json!({"tool": "request_human", "reason": "asked by the agent"}));
+        let ask_key = format!("{kind}|q:{}", authz::norm(&q));
+        let not_again = {
+            let mut inn = self.inner.lock().unwrap_or_else(|e| e.into_inner());
+            self.refresh_task(&mut inn);
+            let hit = inn.unanswered.get(&ask_key) == Some(&inn.task_version);
+            if hit {
+                inn.burden.not_asked_again += 1;
+                inn.inc("person_not_asked_again");
+            }
+            hit
+        };
+        if not_again {
+            let mut r = text_result("[gate] This question was already put to the person and got no answer (timeout or cancelled); it is not asked again in this task. Do not guess; stop and report what you need.", true);
+            r["structuredContent"] = json!({"status": "done", "human_outcome": "not_asked_again"});
+            return r;
+        }
+        let mut meta = json!({"tool": "request_human", "reason": "asked by the agent"});
+        if !options.is_empty() {
+            meta["options"] = json!(options);
+        }
+        let h = self.human.ask_kind(&kind, &text, title, meta);
         if s(&h, "answer") == "input_required" {
             return text_result("[gate] waiting for a person", true);
+        }
+        {
+            let mut inn = self.inner.lock().unwrap_or_else(|e| e.into_inner());
+            self.note_burden(&mut inn, &kind, &ask_key, &h);
         }
         self.log.write(json!({"ev": "request_human", "kind": kind, "question": trunc(&q, 200), "human": h, "human_outcome": h.get("outcome")}));
         let ans = s(&h, "answer").to_string();

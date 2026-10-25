@@ -191,11 +191,11 @@ fn main() {
     if mode.as_deref() == Some("single") {
         cfg.batch = "off".into();
     }
-    if cfg.task.is_empty() {
+    if cfg.task.is_empty() || cfg.task_file.is_some() {
         if let Some(tf) = task_file {
-            if let Ok(t) = std::fs::read_to_string(tf) {
-                cfg.task = t.trim().to_string();
-            }
+            // the trusted task channel: the file is re-read whenever it changes (Gate::refresh_task)
+            cfg.task = std::fs::read_to_string(&tf).map(|t| t.trim().to_string()).unwrap_or_default();
+            cfg.task_file = Some(tf);
         }
     }
     if weights.as_deref() == Some("prior_v1") {

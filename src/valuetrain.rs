@@ -102,6 +102,12 @@ pub fn option_taken(e: &Value) -> Option<String> {
     let dec = s(e, "decision");
     let trail: Vec<String> = e.get("trail").and_then(|t| t.as_array()).map(|a| a.iter().map(|x| pystr(Some(x))).collect()).unwrap_or_default();
     let has = |k: &str| trail.iter().any(|t| t == k);
+    // a person who did not answer (timeout, cancel, closed dialog) is "no answer", never a label that the user was
+    // unwilling: such steps are not training rows for any option
+    let ho = s(e, "human_outcome");
+    if crate::server::NO_ANSWER_OUTCOMES.contains(&ho) || ho == "not_asked_again" {
+        return None;
+    }
     if truthy(e.get("executed")) {
         if dec != "direct" || s(e, "tier") == "human" {
             return None;
@@ -840,6 +846,16 @@ mod tests {
             f[fidx(k).unwrap()] = *v;
         }
         TRow { session: sess.into(), run: "r".into(), task: "t".into(), family: "f".into(), f, option: opt.into(), y, tier: "model".into(), check: None }
+    }
+
+    #[test]
+    fn no_answer_is_never_a_training_label() {
+        for o in ["timeout", "cancelled", "declined", "window_closed", "no_response", "not_asked_again"] {
+            let e = json!({"ev": "action", "executed": false, "decision": "ask_help", "trail": ["ask_help"], "tier": "model", "human_outcome": o});
+            assert_eq!(option_taken(&e), None, "{o}");
+        }
+        let e = json!({"ev": "action", "executed": false, "decision": "ask_help", "trail": ["ask_help"], "tier": "model", "human_outcome": "denied"});
+        assert_eq!(option_taken(&e).as_deref(), Some("ask_help"));
     }
 
     #[test]
