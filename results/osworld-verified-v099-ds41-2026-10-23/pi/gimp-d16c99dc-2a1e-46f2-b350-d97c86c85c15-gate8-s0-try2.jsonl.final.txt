@@ -1,0 +1,1 @@
+DONE — In GIMP I selected the dog layer (`dog_with_background.png`) of `dog_with_background_two_layers.xcf`, used Layer > Scale Layer with the width/height chain linked, set height to 512 (width auto-scaled to 852, keeping the 1578×948 aspect ratio), applied it, and saved the XCF (the second transparent layer and the 1578×948 canvas are untouched).

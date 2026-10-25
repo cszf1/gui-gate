@@ -1,0 +1,1 @@
+DONE — In `/home/user/Multiply_Time_Number.xlsx` I put `=D3*24*F3` in E3 (Total Earned) → 191.67 (7:40 = 7.6667 h × 25; time values are day fractions, hence the ×24), and saved the file.

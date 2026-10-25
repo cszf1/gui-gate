@@ -1,0 +1,1 @@
+DONE — Created a Thunderbird message filter "Forward all mail to gmail" on the anonym-x2024@outlook.com account (Match all messages → Forward Message to anonym-x2024@gmail.com), saved to msgFilterRules.dat, and enabled "Check for new messages at startup / every 10 minutes" so it runs automatically on future mail; no online account settings were touched.

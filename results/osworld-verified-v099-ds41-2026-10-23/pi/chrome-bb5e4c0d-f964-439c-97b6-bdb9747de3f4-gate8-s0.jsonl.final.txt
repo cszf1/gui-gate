@@ -1,0 +1,1 @@
+DONE — Opened Chromium's Settings → "Manage search engines and site search" (chrome://settings/searchEngines), used the Microsoft Bing row's ⋮ → "Make default", confirmed the list now shows "Microsoft Bing (Default)", and verified by searching "weather forecast" in the address bar which loaded https://www.bing.com/search?q=weather+forecast.

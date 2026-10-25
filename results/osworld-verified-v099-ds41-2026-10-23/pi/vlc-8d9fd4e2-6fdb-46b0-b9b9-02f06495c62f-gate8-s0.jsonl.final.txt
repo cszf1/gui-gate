@@ -1,0 +1,1 @@
+DONE — Clicked VLC's "Toggle the video in fullscreen" button so the video now fills the entire 1440x900 screen (verified `_NET_WM_STATE_FULLSCREEN`).

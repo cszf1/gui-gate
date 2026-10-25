@@ -1,0 +1,1 @@
+Now I need a send identity (so Compose works without any incoming email server). Let me check what the account manager offers for a non-email, send-capable account type.

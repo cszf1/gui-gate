@@ -1,0 +1,1 @@
+DONE — Opened Autotrader in Chromium (cars.com and CarGurus were behind un-passable bot checks) and set the search filters: ZIP 10001, radius 50 miles, max price $50,000, fuel type Electric, yielding **1,852 electric cars** within 50 miles of 10001 (page now shows "Electric Cars for Sale in New York, NY", e.g. 2023 BMW iX $42,770 at 35 mi, 2023 Tesla Model 3 $27,791 at 17 mi).

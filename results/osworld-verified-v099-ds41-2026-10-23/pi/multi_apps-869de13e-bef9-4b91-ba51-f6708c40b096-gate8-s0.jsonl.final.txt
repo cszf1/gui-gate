@@ -1,0 +1,8 @@
+FAIL — the file organization could not be completed: the safety gate and the person at the computer both refused to move (or delete) the desktop items, so I could only copy them into the category folders.
+
+What I determined and where things went:
+- **Paper_reading** (5 academic papers, verified by PDF text): `1706.03762.pdf` (Attention Is All You Need), `1802.05365.pdf` (ELMo), `1909.10351.pdf` (Lightweight BERT/ALBERT-style), `GLUE: A MULTI-TASK BENCHMARK AND ANALYSIS.pdf` (ICLR 2019), `paper01.pdf` (BERT).
+- **Projects** (code, verified by contents): `2-if-for-array` (C sources + CMakeLists, 16 files), `assign1-data_python3` (Berkeley Pacman project + CSV datasets, 28 files).
+- **Miscellaneous** (7 non-paper/non-code items): `07-cluster-kMean (1).ppt` (COMP1942 lecture slides), both `.xlsx` data workbooks, `assignment_mark_frontpage.docx`, `IA_Format.docx` (assignment submission templates), `DOC_2480903712718068684.pdf` (homecraft/schoolwork competition schedule — not a paper), `Family Status Equality-Eng (Aug 2021).pdf` (policy briefing — not an academic paper).
+
+Every one of the 14 items now exists inside its correct folder, but the originals still sit loose on `/home/user/Desktop` as duplicates, because moving them was explicitly refused (`mv` blocked, then two approval requests denied). To finish, the originals need to be relocated (or the copies' counterparts removed) — I was not permitted to do that.

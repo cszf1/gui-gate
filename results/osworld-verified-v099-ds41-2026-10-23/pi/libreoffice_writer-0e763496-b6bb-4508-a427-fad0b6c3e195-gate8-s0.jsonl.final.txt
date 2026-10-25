@@ -1,0 +1,1 @@
+DONE — In LibreOffice Writer I selected all text in /data/home/Desktop/Dublin_Zoo_Intro.docx, applied Times New Roman via Format > Character (Font family), also changed the "normal" paragraph style's font to Times New Roman, and saved the .docx (verified: document.xml has only Times New Roman runs, no Arial in body text).

@@ -1,0 +1,1 @@
+DONE — Opened `chrome://settings/manageProfile` in the running Chromium (user-data-dir `/data/home/.config/google-chrome`) and renamed the profile from "Your Chromium" to "Thomas"; the profile menu now shows "Thomas" and `Local State`/`Default/Preferences` record `"name":"Thomas"`.

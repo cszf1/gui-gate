@@ -1,0 +1,1 @@
+DONE — In VS Code's Settings UI (User scope) I set **Files: Auto Save** to `afterDelay` and **Files: Auto Save Delay** to `500` ms, which persisted to `/home/user/.config/Code/User/settings.json`.

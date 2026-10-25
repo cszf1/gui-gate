@@ -1,0 +1,1 @@
+DONE — Opened `~/Desktop/calculator.py` in an editor, filled in the missing insertion-sort shift step (`arr[j+1] = arr[j]`), saved it, then ran it and wrote its output (5, 6, 11, 12, 13) to `~/Desktop/log.txt`.

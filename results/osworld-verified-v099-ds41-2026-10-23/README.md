@@ -1,16 +1,5 @@
 # OSWorld-Verified full run: gui-gate v0.9.9 (all 0.9.7+ features, 7 DeepSeek roles) + Pi + deepseek-v4.1-flash, box gui-pi3
 
-> **How to read this number (wording restored 2026-10-26 after the partial 321/361 refresh dropped it; numbers from this
-> folder's data):** this is a **custom environment based on OSWorld tasks and evaluators**, a **custom-environment partial
-> result**, not an official OSWorld-Verified score and **not comparable to the OSWorld leaderboard**. The committed data give
-> 143/266 = 53.8 % of *valid* runs (Wilson 95 % CI **47.8 %–59.7 %**), ignoring task correlation and the selection of valid
-> runs. Over the planned list (361 tasks; missing and infra runs count as failures) it is **143/361 = 39.6 %** (Wilson
-> 34.7 %–44.7 %); 24 runs were infra failures (19 setup_failed, 4 relay_error, 1 eval_error) and 71 tasks never ran. The run
-> used OSWorld's tasks and evaluators natively on Debian 13 / XFCE 1440x900 with Chromium, LibreOffice 25.2 and other app
-> versions (no VM, no snapshot revert), its own reset and a 100-turn / 3600 s budget, stopped before all 361 tasks finished,
-> and had no baseline of any kind, so it says nothing about the value model. Fair comparisons: bench/fair_compare.py under
-> docs/eval-protocol.md.
-
 Started 2026-10-23 00:07:58 CST. Condition: gate only (bench cond `gate8` = gate policy + task text + reviewer), seed 0.
 No direct baseline in this run.
 
@@ -50,43 +39,43 @@ pi/ (Pi event streams, base64 screenshots stripped, streaming deltas dropped; .t
 .final.txt = final answer, .err = Pi stderr), task/ (task text given to the gate), setup/ (versions, configs, launcher,
 task list, role check, reviewer check).
 
-## Results (state: partial 321/361)
+## Results (state: partial 361/361-ish)
 
 
-- tasks expected 361, finished rows 290, valid 266, infra 24 {'relay_error': 4, 'setup_failed': 19, 'eval_error': 1}
-- **success 143/361 = 39.61 %** (official-style: every expected task counts, infra/missing = 0); 143/266 = 53.76 % of valid runs; score sum 149.33
-- stops {'agent': 245, 'max_turns': 3, 'timeout': 18}; turns mean 30.3 / median 24.5; wall mean 718.8 s / median 350.6 s; total 55.23 h
-- tokens: input 13,254,707 + cache read 315,316,992, output 2,353,572; screenshots returned 2366; tool calls 8506
-- request_human calls 14 (human=deny); FAIL answers 30
-- gate: {'actions': 8020, 'executed': 7764, 'interventions': 256, 'human_events': 98, 'loop_notes': 17, 'loop_refused': 8}
-- reviewer (System One): {'calls': 97, 'decisions': {'deny': 61, 'allow': 36}, 'ms_mean': 947.7, 'ms_median': 702.6}
+- tasks expected 361, finished rows 331, valid 304, infra 27 {'relay_error': 4, 'setup_failed': 22, 'eval_error': 1}
+- **success 167/361 = 46.26 %** (official-style: every expected task counts, infra/missing = 0); 167/304 = 54.93 % of valid runs; score sum 174.24
+- stops {'agent': 282, 'max_turns': 3, 'timeout': 19}; turns mean 30.4 / median 25.0; wall mean 686.3 s / median 342.2 s; total 60.07 h
+- tokens: input 15,266,268 + cache read 368,253,952, output 2,715,174; screenshots returned 2713; tool calls 9763
+- request_human calls 20 (human=deny); FAIL answers 34
+- gate: {'actions': 9164, 'executed': 8867, 'interventions': 297, 'human_events': 122, 'loop_notes': 18, 'loop_refused': 9}
+- reviewer (System One): {'calls': 108, 'decisions': {'deny': 70, 'allow': 38}, 'ms_mean': 922.8, 'ms_median': 697.1}
 
 | role | runs using | invocations | HTTP calls | errors | mean ms | median ms |
 |---|---|---|---|---|---|---|
-| feasibility | 266 | 266 | 1550 | 5 | 68012.2 | 56303.2 |
-| planner | 266 | 266 | 898 | 3 | None | None |
-| verifier | 237 | 248 | 1737 | 13 | 71098.6 | 55358.8 |
+| feasibility | 304 | 304 | 1791 | 7 | 68153.9 | 55949.5 |
+| planner | 304 | 304 | 1020 | 3 | None | None |
+| verifier | 273 | 287 | 2031 | 15 | 71112.6 | 58339.2 |
 | judge | 0 | 0 | 0 | 0 | None | None |
-| search | 5 | 5 | 5 | 0 | 13897.6 | 10481.4 |
-| compact | 212 | 755 | 755 | 1 | 10225.5 | 9359.0 |
-| grounder | 9 | 10 | 10 | 0 | 10042.4 | 5958.5 |
+| search | 6 | 7 | 7 | 0 | 17118.6 | 18235.6 |
+| compact | 244 | 868 | 868 | 1 | 10193.9 | 9298.5 |
+| grounder | 11 | 13 | 13 | 0 | 9324.8 | 6493.7 |
 
 (feasibility ms = the whole briefing incl. planner; compact/judge ms = gap to the previous gate event, approximate)
 
 | domain | tasks | valid | success | rate (of tasks) | score sum | infra |
 |---|---|---|---|---|---|---|
-| libreoffice_impress | 35 | 35 | 7 | 20.0 % | 7.93 | 0 |
-| os | 20 | 17 | 10 | 50.0 % | 10.0 | 3 |
-| multi_apps | 73 | 56 | 26 | 35.6 % | 29.49 | 17 |
-| libreoffice_writer | 18 | 17 | 13 | 72.2 % | 13.0 | 1 |
-| vs_code | 21 | 21 | 17 | 81.0 % | 17.0 | 0 |
-| libreoffice_calc | 41 | 39 | 33 | 80.5 % | 33.0 | 2 |
-| vlc | 15 | 14 | 8 | 53.3 % | 8.99 | 1 |
-| chrome | 39 | 39 | 13 | 33.3 % | 13.93 | 0 |
-| gimp | 18 | 18 | 9 | 50.0 % | 9.0 | 0 |
-| thunderbird | 10 | 10 | 7 | 70.0 % | 7.0 | 0 |
+| libreoffice_impress | 42 | 42 | 10 | 23.8 % | 10.93 | 0 |
+| os | 22 | 19 | 10 | 45.5 % | 10.0 | 3 |
+| multi_apps | 83 | 63 | 30 | 36.1 % | 33.49 | 20 |
+| libreoffice_writer | 21 | 20 | 15 | 71.4 % | 15.0 | 1 |
+| vs_code | 22 | 22 | 18 | 81.8 % | 18.0 | 0 |
+| libreoffice_calc | 45 | 43 | 37 | 82.2 % | 37.0 | 2 |
+| vlc | 17 | 16 | 9 | 52.9 % | 10.89 | 1 |
+| chrome | 44 | 44 | 15 | 34.1 % | 15.93 | 0 |
+| gimp | 22 | 22 | 13 | 59.1 % | 13.0 | 0 |
+| thunderbird | 13 | 13 | 10 | 76.9 % | 10.0 | 0 |
 
-tools: {'run_command': 2150, 'run_actions': 1563, 'get_window_state': 1356, 'click': 1052, 'set_plan': 577, 'press_key': 497, 'list_windows': 494, 'inspect': 307, 'check_done': 249, 'scroll': 96, 'type_text': 83, 'list_apps': 63, 'request_human': 14, 'update_plan': 1, 'mcp__gui_run_actions': 1, 'mcp__gui_set_plan': 1, 'mcp__gui_inspect': 1, 'mcp__gui_press_key': 1}
+tools: {'run_command': 2382, 'run_actions': 1883, 'get_window_state': 1562, 'click': 1185, 'set_plan': 666, 'press_key': 572, 'list_windows': 568, 'inspect': 339, 'check_done': 288, 'scroll': 110, 'type_text': 104, 'list_apps': 78, 'request_human': 20, 'update_plan': 1, 'mcp__gui_run_actions': 1, 'mcp__gui_set_plan': 1, 'mcp__gui_inspect': 1, 'mcp__gui_press_key': 1, 'run_commands': 1}
 
 ## infra rows
 
@@ -121,3 +110,6 @@ tools: {'run_command': 2150, 'run_actions': 1563, 'get_window_state': 1356, 'cli
 - multi_apps-ee9a3c83-f437-4879-8918-be5efbb9fac7: setup_failed (attempts 1) Exception('Setup step 4 failed: _execute_setup - Setup command request failed: HTTP 500')
 - libreoffice_calc-2bd59342-0664-4ccb-ba87-79379096cc08: relay_error (attempts 3) 503: {"code":"LITELLM_UNAVAILABLE","message":"模型服务暂时不可用，请稍后重试","traceId":"trace_06b17e68-c6d5-4c7a-b6f3-a06dca5b09fd"}
 - multi_apps-0e5303d4-8820-42f6-b18d-daf7e633de21: setup_failed (attempts 1) Exception('Setup step 6 failed: _launch_setup - Failed to launch application: HTTP 500')
+- multi_apps-3f05f3b9-29ba-4b6b-95aa-2204697ffc06: setup_failed (attempts 1) Exception('Setup step 9 failed: _launch_setup - Failed to launch application: HTTP 500')
+- multi_apps-5df7b33a-9f77-4101-823e-02f863e1c1ae: setup_failed (attempts 1) Exception('Setup step 3 failed: _launch_setup - Failed to launch application: HTTP 500')
+- multi_apps-788b3701-3ec9-4b67-b679-418bfa726c22: setup_failed (attempts 1) Exception('Setup step 5 failed: _launch_setup - Failed to launch application: HTTP 500')

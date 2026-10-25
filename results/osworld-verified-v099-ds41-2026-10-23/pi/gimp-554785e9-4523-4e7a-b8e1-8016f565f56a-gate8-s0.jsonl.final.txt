@@ -1,0 +1,1 @@
+DONE — Opened `/data/home/Desktop/woman_sitting_by_the_tree2.png` in GIMP, applied Colors > Saturation (scale 1.4) to boost vibrancy, and exported it back over the original PNG (mean saturation 0.38 → 0.50, dimensions unchanged).

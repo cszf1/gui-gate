@@ -1,0 +1,1 @@
+DONE — In LibreOffice Impress I applied Format > Character to the title text on slides 2 ("How to Use This Presentation"), 3 ("Add a Roadmap Page") and 5 ("Write your topic or idea"): font color Black and Underlining Single, then saved /data/home/Desktop/4_1.pptx (verified: those title runs now carry `srgbClr 000000` and `u="sng"`; no other slides changed).

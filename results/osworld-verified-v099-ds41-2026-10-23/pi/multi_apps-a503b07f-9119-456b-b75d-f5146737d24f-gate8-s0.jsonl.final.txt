@@ -1,0 +1,1 @@
+DONE — Converted the receipt image `/home/user/OIP.jpg` into a single-page PDF using LibreOffice Draw's PDF export and saved it as `/home/user/Desktop/receipt.pdf` (verified: valid PDF 1.7, 1 page, embedded 474x670 receipt image rendering correctly).

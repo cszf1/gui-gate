@@ -1,0 +1,1 @@
+DONE — Opened the Drugs.com Natural Products (NPP) database in the existing Chromium window, browsed it (A–Z index, Ginkgo biloba and Chamomile monographs, and the "chamomile" search with 11 results), and left the browser on https://www.drugs.com/npp/ with the 0-9 / A listings (5-HTP, Acacia Gum, Acai, Andrographis…) visible.

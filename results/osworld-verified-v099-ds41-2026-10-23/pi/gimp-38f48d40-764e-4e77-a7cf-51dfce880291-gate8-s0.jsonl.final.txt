@@ -1,0 +1,1 @@
+FAIL — GIMP 3.0.4 is a raster image editor with no video timeline and no MP4/video plug-ins (only image loaders/exporters; no GStreamer video decoders), so it cannot open `/home/user/fullvideo.mp4` as a video or trim it to 2–4 s. Trimming would require a video tool such as ffmpeg or VLC, which is outside the requested app, so I made no changes to the file.

@@ -1,0 +1,1 @@
+DONE — In LibreOffice Writer I selected the document's first two paragraphs, applied Format > Paragraph > Line spacing = Double (formatting marks restored to single so only those two paragraphs changed), and saved the .docx (w:line="480" on both paragraphs, saved to disk).
