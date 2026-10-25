@@ -520,6 +520,58 @@ class TrustedTaskFile(unittest.TestCase):
             shutil.rmtree(d, ignore_errors=True)
 
 
+class PredictorVariants(unittest.TestCase):
+    def test_train_treatment_ipw_and_report_variants(self):
+        import random
+        rnd = random.Random(3)
+        d = tempfile.mkdtemp(prefix="gg-train-")
+        try:
+            for run in ("runA", "runB", "runC", "runD"):
+                os.makedirs(os.path.join(d, run, "gate"))
+                for fam in ("chrome", "gimp", "calc"):
+                    evs, ts = [], 0.0
+                    for k in range(60):
+                        dup = rnd.random() < 0.5
+                        full = rnd.random() < (0.7 if dup else 0.2)
+                        p = (0.85 if dup else 0.6) if full else (0.3 if dup else 0.75)
+                        ok = rnd.random() < p
+                        f = {"bias": 1.0, "is_token": 1.0, "label_dup": 1.0 if dup else 0.0}
+                        ts += 1
+                        if full:
+                            evs.append({"ev": "action", "ts": ts, "session": f"{run}{fam}", "aid": 2 * k, "executed": False, "decision": "look_full",
+                                        "trail": ["look_full"], "tier": "model", "features": f, "sig": f"click|{k}"})
+                            ts += 1
+                        evs.append({"ev": "action", "ts": ts, "session": f"{run}{fam}", "aid": 2 * k + 1, "executed": True, "decision": "direct",
+                                    "trail": ["direct"], "tier": "model", "features": f, "sig": f"click|{k}", "is_error": not ok})
+                    with open(os.path.join(d, run, "gate", f"{fam}-1-gate8-s0.jsonl"), "w") as fh:
+                        fh.write("\n".join(json.dumps(e) for e in evs) + "\n")
+            out = os.path.join(d, "value.json")
+            logs = sorted(os.path.join(dp, f) for dp, _, fs in os.walk(d) for f in fs if f.endswith(".jsonl"))
+            r = subprocess.run([BIN, "train", "--model", "treatment", *logs, "-o", out, "--ipw", "--report", "--boot", "3", "--iters", "300"],
+                               capture_output=True, text=True, timeout=110)
+            self.assertEqual(r.returncode, 0, r.stdout[-2000:] + r.stderr[-2000:])
+            ev = json.loads(r.stdout)
+            self.assertEqual(ev["split"]["mode"], "run+family")
+            self.assertGreater(ev["ipw"]["ess"], 0)
+            self.assertIn("clip", ev["ipw"])
+            models = ev["variants"]["models"]
+            self.assertEqual(set(models), {"interaction", "interaction_ipw", "separate_per_option", "boosted_stumps"})
+            for m in models.values():
+                for k in ("brier", "nll", "ece_mass", "brier_ci95", "nll_ci95", "ece_mass_ci95"):
+                    self.assertIn(k, m)
+            # default stays unweighted, and the gate's default value model stays legacy
+            r = subprocess.run([BIN, "train", "--model", "treatment", *logs, "--boot", "2", "--iters", "200"], capture_output=True, text=True, timeout=110)
+            self.assertIsNone(json.loads(r.stdout)["ipw"])
+            c = Client()
+            try:
+                self.assertIn("osworld_v3", txt(c.call("gate_report")))
+                self.assertEqual(c.call("gate_report")["structuredContent"]["model"], "osworld_v3")
+            finally:
+                c.close()
+        finally:
+            shutil.rmtree(d, ignore_errors=True)
+
+
 class NoKeyLeaks(unittest.TestCase):
     KEYS = {"OPENAI_API_KEY": "sk-test-LEAKCANARY0000000001", "GUI_GATE_REVIEWER_KEY": "sk-test-LEAKCANARY0000000002",
             "GUI_GATE_ROLE_JUDGE_KEY": "sk-test-LEAKCANARY0000000003", "ANTHROPIC_AUTH_TOKEN": "tok-LEAKCANARY0000000004"}

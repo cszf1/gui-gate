@@ -311,16 +311,22 @@ impl Default for FitCfg {
 ///   loss = mean NLL + l2/2 |b − prior|² (bias free) + l2_main/2 Σ g_o[bias]² + l2_int/2 Σ g_o[k≠bias]².
 /// Options present in `allowed` get interaction terms; the rest share the base (they are not chosen anyway).
 pub fn fit_treatment(rows: &[&TRow], fc: &FitCfg, prior: &IndexMap<String, f64>, init: Option<&Coefs>, allowed: &HashSet<String>) -> Coefs {
+    fit_treatment_w(rows, None, fc, prior, init, allowed)
+}
+
+/// fit_treatment with per-row weights (inverse-propensity weights; None = all 1). Weighted mean NLL.
+pub fn fit_treatment_w(rows: &[&TRow], wts: Option<&[f64]>, fc: &FitCfg, prior: &IndexMap<String, f64>, init: Option<&Coefs>, allowed: &HashSet<String>) -> Coefs {
     let center: Vec<f64> = FEATURE_NAMES.iter().map(|k| prior.get(*k).copied().unwrap_or(0.0)).collect();
     let mut w = match init { Some(c) => from_coefs(c), None => Dense { base: center.clone(), inter: vec![vec![0.0; NF]; VALUE_OPTIONS.len()] } };
-    let n = rows.len().max(1) as f64;
+    let wt = |i: usize| wts.map(|v| v[i]).unwrap_or(1.0);
+    let n = (0..rows.len()).map(wt).sum::<f64>().max(1e-9);
     let on: Vec<bool> = VALUE_OPTIONS.iter().map(|o| *o != "direct" && allowed.contains(*o)).collect();
     for _ in 0..fc.iters {
         let mut gb = vec![0.0; NF];
         let mut gi = vec![vec![0.0; NF]; VALUE_OPTIONS.len()];
-        for r in rows {
+        for (ri, r) in rows.iter().enumerate() {
             let oi = opt_idx(&r.option);
-            let d = sigmoid(dense_logit(&w, r)) - r.y;
+            let d = (sigmoid(dense_logit(&w, r)) - r.y) * wt(ri);
             for (k, x) in r.f.iter().enumerate() {
                 if *x != 0.0 {
                     gb[k] += d * x;
@@ -630,6 +636,7 @@ pub fn train_treatment_main(argv: &[String]) -> i32 {
     let (mut out, mut holdout, mut seed, mut split, mut label, mut prior_name) =
         (String::new(), 0.3, 0u64, "run+family".to_string(), "step".to_string(), "zero".to_string());
     let (mut boot, mut level, mut min_rows, mut report, mut md, mut fit_all, mut fams) = (30usize, 0.9, 30usize, false, None::<String>, false, None::<String>);
+    let mut ipw: Option<f64> = None;
     let mut fc = FitCfg::default();
     let mut in_test = false;
     let mut i = 0;
@@ -654,9 +661,11 @@ pub fn train_treatment_main(argv: &[String]) -> i32 {
             "--prior" => prior_name = next(&mut i),
             "--md" => md = Some(next(&mut i)),
             "--report" => report = true,
+            "--ipw" => ipw = Some(ipw.unwrap_or(0.05)),
+            "--ipw-clip" => ipw = Some(next(&mut i).parse().unwrap_or(0.05)),
             "--fit-all" => fit_all = true,
             "--test" => in_test = true,
-            "-h" | "--help" => { println!("usage: gui-gate train --model treatment LOGS... -o value.json [--split run+family|run|family|task|session] [--holdout 0.3] [--seed 0] [--l2 0.01] [--l2-main 0.01] [--l2-int 0.05] [--boot 30] [--level 0.9] [--min-rows 30] [--label step|task --task-labels runs_scored.jsonl] [--families map.json] [--prior zero|v1|builtin] [--report] [--md FILE] [--fit-all] [--test LOGS...]"); return 0; }
+            "-h" | "--help" => { println!("usage: gui-gate train --model treatment LOGS... -o value.json [--split run+family|run|family|task|session] [--holdout 0.3] [--seed 0] [--l2 0.01] [--l2-main 0.01] [--l2-int 0.05] [--boot 30] [--level 0.9] [--min-rows 30] [--label step|task --task-labels runs_scored.jsonl] [--families map.json] [--prior zero|v1|builtin] [--ipw] [--ipw-clip 0.05] [--report] [--md FILE] [--fit-all] [--test LOGS...]\n  --ipw: weight rows by 1/max(p(option|x), clip) from a propensity model of the logged policy (ESS reported)\n  --report: also compare interaction vs separate-per-option vs boosted-stumps models on the held-out split"); return 0; }
             p if in_test => test_paths.push(p.to_string()),
             p => paths.push(p.to_string()),
         }
@@ -682,7 +691,12 @@ pub fn train_treatment_main(argv: &[String]) -> i32 {
     let train: Vec<&TRow> = train_idx.iter().map(|i| &rows[*i]).collect();
     let n_by: IndexMap<String, usize> = VALUE_OPTIONS.iter().map(|o| (o.to_string(), train.iter().filter(|r| r.option == *o).count())).collect();
     let allowed: HashSet<String> = n_by.iter().filter(|(_, n)| **n > 0).map(|(k, _)| k.clone()).collect();
-    let coef = fit_treatment(&train, &fc, &prior, None, &allowed);
+    // inverse-propensity weighting (opt-in; the default stays unweighted)
+    let (wts, ipw_info) = match ipw {
+        Some(clip) => { let p = Propensity::fit(&train, &fc); let (w, i) = ipw_weights(&train, &p, clip); (Some(w), i) }
+        None => (None, Value::Null),
+    };
+    let coef = fit_treatment_w(&train, wts.as_deref(), &fc, &prior, None, &allowed);
     let mut rng = Rng::new(seed);
     let groups: Vec<String> = train.iter().map(|r| r.session.clone()).collect();
     let mut bfc = fc.clone();
@@ -691,7 +705,8 @@ pub fn train_treatment_main(argv: &[String]) -> i32 {
     for _ in 0..boot {
         let idx = resample_groups(&groups, &mut rng);
         let sample: Vec<&TRow> = idx.iter().map(|i| train[*i]).collect();
-        reps.push(fit_treatment(&sample, &bfc, &prior, Some(&coef), &allowed));
+        let sw: Option<Vec<f64>> = wts.as_ref().map(|w| idx.iter().map(|i| w[*i]).collect());
+        reps.push(fit_treatment_w(&sample, sw.as_deref(), &bfc, &prior, Some(&coef), &allowed));
     }
     let mut model = TreatmentModel { name: crate::sidefx::basename(&out).trim_end_matches(".json").to_string(), coef, boot: reps,
         n_by_option: n_by, probe: fit_probe(&train, &fc), level, min_rows };
@@ -716,7 +731,11 @@ pub fn train_treatment_main(argv: &[String]) -> i32 {
         "load": stats.json(), "train_rows": train.len(), "test_rows": test.len(),
         "treatment_on_test": metrics_ci(&ps, &ys, &gs, creps, seed), "treatment_on_test_by_option": per_opt,
         "incremental_calibration": "not estimable from logs (no paired branches per state); run bench/counterfactual and its analyze.py",
-        "hygiene": HYGIENE_NOTES});
+        "ipw": ipw_info, "hygiene": HYGIENE_NOTES});
+    let mut eval = eval;
+    if report {
+        eval["variants"] = compare_variants(&train, &test, &fc, &prior, &allowed, ipw, creps, seed);
+    }
     if fit_all && test_paths.is_empty() {
         let all: Vec<&TRow> = rows.iter().collect();
         model.coef = fit_treatment(&all, &fc, &prior, Some(&model.coef), &allowed);
@@ -728,6 +747,15 @@ pub fn train_treatment_main(argv: &[String]) -> i32 {
         for (o, m) in eval["treatment_on_test_by_option"].as_object().unwrap() {
             s.push('\n');
             s.push_str(&reliability_md(&format!("option {o}"), m));
+        }
+        if let Some(v) = eval.get("variants").and_then(|v| v.get("models")).and_then(|m| m.as_object()) {
+            s.push_str("\n## model variants on the same held-out split\n\n| model | n | Brier | NLL | ECE (equal-mass) |\n|---|---|---|---|---|\n");
+            for (k, m) in v {
+                s.push_str(&format!("| {k} | {} | {} {} | {} {} | {} {} |\n", m["n"], m["brier"], m["brier_ci95"], m["nll"], m["nll_ci95"], m["ece_mass"], m["ece_mass_ci95"]));
+            }
+            if !eval["ipw"].is_null() {
+                s.push_str(&format!("\nIPW: {}\n", eval["ipw"]));
+            }
         }
         s.push_str("\n## label hygiene\n\n");
         for n in HYGIENE_NOTES { s.push_str(&format!("- {n}\n")); }
@@ -743,6 +771,236 @@ pub fn train_treatment_main(argv: &[String]) -> i32 {
     }
     println!("{}", serde_json::to_string_pretty(&eval).unwrap());
     0
+}
+
+// ---------------------------------------------------------------- propensities (IPW) and model variants
+
+/// The logged policy's propensity P(option | x): multinomial (softmax) logistic over the options seen in training.
+pub struct Propensity {
+    pub opts: Vec<String>,
+    pub w: Vec<Vec<f64>>, // per option, NF weights (the first option is the reference with all zeros)
+}
+
+impl Propensity {
+    pub fn fit(rows: &[&TRow], fc: &FitCfg) -> Propensity {
+        let mut opts: Vec<String> = rows.iter().map(|r| r.option.clone()).collect::<HashSet<_>>().into_iter().collect();
+        opts.sort_by_key(|o| opt_idx(o));
+        let k = opts.len();
+        let mut w = vec![vec![0.0; NF]; k];
+        let n = rows.len().max(1) as f64;
+        let iters = (fc.iters / 2).max(300);
+        for _ in 0..iters {
+            let mut g = vec![vec![0.0; NF]; k];
+            for r in rows {
+                let p = Self::probs(&w, &r.f);
+                let yi = opts.iter().position(|o| *o == r.option).unwrap_or(0);
+                for c in 1..k {
+                    let d = p[c] - if c == yi { 1.0 } else { 0.0 };
+                    for (j, x) in r.f.iter().enumerate() {
+                        if *x != 0.0 {
+                            g[c][j] += d * x;
+                        }
+                    }
+                }
+            }
+            for c in 1..k {
+                for j in 0..NF {
+                    let reg = if j == 0 { 0.0 } else { fc.l2 * w[c][j] };
+                    w[c][j] -= fc.lr * (g[c][j] / n + reg);
+                }
+            }
+        }
+        Propensity { opts, w }
+    }
+
+    fn probs(w: &[Vec<f64>], f: &[f64]) -> Vec<f64> {
+        let z: Vec<f64> = w.iter().map(|wc| wc.iter().zip(f).map(|(a, b)| a * b).sum::<f64>()).collect();
+        let m = z.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
+        let e: Vec<f64> = z.iter().map(|x| (x - m).exp()).collect();
+        let s: f64 = e.iter().sum();
+        e.iter().map(|x| x / s).collect()
+    }
+
+    pub fn p(&self, r: &TRow) -> f64 {
+        let ps = Self::probs(&self.w, &r.f);
+        self.opts.iter().position(|o| *o == r.option).map(|i| ps[i]).unwrap_or(0.0)
+    }
+}
+
+/// Inverse-propensity weights 1/max(p̂(o|x), clip), normalised to mean 1, and the effective sample size
+/// (Σw)²/Σw² overall and per option.
+pub fn ipw_weights(rows: &[&TRow], prop: &Propensity, clip: f64) -> (Vec<f64>, Value) {
+    let ps: Vec<f64> = rows.iter().map(|r| prop.p(r)).collect();
+    let clipped = ps.iter().filter(|p| **p < clip).count();
+    let raw: Vec<f64> = ps.iter().map(|p| 1.0 / p.max(clip)).collect();
+    let mean = raw.iter().sum::<f64>() / raw.len().max(1) as f64;
+    let w: Vec<f64> = raw.iter().map(|x| x / mean.max(1e-12)).collect();
+    let ess = |ix: &[usize]| { let a: f64 = ix.iter().map(|i| w[*i]).sum(); let b: f64 = ix.iter().map(|i| w[*i] * w[*i]).sum(); if b > 0.0 { a * a / b } else { 0.0 } };
+    let all: Vec<usize> = (0..rows.len()).collect();
+    let mut per = serde_json::Map::new();
+    for o in &prop.opts {
+        let ix: Vec<usize> = (0..rows.len()).filter(|i| rows[*i].option == *o).collect();
+        let pm = ix.iter().map(|i| ps[*i]).sum::<f64>() / ix.len().max(1) as f64;
+        per.insert(o.clone(), json!({"n": ix.len(), "ess": round_to(ess(&ix), 1), "mean_propensity": round_to(pm, 3)}));
+    }
+    (w.clone(), json!({"clip": clip, "clipped_rows": clipped, "n": rows.len(), "ess": round_to(ess(&all), 1),
+                       "max_weight": round_to(w.iter().cloned().fold(0.0, f64::max), 2), "by_option": per,
+                       "note": "propensities estimated from the logged policy (softmax logistic on the same features); a near-deterministic policy gives tiny overlap and a small ESS"}))
+}
+
+/// Variant: one separate logistic model per option (no shared base), each L2 toward zero.
+pub struct SeparateModels {
+    pub w: HashMap<String, Vec<f64>>,
+}
+
+impl SeparateModels {
+    pub fn fit(rows: &[&TRow], wts: Option<&[f64]>, fc: &FitCfg) -> SeparateModels {
+        let mut w = HashMap::new();
+        let opts: HashSet<String> = rows.iter().map(|r| r.option.clone()).collect();
+        for o in opts {
+            let ix: Vec<usize> = (0..rows.len()).filter(|i| rows[*i].option == o).collect();
+            let n = ix.iter().map(|i| wts.map(|v| v[*i]).unwrap_or(1.0)).sum::<f64>().max(1e-9);
+            let mut b = vec![0.0; NF];
+            for _ in 0..fc.iters {
+                let mut g = vec![0.0; NF];
+                for i in &ix {
+                    let r = rows[*i];
+                    let z: f64 = b.iter().zip(&r.f).map(|(a, x)| a * x).sum();
+                    let d = (sigmoid(z) - r.y) * wts.map(|v| v[*i]).unwrap_or(1.0);
+                    for (k, x) in r.f.iter().enumerate() {
+                        if *x != 0.0 {
+                            g[k] += d * x;
+                        }
+                    }
+                }
+                for k in 0..NF {
+                    let reg = if k == 0 { 0.0 } else { fc.l2_int.max(fc.l2) * b[k] };
+                    b[k] -= fc.lr * (g[k] / n + reg);
+                }
+            }
+            w.insert(o, b);
+        }
+        SeparateModels { w }
+    }
+
+    pub fn q(&self, r: &TRow) -> f64 {
+        match self.w.get(&r.option) {
+            Some(b) => sigmoid(b.iter().zip(&r.f).map(|(a, x)| a * x).sum()),
+            None => 0.5,
+        }
+    }
+}
+
+/// Variant: gradient-boosted decision stumps (logistic loss, Newton leaves, shrinkage) on the features plus option
+/// one-hots and option × feature products, so a stump can split on an option's interaction with the state.
+pub struct Stumps {
+    pub base: f64,
+    pub trees: Vec<(usize, f64, f64, f64)>, // (column, threshold, value if x <= t, value if x > t)
+    pub lr: f64,
+}
+
+fn stump_x(r: &TRow) -> Vec<f64> {
+    let oi = opt_idx(&r.option);
+    let k = VALUE_OPTIONS.len();
+    let mut x = r.f.clone();
+    for o in 1..k {
+        x.push(if oi == o { 1.0 } else { 0.0 });
+    }
+    for o in 1..k {
+        for j in 1..NF {
+            x.push(if oi == o { r.f[j] } else { 0.0 });
+        }
+    }
+    x
+}
+
+impl Stumps {
+    pub fn fit(rows: &[&TRow], wts: Option<&[f64]>, rounds: usize, lr: f64, l2: f64) -> Stumps {
+        let xs: Vec<Vec<f64>> = rows.iter().map(|r| stump_x(r)).collect();
+        let ys: Vec<f64> = rows.iter().map(|r| r.y).collect();
+        let wt: Vec<f64> = (0..rows.len()).map(|i| wts.map(|v| v[i]).unwrap_or(1.0)).collect();
+        let ncol = xs.first().map(|x| x.len()).unwrap_or(0);
+        let sw: f64 = wt.iter().sum::<f64>().max(1e-9);
+        let p0 = (ys.iter().zip(&wt).map(|(y, w)| y * w).sum::<f64>() / sw).clamp(1e-3, 1.0 - 1e-3);
+        let base = (p0 / (1.0 - p0)).ln();
+        let mut f: Vec<f64> = vec![base; rows.len()];
+        // candidate thresholds per column: midpoints of up to 12 distinct values
+        let cands: Vec<Vec<f64>> = (0..ncol).map(|c| {
+            let mut v: Vec<f64> = xs.iter().map(|x| x[c]).collect();
+            v.sort_by(|a, b| a.partial_cmp(b).unwrap());
+            v.dedup();
+            if v.len() <= 1 { return vec![]; }
+            let step = (v.len() as f64 / 12.0).ceil().max(1.0) as usize;
+            (0..v.len() - 1).step_by(step).map(|i| (v[i] + v[i + 1]) / 2.0).collect()
+        }).collect();
+        let mut trees = vec![];
+        for _ in 0..rounds {
+            let g: Vec<f64> = (0..rows.len()).map(|i| (sigmoid(f[i]) - ys[i]) * wt[i]).collect();
+            let h: Vec<f64> = (0..rows.len()).map(|i| { let p = sigmoid(f[i]); (p * (1.0 - p)).max(1e-6) * wt[i] }).collect();
+            let (gt, ht): (f64, f64) = (g.iter().sum(), h.iter().sum());
+            let mut best: Option<(f64, usize, f64, f64, f64)> = None;
+            for c in 0..ncol {
+                for t in &cands[c] {
+                    let (mut gl, mut hl) = (0.0, 0.0);
+                    for i in 0..rows.len() {
+                        if xs[i][c] <= *t {
+                            gl += g[i];
+                            hl += h[i];
+                        }
+                    }
+                    let (gr, hr) = (gt - gl, ht - hl);
+                    let gain = gl * gl / (hl + l2) + gr * gr / (hr + l2) - gt * gt / (ht + l2);
+                    if best.map(|b| gain > b.0).unwrap_or(true) {
+                        best = Some((gain, c, *t, -gl / (hl + l2), -gr / (hr + l2)));
+                    }
+                }
+            }
+            let Some((gain, c, t, vl, vr)) = best else { break };
+            if gain <= 1e-9 {
+                break;
+            }
+            for i in 0..rows.len() {
+                f[i] += lr * if xs[i][c] <= t { vl } else { vr };
+            }
+            trees.push((c, t, vl, vr));
+        }
+        Stumps { base, trees, lr }
+    }
+
+    pub fn q(&self, r: &TRow) -> f64 {
+        let x = stump_x(r);
+        sigmoid(self.base + self.trees.iter().map(|(c, t, vl, vr)| self.lr * if x[*c] <= *t { *vl } else { *vr }).sum::<f64>())
+    }
+}
+
+/// Held-out comparison of the value-model variants on the same split: Brier, NLL, ECE (cluster-bootstrap CIs).
+pub fn compare_variants(train: &[&TRow], test: &[&TRow], fc: &FitCfg, prior: &IndexMap<String, f64>, allowed: &HashSet<String>,
+                        ipw: Option<f64>, reps: usize, seed: u64) -> Value {
+    let (wts, ipw_info) = match ipw {
+        Some(clip) => { let p = Propensity::fit(train, fc); let (w, i) = ipw_weights(train, &p, clip); (Some(w), i) }
+        None => (None, Value::Null),
+    };
+    let w = wts.as_deref();
+    let ys: Vec<f64> = test.iter().map(|r| r.y).collect();
+    let gs: Vec<String> = test.iter().map(|r| r.session.clone()).collect();
+    let feats = |r: &TRow| -> crate::features::Feats { FEATURE_NAMES.iter().enumerate().map(|(k, n)| (*n, r.f[k])).collect() };
+    let mut out = serde_json::Map::new();
+    let inter = fit_treatment_w(train, None, fc, prior, None, allowed);
+    let m = TreatmentModel { coef: inter, ..Default::default() };
+    out.insert("interaction".into(), metrics_ci(&test.iter().map(|r| m.q(&feats(r), &r.option)).collect::<Vec<_>>(), &ys, &gs, reps, seed));
+    if w.is_some() {
+        let mi = TreatmentModel { coef: fit_treatment_w(train, w, fc, prior, None, allowed), ..Default::default() };
+        out.insert("interaction_ipw".into(), metrics_ci(&test.iter().map(|r| mi.q(&feats(r), &r.option)).collect::<Vec<_>>(), &ys, &gs, reps, seed));
+    }
+    let sep = SeparateModels::fit(train, w, fc);
+    out.insert("separate_per_option".into(), metrics_ci(&test.iter().map(|r| sep.q(r)).collect::<Vec<_>>(), &ys, &gs, reps, seed));
+    let st = Stumps::fit(train, w, 60, 0.3, 1.0);
+    let mut stm = metrics_ci(&test.iter().map(|r| st.q(r)).collect::<Vec<_>>(), &ys, &gs, reps, seed);
+    stm["stumps"] = json!(st.trees.len());
+    out.insert("boosted_stumps".into(), stm);
+    json!({"held_out_rows": test.len(), "train_rows": train.len(), "weighting": if ipw.is_some() { "ipw (separate/stumps fitted with the same weights; metrics unweighted)" } else { "none" },
+           "ipw": ipw_info, "models": out,
+           "note": "all variants are observational (logged policy, no paired branches); compare on the SAME held-out run+family split"})
 }
 
 // ---------------------------------------------------------------- gui-gate costs
@@ -870,6 +1128,51 @@ mod tests {
             f[fidx(k).unwrap()] = *v;
         }
         TRow { session: sess.into(), run: "r".into(), task: "t".into(), family: "f".into(), f, option: opt.into(), y, tier: "model".into(), check: None }
+    }
+
+    #[test]
+    fn ipw_and_model_variants_on_a_confounded_policy() {
+        // the logged policy picks look_full mostly on duplicate labels (confounding); look_full helps there
+        let mut rng = Rng::new(11);
+        let mut u = || (rng.next() >> 11) as f64 / (1u64 << 53) as f64;
+        let mut rows = vec![];
+        for i in 0..1200 {
+            let dup = u() < 0.5;
+            let full = u() < if dup { 0.8 } else { 0.15 };
+            let p = match (full, dup) { (true, true) => 0.85, (true, false) => 0.6, (false, true) => 0.3, (false, false) => 0.75 };
+            let y = if u() < p { 1.0 } else { 0.0 };
+            let mut r = row(if full { "look_full" } else { "direct" }, &[("label_dup", if dup { 1.0 } else { 0.0 })], y, &format!("s{}", i % 60));
+            r.run = format!("run{}", i % 4);
+            r.family = format!("fam{}", i % 3);
+            rows.push(r);
+        }
+        let all: Vec<&TRow> = rows.iter().collect();
+        let fc = FitCfg { iters: 400, ..FitCfg::default() };
+        let prop = Propensity::fit(&all, &fc);
+        let dup_full = rows.iter().find(|r| r.option == "look_full" && r.f[fidx("label_dup").unwrap()] == 1.0).unwrap();
+        let nodup_full = rows.iter().find(|r| r.option == "look_full" && r.f[fidx("label_dup").unwrap()] == 0.0).unwrap();
+        assert!(prop.p(dup_full) > 0.65 && prop.p(nodup_full) < 0.3, "{} {}", prop.p(dup_full), prop.p(nodup_full));
+        let (w, info) = ipw_weights(&all, &prop, 0.05);
+        assert!((w.iter().sum::<f64>() / w.len() as f64 - 1.0).abs() < 1e-9);
+        let ess = info["ess"].as_f64().unwrap();
+        assert!(ess > 100.0 && ess < 1200.0, "{info}");
+        assert!(info["by_option"]["look_full"]["ess"].as_f64().unwrap() > 0.0);
+        let (train, test): (Vec<&TRow>, Vec<&TRow>) = all.iter().partition(|r| r.run != "run0");
+        let allowed: HashSet<String> = ["direct", "look_full"].iter().map(|x| x.to_string()).collect();
+        let v = compare_variants(&train, &test, &fc, &IndexMap::new(), &allowed, Some(0.05), 20, 1);
+        for k in ["interaction", "interaction_ipw", "separate_per_option", "boosted_stumps"] {
+            let m = &v["models"][k];
+            assert!(m["brier"].as_f64().unwrap() < 0.25, "{k}: {m}");
+            assert!(m["nll"].as_f64().is_some() && m["ece_mass"].as_f64().is_some(), "{k}");
+            assert!(m["brier_ci95"].is_array(), "{k}");
+        }
+        // the stumps find the option x duplicate-label interaction
+        let st = Stumps::fit(&all, None, 60, 0.3, 1.0);
+        let q = |o: &str, d: f64| st.q(&row(o, &[("label_dup", d)], 0.0, "x"));
+        assert!(q("look_full", 1.0) > q("direct", 1.0) + 0.3, "{} {}", q("look_full", 1.0), q("direct", 1.0));
+        assert!(q("direct", 0.0) > q("direct", 1.0) + 0.2);
+        let sep = SeparateModels::fit(&all, None, &fc);
+        assert!(sep.q(&row("look_full", &[("label_dup", 1.0)], 0.0, "x")) > 0.75);
     }
 
     #[test]
