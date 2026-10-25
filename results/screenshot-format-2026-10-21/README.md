@@ -1,5 +1,11 @@
 # screenshot-format-2026-10-21 — which screenshot format to send to the model
 
+> **Environment note (2026-10-25):** OSWorld numbers here are from a
+> **custom environment based on OSWorld tasks and evaluators** (native Debian 13 / XFCE, other app versions, own reset
+> and budget; bench/README.md), not comparable to the OSWorld leaderboard; descriptive only (no frozen manifest,
+> docs/eval-protocol.md).
+
+
 **Recommendation: JPEG quality 60, full size.** Its accuracy matched PNG (paired 18 better / 17 worse, sign test p = 1.0).
 Time to first token was about 3x lower with 1 image (cold 7.0 s vs 21.4 s) and about 3.8x lower with 3 images (17.2 s vs 64.8 s).
 The image is 93 KB instead of 326 KB, with the same prompt tokens (773 per image).

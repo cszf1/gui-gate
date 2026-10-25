@@ -1,5 +1,11 @@
 # pi-m3-v095-2026-10-22 — full run, gui-gate 0.9.5, Inception mercury-3 (text-only)
 
+> **Environment note (2026-10-25):** OSWorld numbers here are from a
+> **custom environment based on OSWorld tasks and evaluators** (native Debian 13 / XFCE, other app versions, own reset
+> and budget; bench/README.md), not comparable to the OSWorld leaderboard; descriptive only (no frozen manifest,
+> docs/eval-protocol.md).
+
+
 Complete: 34 tasks x 2 conditions x 2 seeds = 136 valid runs, 0 infra errors.
 
 - Box **gui-pi2**, run dir /data/workspace/runs/pi-m3-v095-2026-10-22, started 09:25 CST, finished ~12:33 CST 2026-10-22
