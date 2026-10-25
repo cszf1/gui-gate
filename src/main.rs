@@ -27,6 +27,7 @@ mod state;
 mod tools;
 mod updates;
 mod util;
+mod value;
 mod v097;
 mod roles;
 mod inspect;
