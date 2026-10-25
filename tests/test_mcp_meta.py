@@ -2,6 +2,7 @@
 ProtocolSession rules (metadata-free requests are rejected before a legacy initialize)."""
 import json
 import os
+os.environ.setdefault("GUI_GATE_DIALOG", "none")  # tests answer person requests through the client (MRTR) or --human, never a real desktop dialog
 import unittest
 
 from test_gate import BIN, Client, FAKE, FAKE_REVIEWER, ROOT, txt

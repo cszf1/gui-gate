@@ -1,6 +1,7 @@
 """0.9.6 R11+: the gated command channel (run_command) and the tool-side helpers around it."""
 import json
 import os
+os.environ.setdefault("GUI_GATE_DIALOG", "none")  # tests answer person requests through the client (MRTR) or --human, never a real desktop dialog
 import shutil
 import sys
 import tempfile

@@ -1,6 +1,7 @@
 """v0.4: authorization, deny-and-continue, observation budget, server-side batching (run_actions)."""
 import json
 import os
+os.environ.setdefault("GUI_GATE_DIALOG", "none")  # tests answer person requests through the client (MRTR) or --human, never a real desktop dialog
 import subprocess
 import sys
 import unittest

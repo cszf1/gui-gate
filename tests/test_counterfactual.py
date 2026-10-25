@@ -1,6 +1,7 @@
 """bench/counterfactual/: checkpoint restore, the seven treatments, analysis, and an offline dry run through the gate."""
 import json
 import os
+os.environ.setdefault("GUI_GATE_DIALOG", "none")  # tests answer person requests through the client (MRTR) or --human, never a real desktop dialog
 import sys
 import tempfile
 import unittest

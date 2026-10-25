@@ -1,6 +1,7 @@
 """Packaging and updates, against the built binary: client configuration, doctor, --mode single, update notice."""
 import json
 import os
+os.environ.setdefault("GUI_GATE_DIALOG", "none")  # tests answer person requests through the client (MRTR) or --human, never a real desktop dialog
 import subprocess
 import sys
 import tempfile
