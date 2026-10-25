@@ -23,6 +23,7 @@ restore is compared with the checkpoint's hash and `restored_ok` records the res
 import copy
 import json
 import os
+import zlib
 import random
 import subprocess
 import sys
@@ -420,7 +421,7 @@ def run_branches(checkpoints, make_backend, treatments=TREATMENTS, repeats=3, se
         rng.shuffle(plan)  # randomised branch order
         for pos, (t, r) in enumerate(plan):
             be, ctl, ok, h = restore(cp, make_backend, restore_mode)
-            ctl.reseed(hash((cp["id"], r)) & 0xFFFFFFFF)
+            ctl.reseed(zlib.crc32(f"{cp['id']}|{r}".encode()))  # stable across runs (hash() of a str is salted per process)
             ev, cost = apply_treatment(t, be, ctl, cp["candidate"], random.Random(r * 7919 + pos))
             left = cp["budget_left_s"] - cost["wall_s"]
             cont = continue_task(be, ctl, left)

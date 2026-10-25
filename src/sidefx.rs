@@ -60,6 +60,10 @@ fn canon_win(p: &str) -> String {
     let mut head = n.clone();
     let mut tail: Vec<String> = vec![];
     for _ in 0..64 {
+        // only the root (or nothing) exists: nothing to resolve, keep the spelling (`/tmp/x` must not become `C:/tmp/x`)
+        if head == "/" || head.ends_with(":/") || head.is_empty() {
+            break;
+        }
         if let Ok(c) = fs::canonicalize(&head) {
             let c = normpath(&strip_verbatim(&c.to_string_lossy()));
             tail.reverse();
@@ -1124,6 +1128,8 @@ mod win_path_tests {
         assert!(!long.starts_with("//?/") && !long.contains('\\'), "{long}");
         // a missing tail keeps its spelling after the resolved part
         assert_eq!(super::canon(&format!(r"{raw}\nope\x.txt")), format!("{long}/nope/x.txt"));
+        // a rooted path whose folders do not exist keeps its spelling (no drive letter added)
+        assert_eq!(super::canon("/tmp/w/a/report.txt"), "/tmp/w/a/report.txt");
         let args = serde_json::json!({"cwd": raw});
         assert_eq!(crate::features::command_cwd(&args), long);
         let _ = std::fs::remove_dir_all(&d);

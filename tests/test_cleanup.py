@@ -113,7 +113,7 @@ class CleanupTests(unittest.TestCase):
         self.assertEqual(pi["mcpServers"]["web"], {"command": "npx", "args": ["-y", "web"]})
         self.assertFalse(os.path.exists(self.pi + ".bak"))
         cx = open(self.codex).read()
-        self.assertIn(f'command = "{self.me}"', cx)
+        self.assertIn(f'command = "{os.path.realpath(self.me)}"', cx)
         self.assertNotIn("--decider", cx)
         self.assertFalse(os.path.exists(self.codex + ".bak"))
         self.assertTrue(os.path.exists(self.userbak))               # differs by more than our entry
