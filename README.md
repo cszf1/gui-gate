@@ -41,6 +41,11 @@ Agent (Pi 等) ──MCP stdio──▶ gui-gate ──▶ cua-driver（手脚�
 Cua Driver 的 66 个工具原样暴露。观察类工具（`get_window_state` 等）直接放行并被门记录；
 动作类工具（`click`、`type_text`、`run_steps` ……）先过门。
 
+## MCP 协议版本
+
+gui-gate 同时支持两种 MCP 客户端：老式的（先发 `initialize`，协议 2025-06-18 等）和 2026-07-28 新式的（不发 `initialize`，每个请求在 `params._meta` 里带 `io.modelcontextprotocol/protocolVersion` 和 `clientCapabilities`）。
+gui-gate 启动驱动后自己先和驱动做一次老式 `initialize`（驱动重启后也会重做），之后发给驱动的请求一律走老式；客户端的 `initialize` 和 `server/discover` 由 gui-gate 自己回答（带门的说明和 gui-gate 的 serverInfo）。新式请求的结果都带 `resultType: "complete"` 和 `_meta` 里的 gui-gate serverInfo；不支持的协议版本返回 -32022。详见 docs/mcp-2026-07-28.md。
+
 ## 门的三层判断（v2，详见 docs/decision-v2.md）
 
 | 层 | 做什么 | 代价 |

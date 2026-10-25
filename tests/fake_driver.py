@@ -177,21 +177,73 @@ def call(name, a):
     return text(f"{name} ok delivery={a.get('delivery_mode', 'background')}", sc={})
 
 
+MODERN = "2026-07-28"
+PV, CC = "io.modelcontextprotocol/protocolVersion", "io.modelcontextprotocol/clientCapabilities"
+
+
+def classify(m):
+    """Like cua-driver 0.38's mcp_wire ProtocolSession: returns ("legacy"|"modern", None) or (None, error)."""
+    meta = (m.get("params") or {}).get("_meta") if isinstance(m.get("params"), dict) else None
+    modern = isinstance(meta, dict) and (PV in meta or CC in meta)
+    if not modern and m.get("method") != "server/discover":
+        if meta is not None and not isinstance(meta, dict):
+            return None, (-32602, "MCP _meta must be an object", None)
+        if m.get("method") == "initialize":
+            state["legacy_init"] = True
+        elif not state.get("legacy_init"):
+            return None, (-32602, "Missing required per-request MCP metadata", None)
+        return "legacy", None
+    ver = (meta or {}).get(PV)
+    if not isinstance(ver, str):
+        return None, (-32602, "Missing or invalid MCP protocolVersion metadata", None)
+    if ver != MODERN:
+        return None, (-32022, "Unsupported protocol version", {"supported": [MODERN], "requested": ver})
+    if not isinstance(meta.get(CC), dict):
+        return None, (-32602, "Missing or invalid MCP clientCapabilities metadata", None)
+    return "modern", None
+
+
 def main():
+    # FAKE_PRE_038=1: an older driver without the 2026-07-28 per-request session rules
+    old = bool(os.environ.get("FAKE_PRE_038"))
     for line in sys.stdin:
         m = json.loads(line)
         if "id" not in m:
             continue
         meth = m.get("method")
+        state.setdefault("seen", []).append({"method": meth, "meta": (m.get("params") or {}).get("_meta")
+                                             if isinstance(m.get("params"), dict) else None})
+        era = "legacy"
+        if not old:
+            era, err = classify(m)
+            if err:
+                e = {"code": err[0], "message": err[1]}
+                if err[2] is not None:
+                    e["data"] = err[2]
+                sys.stdout.write(json.dumps({"jsonrpc": "2.0", "id": m["id"], "error": e}) + "\n")
+                sys.stdout.flush()
+                continue
         if meth == "initialize":
+            state["inits"] = state.get("inits", 0) + 1
             res = {"protocolVersion": "2025-06-18", "capabilities": {"tools": {}},
                    "serverInfo": {"name": "fake-driver", "version": "0.0"}, "instructions": "fake"}
+        elif meth == "server/discover" and not old:
+            res = {"supportedVersions": [MODERN], "capabilities": {"tools": {}}, "instructions": "fake"}
         elif meth == "tools/list":
             res = {"tools": TOOLS}
         elif meth == "tools/call":
-            res = call(m["params"]["name"], m["params"].get("arguments") or {})
+            name = m["params"]["name"]
+            if name == "fake_state":
+                res = text(json.dumps({"keys": state["keys"], "clicked": state["clicked"], "front": state.get("front", []),
+                                       "modes": state.get("modes", []), "inits": state.get("inits", 0),
+                                       "seen": state["seen"][-50:]}))
+            else:
+                res = call(name, m["params"].get("arguments") or {})
         else:
             res = {}
+        if era == "modern":
+            res["resultType"] = "complete"
+            res.setdefault("_meta", {})["io.modelcontextprotocol/serverInfo"] = {"name": "fake-driver", "version": "0.0"}
         sys.stdout.write(json.dumps({"jsonrpc": "2.0", "id": m["id"], "result": res}) + "\n")
         sys.stdout.flush()
 
