@@ -70,5 +70,5 @@ from " - LibreOffice" to " — LibreOffice". Nothing else in any task is changed
 - `stats.noninferiority` / `fair_compare.py --manifest M` (or `--margin`): paired one-sided non-inferiority.
 - `leakage_lint.py`: answer files not reachable from the agent's run dirs; tuned artefacts free of test ids/answers.
 - `counterfactual/layouts.py`: frozen unseen-layout test set; `dryrun.py --unseen-layouts N`; `analyze.py --plot`.
-- `human_pilot.py`: real-user pilot analysis (threshold vs value asking, counterbalanced `assign`).
+- `human_pilot.py`: real-user pilot analysis (threshold vs value asking, counterbalanced `assign`; `from-logs` reads the desktop client's `logs/human.jsonl` (`gui-pi-human/1`) and the gate's `person_burden` events).
 - `context_ablation.py` + conds `ctx_full ctx_current ctx_new`: context ablation from gate + Pi logs.

@@ -379,6 +379,15 @@ class ResultsWordingTests(unittest.TestCase):
             self.assertIn(f"{100 * plo:.1f} %–{100 * phi:.1f} %", txt, f)
         top = open(os.path.join(ROOT, "results", "README.md"), encoding="utf-8").read()
         self.assertNotIn("132/361", top)
+        # the project README quotes the same committed numbers and the custom-environment wording
+        main = open(os.path.join(ROOT, "README.md"), encoding="utf-8").read()
+        for stale in ("137/255", "132/361"):
+            self.assertNotIn(stale, main)
+        self.assertIn(f"{k}/{len(valid)} = {100 * k / len(valid):.1f} %", main)
+        self.assertIn(f"{100 * lo:.1f} %–{100 * hi:.1f} %", main)
+        self.assertIn(f"{k}/361 = {100 * k / 361:.1f} %", main)
+        self.assertIn(f"{100 * plo:.1f} %–{100 * phi:.1f} %", main)
+        self.assertIn(self.PHRASE + ", not comparable to the leaderboard", main)
 
 
 if __name__ == "__main__":

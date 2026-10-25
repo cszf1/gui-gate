@@ -3,6 +3,21 @@
 
   human_pilot.py SESSIONS.jsonl [--md OUT.md] [--json OUT.json] [--baseline threshold_ask] [--margin 0.1]
   human_pilot.py assign --participants 12 --tasks TASKLIST|--n-tasks 8 [--seed 0] [--out ASSIGN.jsonl]
+  human_pilot.py from-logs --meta META.jsonl [--human logs/human.jsonl ...] [--gate-log LOGTASK=GATE.jsonl ...]
+                 [--out SESSIONS.jsonl]
+
+from-logs builds SESSIONS.jsonl from what the systems log, so nobody re-types the numbers:
+  * the gui-pi desktop client's `<data>/logs/human.jsonl` (schema `gui-pi-human/1`, desktop design 0.3 section 6.1):
+    one `human_q` line per question {task, type: approve|clarify|takeover|help, outcome, refused, secs, repeated,
+    takeover_steps} and one `human_summary` line per task {asks, by_type, repeated, person_active_s, person_wait_s,
+    agent_blocked_s, takeover_steps, cancelled, timed_out, declined, unavailable, task_s};
+  * the gate's `person_burden` events (gui-gate >= 0.10.1 log: kind, outcome, repeat, wait_s, active_s, totals), used
+    as a cross-check, or as the source when a task has no human.jsonl lines. The gate only sees the time a question was
+    open (its person_wait_s is the desktop's agent_blocked_s), never the time a person spent watching between
+    questions, so a gate-only session has waiting_s = null and is left out of the waiting-time mean.
+  META.jsonl gives what no log knows, one line per desktop task:
+    {"log_task": "task-7", "participant": "p01", "task": "ow07", "condition": "value_ask", "order": 0,
+     "success": true, "interruption_rating": 2, "gate_log": "optional/path/to/gate.jsonl"}
 
 A simulated person tunes the protocol and `--human deny` tests unattended runs; neither shows that a REAL person's
 burden went down. This script analyses a real pilot. One JSON line per (participant, task) session:
@@ -49,6 +64,9 @@ def session_metrics(s):
     asks = s.get("asks") or []
     seen, rep = set(), 0
     for a in asks:
+        if "repeated" in a:  # from a log that already decided it (gui-pi-human/1, gate person_burden)
+            rep += 1 if a.get("repeated") else 0
+            continue
         q = norm_q(a.get("question"))
         if q and q in seen:
             rep += 1
@@ -57,7 +75,8 @@ def session_metrics(s):
     wrong = sum(1 for a in appr if a.get("approval_correct") is False)
     timeouts = [a for a in asks if a.get("outcome") == "timeout"]
     return {"asks": len(asks), "repeated": rep, "repeated_ratio": rep / len(asks) if asks else 0.0,
-            "active_s": float(s.get("active_s") or 0.0), "waiting_s": float(s.get("waiting_s") or 0.0),
+            "active_s": float(s.get("active_s") or 0.0),
+            "waiting_s": None if s.get("waiting_s") is None and "waiting_s" in s else float(s.get("waiting_s") or 0.0),
             "takeover_steps": int(s.get("takeover_steps") or 0), "cancelled": 1.0 if s.get("cancelled") else 0.0,
             "timed_out": 1.0 if (s.get("timed_out") or timeouts) else 0.0, "success": 1.0 if s.get("success") else 0.0,
             "total_s": float(s.get("total_s") or 0.0),
@@ -83,7 +102,9 @@ def per_condition(sessions):
         k_ok = int(sum(m["success"] for m in ms))
         out[c] = {"sessions": n, "asks_per_task": tot_asks / n if n else None,
                   "repeated_question_ratio": sum(m["repeated"] for m in ms) / tot_asks if tot_asks else 0.0,
-                  "active_s": sum(m["active_s"] for m in ms) / n, "waiting_s": sum(m["waiting_s"] for m in ms) / n,
+                  "active_s": sum(m["active_s"] for m in ms) / n,
+                  "waiting_s": (sum(w) / len(w)) if (w := [m["waiting_s"] for m in ms if m["waiting_s"] is not None]) else None,
+                  "waiting_s_sessions": len(w),
                   "takeover_steps": sum(m["takeover_steps"] for m in ms) / n,
                   "cancel_rate": sum(m["cancelled"] for m in ms) / n, "timeout_rate": sum(m["timed_out"] for m in ms) / n,
                   "wrong_approval_rate": (sum(m["wrong_approvals"] for m in ms) / judged) if judged else None,
@@ -181,6 +202,172 @@ def assign(participants, tasks, seed=0):
     return plan
 
 
+# ---------------------------------------------------------------- from-logs: gui-pi-human/1 + gate person_burden
+HUMAN_SCHEMA = "gui-pi-human/1"
+DESKTOP_KIND = {"approve": "approve", "clarify": "answer", "takeover": "takeover", "help": "help"}
+GATE_KIND = {"approve": "approve", "answer": "answer", "takeover": "takeover", "ask_help": "help", "help": "help"}
+NO_ANSWER = {"timeout": "timeout", "timed out": "timeout", "cancelled": "cancel", "window closed": "cancel",
+             "window_closed": "cancel", "declined_form": "cancel", "unavailable": "unavailable",
+             "channel_unavailable": "unavailable", "no_response": "no_response"}
+
+
+def _yes(kind):
+    return {"approve": "approved", "answer": "answered", "takeover": "taken_over", "help": "helped"}.get(kind, "approved")
+
+
+def desktop_outcome(kind, word):
+    """gui-pi-human/1 outcome words (desktop core human::label) -> this script's outcome vocabulary."""
+    if word in ("allowed", "answered"):
+        return _yes(kind)
+    if word == "done by the person":
+        return "taken_over" if kind == "takeover" else "helped"
+    if word == "try another way":
+        return "hint"
+    if word in NO_ANSWER:
+        return NO_ANSWER[word]
+    return "denied"  # "declined" (approve / takeover refused, empty clarify answer)
+
+
+def gate_outcome(kind, outcome):
+    """gate human_outcome -> outcome vocabulary. A cancelled/declined form, closed window or timeout is no answer."""
+    if outcome == "accepted":
+        return _yes(kind)
+    if outcome == "denied":
+        return "denied"
+    if outcome in ("cancelled", "declined", "window_closed"):
+        return "cancel"
+    return NO_ANSWER.get(outcome, outcome or "no_response")
+
+
+def read_jsonl(path):
+    out = []
+    for line in open(path, encoding="utf-8"):
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            out.append(json.loads(line))
+        except ValueError:
+            continue  # a torn last line of a crashed run
+    return out
+
+
+def desktop_sessions(paths):
+    """{log_task: {"asks": [...], "summary": {...} | None}} from the desktop client's human.jsonl files."""
+    by = defaultdict(lambda: {"asks": [], "summary": None})
+    for p in paths:
+        for e in read_jsonl(p):
+            if e.get("schema") != HUMAN_SCHEMA:
+                continue
+            t = str(e.get("task") or "")
+            if e.get("ev") == "human_q":
+                k = DESKTOP_KIND.get(e.get("type"), e.get("type") or "answer")
+                by[t]["asks"].append({"kind": k, "outcome": desktop_outcome(k, e.get("outcome")), "secs": float(e.get("secs") or 0.0),
+                                      "repeated": bool(e.get("repeated")), "refused": bool(e.get("refused")),
+                                      "takeover_steps": int(e.get("takeover_steps") or 0), "raw_outcome": e.get("outcome")})
+            elif e.get("ev") == "human_summary":
+                by[t]["summary"] = e
+    return dict(by)
+
+
+def gate_burden(path):
+    """The gate's person_burden events of one log: (asks, last totals)."""
+    asks, totals = [], None
+    for e in read_jsonl(path):
+        if e.get("ev") != "person_burden":
+            continue
+        k = GATE_KIND.get(e.get("kind"), e.get("kind") or "answer")
+        asks.append({"kind": k, "outcome": gate_outcome(k, e.get("outcome")), "secs": float(e.get("wait_s") or 0.0),
+                     "repeated": bool(e.get("repeat")), "label": e.get("label"), "raw_outcome": e.get("outcome")})
+        totals = e.get("totals") or totals
+    return asks, (totals or {})
+
+
+def from_logs(meta, human_paths=(), gate_logs=None):
+    """Pilot sessions (the SESSIONS.jsonl shape) from META lines + desktop human.jsonl + gate logs."""
+    gate_logs = dict(gate_logs or {})
+    desk = desktop_sessions(human_paths)
+    out = []
+    for m in meta:
+        lt = str(m.get("log_task") or m.get("task"))
+        s = {k: m[k] for k in ("participant", "task", "condition", "order", "success", "interruption_rating") if k in m}
+        s.setdefault("task", lt)
+        s["log_task"] = lt
+        d = desk.get(lt)
+        gl = m.get("gate_log") or gate_logs.get(lt)
+        g = gate_burden(gl) if gl and os.path.exists(gl) else None
+        if d and (d["asks"] or d["summary"]):
+            sm = d["summary"]
+            asks = d["asks"]
+            s["asks"] = asks
+            s["source"] = HUMAN_SCHEMA
+            if sm:
+                s["active_s"] = float(sm.get("person_active_s") or 0.0)
+                s["waiting_s"] = float(sm.get("person_wait_s") or 0.0)
+                s["agent_blocked_s"] = float(sm.get("agent_blocked_s") or 0.0)
+                s["takeover_steps"] = int(sm.get("takeover_steps") or 0)
+                s["cancelled"] = int(sm.get("cancelled") or 0) > 0
+                s["timed_out"] = int(sm.get("timed_out") or 0) > 0
+                s["total_s"] = float(sm.get("task_s") or 0.0)
+                if int(sm.get("asks") or 0) != len(asks):
+                    s["warning"] = f"human_summary says {sm.get('asks')} asks, {len(asks)} human_q lines"
+            else:  # the task did not end cleanly: rebuild what the questions give, no waiting time
+                s["active_s"] = sum(a["secs"] for a in asks if a["outcome"] not in ("timeout", "cancel", "unavailable", "no_response"))
+                s["waiting_s"] = None
+                s["agent_blocked_s"] = sum(a["secs"] for a in asks)
+                s["takeover_steps"] = sum(a["takeover_steps"] for a in asks)
+                s["cancelled"] = any(a["outcome"] == "cancel" for a in asks)
+                s["timed_out"] = any(a["outcome"] == "timeout" for a in asks)
+                s["warning"] = "no human_summary line (task did not end cleanly): waiting_s unknown"
+            if g is not None:
+                s["gate_check"] = {"asks": len(g[0]), "not_asked_again": g[1].get("not_asked_again", 0),
+                                   "agrees": len(g[0]) == len(asks)}
+        elif g is not None:
+            asks, tot = g
+            s["asks"] = asks
+            s["source"] = "gate person_burden"
+            s["active_s"] = float(tot.get("person_active_s") or 0.0)
+            s["waiting_s"] = None  # the gate cannot see the time a person spent watching between questions
+            s["agent_blocked_s"] = float(tot.get("person_wait_s") or 0.0)
+            s["takeover_steps"] = int(tot.get("takeover_steps") or 0)
+            s["cancelled"] = any(a["outcome"] == "cancel" for a in asks)
+            s["timed_out"] = any(a["outcome"] == "timeout" for a in asks)
+            s["not_asked_again"] = tot.get("not_asked_again", 0)
+        else:
+            s.update({"asks": [], "source": "none", "active_s": 0.0, "waiting_s": None, "takeover_steps": 0,
+                      "cancelled": False, "timed_out": False, "warning": "no person log for this task"})
+        s.setdefault("total_s", float(m.get("total_s") or 0.0))
+        if "total_s" in m:
+            s["total_s"] = float(m["total_s"])
+        out.append(s)
+    return out
+
+
+def from_logs_main(a):
+    human, gates, meta_p, out_p = [], {}, None, None
+    i = 0
+    while i < len(a):
+        if a[i] == "--human":
+            human.append(a[i + 1]); i += 2
+        elif a[i] == "--gate-log":
+            k, _, v = a[i + 1].partition("="); gates[k] = v; i += 2
+        elif a[i] == "--meta":
+            meta_p = a[i + 1]; i += 2
+        elif a[i] == "--out":
+            out_p = a[i + 1]; i += 2
+        else:
+            raise SystemExit(f"unknown argument {a[i]}")
+    if not meta_p:
+        raise SystemExit("from-logs needs --meta META.jsonl (participant, condition, success per desktop task)")
+    sessions = from_logs(read_jsonl(meta_p), human, gates)
+    txt = "".join(json.dumps(x, ensure_ascii=False) + "\n" for x in sessions)
+    if out_p:
+        open(out_p, "w", encoding="utf-8").write(txt)
+    else:
+        sys.stdout.write(txt)
+    return sessions
+
+
 def to_md(pc, cmp_):
     L = ["# Human pilot: threshold asking vs value asking", "",
          "| condition | sessions | asks/task | repeated q | active s | waiting s | takeover steps | cancel | timeout | "
@@ -189,7 +376,7 @@ def to_md(pc, cmp_):
         wa = "-" if a["wrong_approval_rate"] is None else f"{a['wrong_approval_rate']:.2f} ({a['approvals_judged']})"
         ir = "-" if a["interruption_rating"] is None else f"{a['interruption_rating']:.2f}"
         L.append(f"| {c} | {a['sessions']} | {a['asks_per_task']:.2f} | {a['repeated_question_ratio']:.2f} | {a['active_s']:.1f} | "
-                 f"{a['waiting_s']:.1f} | {a['takeover_steps']:.2f} | {a['cancel_rate']:.2f} | {a['timeout_rate']:.2f} | {wa} | "
+                 f"{'-' if a['waiting_s'] is None else format(a['waiting_s'], '.1f')} | {a['takeover_steps']:.2f} | {a['cancel_rate']:.2f} | {a['timeout_rate']:.2f} | {wa} | "
                  f"{a['success']:.2f} | {a['success_wilson95'][0]:.2f}-{a['success_wilson95'][1]:.2f} | {a['total_s_all_sessions']:.1f} | {ir} |")
     if cmp_:
         o = cmp_["order"]
@@ -206,6 +393,8 @@ def to_md(pc, cmp_):
 
 
 def main(a):
+    if a and a[0] == "from-logs":
+        return from_logs_main(a[1:])
     if a and a[0] == "assign":
         flags = {a[i]: a[i + 1] for i in range(1, len(a) - 1) if a[i].startswith("--")}
         if "--tasks" in flags:

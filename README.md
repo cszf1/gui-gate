@@ -38,13 +38,26 @@ Agent (Pi 等) ──MCP stdio──▶ gui-gate ──▶ cua-driver（手脚�
                               └─ 每个动作执行前：值不值得先看一眼 / 多想一下 / 等一等？
 ```
 
-Cua Driver 的 66 个工具原样暴露。观察类工具（`get_window_state` 等）直接放行并被门记录；
-动作类工具（`click`、`type_text`、`run_steps` ……）先过门。
+Cua Driver 的 66 个工具原样暴露。只有白名单里的只读工具（`get_window_state`、`list_windows`、`screenshot` 等）直接放行并被门记录；
+其余一切（`click`、`type_text`、`launch_app`、`bring_to_front`、新版驱动新增的任何工具……）都算动作，先过门和唯一的最终派发检查（v0.10.1，见 docs/security-model.md）。
 
 ## MCP 协议版本
 
 gui-gate 同时支持两种 MCP 客户端：老式的（先发 `initialize`，协议 2025-06-18 等）和 2026-07-28 新式的（不发 `initialize`，每个请求在 `params._meta` 里带 `io.modelcontextprotocol/protocolVersion` 和 `clientCapabilities`）。
 gui-gate 启动驱动后自己先和驱动做一次老式 `initialize`（驱动重启后也会重做），之后发给驱动的请求一律走老式；客户端的 `initialize` 和 `server/discover` 由 gui-gate 自己回答（带门的说明和 gui-gate 的 serverInfo）。新式请求的结果都带 `resultType: "complete"` 和 `_meta` 里的 gui-gate serverInfo；不支持的协议版本返回 -32022。详见 docs/mcp-2026-07-28.md。
+
+## v0.10.x 要点（完整列表见 [CHANGELOG.md](CHANGELOG.md)）
+
+- **唯一的最终派发检查**：门发出的每个动作（含自愈、重绑定、批量子步骤、透传的 `launch_app` 等）都按最终参数重建效果，
+  没有绑定该效果的一次性许可就不发。只读工具是白名单，其余都是动作。agent 不能批准自己（`gate_confirm` 已删除，`gate_task` 只作上下文）。
+- **可信任务通道**：`--task-file` 接受桌面客户端的 `gui-pi-task/1 version=N` 格式（只有人说的话，按版本），批准绑定任务版本。
+- **问人**：四种严格结果类型（approve / answer / takeover / ask_help），人回答期间冻结所有输入，门自己的对话框永远不是目标；
+  人代做的步骤返回 `status: "done_by_person"`、从不重发；没回答的问题同一任务版本内不再问；问人负担进 `gate_report` 和 `gui-gate report 日志`。
+- **客户端专用工具**：`gate_next_step`（下一轮前要不要看 / 多想，只是建议）、`gate_reset`（停止/重启时作废许可、待答请求和观察）；
+  客户端可在 `_meta["gui_pi/usage"]` 里报真实 token 用量。MRTR `requestState` 按门进程签名，重启即失效。
+- **价值模型**：`extra_reason` = 让同一模型重想一次（1024 token 提示，不授权）；处理交互模型可加 IPW（报告 ESS），`train --report`
+  比较交互 / 每选项单独 / 提升树桩三个变体；默认仍是旧先验。
+- **planner / search / compact 默认关闭**；回复和日志里的已知密钥一律 `[redacted]`。
 
 ## 门的三层判断（v2，详见 docs/decision-v2.md）
 
@@ -88,7 +101,7 @@ cua-driver 结果里所有 `image` 内容）都从 PNG **重新编码成原尺�
 **不缩小**，所以模型从图上读出的 x/y 坐标照样有效。所有策略（direct / full / light / gate）都一样，基准各条件可比。
 
 依据是实验 `results/screenshot-format-2026-10-21`（deepseek-v4.1-flash，15 个 OSWorld 任务的门截图，980 次调用）：
-JPEG q60 原尺寸的准确率与 PNG 相同（配对 18 好 / 17 差，p = 1.0），冷启动首 token 7.0 s 对 21.4 s（3 张图 17.2 s 对 64.8 s），
+JPEG q60 原尺寸的准确率在我们的测试里与 PNG **没有显著差异**（配对 18 好 / 17 差，p = 1.0；no significant difference in our tests），但这**不证明与 PNG 等效**（not proven equivalent to PNG）；冷启动首 token 7.0 s 对 21.4 s（3 张图 17.2 s 对 64.8 s），约 3 倍的首 token 加速**只对所测的模型（deepseek-v4.1-flash）和 API 成立**，换模型或接口要重新测；
 图片 93 KB 对 326 KB；半尺寸准确率明显下降（25% 对 43%），WebP q80 准确率偏低（38%），都没采用。
 
 | 环境变量 | 默认 | 说明 |
@@ -123,7 +136,7 @@ GTA1、CoACT-1 的做法，全部放在**同一个 gui-gate MCP 服务**里（Ru
 | `DIGEST` | 每 8 步附一份进度摘要（计划、事实、最近步骤）（Pointer 压缩、OpenAPA、HIPPO） |
 | `GUI_GATE_MEMORY=文件` | 经验记忆：`gui-gate memory add --task-file T --log 门日志` 从成功运行生成；简报和 inspect memory 里给出相似任务的做法（HIPPO / muscle-mem）。评测时只能用不相交的任务集生成 |
 
-**可选模型角色**（全部默认关闭，审核模型仍是风险步骤的唯一裁决者，干活的主模型从不批准自己的步骤）：
+**可选模型角色**（全部默认关闭，审核模型仍是风险步骤的唯一模型裁决者，干活的主模型从不批准自己的步骤）。v0.10.1 起 `planner`、`search`、`compact` 三个角色**即使配了接口也默认不启用**（它们以后可能移到客户端），要用须显式打开：`GUI_GATE_ROLE_<NAME>_ENABLE=1` 或 `GUI_GATE_ROLES_ENABLE=planner,search,compact`。角色列表：
 `feasibility`（可行性判断，只读探测）、`planner`（最终状态里程碑）、`verifier`（终态核验，只读探测，每会话最多 2 次）、
 `judge`（循环第 3 级 KEEP/SWITCH；pick_one 选择）、`search`（howto 教程）、`compact`（进度摘要）、`grounder`（视觉定位）。
 配置同审核模型：`GUI_GATE_ROLE_<NAME>_URL / _MODEL / _KEY 或 _KEY_FILE / _PROTOCOL / _TIMEOUT / _MAX_TOKENS / _MAX_STEPS`，
@@ -165,6 +178,9 @@ run_actions run_command check_done set_plan`；0.9.7 开 `INSPECT` 时多一个 
     门拒绝启动并说明怎么配；`gui-gate check-reviewer` 报告「not configured」。
     运行中审核 API 出错或超时（fail closed）：有人可找就问人，无人值守就拒绝并给出安全做法。
   干活的主模型从不审核自己的动作，门也不会借用 Agent 自己的模型。
+  独立审核模型是**必要的防线之一，单靠它不够**（one necessary line of defence, not sufficient on its own）：
+  独立调用不等于错误独立，界面里的提示注入可能同时误导主模型和审核模型；所以授权只来自启动者原话和人，
+  拒绝记录、一次性许可和最终派发检查不依赖审核模型的判断（见 docs/security-model.md）。
 - **省观察**：截图只在刚用过坐标点击时附带；动作后紧接着重读同一窗口直接用缓存（`fresh:true` 强制重读）；
   表格里「粘贴覆盖单元格」不再当成覆盖文件。
 - **服务端批量执行（任何 Agent 可用）**：`run_actions` 一次传一段小程序：动作步骤 + find（找元素）/
@@ -191,7 +207,7 @@ irm https://github.com/cszf1/gui-gate/releases/latest/download/install.ps1 | iex
 | 选项（sh 参数 / 环境变量） | 作用 |
 |---|---|
 | `--client claude` / `GUI_GATE_CLIENT=claude,codex` | 顺便写入 Agent 配置 |
-| `--version 0.9.9` / `GUI_GATE_VERSION` | 装指定版本 |
+| `--version 0.10.1` / `GUI_GATE_VERSION` | 装指定版本 |
 | `--bin-dir` / `GUI_GATE_INSTALL_DIR` | gui-gate 目录（默认 `~/.local/bin`，Windows `%LOCALAPPDATA%\Programs\gui-gate\bin`） |
 | `--lib-dir` / `GUI_GATE_LIB_DIR` | 内置驱动目录（默认 `<bin>/../lib/gui-gate`；Windows 固定 `<bin>\..\cua-driver`） |
 | `--skip-driver` / `GUI_GATE_SKIP_DRIVER=1` | 不装内置驱动，改用你另外装的 Cua Driver |
@@ -261,9 +277,11 @@ gui-gate --weights weights.json   # 用训练好的预测器
 
 ## 结果怎么读
 
-v0.9.9 的 OSWorld-Verified 运行（`results/osworld-verified-v099-ds41-2026-10-23/`）：137/255 = 53.7 % 是**有效运行上的、
-自定义环境（原生 Debian/XFCE、无 VM、应用版本不同）的部分结果**，is not an official OSWorld-Verified score；
-Wilson 95 % 区间 47.6 %–59.7 %（未计任务相关性与有效样本选择），按计划的 361 题算是 132/361 = 36.6 %。不要和榜单数字直接比较。
+v0.9.9 的 OSWorld-Verified 运行（`results/osworld-verified-v099-ds41-2026-10-23/`）是**基于 OSWorld 任务与评估器的自定义环境**
+（custom environment based on OSWorld tasks and evaluators, not comparable to the leaderboard：原生 Debian/XFCE、无 VM、应用版本和预算不同）
+上的部分结果，is not an official OSWorld-Verified score。按提交的数据：有效运行 137/256 = 53.5 %（Wilson 95 % 区间 47.4 %–59.5 %，
+未计任务相关性与有效样本选择）；按计划的 361 题算 137/361 = 38.0 %（Wilson 33.1 %–43.1 %，基础设施失败 / 缺失记 0）。
+不要和榜单数字直接比较。评测协议见 docs/eval-protocol.md 和 bench/README.md。
 
 ## 采数据 → 训练 → 对比
 
@@ -273,6 +291,7 @@ gui-gate train runs/ -o weights.json --split run+family --report   # 按运行�
 gui-gate train --model treatment runs/ -o value.json --report       # 处理交互价值模型（日志里实际采取的选项）
 gui-gate costs runs/ -o costs.json                                  # 各选项实测代价（GUI_GATE_COSTS）
 gui-gate compare runs/                                     # 各策略：执行数、失败率、观察/截图数、门开销
+gui-gate report runs/                                      # 问人负担：每任务询问数、重复比例、等待/主动秒数、接管步骤、无回答率
 ```
 
 日志默认写到 `~/.gui-gate/logs/`，每行一个事件（JSONL）。
