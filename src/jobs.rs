@@ -17,6 +17,8 @@ pub struct Job {
     pub cwd: String,
     /// the log path while it still exists on disk (Windows; on unix it is unlinked at start)
     pub out: Option<String>,
+    /// the log's file name as created (unique per job and process; unlinked at start on unix)
+    pub log_name: String,
     reader: std::fs::File,
     pub child: Child,
     pub started: Instant,
@@ -49,7 +51,10 @@ impl Jobs {
             *n
         };
         let Some(mut c) = crate::proc::shell(cmd) else { return Err("background jobs are not available on this OS".into()) };
-        let out = std::env::temp_dir().join(format!("gui-gate-job-{}-{id}.log", std::process::id())).to_string_lossy().to_string();
+        // unique per job: several Jobs values in one process (tests run in parallel threads) all count ids from 1
+        let out = std::env::temp_dir().join(format!("gui-gate-job-{}-{id}-{}.log", std::process::id(), crate::util::rand_hex(6)))
+            .to_string_lossy().to_string();
+        let log_name = out.clone();
         let f = std::fs::File::create(&out).map_err(|e| e.to_string())?;
         let f2 = f.try_clone().map_err(|e| e.to_string())?;
         let reader = std::fs::File::open(&out).map_err(|e| e.to_string())?;
@@ -65,7 +70,7 @@ impl Jobs {
         crate::proc::register(child.id());
         // unix: the open handles keep the file alive; no name is left in the temp dir
         let out = if cfg!(unix) && std::fs::remove_file(&out).is_ok() { None } else { Some(out) };
-        self.map.lock().unwrap().insert(id, Job { id, command: cmd.to_string(), cwd: cwd.to_string(), out, reader, child, started: Instant::now(), exit: None });
+        self.map.lock().unwrap().insert(id, Job { id, command: cmd.to_string(), cwd: cwd.to_string(), out, log_name, reader, child, started: Instant::now(), exit: None });
         Ok(id)
     }
 
@@ -154,7 +159,7 @@ mod tests {
         let mark = format!("gg-orphan-{}", crate::util::rand_hex(4));
         let j = Jobs::default();
         let id = j.start(&format!("(sleep 60; echo {mark}) & sleep 60"), &tmp()).unwrap();
-        let log = std::env::temp_dir().join(format!("gui-gate-job-{}-{id}.log", std::process::id()));
+        let log = std::path::PathBuf::from(&j.map.lock().unwrap()[&id].log_name);
         assert!(!log.exists(), "log left on disk: {}", log.display());
         let pgid = j.map.lock().unwrap()[&id].child.id() as i32;
         std::thread::sleep(std::time::Duration::from_millis(200));
