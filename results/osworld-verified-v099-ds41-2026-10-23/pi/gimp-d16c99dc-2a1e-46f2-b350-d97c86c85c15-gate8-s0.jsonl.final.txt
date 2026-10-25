@@ -1,0 +1,1 @@
+DONE — In GIMP I selected the dog layer (`dog_with_background.png`) and scaled it with the aspect-ratio lock: 1578×948 → **852×512** (852 = round(1578·512/948)), left the canvas and the other layer untouched, and saved the XCF in place (verified: the saved file on disk contains the 852×512 layer).

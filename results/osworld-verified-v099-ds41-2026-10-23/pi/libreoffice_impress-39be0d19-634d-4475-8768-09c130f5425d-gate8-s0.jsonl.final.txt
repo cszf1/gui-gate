@@ -1,0 +1,1 @@
+DONE — Selected slide 3 ("Features") in the open LibreOffice Impress deck, used Insert > Table… with 5 rows / 2 columns, saved in PowerPoint format, and verified the saved slide3.xml contains exactly one 5×2 table.

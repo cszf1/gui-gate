@@ -1,0 +1,1 @@
+DONE — On slide 5 of the open `1_2.pptx` in LibreOffice Impress, I set the character color of both text bodies (all 4 text runs) to the pure yellow RGB 255,255,0 and saved the file; the saved `ppt/slides/slide5.xml` now carries `srgbClr val="ffff00"` on every run, and a headless render of slide 5 confirms only (255,255,0) yellow text (no other yellow/cyan variant).

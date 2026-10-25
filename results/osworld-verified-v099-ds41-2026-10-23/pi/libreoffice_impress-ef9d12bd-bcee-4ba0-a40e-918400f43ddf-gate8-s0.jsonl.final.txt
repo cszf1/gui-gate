@@ -1,0 +1,3 @@
+The left slide panel ("Slides") is visible again in LibreOffice Impress — it was restored via the View menu's "Slide Pane" toggle, and the slide thumbnail pane is showing on the left.
+
+DONE — Restored the left slide panel in LibreOffice Impress using View > Slide Pane (toggled off/on), and confirmed the "Slides" thumbnail pane is visible again.

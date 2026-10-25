@@ -1,0 +1,1 @@
+DONE — In LibreOffice Impress I opened Tools ▸ Options ▸ Load/Save ▸ General, checked "Save AutoRecovery information every" with 3 minutes and also "Automatically save the document instead", then clicked OK; the profile now records AutoSave Enabled=true, TimeIntervall=3, UserAutoSaveEnabled=true.

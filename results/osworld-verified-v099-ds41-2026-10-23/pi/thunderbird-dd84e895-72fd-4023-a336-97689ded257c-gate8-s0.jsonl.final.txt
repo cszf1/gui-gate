@@ -1,0 +1,1 @@
+DONE — In Thunderbird I opened Local Folders ▸ Bills, selected both messages (Ctrl+A) and toggled the star (S), so both are now starred and the flags are persisted in the Bills mbox (`X-Mozilla-Status: 0005` for both).

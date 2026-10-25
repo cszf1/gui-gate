@@ -1,0 +1,1 @@
+DONE — Used VLC's "Take Snapshot" (Shift+S) on the playing Interstellar trailer and copied the resulting 1920×1080 PNG to `/data/home/Desktop/interstellar.png`.

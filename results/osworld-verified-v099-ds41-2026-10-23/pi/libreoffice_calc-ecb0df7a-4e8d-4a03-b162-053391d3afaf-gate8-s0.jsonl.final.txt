@@ -1,0 +1,1 @@
+DONE — Added a "Pass / Fail / Held" list data validation (Data ▸ Validity, "List", dropdown enabled) to the cells D2:D29 of the "Pass/Fail/Held" column in /data/home/Order_Id_Mark_Pass_Fail.xlsx, saved in xlsx format, and verified the dropdown offers exactly Pass, Fail, Held (other columns untouched).

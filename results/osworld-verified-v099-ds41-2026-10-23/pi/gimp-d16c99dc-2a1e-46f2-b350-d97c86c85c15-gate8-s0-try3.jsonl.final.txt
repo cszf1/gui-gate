@@ -1,0 +1,1 @@
+DONE — In GIMP I selected the dog layer (`dog_with_background.png`) in `~/Desktop/dog_with_background_two_layers.xcf`, used Layer ▸ Scale Layer with the width/height chain linked and set Height to 512 px (Width auto-computed to 852 px, preserving the 1578:948 aspect ratio), then saved the XCF back in place; verified the layer reads 852 × 512.

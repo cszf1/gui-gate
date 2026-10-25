@@ -1,0 +1,1 @@
+DONE — In `/data/home/Desktop/43_1.pptx` (LibreOffice Impress) I moved slide 2's picture (with its gold frame) to the top of the slide (picture top edge now at Y=0) and applied underline (Ctrl+U) to all text in the text boxes on slides 1 and 2, then saved the file.
