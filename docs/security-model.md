@@ -1,4 +1,4 @@
-# gui-gate 安全模型（2026-10-25，分支 fix-security）
+# gui-gate 安全模型（v0.10.1，2026-10-25）
 
 ## 一句话
 
@@ -85,12 +85,94 @@ gui-gate 防的是**合作但会犯错的 agent**：它想完成用户的任务�
 `unknown`（可能执行了也可能没有：先读窗口，不要盲目重发）、`input_required`（需要人：批量里要单独发的步骤、无法联系人时的接管、
 `request_human` 没有通道）。MRTR 的 `resultType: "input_required"` 是协议层的，见 docs/mcp-2026-07-28.md。
 
+## 0.10.1：哪些工具算“动作”（按分类拒绝）
+
+- **只读工具是白名单**（`src/features.rs` `READ_ONLY_TOOLS`）：`get_window_state`、`get_desktop_state`、`get_browser_state`、
+  `list_windows`、`list_apps`、`screenshot`、`zoom`、`verify_state`、`get_cursor_position`、`get_screen_size`、`list_displays`、
+  `list_screens`、`check_permissions`、`get_permissions`、`get_config`、`get_version`、`get_accessibility_tree`、`find_elements`、
+  `get_element`、`get_focused_element`、`get_clipboard_text_length`。可信启动者可用 `GUI_GATE_READONLY_TOOLS` 追加（agent 改不了环境）。
+- **其余一切都是动作**：门已建模的 GUI 工具（click、type_text……）、`launch_app`、`bring_to_front`、以及新版驱动将来新增的任何工具。
+  没有 GUI 目标模型的“透传动作”也**从不原样转发**：都经过 `Gate::tool` 里同一个最终派发检查（一次性许可、输入冻结、自己的对话框）。
+- **`launch_app` 的风险**（`launch_risk`）：交给任何应用的 URL（浏览器、xdg-open、mailto……）为中风险；终端 / shell / 解释器带命令
+  （`-e`、`-x`、`--`、`-c`、`/c`……之后的部分，否则全部参数）按 `run_command` 同样的命令风险分类，分类不出来也至少中风险；
+  文件管理器打开某个路径为中风险并以该路径为资源。有风险的透传动作走与所有动作相同的风险路径（拒绝记录 → 启动者任务 → 审核 → 人）。
+
+## 0.10.1：人在回答时冻结输入，保护门自己的对话框
+
+- 只要有一个问人的请求还开着（桌面对话框打开中，或 MRTR 待答记录还没过 `deadline + 5 s`），**所有动作类调用**（驱动动作、
+  `run_actions`、透传动作）在入口和最终派发点都被拒绝（`tier: "freeze"`，日志 `frozen`），什么也不发。agent 不能在人回答期间操作界面，
+  更不能替人点批准按钮。观察类工具照常可用。
+- 门自己弹出的对话框进程（zenity / kdialog / osascript / GTK python / PowerShell）的 pid 记录在案；目标是这些 pid 或标题是门对话框的
+  窗口的动作，在任何决策之前就被拒绝（`tier: "own_dialog"`，日志 `own_dialog_refused`）。只有人能回答门的对话框。
+
+## 0.10.1：只写文件名的任务
+
+启动者原文只写了文件名（没有路径）时，它只覆盖**工作目录里**的那个文件：`run_command` 的 cwd，或终端当前目录。另一个目录里的同名文件
+不由文字授权（可能是用户没指的另一个文件），交给审核模型 / 人。同一个效果里出现两个同名不同目录的文件时，只写文件名的原文不授权任何一个。
+写了路径的原文仍必须是那个规范化路径。
+
+## 0.10.1：可信任务通道 `--task-file`（桌面客户端格式）
+
+桌面客户端把**只有人说的话**写进任务文件（0600），门在每次风险判断前检查文件是否变了并重读：
+
+```
+gui-pi-task/1 version=N
+--- user 1 <UTC ISO 时间> initial request
+用户的第一条原话……
+--- user 2 <UTC ISO 时间> later message
+用户之后补充的原话……
+```
+
+- 第一行是格式头和客户端版本号 N；每条用户消息一个 `--- user <i> <UTC> initial request|later message` 段，段内是原文。
+  门把各段原文按顺序拼起来作为授权用的启动者原话。没有格式头的文件整个当作任务原文（门按内容哈希给版本）。
+- 每个新版本记一条日志 `task_version`（版本号、客户端版本、内容哈希、字数，不记原文）。
+- **批准绑定任务版本**：一次性许可记下签发时的任务版本，版本变了就失效；超时未答的“不再问”也只在同一版本内有效。
+- 拒绝记录仍然只会拒绝；但如果用户在**更新的版本**里明确点名了这个效果（授权规则照常适用），旧版本下的拒绝被取代
+  （日志 `denial_superseded`）。agent 自己的话（`gate_task`）永远做不到这一点。
+
+## 0.10.1：MRTR requestState 按进程签名
+
+`requestState` 的形式是 `gg1.<instance>.<nonce>.<HMAC>`：instance 和签名密钥每次门进程启动时随机生成，HMAC-SHA256 覆盖
+instance、nonce 和绑定（工具 + 参数）。门重启后旧进程签发的 requestState 一律被拒（-32602，“the gate restarted; every earlier approval is void”）；
+格式不对、签名不对、未知或已用过、绑定的调用不同，都回 -32602。仍是一次性的，仍按 `human_timeout + 5 s` 判超时。
+
+## 0.10.1：严格的人回答类型
+
+四种请求各有唯一的结果形状，互不转换：
+
+| 类型 | 表单 | 只有这样才算“是” | 意义 |
+|---|---|---|---|
+| approve | `{decision: allow\|deny}`（兼容老 `{allow: bool}`） | `accept` + `allow` | 只批准门确认的那一个效果一次 |
+| answer（澄清） | `{answer}`，有 2–4 个选项时另加 `choice` | `accept` + 非空回答 | 回答**不是**批准 |
+| takeover | `{done: bool}` | `accept` + `done: true` | 人自己做了这一步 → 结果 `status: "done_by_person"`，门**不会**再发原动作，先重读窗口 |
+| ask_help（求助） | `{choice: did_it\|hint\|try_other, note}` | `did_it` = 人代做（同样 `done_by_person`）；hint / try_other 只带回提示 | 不批准任何东西 |
+
+- 没有回答的结束（`timeout`、`cancelled`、`declined`、`window_closed`、`no_response`、`channel_unavailable`）按拒绝处理本次动作，
+  日志标 `no_answer`，**不当作用户反对**，也不进价值模型训练标签。
+- **超时后不再问**：同一个效果（或同一个 `request_human` 问题）在同一任务版本里没得到回答，就不再弹第二次（`human_outcome: "not_asked_again"`），
+  告诉 agent 别猜、停下汇报。用户在任务文件里补了新消息（版本变了）后才可能再问。
+- 安全上必须问的步骤从不参加价值/成本比较；可选的澄清和求助才算问人成本。问人负担（询问数、重复比例、等待/主动秒数、接管步骤、
+  无回答率、不再问次数）进 `gate_report` 的 `person_burden`、日志 `person_burden` 事件和 `gui-gate report 日志`。
+
+## 0.10.1：`gate_reset`
+
+客户端停止或重启 agent 时调用（客户端专用工具，见 docs/mcp-2026-07-28.md）。之后：所有一次性许可、未完成的批准、待答的问人请求
+（requestState）、缓存的观察和快照 id 全部作废——旧元素 token 不再解析、旧 requestState 被拒、重置前批准的东西都不延续。
+拒绝记录和启动者任务保留（拒绝只会拒绝）。
+
+## 0.10.1：密钥脱敏
+
+门知道的密钥值（环境里名字像 `*_KEY`、`*TOKEN*`、`*_SECRET`、`*PASSWORD*` 的变量、密钥文件、`reviewer.env` 设置）以及通用密钥形状
+（`sk-…`、`ghp_…`、`xox?-…`、`AKIA…`、`Bearer …`、`KEY=…` / `password: …`、JWT）在**每个工具结果**（图片数据除外）和**每行日志**里替换成
+`[redacted]`，不管它走了什么路（命令打印了环境、解释器读了密钥文件、错误信息）。子进程环境白名单（`scrub_env`）照旧。脱敏是兜底，
+不是隔离：同用户任意代码仍可直接读文件（见开头）。
+
 ## 测试
 
 - Rust：`effect::tests`（同名不同目录、跨工具同一效果、按应用区分控件）、`authz::tests`（只认点名的文件、没有对象的效果不靠文字覆盖、否定句）、
   `human::tests`（结束原因、效果变化后不复用回答）、`server::tests::final_dispatch_check_needs_a_one_shot_permit`（真门 + 假驱动：无许可、
   别的窗口的批准、用过的、过期的许可都被拒，驱动只收到一次）。
-- Python（真门二进制 + tests/fake_driver.py）：`tests/test_security_e2e.py` 的绕过测试，`tests/test_actions_e2e.py`、`tests/test_gate.py`、
+- Python（真门二进制 + tests/fake_driver.py）：`tests/test_security_e2e.py` 的绕过测试，`tests/test_remaining.py`（0.10.1：透传动作、launch_app、冻结、自己的对话框、gate_reset、签名 requestState、任务文件版本、严格回答类型、不再问、脱敏），`tests/test_actions_e2e.py`、`tests/test_gate.py`、
   `tests/test_v04.py`、`tests/test_commands.py` 中的边界测试。
 
 ## 已知限制

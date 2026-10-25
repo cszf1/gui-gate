@@ -153,6 +153,13 @@ success, total time over all sessions and an interruption rating, with within-pe
 check. Timeouts deny the one action and keep their reason; they are not "the person refused". A simulated person and
 `--human deny` test the protocol, not the burden on people.
 
+`bench/human_pilot.py from-logs --meta META.jsonl --human <data>/logs/human.jsonl [--gate-log LOGTASK=GATE.jsonl]`
+builds the sessions from the logs instead of hand entry: the desktop client's `gui-pi-human/1` lines (`human_q` per
+question, `human_summary` per task) are the primary source; the gate's `person_burden` events (0.10.1) are a
+cross-check, or the source when a task has no desktop lines. The gate only sees how long a question was open, not the
+time a person spent watching between questions, so a gate-only session has no waiting time and is left out of that
+mean. META gives what no log knows (participant, benchmark task, condition, order, success, interruption rating).
+
 ## 12. Claims and wording
 
 - Strongest acceptable claims: "at a fixed budget, success is higher" or "success is lower by no more than the
