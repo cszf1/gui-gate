@@ -64,6 +64,11 @@ def text(t, err=False, sc=None, img=False):
 
 
 def call(name, a):
+    if state.get("crash_on") == name:
+        os._exit(4)  # dies while delivering the action: the gate cannot know whether it happened
+    if state.get("garbage_on") == name:
+        state.pop("garbage_on")
+        return "not-an-mcp-result"
     if name == "click":
         state.setdefault("modes", []).append(a.get("delivery_mode"))
     if state.get("fg_fail_next") and name in ("click", "press_key", "type_text"):
@@ -173,6 +178,10 @@ def call(name, a):
             state["fg_fail_next"] = a["fg_fail_next"]
         if "occlude_next" in a:
             state["occlude_next"] = a["occlude_next"]
+        if "crash_on" in a:
+            state["crash_on"] = a["crash_on"]
+        if "garbage_on" in a:
+            state["garbage_on"] = a["garbage_on"]
         return text("mutated")
     return text(f"{name} ok delivery={a.get('delivery_mode', 'background')}", sc={})
 
@@ -241,7 +250,7 @@ def main():
                 res = call(name, m["params"].get("arguments") or {})
         else:
             res = {}
-        if era == "modern":
+        if era == "modern" and isinstance(res, dict):
             res["resultType"] = "complete"
             res.setdefault("_meta", {})["io.modelcontextprotocol/serverInfo"] = {"name": "fake-driver", "version": "0.0"}
         sys.stdout.write(json.dumps({"jsonrpc": "2.0", "id": m["id"], "result": res}) + "\n")

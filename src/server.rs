@@ -3994,6 +3994,80 @@ mod tests {
         assert_eq!(tree_delta(&seen, &same, 0.5), Some(vec![]));
     }
 
+    /// The single final dispatch check, against the real gate and tests/fake_driver.py: a risky target is sent only
+    /// with a one-shot permit for exactly its effect (no permit, a permit for another window, a used or expired one:
+    /// refused and nothing reaches the driver).
+    #[test]
+    fn final_dispatch_check_needs_a_one_shot_permit() {
+        let fake = format!("{}/tests/fake_driver.py", env!("CARGO_MANIFEST_DIR"));
+        if std::process::Command::new("python3").arg("-c").arg("1").status().map(|s| !s.success()).unwrap_or(true) {
+            return; // no python3 here: the e2e suite covers it
+        }
+        let mut cfg = GateConfig::default();
+        cfg.human_channel = "deny".into();
+        let g = Gate::new(vec!["python3".into(), fake], cfg, None);
+        let r = g.passthrough("get_window_state", json!({"pid": 4242, "window_id": 777}));
+        let snap = pystr(sc(&r).get("snapshot_id"));
+        let mut inn = g.inner.lock().unwrap();
+        let del = json!({"element_token": format!("{snap}:1")});
+        let refused = |r: &Value| sc(r).get("gate").and_then(|x| x.get("tier")).and_then(|x| x.as_str()) == Some("dispatch");
+        assert!(refused(&g.tool(&mut inn, "click", &del, 10.0)), "no permit");
+        let ctx = build_ctx("click", &del, &inn.state);
+        assert!(ctx.risk.is_some());
+        let good = g.effect_key(&inn, &ctx);
+        let mut other = good.clone();
+        other.window = Some(999);
+        inn.approval = Some((other, "test".into()));
+        g.grant(&mut inn, "click", &del);
+        assert!(inn.permits.is_empty(), "an approval for another window issues nothing");
+        assert!(refused(&g.tool(&mut inn, "click", &del, 10.0)));
+        inn.approval = Some((good, "test".into()));
+        g.grant(&mut inn, "click", &del);
+        assert_eq!(inn.permits.len(), 1);
+        let r = g.tool(&mut inn, "click", &del, 10.0);
+        assert!(!is_error(&r), "{r}");
+        assert!(refused(&g.tool(&mut inn, "click", &del, 10.0)), "one shot");
+        g.grant(&mut inn, "click", &del);
+        inn.permits[0].expires = now() - 1.0;
+        assert!(refused(&g.tool(&mut inn, "click", &del, 10.0)), "expired");
+        // a safe target needs no permit
+        assert!(!is_error(&g.tool(&mut inn, "click", &json!({"element_token": format!("{snap}:0")}), 10.0)));
+        let st = g.tool(&mut inn, "fake_state", &json!({}), 10.0);
+        let clicked: Value = serde_json::from_str(&text_of(&st)).unwrap();
+        let n = clicked["clicked"].as_array().unwrap().iter().filter(|c| c.as_str() == Some("Delete file")).count();
+        assert_eq!(n, 1, "{clicked}");
+        eprintln!("final dispatch check: {} refusals, {} permits used", inn.stat("dispatch_refused"), inn.stat("permits_used"));
+        drop(inn);
+        g.child().close();
+    }
+
+    #[test]
+    fn structured_diff_rebuilds_the_tree() {
+        let base: Vec<String> = ["- frame \"A\"", "  - [0] button \"OK\"", "  - [1] text \"count=0\"", "  - [2] button \"Cancel\"", "  - [3] list \"L\"", "    - [4] item \"x\""]
+            .iter().map(|s| s.to_string()).collect();
+        let cases: Vec<Vec<&str>> = vec![
+            // edited rows
+            vec!["- frame \"A\"", "  - [0] button \"OK\"", "  - [1] text \"count=1\"", "  - [2] button \"Cancel\"", "  - [3] list \"L\"", "    - [4] item \"y\""],
+            // a removed row and an added one
+            vec!["- frame \"A\"", "  - [0] button \"OK\"", "  - [2] button \"Cancel\"", "  - [3] list \"L\"", "    - [4] item \"x\"", "    - [5] item \"z\""],
+            // re-ordered rows (same text, other place)
+            vec!["- frame \"A\"", "  - [2] button \"Cancel\"", "  - [0] button \"OK\"", "  - [1] text \"count=0\"", "  - [3] list \"L\"", "    - [4] item \"x\""],
+            // everything gone but the frame
+            vec!["- frame \"A\""],
+        ];
+        for cur in cases {
+            let d = structured_diff("s1", &base, &cur, "s2");
+            assert_eq!(d["base_snapshot_id"], "s1");
+            assert_eq!(d["snapshot_id"], "s2");
+            assert_eq!(apply_diff(&base, &d), cur.iter().map(|s| s.to_string()).collect::<Vec<_>>(), "{d}");
+        }
+        let d = structured_diff("s1", &base, &["- frame \"A\"", "  - [0] button \"OK\""], "s2");
+        assert_eq!(d["removed"].as_array().unwrap().len(), 4);
+        let r = structured_diff("s1", &base, &["  - [2] button \"Cancel\"", "- frame \"A\"", "  - [0] button \"OK\"", "  - [1] text \"count=0\"", "  - [3] list \"L\"", "    - [4] item \"x\""], "s2");
+        assert_eq!(r["reordered"].as_array().unwrap().len(), 1, "{r}");
+        assert!(r["changed"].as_array().unwrap().is_empty());
+    }
+
     /// Offline harness: GG_DIFFSIM=<jsonl of recorded tree reads> GG_DIFFSIM_OUT=<out> cargo test -- --ignored diffsim
     /// Feeds recorded auto-observe blocks and agent reads through tree_delta with the same seen-row bookkeeping
     /// as auto_observe/passthrough and writes the chars each auto-observe would have sent.
