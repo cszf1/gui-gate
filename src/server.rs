@@ -2010,6 +2010,7 @@ impl Gate {
         let mut trail: Vec<String> = vec![];
         // the identical action came back with an unknown outcome: never re-send it blind, read the window first
         let unknown_prev = inn.unknown_sigs.remove(&ctx.signature);
+        let _ = crate::value::take_last(); // the value log below belongs to this action only
         // a risky or hand-off step always goes through the safety rules first, whatever the baseline policy says
         let safety_first = ctx.risk.is_some() || ctx.handoff.is_some();
         let mut dec = match if let Some(why) = &unknown_prev {
@@ -2168,7 +2169,7 @@ impl Gate {
             "decision": opt, "tier": dec.tier, "trail": trail, "reason": dec.reason, "check": check_res,
             "shadow_check": shadow, "judge": judge, "window_changed": wc, "window_added": wadd,
             "ack": ack, "approval": inn.approval.as_ref().map(|a| a.1.clone()), "risk_level": ctx.risk_level, "handoff": ctx.handoff,
-            "risk_gate": inn.risk_info, "batch": inn.batch_ctx});
+            "risk_gate": inn.risk_info, "batch": inn.batch_ctx, "value": crate::value::take_last()});
 
         // a person decides / acts, when the gate can reach one itself
         if (opt == "ask_human" || opt == "handoff" || opt == "ask_help") && self.human.resolve_channel() != "chat" {

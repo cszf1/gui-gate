@@ -1,7 +1,12 @@
 //! Offline tools over the gate's JSONL logs.
-//!   gui-gate train LOGS... -o weights.json [--holdout 0.3] [--seed 0] [--l2 0.05]
+//!   gui-gate train LOGS... -o weights.json [--holdout 0.3] [--seed 0] [--l2 0.05] [--prior v1|zero|builtin]
+//!       [--split session|run|family|run+family] [--report] [--md FILE] [--families map.json]
 //!       fit P(direct succeeds) from executed-direct actions, Platt-calibrate it, report held-out metrics
-//!       (split by session, so a model is never scored on the run it was trained on);
+//!       (default split: session; --split run+family keeps runs AND task families apart; --report adds Brier / NLL /
+//!       equal-mass ECE / AUC with session-bootstrap CIs and equal-mass reliability tables);
+//!       the L2 centre defaults to the hand-set v1 prior (0.9.x used the built-in weights, which were fitted on the
+//!       same logs: a held-out score against them can leak; --prior builtin reproduces that and is flagged);
+//!   gui-gate train --model treatment ...  the treatment-interaction value model (valuetrain.rs);
 //!   gui-gate compare LOGS... [--json]
 //!       summarise logs per policy (baseline comparisons).
 use crate::decide::{prior_weights, sigmoid};
@@ -11,7 +16,7 @@ use indexmap::IndexMap;
 use serde_json::{json, Value};
 use std::collections::{HashMap, HashSet};
 
-fn files_of(paths: &[String]) -> Vec<String> {
+pub(crate) fn files_of(paths: &[String]) -> Vec<String> {
     let mut out = vec![];
     for p in paths {
         if std::path::Path::new(p).is_dir() {
@@ -27,14 +32,14 @@ fn files_of(paths: &[String]) -> Vec<String> {
     out
 }
 
-fn events(path: &str) -> Vec<Value> {
+pub(crate) fn events(path: &str) -> Vec<Value> {
     std::fs::read_to_string(path).unwrap_or_default().lines().filter_map(|l| serde_json::from_str(l).ok()).collect()
 }
 
 type Row = (String, HashMap<String, f64>, f64);
 
 /// Environment outcomes from a fixture log are training labels (never features).
-fn outcomes_from_fixture(evs: &[Value], fixture: &str) -> HashMap<i64, bool> {
+pub(crate) fn outcomes_from_fixture(evs: &[Value], fixture: &str) -> HashMap<i64, bool> {
     let fx: Vec<Value> = events(fixture).into_iter().filter(|e| matches!(s(e, "ev"), "click" | "ignored")).collect();
     let mut out = HashMap::new();
     let mut prev = 0.0;
@@ -198,7 +203,7 @@ fn metrics(ps: &[f64], ys: &[f64]) -> Value {
 }
 
 /// Small deterministic PRNG (splitmix64) for the session shuffle.
-fn shuffle<T>(v: &mut [T], seed: u64) {
+pub(crate) fn shuffle<T>(v: &mut [T], seed: u64) {
     let mut x = seed.wrapping_add(0x9E3779B97F4A7C15);
     for i in (1..v.len()).rev() {
         x = x.wrapping_add(0x9E3779B97F4A7C15);
@@ -212,17 +217,27 @@ fn shuffle<T>(v: &mut [T], seed: u64) {
 
 pub fn train_main(argv: &[String]) -> i32 {
     let (mut paths, mut out, mut holdout, mut seed, mut l2) = (vec![], "weights.json".to_string(), 0.3, 0u64, 0.05);
+    if argv.windows(2).any(|w| w[0] == "--model" && w[1] == "treatment") {
+        return crate::valuetrain::train_treatment_main(argv);
+    }
     let mut test_paths: Vec<String> = vec![];
     let mut in_test = false;
+    let (mut prior_name, mut split, mut report, mut md, mut fams) = ("v1".to_string(), "session".to_string(), false, None::<String>, None::<String>);
     let mut i = 0;
     while i < argv.len() {
         match argv[i].as_str() {
+            "--model" => { i += 1; }
+            "--prior" => { prior_name = argv.get(i + 1).cloned().unwrap_or(prior_name); i += 1; }
+            "--split" => { split = argv.get(i + 1).cloned().unwrap_or(split); i += 1; }
+            "--families" => { fams = argv.get(i + 1).cloned(); i += 1; }
+            "--md" => { md = argv.get(i + 1).cloned(); i += 1; }
+            "--report" => report = true,
             "-o" | "--out" => { out = argv.get(i + 1).cloned().unwrap_or(out); i += 1; }
             "--holdout" => { holdout = argv.get(i + 1).and_then(|v| v.parse().ok()).unwrap_or(holdout); i += 1; }
             "--seed" => { seed = argv.get(i + 1).and_then(|v| v.parse().ok()).unwrap_or(seed); i += 1; }
             "--l2" => { l2 = argv.get(i + 1).and_then(|v| v.parse().ok()).unwrap_or(l2); i += 1; }
             "--test" => in_test = true,
-            "-h" | "--help" => { println!("usage: gui-gate train LOGS... [-o weights.json] [--holdout 0.3] [--seed 0] [--l2 0.05] [--test LOGS...]\n  --test: evaluate on these logs instead of a random session holdout (e.g. another model's run)"); return 0; }
+            "-h" | "--help" => { println!("usage: gui-gate train LOGS... [-o weights.json] [--holdout 0.3] [--seed 0] [--l2 0.05] [--test LOGS...] [--prior v1|zero|builtin] [--split session|run|family|run+family] [--report] [--md FILE] [--families map.json]\n  --test: evaluate on these logs instead of a random holdout (e.g. another model's run)\n  --model treatment: the treatment-interaction value model (gui-gate train --model treatment -h)"); return 0; }
             p if in_test => test_paths.push(p.to_string()),
             p => paths.push(p.to_string()),
         }
@@ -235,11 +250,22 @@ pub fn train_main(argv: &[String]) -> i32 {
         println!("{}", json!({"error": "need at least 20 direct-executed actions from 2+ sessions", "rows": data.len(), "sessions": sessions.len()}));
         return 1;
     }
-    shuffle(&mut sessions, seed);
     let ext = if test_paths.is_empty() { vec![] } else { load(&test_paths) };
-    let k = if ext.is_empty() { ((sessions.len() as f64 * holdout).round() as usize).max(1) } else { 0 };
-    let test_s: HashSet<&String> = sessions[..k].iter().collect();
-    let train: Vec<&Row> = data.iter().filter(|d| !test_s.contains(&d.0)).collect();
+    let families = crate::valuetrain::read_families(fams.as_deref());
+    let groups = crate::valuetrain::session_groups(&paths, &families);
+    let key = |sess: &String| -> (String, String, String, String) {
+        let g = groups.get(sess).cloned().unwrap_or_default();
+        (sess.clone(), g.0, g.1, g.2)
+    };
+    let (test_s, train_s, split_desc): (HashSet<String>, HashSet<String>, Value) = if ext.is_empty() {
+        let keys: Vec<(String, String, String, String)> = sessions.iter().map(key).collect();
+        let sp = crate::valuetrain::split_rows(&keys, &split, holdout, seed);
+        (sp.test.iter().map(|i| sessions[*i].clone()).collect(), sp.train.iter().map(|i| sessions[*i].clone()).collect(), sp.desc)
+    } else {
+        (HashSet::new(), sessions.iter().cloned().collect(), json!({"mode": "external"}))
+    };
+    // sessions that cross a held-out run / family are neither trained on nor scored
+    let train: Vec<&Row> = data.iter().filter(|d| train_s.contains(&d.0)).collect();
     let test: Vec<&Row> = if ext.is_empty() { data.iter().filter(|d| test_s.contains(&d.0)).collect() } else { ext.iter().collect() };
     let n_test_s = if ext.is_empty() { test_s.len() } else { ext.iter().map(|d| &d.0).collect::<HashSet<_>>().len() };
     let mut tr_s: Vec<&String> = train.iter().map(|d| &d.0).collect::<HashSet<_>>().into_iter().collect();
@@ -249,7 +275,7 @@ pub fn train_main(argv: &[String]) -> i32 {
     if fit_rows.is_empty() { fit_rows = train.clone(); }
     let mut cal_rows: Vec<&Row> = train.iter().filter(|d| cal_s.contains(&d.0)).cloned().collect();
     if cal_rows.is_empty() { cal_rows = train.clone(); }
-    let prior = prior_weights();
+    let prior = match prior_name.as_str() { "builtin" => prior_weights(), "zero" => IndexMap::new(), _ => crate::decide::prior_v1_weights() };
     let w = fit(&fit_rows, l2, &prior);
     let (a, b) = platt(&cal_rows.iter().map(|d| logit(&w, &d.1)).collect::<Vec<_>>(), &cal_rows.iter().map(|d| d.2).collect::<Vec<_>>());
     let ys: Vec<f64> = test.iter().map(|d| d.2).collect();
@@ -258,7 +284,33 @@ pub fn train_main(argv: &[String]) -> i32 {
         "prior_on_test": metrics(&test.iter().map(|d| sigmoid(logit(&prior, &d.1))).collect::<Vec<_>>(), &ys),
         "fitted_on_test": metrics(&test.iter().map(|d| sigmoid(logit(&w, &d.1))).collect::<Vec<_>>(), &ys),
         "fitted_calibrated_on_test": metrics(&test.iter().map(|d| sigmoid(a * logit(&w, &d.1) + b)).collect::<Vec<_>>(), &ys),
+        "split": split_desc, "prior_center": prior_name, "prior_leak_risk": prior_name == "builtin",
+        "label": "executed direct actions only (states the gate blocked have no direct outcome; see train --model treatment)",
     });
+    let mut res = res;
+    if report {
+        let gs: Vec<String> = test.iter().map(|d| d.0.clone()).collect();
+        let builtin = prior_weights();
+        let sets: [(&str, Vec<f64>); 4] = [
+            ("builtin_osworld_v3", test.iter().map(|d| sigmoid(crate::decide::PRIOR_CALIB.0 * logit(&builtin, &d.1) + crate::decide::PRIOR_CALIB.1)).collect()),
+            ("prior_center", test.iter().map(|d| sigmoid(logit(&prior, &d.1))).collect()),
+            ("fitted", test.iter().map(|d| sigmoid(logit(&w, &d.1))).collect()),
+            ("fitted_calibrated", test.iter().map(|d| sigmoid(a * logit(&w, &d.1) + b)).collect()),
+        ];
+        let mut rep = serde_json::Map::new();
+        let mut mdtxt = format!("# direct predictor report\n\nsplit: {}\n\nprior centre: {prior_name} (leak risk: {})\n\n", res["split"], prior_name == "builtin");
+        for (name, ps) in &sets {
+            let m = crate::valuetrain::metrics_ci(ps, &ys, &gs, 200, seed);
+            mdtxt.push_str(&crate::valuetrain::reliability_md(name, &m));
+            mdtxt.push('\n');
+            rep.insert(name.to_string(), m);
+        }
+        rep.insert("note".into(), json!("builtin_osworld_v3 was fitted on logs up to 2026-10-22: on any held-out set drawn from those logs its score is optimistic (leakage), shown for reference only"));
+        res["report"] = Value::Object(rep);
+        if let Some(p) = &md {
+            let _ = std::fs::write(p, mdtxt);
+        }
+    }
     let name = crate::sidefx::basename(&out);
     let name = name.rsplit_once('.').map(|x| x.0.to_string()).unwrap_or(name);
     let wj: serde_json::Map<String, Value> = w.iter().map(|(k, v)| (k.clone(), json!(v))).collect();

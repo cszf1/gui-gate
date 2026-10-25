@@ -1,0 +1,72 @@
+{
+ "kind": "costs_v1",
+ "costs": {
+  "direct": {
+   "extra_s": 0.0,
+   "tokens": 0.0,
+   "person_s": 0.0,
+   "n": 8129,
+   "direct_gate_ms_median": 2.3
+  },
+  "review": {
+   "extra_s": 17.005,
+   "extra_s_median": 5.209,
+   "tokens": 68.7,
+   "person_s": 0.0,
+   "n": 102
+  },
+  "look_light": {
+   "extra_s": 9.14,
+   "extra_s_median": 4.312,
+   "tokens": 465.7,
+   "person_s": 0.0,
+   "n": 23
+  },
+  "look_full": {
+   "extra_s": 24.177,
+   "extra_s_median": 9.232,
+   "tokens": 487.1,
+   "person_s": 0.0,
+   "n": 79
+  },
+  "ask_human": {
+   "extra_s": 15.945,
+   "extra_s_median": 6.189,
+   "tokens": 20.1,
+   "person_s": 0.0,
+   "n": 76
+  },
+  "handoff": {
+   "extra_s": 8.63,
+   "extra_s_median": 10.427,
+   "tokens": 496.6,
+   "person_s": 0.0,
+   "n": 3
+  },
+  "heal": {
+   "extra_s": 0.21,
+   "extra_s_median": 0.185,
+   "tokens": 0.0,
+   "person_s": 0.0,
+   "n": 31
+  },
+  "wait": {
+   "extra_s": 1.126,
+   "extra_s_median": 1.503,
+   "tokens": 0.0,
+   "person_s": 0.0,
+   "n": 229
+  },
+  "check": {
+   "extra_s": 0.318,
+   "extra_s_median": 0.148,
+   "tokens": 0.0,
+   "person_s": 0.0,
+   "n": 16
+  }
+ },
+ "source": [
+  "results/osworld-verified-v099-ds41-2026-10-23/gate"
+ ],
+ "note": "means (expected cost); use with GUI_GATE_COSTS. Options with fewer than GUI_GATE_COST_MIN_N (5) measurements fall back to the prior seconds."
+}
