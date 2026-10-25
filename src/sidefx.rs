@@ -57,6 +57,11 @@ pub fn strip_verbatim(p: &str) -> String {
 #[cfg(windows)]
 fn canon_win(p: &str) -> String {
     let n = normpath(p);
+    // `/tmp/x` (no drive, not UNC) means "on the current drive": resolving it would turn it into D:/tmp/x on a
+    // machine where that folder happens to exist, so it keeps its spelling
+    if n.starts_with('/') && !n.starts_with("//") {
+        return n;
+    }
     let mut head = n.clone();
     let mut tail: Vec<String> = vec![];
     for _ in 0..64 {
@@ -1128,7 +1133,10 @@ mod win_path_tests {
         assert!(!long.starts_with("//?/") && !long.contains('\\'), "{long}");
         // a missing tail keeps its spelling after the resolved part
         assert_eq!(super::canon(&format!(r"{raw}\nope\x.txt")), format!("{long}/nope/x.txt"));
-        // a rooted path whose folders do not exist keeps its spelling (no drive letter added)
+        // the task text names a Windows path: check_done / inspect env / plans see it (it used to be missed)
+        let task = format!(r"Read {raw}\sub/notes.txt and put the total into out.xlsx");
+        assert!(crate::done::task_paths(&task).contains(&format!(r"{raw}\sub/notes.txt")), "{:?}", crate::done::task_paths(&task));
+        // a rooted path keeps its spelling (no drive letter added, even where D:/tmp exists)
         assert_eq!(super::canon("/tmp/w/a/report.txt"), "/tmp/w/a/report.txt");
         let args = serde_json::json!({"cwd": raw});
         assert_eq!(crate::features::command_cwd(&args), long);

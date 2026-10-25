@@ -142,7 +142,7 @@ pub fn affirmed_hit(word: &str, text: &str) -> bool {
 fn path_words(task: &str) -> Vec<String> {
     task.split(|c: char| c.is_whitespace() || "\"'“”‘’`,;()<>[]{}".contains(c))
         .map(|w| w.trim_end_matches(|c: char| ".:!?。，；：".contains(c)).to_string())
-        .filter(|w| w.contains('/') && !w.contains("://") && w.len() > 1)
+        .filter(|w| (w.contains('/') || (cfg!(windows) && w.contains('\\'))) && !w.contains("://") && w.len() > 1)
         .collect()
 }
 

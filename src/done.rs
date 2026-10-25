@@ -19,6 +19,8 @@ const EXTS: &str = "pptx|ppt|odp|docx|doc|odt|rtf|xlsx|xls|ods|csv|tsv|pdf|png|j
 re!(quoted, r#"["'“‘`]([^"'“”‘’`\n]{1,120})["'”’`]"#);
 re!(bare_file, &format!(r"(?i)(?:^|[\s(])((?:~|/)?[\w\-~][\w.\-/~]*\.(?:{EXTS}))\b"));
 re!(abs_path, r"(?:^|\s)((?:/|~/)[\w.\-/]+)");
+// Windows: C:\... / C:/... / \\server\share\... (mixed separators and 8.3 short names such as RUNNER~1 included)
+re!(win_abs_path, r"(?:^|[\s(])((?:[A-Za-z]:[\\/]|\\\\)[\w.\-\\/~$]+)");
 re!(git_url, r"(?i)https?://(?:github\.com|gitlab\.com|bitbucket\.org)/[\w.\-]+/([\w.\-]+?)(?:\.git)?(?:[\s/\x22'”]|$)");
 re!(produce_words, r"(?i)\b(save|saved|export|exported|create|created|write|copy|copies|copied|rename|move|clone|convert|download|generate|produce|backup|compress|extract)\b|保存|导出|创建|复制|重命名|移动|克隆|转换|下载");
 re!(on_desktop, r"(?i)\bon (the|my) desktop\b|桌面");
@@ -46,6 +48,11 @@ pub fn task_paths(task: &str) -> Vec<String> {
     }
     for c in abs_path().captures_iter(task) {
         add(&c[1]);
+    }
+    if cfg!(windows) {
+        for c in win_abs_path().captures_iter(task) {
+            add(&c[1]);
+        }
     }
     for c in git_url().captures_iter(task) {
         add(&c[1]);
