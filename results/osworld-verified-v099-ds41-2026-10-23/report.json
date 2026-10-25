@@ -1,43 +1,43 @@
 {
  "summary": {
   "expected": 361,
-  "rows": 257,
-  "valid": 236,
-  "infra": 21,
-  "success": 129,
-  "score_sum": 135.33,
-  "rate_official": 35.73,
-  "rate_valid": 54.66,
+  "rows": 268,
+  "valid": 246,
+  "infra": 22,
+  "success": 132,
+  "score_sum": 138.33,
+  "rate_official": 36.57,
+  "rate_valid": 53.66,
   "infra_kinds": {
    "relay_error": 3,
-   "setup_failed": 17,
+   "setup_failed": 18,
    "eval_error": 1
   },
   "domains": {
    "libreoffice_impress": {
-    "tasks": 28,
-    "valid": 28,
+    "tasks": 31,
+    "valid": 31,
     "success": 5,
     "score_sum": 5.925318705016887,
     "infra": 0
    },
    "os": {
-    "tasks": 17,
-    "valid": 14,
+    "tasks": 18,
+    "valid": 15,
     "success": 8,
     "score_sum": 8.0,
     "infra": 3
    },
    "multi_apps": {
-    "tasks": 67,
-    "valid": 52,
-    "success": 23,
-    "score_sum": 26.488890566084056,
-    "infra": 15
+    "tasks": 70,
+    "valid": 54,
+    "success": 24,
+    "score_sum": 27.488890566084056,
+    "infra": 16
    },
    "libreoffice_writer": {
-    "tasks": 17,
-    "valid": 16,
+    "tasks": 18,
+    "valid": 17,
     "success": 13,
     "score_sum": 13.0,
     "infra": 1
@@ -50,10 +50,10 @@
     "infra": 0
    },
    "libreoffice_calc": {
-    "tasks": 36,
-    "valid": 35,
-    "success": 30,
-    "score_sum": 30.0,
+    "tasks": 37,
+    "valid": 36,
+    "success": 31,
+    "score_sum": 31.0,
     "infra": 1
    },
    "vlc": {
@@ -64,8 +64,8 @@
     "infra": 1
    },
    "chrome": {
-    "tasks": 34,
-    "valid": 34,
+    "tasks": 35,
+    "valid": 35,
     "success": 12,
     "score_sum": 12.932778548312529,
     "infra": 0
@@ -78,41 +78,41 @@
     "infra": 0
    },
    "thunderbird": {
-    "tasks": 9,
-    "valid": 9,
-    "success": 6,
-    "score_sum": 6.0,
+    "tasks": 10,
+    "valid": 10,
+    "success": 7,
+    "score_sum": 7.0,
     "infra": 0
    }
   },
   "stops": {
-   "agent": 221,
+   "agent": 229,
    "max_turns": 3,
-   "timeout": 12
+   "timeout": 14
   },
-  "turns_mean": 30.7,
+  "turns_mean": 30.5,
   "turns_median": 25.0,
-  "wall_mean_s": 644.9,
-  "wall_median_s": 333.8,
-  "wall_total_h": 44.12,
-  "tok_in": 11948439,
-  "tok_cache": 289983232,
-  "tok_out": 2129446,
-  "screenshots": 2137,
-  "tool_calls": 7665,
+  "wall_mean_s": 669.6,
+  "wall_median_s": 336.5,
+  "wall_total_h": 47.6,
+  "tok_in": 12451732,
+  "tok_cache": 298050048,
+  "tok_out": 2205161,
+  "screenshots": 2204,
+  "tool_calls": 7926,
   "tools": {
-   "run_command": 1956,
-   "run_actions": 1431,
-   "get_window_state": 1205,
-   "click": 934,
-   "set_plan": 516,
-   "list_windows": 441,
-   "press_key": 437,
-   "inspect": 278,
-   "check_done": 225,
-   "scroll": 92,
-   "type_text": 76,
-   "list_apps": 57,
+   "run_command": 2001,
+   "run_actions": 1477,
+   "get_window_state": 1253,
+   "click": 973,
+   "set_plan": 538,
+   "press_key": 466,
+   "list_windows": 457,
+   "inspect": 281,
+   "check_done": 233,
+   "scroll": 95,
+   "type_text": 77,
+   "list_apps": 58,
    "request_human": 12,
    "update_plan": 1,
    "mcp__gui_run_actions": 1,
@@ -123,41 +123,41 @@
   "request_human_calls": 12,
   "final_fail_answers": 26,
   "reviewer": {
-   "calls": 87,
+   "calls": 95,
    "decisions": {
-    "deny": 56,
-    "allow": 31
+    "deny": 59,
+    "allow": 36
    },
-   "ms_mean": 875.8,
-   "ms_median": 696.9
+   "ms_mean": 947.2,
+   "ms_median": 702.6
   },
   "roles": {
    "feasibility": {
-    "invocations": 236,
-    "http_calls": 1389,
+    "invocations": 246,
+    "http_calls": 1439,
     "errors": 5,
-    "ms_mean": 67009.3,
-    "ms_median": 55966.1,
-    "timed": 236,
-    "runs_using": 236
+    "ms_mean": 66618.7,
+    "ms_median": 55949.5,
+    "timed": 246,
+    "runs_using": 246
    },
    "planner": {
-    "invocations": 236,
-    "http_calls": 809,
+    "invocations": 246,
+    "http_calls": 847,
     "errors": 3,
     "ms_mean": null,
     "ms_median": null,
     "timed": 0,
-    "runs_using": 236
+    "runs_using": 246
    },
    "verifier": {
-    "invocations": 224,
-    "http_calls": 1563,
-    "errors": 12,
-    "ms_mean": 70547.5,
-    "ms_median": 54342.4,
-    "timed": 224,
-    "runs_using": 213
+    "invocations": 232,
+    "http_calls": 1629,
+    "errors": 13,
+    "ms_mean": 71343.5,
+    "ms_median": 55289.0,
+    "timed": 232,
+    "runs_using": 221
    },
    "judge": {
     "invocations": 0,
@@ -169,22 +169,22 @@
     "runs_using": 0
    },
    "search": {
-    "invocations": 4,
-    "http_calls": 4,
+    "invocations": 5,
+    "http_calls": 5,
     "errors": 0,
-    "ms_mean": 10413.8,
-    "ms_median": 9443.6,
-    "timed": 4,
-    "runs_using": 4
+    "ms_mean": 13897.6,
+    "ms_median": 10481.4,
+    "timed": 5,
+    "runs_using": 5
    },
    "compact": {
-    "invocations": 693,
-    "http_calls": 693,
+    "invocations": 713,
+    "http_calls": 713,
     "errors": 1,
-    "ms_mean": 10088.8,
-    "ms_median": 9240.0,
-    "timed": 693,
-    "runs_using": 192
+    "ms_mean": 10129.8,
+    "ms_median": 9266.0,
+    "timed": 713,
+    "runs_using": 199
    },
    "grounder": {
     "invocations": 9,
@@ -197,10 +197,10 @@
    }
   },
   "gate": {
-   "actions": 7303,
-   "executed": 7078,
-   "interventions": 225,
-   "human_events": 81,
+   "actions": 7534,
+   "executed": 7299,
+   "interventions": 235,
+   "human_events": 84,
    "loop_notes": 14,
    "loop_refused": 8
   }
@@ -27428,6 +27428,1133 @@
      "delivery_fallback": 1,
      "role": 3,
      "command": 4,
+     "check_done": 1,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "chrome-9f935cce-0a9f-435f-8007-817732bfc0a5",
+   "domain": "chrome",
+   "tag": "chrome-9f935cce-0a9f-435f-8007-817732bfc0a5-gate8-s0",
+   "attempts": 1,
+   "infra": null,
+   "stop": "agent",
+   "wall_s": 346.6,
+   "turns_monitor": 14,
+   "score": 0.0,
+   "success": false,
+   "final_fail": false,
+   "turns": 14,
+   "tool_calls": 14,
+   "screenshots": 5,
+   "tok_in": 36756,
+   "tok_cache": 283776,
+   "tok_out": 2236,
+   "pi_error": null,
+   "final": "DONE \u2014 Opened the existing Chromium window, found the DOJ Civil Division section via justice.gov/civil, clicked \"Public Documents\", and browsed the \"Documents and Forms\" list (Standard Form 95, Judgme",
+   "request_human": 0,
+   "tools": {
+    "set_plan": 2,
+    "list_windows": 1,
+    "run_actions": 2,
+    "get_window_state": 1,
+    "press_key": 1,
+    "inspect": 2,
+    "click": 1,
+    "scroll": 3,
+    "check_done": 1
+   },
+   "gate": {
+    "actions": 11,
+    "executed": 10,
+    "interventions": 1,
+    "decisions": {
+     "direct": 10,
+     "look_full": 1
+    },
+    "reviewer": [],
+    "reviewer_decisions": {},
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 5,
+      "errors": 0,
+      "ms": [
+       37226.6
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 2,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 1,
+      "http_calls": 9,
+      "errors": 0,
+      "ms": [
+       66486.0
+      ]
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 1,
+      "http_calls": 1,
+      "errors": 0,
+      "ms": [
+       6540.0
+      ]
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 0,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "plan": 2,
+     "briefing": 1,
+     "obs": 10,
+     "delivery_fallback": 1,
+     "action": 11,
+     "batch": 2,
+     "img": 4,
+     "inspect": 2,
+     "role": 2,
+     "retro_repeat": 1,
+     "check_done": 1,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "libreoffice_writer-b21acd93-60fd-4127-8a43-2f5178f4a830",
+   "domain": "libreoffice_writer",
+   "tag": "libreoffice_writer-b21acd93-60fd-4127-8a43-2f5178f4a830-gate8-s0",
+   "attempts": 1,
+   "infra": null,
+   "stop": "agent",
+   "wall_s": 1172.8,
+   "turns_monitor": 30,
+   "score": 0.0,
+   "success": false,
+   "final_fail": false,
+   "turns": 30,
+   "tool_calls": 31,
+   "screenshots": 9,
+   "tok_in": 109993,
+   "tok_cache": 1104384,
+   "tok_out": 12072,
+   "pi_error": null,
+   "final": "DONE \u2014 Created `/data/home/Desktop/essay.docx` with three 12 pt paragraphs: introduction single-spaced, body double-spaced, and conclusion at 1.5 spacing; it is open in LibreOffice Writer.",
+   "request_human": 0,
+   "tools": {
+    "set_plan": 2,
+    "list_apps": 1,
+    "list_windows": 4,
+    "press_key": 3,
+    "click": 4,
+    "get_window_state": 7,
+    "run_actions": 4,
+    "inspect": 1,
+    "run_command": 4,
+    "check_done": 1
+   },
+   "gate": {
+    "actions": 23,
+    "executed": 21,
+    "interventions": 2,
+    "decisions": {
+     "look_light": 1,
+     "direct": 21,
+     "ask_human": 1
+    },
+    "reviewer": [],
+    "reviewer_decisions": {},
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 4,
+      "errors": 0,
+      "ms": [
+       56041.0
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 3,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 1,
+      "http_calls": 7,
+      "errors": 0,
+      "ms": [
+       48146.3
+      ]
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 1,
+      "http_calls": 1,
+      "errors": 0,
+      "ms": [
+       27832.8
+      ]
+     },
+     "compact": {
+      "invocations": 2,
+      "http_calls": 2,
+      "errors": 0,
+      "ms": [
+       6392.0,
+       8598.0
+      ]
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 1,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "obs": 21,
+     "briefing": 1,
+     "plan": 2,
+     "action": 23,
+     "batch": 4,
+     "img": 9,
+     "delivery_fallback": 1,
+     "role": 4,
+     "inspect": 1,
+     "command": 3,
+     "retro_repeat": 1,
+     "tree_extra": 2,
+     "check_done": 1,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "thunderbird-d38192b0-17dc-4e1d-99c3-786d0117de77",
+   "domain": "thunderbird",
+   "tag": "thunderbird-d38192b0-17dc-4e1d-99c3-786d0117de77-gate8-s0",
+   "attempts": 1,
+   "infra": null,
+   "stop": "agent",
+   "wall_s": 366.5,
+   "turns_monitor": 14,
+   "score": 1.0,
+   "success": true,
+   "final_fail": false,
+   "turns": 14,
+   "tool_calls": 14,
+   "screenshots": 2,
+   "tok_in": 15112,
+   "tok_cache": 139648,
+   "tok_out": 1680,
+   "pi_error": null,
+   "final": "The attachment is confirmed in the compose window: attachment pane shows **1 Attachment (22.8 KB)** \u2192 `aws-bill.pdf` from `file:///data/home/aws-bill.pdf`, and Thunderbird is auto-saving it to Drafts.",
+   "request_human": 0,
+   "tools": {
+    "set_plan": 2,
+    "run_command": 1,
+    "list_windows": 2,
+    "get_window_state": 5,
+    "click": 2,
+    "run_actions": 1,
+    "check_done": 1
+   },
+   "gate": {
+    "actions": 6,
+    "executed": 6,
+    "interventions": 0,
+    "decisions": {
+     "direct": 6
+    },
+    "reviewer": [],
+    "reviewer_decisions": {},
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 4,
+      "errors": 0,
+      "ms": [
+       34830.0
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 1,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 1,
+      "http_calls": 9,
+      "errors": 0,
+      "ms": [
+       251112.2
+      ]
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 0,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "plan": 2,
+     "briefing": 1,
+     "command": 1,
+     "action": 6,
+     "obs": 9,
+     "delivery_fallback": 1,
+     "batch": 1,
+     "streak_hint": 1,
+     "img": 2,
+     "role": 1,
+     "check_done": 1,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "multi_apps-e2392362-125e-4f76-a2ee-524b183a3412",
+   "domain": "multi_apps",
+   "tag": "multi_apps-e2392362-125e-4f76-a2ee-524b183a3412-gate8-s0",
+   "attempts": 1,
+   "infra": null,
+   "stop": "agent",
+   "wall_s": 126.1,
+   "turns_monitor": 8,
+   "score": 1.0,
+   "success": true,
+   "final_fail": false,
+   "turns": 8,
+   "tool_calls": 10,
+   "screenshots": 0,
+   "tok_in": 11957,
+   "tok_cache": 75264,
+   "tok_out": 1876,
+   "pi_error": null,
+   "final": "DONE \u2014 In `~/Code/Website/academicpages.github.io/_config.yml` I set the site name anchor (`name : &name \"Test Account\"`), the sidebar `author.name : \"Test Account\"`, and `author.email : \"Test@gmail.c",
+   "request_human": 0,
+   "tools": {
+    "set_plan": 3,
+    "run_command": 5,
+    "list_windows": 1,
+    "check_done": 1
+   },
+   "gate": {
+    "actions": 5,
+    "executed": 5,
+    "interventions": 0,
+    "decisions": {
+     "direct": 5
+    },
+    "reviewer": [
+     936.1
+    ],
+    "reviewer_decisions": {
+     "allow": 1
+    },
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 4,
+      "errors": 0,
+      "ms": [
+       33882.0
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 2,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 1,
+      "http_calls": 6,
+      "errors": 0,
+      "ms": [
+       55256.5
+      ]
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 0,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "briefing": 1,
+     "command": 5,
+     "action": 5,
+     "plan": 2,
+     "obs": 1,
+     "role": 1,
+     "check_done": 1,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "libreoffice_impress-7dbc52a6-11e0-4c9a-a2cb-1e36cfda80d8",
+   "domain": "libreoffice_impress",
+   "tag": "libreoffice_impress-7dbc52a6-11e0-4c9a-a2cb-1e36cfda80d8-gate8-s0",
+   "attempts": 1,
+   "infra": null,
+   "stop": "timeout",
+   "wall_s": 3600.6,
+   "turns_monitor": 52,
+   "score": 0.0,
+   "success": false,
+   "final_fail": false,
+   "turns": 52,
+   "tool_calls": 55,
+   "screenshots": 20,
+   "tok_in": 90120,
+   "tok_cache": 2521344,
+   "tok_out": 16232,
+   "pi_error": null,
+   "final": "I'll start by checking the environment and what's on screen.",
+   "request_human": 0,
+   "tools": {
+    "set_plan": 2,
+    "list_windows": 2,
+    "get_window_state": 14,
+    "click": 12,
+    "press_key": 6,
+    "run_actions": 13,
+    "run_command": 5,
+    "type_text": 1
+   },
+   "gate": {
+    "actions": 47,
+    "executed": 43,
+    "interventions": 4,
+    "decisions": {
+     "direct": 43,
+     "look_full": 1,
+     "look_light": 1,
+     "ask_human": 1,
+     "deny": 1
+    },
+    "reviewer": [
+     1707.6,
+     681.6
+    ],
+    "reviewer_decisions": {
+     "deny": 2
+    },
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 5,
+      "errors": 0,
+      "ms": [
+       26609.3
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 1,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 5,
+      "http_calls": 5,
+      "errors": 0,
+      "ms": [
+       7058.0,
+       13616.0,
+       8102.0,
+       10178.0,
+       17480.0
+      ]
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 1,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "briefing": 1,
+     "obs": 45,
+     "plan": 1,
+     "img": 20,
+     "action": 47,
+     "streak_hint": 1,
+     "delivery_fallback": 1,
+     "command": 3,
+     "batch": 13,
+     "role": 5,
+     "tree_extra": 1,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "multi_apps-eb303e01-261e-4972-8c07-c9b4e7a4922a",
+   "domain": "multi_apps",
+   "tag": "multi_apps-eb303e01-261e-4972-8c07-c9b4e7a4922a-gate8-s0",
+   "attempts": 1,
+   "infra": null,
+   "stop": "agent",
+   "wall_s": 1032.9,
+   "turns_monitor": 38,
+   "score": 0.0,
+   "success": false,
+   "final_fail": false,
+   "turns": 38,
+   "tool_calls": 40,
+   "screenshots": 5,
+   "tok_in": 65664,
+   "tok_cache": 1221376,
+   "tok_out": 13428,
+   "pi_error": null,
+   "final": "DONE \u2014 Inserted the missing speaker remarks from notes.docx into the note sections of slides 1, 2, 3 and 6 (slides 4, 5, 7 were already done), left all seven notes intact, saved the deck in PowerPoint",
+   "request_human": 0,
+   "tools": {
+    "set_plan": 3,
+    "run_command": 14,
+    "list_windows": 1,
+    "get_window_state": 6,
+    "run_actions": 8,
+    "click": 5,
+    "press_key": 2,
+    "check_done": 1
+   },
+   "gate": {
+    "actions": 42,
+    "executed": 41,
+    "interventions": 1,
+    "decisions": {
+     "direct": 41,
+     "deny": 1
+    },
+    "reviewer": [
+     890.3,
+     6106.1,
+     945.5,
+     941.0,
+     1578.2
+    ],
+    "reviewer_decisions": {
+     "allow": 4,
+     "deny": 1
+    },
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 9,
+      "errors": 0,
+      "ms": [
+       110274.8
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 9,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 1,
+      "http_calls": 9,
+      "errors": 0,
+      "ms": [
+       40395.5
+      ]
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 4,
+      "http_calls": 4,
+      "errors": 0,
+      "ms": [
+       17631.0,
+       18852.0,
+       14830.0,
+       17441.0
+      ]
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 0,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "briefing": 1,
+     "command": 13,
+     "action": 42,
+     "plan": 2,
+     "obs": 19,
+     "img": 5,
+     "batch": 8,
+     "role": 5,
+     "delivery_fallback": 1,
+     "retro_repeat": 1,
+     "tree_extra": 1,
+     "check_done": 1,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "libreoffice_calc-a9f325aa-8c05-4e4f-8341-9e4358565f4f",
+   "domain": "libreoffice_calc",
+   "tag": "libreoffice_calc-a9f325aa-8c05-4e4f-8341-9e4358565f4f-gate8-s0",
+   "attempts": 1,
+   "infra": null,
+   "stop": "agent",
+   "wall_s": 521.4,
+   "turns_monitor": 17,
+   "score": 1.0,
+   "success": true,
+   "final_fail": false,
+   "turns": 17,
+   "tool_calls": 19,
+   "screenshots": 2,
+   "tok_in": 32179,
+   "tok_cache": 331904,
+   "tok_out": 3989,
+   "pi_error": null,
+   "final": "DONE \u2014 In LibreOffice Calc I filled C2:C29 (Clean Movie Titles) with =PROPER(TRIM(B2:B29)) results, pasted them back as static values, and saved Movie_title_garbage_clean.xlsx in place, leaving column",
+   "request_human": 0,
+   "tools": {
+    "set_plan": 2,
+    "run_command": 4,
+    "list_windows": 1,
+    "get_window_state": 2,
+    "run_actions": 5,
+    "press_key": 2,
+    "click": 2,
+    "check_done": 1
+   },
+   "gate": {
+    "actions": 27,
+    "executed": 27,
+    "interventions": 0,
+    "decisions": {
+     "direct": 27
+    },
+    "reviewer": [],
+    "reviewer_decisions": {},
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 6,
+      "errors": 0,
+      "ms": [
+       61372.2
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 3,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 1,
+      "http_calls": 9,
+      "errors": 0,
+      "ms": [
+       160266.7
+      ]
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 2,
+      "http_calls": 2,
+      "errors": 0,
+      "ms": [
+       8217.0,
+       14330.0
+      ]
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 0,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "command": 4,
+     "action": 27,
+     "briefing": 1,
+     "plan": 2,
+     "obs": 11,
+     "tree_extra": 10,
+     "img": 2,
+     "delivery_fallback": 1,
+     "batch": 5,
+     "role": 3,
+     "check_done": 1,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "libreoffice_impress-550ce7e7-747b-495f-b122-acdc4d0b8e54",
+   "domain": "libreoffice_impress",
+   "tag": "libreoffice_impress-550ce7e7-747b-495f-b122-acdc4d0b8e54-gate8-s0",
+   "attempts": 1,
+   "infra": null,
+   "stop": "agent",
+   "wall_s": 1584.9,
+   "turns_monitor": 39,
+   "score": 0.0,
+   "success": false,
+   "final_fail": false,
+   "turns": 39,
+   "tool_calls": 41,
+   "screenshots": 9,
+   "tok_in": 70008,
+   "tok_cache": 1459200,
+   "tok_out": 14727,
+   "pi_error": null,
+   "final": "DONE \u2014 In LibreOffice Impress (slide 2 \"Overview\", the club's semester to-do list), I selected the first two bullet lines (\"Introductions\" and \"Club Rights, Responsibilities & Resources\"), applied For",
+   "request_human": 0,
+   "tools": {
+    "set_plan": 2,
+    "list_windows": 2,
+    "get_window_state": 6,
+    "press_key": 8,
+    "run_command": 7,
+    "run_actions": 10,
+    "click": 5,
+    "check_done": 1
+   },
+   "gate": {
+    "actions": 46,
+    "executed": 44,
+    "interventions": 2,
+    "decisions": {
+     "direct": 44,
+     "ask_human": 1,
+     "look_full": 1
+    },
+    "reviewer": [],
+    "reviewer_decisions": {},
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 9,
+      "errors": 0,
+      "ms": [
+       103881.3
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 9,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 1,
+      "http_calls": 9,
+      "errors": 1,
+      "ms": [
+       62543.9
+      ]
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 4,
+      "http_calls": 4,
+      "errors": 0,
+      "ms": [
+       13409.0,
+       6970.0,
+       17201.0,
+       13318.0
+      ]
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 1,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "obs": 29,
+     "briefing": 1,
+     "plan": 2,
+     "img": 9,
+     "delivery_fallback": 1,
+     "action": 46,
+     "command": 6,
+     "batch": 10,
+     "role": 5,
+     "retro_repeat": 1,
+     "tree_extra": 1,
+     "check_done": 1,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "libreoffice_impress-841b50aa-df53-47bd-a73a-22d3a9f73160",
+   "domain": "libreoffice_impress",
+   "tag": "libreoffice_impress-841b50aa-df53-47bd-a73a-22d3a9f73160-gate8-s0",
+   "attempts": 1,
+   "infra": null,
+   "stop": "timeout",
+   "wall_s": 3600.6,
+   "turns_monitor": 28,
+   "score": 0.0,
+   "success": false,
+   "final_fail": false,
+   "turns": 28,
+   "tool_calls": 28,
+   "screenshots": 15,
+   "tok_in": 63097,
+   "tok_cache": 869888,
+   "tok_out": 8180,
+   "pi_error": "Request timed out.",
+   "final": "View menu is open. Selecting Notes view:",
+   "request_human": 0,
+   "tools": {
+    "set_plan": 1,
+    "list_windows": 2,
+    "get_window_state": 7,
+    "click": 8,
+    "press_key": 7,
+    "run_actions": 3
+   },
+   "gate": {
+    "actions": 19,
+    "executed": 19,
+    "interventions": 0,
+    "decisions": {
+     "direct": 19
+    },
+    "reviewer": [],
+    "reviewer_decisions": {},
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 2,
+      "errors": 0,
+      "ms": [
+       33805.6
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 2,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 2,
+      "http_calls": 2,
+      "errors": 0,
+      "ms": [
+       6508.0,
+       4279.0
+      ]
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 0,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "obs": 27,
+     "briefing": 1,
+     "plan": 1,
+     "img": 15,
+     "action": 19,
+     "delivery_fallback": 1,
+     "role": 2,
+     "batch": 3,
+     "shutdown": 1
+    }
+   }
+  },
+  {
+   "task": "multi_apps-ee9a3c83-f437-4879-8918-be5efbb9fac7",
+   "domain": "multi_apps",
+   "tag": "multi_apps-ee9a3c83-f437-4879-8918-be5efbb9fac7-gate8-s0",
+   "attempts": 1,
+   "infra": "setup_failed",
+   "stop": null,
+   "wall_s": null,
+   "turns_monitor": null,
+   "error": "Exception('Setup step 4 failed: _execute_setup - Setup command request failed: HTTP 500')"
+  },
+  {
+   "task": "os-5c1075ca-bb34-46a3-a7a0-029bd7463e79",
+   "domain": "os",
+   "tag": "os-5c1075ca-bb34-46a3-a7a0-029bd7463e79-gate8-s0",
+   "attempts": 1,
+   "infra": null,
+   "stop": "agent",
+   "wall_s": 176.4,
+   "turns_monitor": 8,
+   "score": 0.0,
+   "success": false,
+   "final_fail": false,
+   "turns": 8,
+   "tool_calls": 9,
+   "screenshots": 0,
+   "tok_in": 8407,
+   "tok_cache": 60032,
+   "tok_out": 1295,
+   "pi_error": null,
+   "final": "DONE \u2014 Found 3 `*failed.ipynb` files under `/data/home/test_environment` and copied them with `cp --parents` into `/data/home/fails`, preserving the hierarchy (`fails/test_environment/dir1/a_failed.ip",
+   "request_human": 0,
+   "tools": {
+    "set_plan": 3,
+    "run_command": 5,
+    "check_done": 1
+   },
+   "gate": {
+    "actions": 5,
+    "executed": 5,
+    "interventions": 0,
+    "decisions": {
+     "direct": 5
+    },
+    "reviewer": [],
+    "reviewer_decisions": {},
+    "roles": {
+     "feasibility": {
+      "invocations": 1,
+      "http_calls": 2,
+      "errors": 0,
+      "ms": [
+       76081.3
+      ]
+     },
+     "planner": {
+      "invocations": 1,
+      "http_calls": 6,
+      "errors": 0,
+      "ms": []
+     },
+     "verifier": {
+      "invocations": 1,
+      "http_calls": 8,
+      "errors": 0,
+      "ms": [
+       64856.5
+      ]
+     },
+     "judge": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "search": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "compact": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     },
+     "grounder": {
+      "invocations": 0,
+      "http_calls": 0,
+      "errors": 0,
+      "ms": []
+     }
+    },
+    "human_events": 0,
+    "loop_notes": 0,
+    "loop_refused": 0,
+    "events": {
+     "client": 1,
+     "command": 5,
+     "action": 5,
+     "briefing": 1,
+     "plan": 3,
+     "role": 1,
      "check_done": 1,
      "shutdown": 1
     }

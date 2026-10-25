@@ -1,0 +1,1 @@
+DONE — Inserted the missing speaker remarks from notes.docx into the note sections of slides 1, 2, 3 and 6 (slides 4, 5, 7 were already done), left all seven notes intact, saved the deck in PowerPoint format at /data/home/Desktop/lecture1-2021-with-ink.pptx and reloaded it in Impress (Notes view) so the file and the open window match.

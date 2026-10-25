@@ -94,3 +94,10 @@
 {"t": 271.042, "type": "message_start", "role": "assistant", "tool": null}
 {"t": 271.474, "type": "message_end", "role": "assistant", "tool": null}
 {"t": 271.474, "type": "tool_execution_start", "role": null, "tool": "mcp__gui__check_done"}
+{"t": 337.962, "type": "tool_execution_end", "role": null, "tool": "mcp__gui__check_done"}
+{"t": 337.962, "type": "message_start", "role": "toolResult", "tool": null}
+{"t": 337.962, "type": "message_end", "role": "toolResult", "tool": null}
+{"t": 337.962, "type": "turn_start", "role": null, "tool": null}
+{"t": 345.81, "type": "message_start", "role": "assistant", "tool": null}
+{"t": 346.21, "type": "message_end", "role": "assistant", "tool": null}
+{"t": 346.225, "type": "agent_end", "role": null, "tool": null}
