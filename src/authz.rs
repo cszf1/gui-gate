@@ -6,6 +6,8 @@
 //!  * explicit wording: the task names the hazard and, when the action has a concrete file target, that file.
 //! Also: a hazard class per risk reason, to pick a safe alternative when the action is denied
 //! (deny-and-continue) and to remember denied effects.
+use crate::effect::{digest, EffectKey};
+use crate::features::ActionCtx;
 use crate::sidefx::{basename, splitext_ext};
 use regex::Regex;
 use std::sync::OnceLock;
@@ -25,9 +27,6 @@ fn auth_words(hz: &str) -> Option<&'static [&'static str]> {
         _ => return None,
     })
 }
-
-/// Hazards a request typed into gate_task by the agent itself cannot authorize (only --task / GUI_GATE_TASK can).
-pub const OPERATOR_ONLY: &[&str] = &["send", "purchase", "permissions", "power", "install", "logout", "command"];
 
 fn file_in_reason() -> &'static Regex {
     static R: OnceLock<Regex> = OnceLock::new();
@@ -138,16 +137,72 @@ pub fn affirmed_hit(word: &str, text: &str) -> bool {
     }
 }
 
-/// (authorized?, why). Never authorizes when there is no task text, except the working document.
-pub fn authorized(reason: &str, task: &str, _label: &str, dialog_text: &str, titles: &[String]) -> (bool, String) {
-    let hz = hazard_of(reason);
-    let tf = target_file(reason, dialog_text);
-    if hz == "overwrite" && is_open_document(tf.as_deref(), titles) {
-        return (true, format!("replaces the document that is open in this app ({})", basename(tf.as_deref().unwrap())));
+/// Path-like words of the request ("~/a/report.txt", "/tmp/x/a", "Desktop/report.pdf"), quotes and trailing
+/// punctuation stripped, URLs skipped.
+fn path_words(task: &str) -> Vec<String> {
+    task.split(|c: char| c.is_whitespace() || "\"'“”‘’`,;()<>[]{}".contains(c))
+        .map(|w| w.trim_end_matches(|c: char| ".:!?。，；：".contains(c)).to_string())
+        .filter(|w| w.contains('/') && !w.contains("://") && w.len() > 1)
+        .collect()
+}
+
+/// Is this file resource named by the request? (covered?, why-not)
+fn file_named(res: &str, task_l: &str, cwd: Option<&str>) -> Result<(), String> {
+    let (kind, val) = res.split_once(':').unwrap_or(("", res));
+    let base = val.trim_end_matches('/').rsplit('/').next().unwrap_or("").to_lowercase();
+    if base.is_empty() {
+        return Err(format!("cannot tell which file {val} is"));
+    }
+    let stem_ok = |t: &str| {
+        let ext = splitext_ext(&base);
+        let stem = &base[..base.len() - ext.len()];
+        t.contains(&base) || (stem.chars().count() >= 3 && !ext.is_empty() && t.contains(stem))
+    };
+    if kind == "path" {
+        // a path in the request with this basename must be this very path (the same name elsewhere is another file)
+        let anchor = cwd.map(String::from).unwrap_or_else(crate::util::home);
+        let mut same_name = vec![];
+        for w in path_words(task_l) {
+            if w.trim_end_matches('/').rsplit('/').next().unwrap_or("") != base {
+                continue;
+            }
+            let abs = crate::sidefx::canon(&crate::sidefx::p(&w, &anchor)).to_lowercase();
+            let rel_tail = format!("/{}", w.trim_start_matches("./").trim_end_matches('/'));
+            if abs == val.to_lowercase() || (!w.starts_with('/') && !w.starts_with('~') && val.to_lowercase().ends_with(&rel_tail)) {
+                return Ok(());
+            }
+            same_name.push(w);
+        }
+        if let Some(w) = same_name.first() {
+            return Err(format!("the request names {w}, which is not {val} (same name, another folder)"));
+        }
+    }
+    if stem_ok(task_l) {
+        Ok(())
+    } else {
+        Err(format!("the request does not name {base}"))
+    }
+}
+
+/// (authorized?, why). Only the operator's request (--task / GUI_GATE_TASK) is passed here; what the agent stated
+/// itself never is. Authorized only when the request affirms the hazard AND names every file the structured effect
+/// acts on (a path the request spells out must be this very path). An effect without a file the gate can match
+/// (a "Send" button, a "Delete" control, a command without a resolvable target) is never covered by wording alone:
+/// the reviewer (medium risk) or a person (high risk) decides. The working-document exception (replacing the file that
+/// is open in this very app) needs no wording.
+pub fn authorized(key: &EffectKey, task: &str, titles: &[String], cwd: Option<&str>) -> (bool, String) {
+    let hz = key.hazard.as_str();
+    if hz == "overwrite" {
+        for r in key.files() {
+            let v = r.split_once(':').map(|x| x.1).unwrap_or(r);
+            if is_open_document(Some(v), titles) {
+                return (true, format!("replaces the document that is open in this app ({})", basename(v)));
+            }
+        }
     }
     let t = norm(task);
     if t.is_empty() {
-        return (false, "no user request known to the gate".into());
+        return (false, "no user request from the operator (--task) is known to the gate".into());
     }
     let Some(words) = auth_words(hz) else {
         return (false, "this kind of action is never authorized by wording alone".into());
@@ -158,15 +213,17 @@ pub fn authorized(reason: &str, task: &str, _label: &str, dialog_text: &str, tit
         }
         return (false, format!("the request does not ask to {hz}"));
     };
-    if let Some(tf) = tf {
-        let base = basename(&tf).to_lowercase();
-        let ext = splitext_ext(&base);
-        let stem = base[..base.len() - ext.len()].to_string();
-        if !t.contains(&base) && !(stem.chars().count() >= 3 && t.contains(&stem)) {
-            return (false, format!("the request says \"{hit}\" but does not name {}", basename(&tf)));
+    let files = key.files();
+    if files.is_empty() {
+        return (false, format!("the request says \"{hit}\" but the gate cannot match what this action acts on to the request (no file it can resolve), so the words alone do not cover it"));
+    }
+    for f in &files {
+        if let Err(why) = file_named(f, &t, cwd) {
+            return (false, format!("the request says \"{hit}\" but {why}"));
         }
     }
-    (true, format!("the request explicitly says \"{hit}\""))
+    let names: Vec<String> = files.iter().take(3).map(|f| basename(f.split_once(':').map(|x| x.1).unwrap_or(f))).collect();
+    (true, format!("the request explicitly says \"{hit}\" and names {}", names.join(", ")))
 }
 
 pub fn alternative_for(hz: &str) -> &'static str {
@@ -197,64 +254,145 @@ pub fn alternative(reason: &str) -> &'static str {
     alternative_for(hazard_of(reason))
 }
 
-/// What the action would do, independent of the route (dialog button, Enter key, terminal).
-pub fn effect_key(reason: &str, dialog_text: &str) -> String {
-    let hz = hazard_of(reason);
-    match target_file(reason, dialog_text) {
-        Some(tf) => format!("{hz}:{}", basename(&tf).to_lowercase()),
-        None => format!("{hz}:{}", crate::util::trunc(&norm(reason), 80)),
+/// The structured effect of a risky (or hand-off) action: hazard from the rule that fired, resources from the disk
+/// checks (`targets`, canonical paths), else the file the dialog's own words name, else the control or command.
+/// `line`: in a terminal, the command line Enter would submit (part of the payload).
+pub fn effect_of(ctx: &ActionCtx, targets: &[String], dialog_text: &str, line: Option<&str>) -> EffectKey {
+    let reason = ctx.risk.clone().or(ctx.handoff.clone()).unwrap_or_default();
+    let hazard = if ctx.risk.is_none() && ctx.handoff.is_some() { "secret" } else { hazard_of(&reason) };
+    let mut resources: Vec<String> = targets.iter().map(|t| format!("path:{t}")).collect();
+    if resources.is_empty() {
+        if let Some(tf) = target_file(&reason, dialog_text) {
+            if tf.starts_with('/') {
+                resources.push(format!("path:{}", crate::sidefx::canon(&tf)));
+            } else {
+                resources.push(format!("name:{}", basename(&tf).to_lowercase()));
+            }
+        }
     }
+    let cmd = if ctx.tool == "run_command" { crate::util::pystr(ctx.args.get("command")) } else { String::new() };
+    if resources.is_empty() {
+        let t = &ctx.target;
+        if ctx.tool == "run_command" {
+            resources.push(format!("cmd:{}", digest(&norm(&cmd))));
+        } else if let Some(l) = line.filter(|l| !l.trim().is_empty()) {
+            resources.push(format!("cmd:{}", digest(&norm(l))));
+        } else if !t.the_label().is_empty() || !t.the_role().is_empty() {
+            resources.push(format!("elem:{}|{}", norm(t.the_role()), norm(t.the_label())));
+        } else {
+            resources.push(format!("none:{}|{}", ctx.tool, norm(&reason)));
+        }
+    }
+    resources.sort();
+    resources.dedup();
+    let a = &ctx.args;
+    let typed = if crate::util::truthy(a.get("text")) { crate::util::pystr(a.get("text")) } else { crate::util::pystr(a.get("value")) };
+    let keys = a.get("keys").map(|k| k.to_string()).unwrap_or_default() + &crate::util::pystr(a.get("key")) + &a.get("modifiers").map(|k| k.to_string()).unwrap_or_default();
+    let payload_src = format!("{cmd}\u{1}{typed}\u{1}{keys}\u{1}{}\u{1}{}", line.unwrap_or(""), crate::util::pystr(a.get("cwd")));
+    let payload = if payload_src.chars().all(|c| c == '\u{1}') { String::new() } else { digest(&payload_src) };
+    EffectKey {
+        tool: ctx.tool.clone(), hazard: hazard.to_string(), resources,
+        app: if ctx.tool == "run_command" { None } else { ctx.target.pid },
+        window: if ctx.tool == "run_command" { None } else { ctx.target.window_id },
+        payload,
+    }
+}
+
+/// The key of a command-line effect (the offline audits and tests use it): (level, reason, targets) from sidefx.
+pub fn command_key(eff: &crate::sidefx::Effect, cmd: &str) -> EffectKey {
+    let ctx = ActionCtx { tool: "run_command".into(), args: serde_json::json!({"command": cmd}), risk: Some(eff.1.clone()), risk_level: Some(eff.0.clone()), ..Default::default() };
+    effect_of(&ctx, &eff.2, "", None)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::features::Target;
+
+    fn ctx(reason: &str, label: &str) -> ActionCtx {
+        ActionCtx { tool: "click".into(), args: serde_json::json!({}), risk: Some(reason.into()), risk_level: Some("high".into()),
+                    target: Target { kind: "token".into(), pid: Some(7), window_id: Some(3), label: label.into(), role: "button".into(), ..Default::default() },
+                    ..Default::default() }
+    }
+    fn key(reason: &str, dialog: &str, targets: &[&str]) -> EffectKey {
+        effect_of(&ctx(reason, ""), &targets.iter().map(|s| s.to_string()).collect::<Vec<_>>(), dialog, None)
+    }
+    fn auth(reason: &str, task: &str, targets: &[&str]) -> bool {
+        authorized(&key(reason, "", targets), task, &[], None).0
+    }
 
     #[test]
     fn working_document_and_wording() {
         let titles = vec!["report.pdf - Viewer".to_string()];
-        let (ok, why) = authorized("\"Yes\" confirms replacing an existing file", "", "Yes",
-                                   "A file named \"report.pdf\" already exists.", &titles);
+        let (ok, why) = authorized(&key("\"Yes\" confirms replacing an existing file", "A file named \"report.pdf\" already exists.", &[]), "", &titles, None);
         assert!(ok, "{why}");
         let r = "saving here would replace the existing file /home/u/Desktop/report.pdf";
-        assert!(!authorized(r, "Export the current document into PDF, keep the file name", "", "", &[]).0);
-        assert!(authorized(r, "Export it as PDF and overwrite report.pdf", "", "", &[]).0);
-        assert!(!authorized(r, "Export it as PDF to the Desktop", "", "", &[]).0);
+        let t = &["/home/u/Desktop/report.pdf"];
+        assert!(!auth(r, "Export the current document into PDF, keep the file name", t));
+        assert!(auth(r, "Export it as PDF and overwrite report.pdf", t));
+        assert!(auth(r, "Export it as PDF and overwrite ~/Desktop/report.pdf", t) || crate::util::home() != "/home/u");
+        assert!(auth(r, "Export it as PDF and overwrite Desktop/report.pdf", t));
+        assert!(!auth(r, "Export it as PDF and overwrite /home/u/Documents/report.pdf", t), "same name, another folder");
+        assert!(!auth(r, "Export it as PDF to the Desktop", t));
         let cp = "`cp` would overwrite existing file(s): dir2/file1";
-        assert!(!authorized(cp, "Copies file 'file1' to each of directories 'dir1', 'dir2', 'dir3'.", "", "", &[]).0);
+        assert!(!auth(cp, "Copies file 'file1' to each of directories 'dir1', 'dir2', 'dir3'.", &["/tmp/x/dir2/file1"]));
         assert!(alternative(cp).starts_with("do not overwrite it: copy"));
-        assert!(!authorized("\"Delete file\" (delete)", "", "", "", &[]).0);
+        assert!(!auth("\"Delete file\" (delete)", "", &[]));
+    }
+
+    #[test]
+    fn wording_without_a_matchable_target_is_not_enough() {
+        // a "Send"/"Delete" control: the gate cannot match its object to the request, so words alone never cover it
+        let r = "\"Send\" (send)";
+        assert!(!auth(r, "reply to Bob and send it", &[]));
+        let (ok, why) = authorized(&key("\"Delete file\" (delete)", "", &[]), "Please delete the file in this window", &[], None);
+        assert!(!ok);
+        assert!(why.contains("cannot match"), "{why}");
+        // a named file is covered
+        assert!(auth("`rm` deletes report.txt", "delete report.txt", &["/tmp/w/a/report.txt"]));
+        assert!(auth("`rm` deletes report.txt", "delete /tmp/w/a/report.txt", &["/tmp/w/a/report.txt"]));
+        assert!(!auth("`rm` deletes report.txt", "delete /tmp/w/b/report.txt", &["/tmp/w/a/report.txt"]));
+        // every file the effect touches must be named
+        assert!(!auth("`rm` deletes a.txt b.txt", "delete a.txt", &["/tmp/w/a.txt", "/tmp/w/b.txt"]));
     }
 
     #[test]
     fn negated_wording_does_not_authorize() {
-        let r = "\"Send\" (send)";
-        assert!(!authorized(r, "draft a reply to Bob, do not send it yet", "", "", &[]).0);
-        assert!(!authorized(r, "Write the email but don't send it", "", "", &[]).0);
-        assert!(!authorized(r, "回复 Bob，先不要发送", "", "", &[]).0);
-        assert!(authorized(r, "reply to Bob and send it", "", "", &[]).0);
-        assert!(authorized(r, "do not wait, send it now", "", "", &[]).0);
-        assert!(authorized(r, "写好后发送给 Bob", "", "", &[]).0);
-        assert!(authorized(r, "send it before 5 pm", "", "", &[]).0);
-        assert!(!authorized("\"Delete file\" (delete)", "Rename the file; never delete anything", "", "", &[]).0);
+        let t = &["/tmp/w/notes.txt"];
+        let r = "`rm` deletes notes.txt";
+        assert!(!auth(r, "tidy notes.txt, do not delete it", t));
+        assert!(!auth(r, "Edit notes.txt but don't remove it", t));
+        assert!(!auth(r, "整理 notes.txt，先不要删除", t));
+        assert!(auth(r, "delete notes.txt", t));
+        assert!(auth(r, "do not wait, delete notes.txt now", t));
+        assert!(auth(r, "把 notes.txt 删除", t));
+        assert!(!auth(r, "Rename notes.txt; never delete anything", t));
+        // the clause logic itself
+        assert!(affirmed_hit("send", "reply to bob and send it"));
+        assert!(!affirmed_hit("send", "draft a reply to bob, do not send it yet"));
+        assert!(!affirmed_hit("发送", "回复 bob，先不要发送"));
     }
 
     #[test]
-    fn same_effect_same_key() {
-        let a = effect_key("saving here would replace the existing file /home/u/a.pdf", "");
-        let b = effect_key("\"Yes\" confirms replacing an existing file", "A file named \"a.pdf\" already exists.");
-        assert_eq!(a, b);
+    fn same_effect_across_routes() {
+        let a = key("saving here would replace the existing file /home/u/a.pdf", "", &["/home/u/a.pdf"]);
+        let b = key("\"Yes\" confirms replacing an existing file", "A file named \"a.pdf\" already exists.", &[]);
+        assert!(a.denial_covers(&b) && b.denial_covers(&a));
+        let c = key("saving here would replace the existing file /home/v/a.pdf", "", &["/home/v/a.pdf"]);
+        assert!(!a.denial_covers(&c), "same basename in another folder");
     }
 
     #[test]
     fn moving_existing_data_needs_the_words() {
         let r = "`mv` would move the existing instructor-embedding away (to instructor-embedding.KEEP.bak); it is no longer where it was";
         assert_eq!(hazard_of(r), "move");
-        assert!(!authorized(r, "Please help me clone the repo \"https://github.com/xlang-ai/instructor-embedding\" to /home/user.", "", "", &[]).0);
-        assert!(authorized(r, "I have a directory named \"todo_list_Jan_1\". Can you help me change its name into \"todo_list_Jan_2\"?", "", "", &[]).0);
-        assert!(authorized(r, "Rename the folder a to b", "", "", &[]).0);
-        assert!(authorized(r, "把 a 文件夹重命名为 b", "", "", &[]).0);
-        assert!(!authorized(r, "clone it but do not move anything", "", "", &[]).0);
+        let t = &["/home/user/instructor-embedding"];
+        assert!(!auth(r, "Please help me clone the repo \"https://github.com/xlang-ai/instructor-embedding\" to /home/user.", t));
+        let t2 = &["/tmp/w/todo_list_Jan_1"];
+        assert!(auth(r, "I have a directory named \"todo_list_Jan_1\". Can you help me change its name into \"todo_list_Jan_2\"?", t2));
+        assert!(auth(r, "Rename the folder todo_list_Jan_1 to b", t2));
+        assert!(auth(r, "把 todo_list_Jan_1 文件夹重命名为 b", t2));
+        assert!(!auth(r, "clone it but do not move anything", t2));
         assert!(alternative(r).starts_with("do not move"));
         assert!(alternative("`mv` would overwrite existing file(s): a").starts_with("do not overwrite"));
     }

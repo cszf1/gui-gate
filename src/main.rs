@@ -10,6 +10,7 @@ mod atspi;
 mod authz;
 mod batch;
 mod decide;
+mod effect;
 mod features;
 mod human;
 mod install;
