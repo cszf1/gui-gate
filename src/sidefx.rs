@@ -44,7 +44,8 @@ re!(overwrite_ctx, r"(?i)(already exists|do you want to (replace|overwrite)|repl
 re!(in_document_ctx, r"(?i)(pasting data into cells|cells that already contain|overwrite the existing data|replace the (current )?selection|单元格.*已有数据|覆盖现有数据)");
 re!(file_words, r#"(?i)(\bfile\b|\bfolder\b|\.[a-z0-9]{2,5}\b["'”]?\s*already exists|文件)"#);
 re!(terminal_comm, r"(?i)(term|konsole|tilix|alacritty|kitty|wezterm|guake|terminator|foot|sakura)");
-re!(value_rx, r#"value=\\?"([^"\\]{1,400})\\?""#);
+// (backslashes allowed inside: Windows folder paths; an escaped closing quote \" still ends the value)
+re!(value_rx, r#"value=\\?"([^"]{1,400}?)\\?""#);
 re!(ext_rx, r"\(\*?\.([A-Za-z0-9]{1,6})\)");
 re!(chmod_mode, r"^0?[0-7]{3,4}$");
 re!(digits_dots, r"^[0-9.]+$");
@@ -871,6 +872,8 @@ pub fn save_dialog_target(text: &str) -> Option<String> {
         if v.is_empty() || v.chars().count() > 300 || digits_dots().is_match(&v) {
             continue;
         }
+        // a tree that escapes backslashes shows C:\\\\Users: one is meant
+        let v = if win_abs(&v) && v.contains("\\\\") { v.replace("\\\\", "\\") } else { v };
         let pth = expanduser(&v);
         // a Windows file dialog shows "C:\\Users\\..." (or a UNC "\\\\server\\share"): absolute too
         if pth.starts_with('/') || win_abs(&pth) {
