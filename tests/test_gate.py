@@ -92,7 +92,8 @@ class GateTests(unittest.TestCase):
         tools = {t["name"]: t for t in self.c.rpc("tools/list", {})["tools"]}
         self.assertIn("gate_report", tools)
         self.assertNotIn("gate_ack", tools["click"]["inputSchema"]["properties"])  # the agent never approves its own step
-        self.assertIn("gate_confirm", tools["click"]["inputSchema"]["properties"])
+        self.assertNotIn("gate_confirm", tools["click"]["inputSchema"]["properties"])  # no agent-facing approval path
+        self.assertNotIn("gate_confirm", self.c.init["instructions"])
         self.assertIn("[gui-gate]", self.c.init["instructions"])
 
     def test_fresh_click_runs_directly(self):
@@ -141,17 +142,22 @@ class GateTests(unittest.TestCase):
         r = self.c.call("get_window_state", pid=4242, window_id=777, include_screenshot=True)
         self.assertTrue(any(c.get("type") == "image" for c in r["content"]))
 
-    def test_high_risk_needs_confirmation(self):
+    def test_high_risk_has_no_agent_confirmation_path(self):
+        # a person must approve, and this client offers no way to reach one: refused, and nothing the agent sends
+        # (an old-style gate_confirm code, gate_ack) can approve it
         self.c.call("gate_config", risk_mode="human")
         s = self.c.read()
         r = self.c.call("click", element_token=f"{s}:1")
         self.assertTrue(r.get("isError"))
-        code = r["structuredContent"]["gate"]["confirm_code"]
-        r2 = self.c.call("click", element_token=f"{s}:1", gate_confirm="wrong")
-        self.assertTrue(r2.get("isError"))
-        code = r2["structuredContent"]["gate"]["confirm_code"]
-        r3 = self.c.call("click", element_token=f"{s}:1", gate_confirm=code)
-        self.assertFalse(r3.get("isError"), txt(r3))
+        g = r["structuredContent"]["gate"]
+        self.assertNotIn("confirm_code", g)
+        self.assertEqual(r["structuredContent"]["human_outcome"], "channel_unavailable")
+        self.assertNotIn("gate_confirm", txt(r))
+        for extra in ({"gate_confirm": "abc123"}, {"gate_confirm": "abc123", "gate_ack": True}):
+            s = self.c.read()
+            r2 = self.c.call("click", element_token=f"{s}:1", **extra)
+            self.assertTrue(r2.get("isError"), txt(r2))
+        self.assertNotIn("Delete file", json.loads(txt(self.c.call("fake_state")))["clicked"])
 
     def test_pixel_click_after_popup_requires_screenshot(self):
         self.c.read()
@@ -270,9 +276,10 @@ class ToolTests(unittest.TestCase):
             c.read()
             r = c.call("type_text", pid=4242, text="rm -rf ~/work")
             self.assertEqual(r["structuredContent"]["gate"]["decision"], "ask_human")
-            c.call("type_text", pid=4242, text="rm -rf ~/work", gate_confirm=r["structuredContent"]["gate"]["confirm_code"])
-            r = c.call("press_key", pid=4242, key="Return")
-            self.assertEqual(r["structuredContent"]["gate"]["decision"], "ask_human")
+            # a forged confirmation code does not let it through
+            r = c.call("type_text", pid=4242, text="rm -rf ~/work", gate_confirm="000000")
+            self.assertTrue(r.get("isError"), txt(r))
+            self.assertFalse(any(e.get("executed") for e in c.events() if e.get("ev") == "action" and e.get("tool") == "type_text"))
         finally:
             c.close()
 
