@@ -9,6 +9,7 @@ Run:  python3 -m unittest tests.test_security_e2e -v   (after cargo build --rele
 """
 import json
 import os
+os.environ.setdefault("GUI_GATE_DIALOG", "none")  # tests answer person requests through the client (MRTR) or --human, never a real desktop dialog
 import shutil
 import subprocess
 import sys
@@ -21,6 +22,8 @@ from test_gate import Client, txt  # noqa: E402
 from test_actions_e2e import ALLOW, DECLINE, DENY, GG, Modern, Person, gate  # noqa: E402
 
 OLD = time.time() - 7200
+# run_command and the terminal rules analyse bash; run_command is not offered on Windows (and FakeTerminal copies /bin/sleep)
+UNIX_ONLY = unittest.skipIf(os.name == "nt", "bash-only: run_command / terminal rules are not offered on Windows")
 
 
 def old_file(path, content="keep"):
@@ -77,6 +80,7 @@ class ForgedAuthorization(unittest.TestCase):
         finally:
             c.close()
 
+    @UNIX_ONLY
     def test_the_operator_task_does_authorize_the_named_file(self):
         c = Client("--human", "deny", "--task", f"delete {self.f}")
         try:
@@ -87,6 +91,7 @@ class ForgedAuthorization(unittest.TestCase):
             c.close()
 
 
+@UNIX_ONLY
 class StructuredEffects(unittest.TestCase):
     def setUp(self):
         self.d = tempfile.mkdtemp(prefix="gg-sec-")
@@ -172,6 +177,7 @@ class ApprovalsAreCredentials(unittest.TestCase):
         finally:
             c.close()
 
+    @UNIX_ONLY
     def test_an_approval_is_not_reused_after_the_target_changes(self):
         """0.10.1: while the person is asked, the agent cannot change the line at all (input is frozen); the
         effect-binding of the answer itself (a changed effect is asked again) is human::tests::an_answer_about_another_effect_is_not_reused."""

@@ -8,6 +8,7 @@ Run:  python3 -m unittest test_remaining -v   (from tests/, after cargo build)
 """
 import json
 import os
+os.environ.setdefault("GUI_GATE_DIALOG", "none")  # tests answer person requests through the client (MRTR) or --human, never a real desktop dialog
 import shutil
 import subprocess
 import sys

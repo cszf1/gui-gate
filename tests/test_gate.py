@@ -4,6 +4,7 @@ Run:  python3 -m unittest discover -s tests -v
 """
 import json
 import os
+os.environ.setdefault("GUI_GATE_DIALOG", "none")  # tests answer person requests through the client (MRTR) or --human, never a real desktop dialog
 os.environ.setdefault("GUI_GATE_NO_UPDATE_CHECK", "1")  # unit tests never touch the network
 import re
 import subprocess

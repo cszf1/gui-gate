@@ -4,6 +4,7 @@ endpoint here (no paid API is ever called by the tests)."""
 import http.server
 import json
 import os
+os.environ.setdefault("GUI_GATE_DIALOG", "none")  # tests answer person requests through the client (MRTR) or --human, never a real desktop dialog
 import sys
 import shutil
 import tempfile

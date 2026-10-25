@@ -1,6 +1,7 @@
 """Upgrade hygiene: after `gui-gate cleanup` nothing an older version left behind remains (fake HOME)."""
 import json
 import os
+os.environ.setdefault("GUI_GATE_DIALOG", "none")  # tests answer person requests through the client (MRTR) or --human, never a real desktop dialog
 import shutil
 import stat
 import subprocess

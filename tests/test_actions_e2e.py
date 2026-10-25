@@ -8,6 +8,7 @@ Run:  python3 -m unittest tests.test_actions_e2e -v   (after cargo build)
 """
 import json
 import os
+os.environ.setdefault("GUI_GATE_DIALOG", "none")  # tests answer person requests through the client (MRTR) or --human, never a real desktop dialog
 import subprocess
 import sys
 import tempfile
@@ -497,6 +498,7 @@ class BoundaryTests(unittest.TestCase):
         finally:
             c.close()
 
+    @unittest.skipIf(os.name == "nt", "run_command is not offered on Windows")
     def test_commands_do_not_inherit_secrets(self):
         c = Modern("--human", "deny", env={"GUI_GATE_RUN_COMMAND": "1", "GUI_PI_HUMAN_TOKEN": "tok-should-not-leak",
                                            "MY_API_KEY": "sk-should-not-leak"})
