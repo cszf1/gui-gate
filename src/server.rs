@@ -30,6 +30,25 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 const CORE_TOOLS: &[&str] = &["list_apps", "list_windows", "get_window_state", "launch_app", "bring_to_front", "click",
     "double_click", "right_click", "type_text", "press_key", "hotkey", "scroll", "set_value", "drag", "invoke_menu",
     "gate_report", "request_human", "gate_task", "run_actions", "run_command", "check_done", "set_plan"];
+/// Tools the gate answers itself (never sent to the driver as such). Every other name is a driver tool: read-only
+/// only when features::is_read_only says so, otherwise an action.
+pub const GATE_LOCAL: &[&str] = &["gate_report", "gate_config", "request_human", "gate_task", "check_done", "set_plan",
+    "run_actions", "inspect", "gate_next_step", "gate_reset", "__triple_click"];
+/// Client-only tools (never listed to the model): the client marks its own calls with this `_meta` key = true.
+pub const CLIENT_META: &str = "io.github.cszf1/gui-gate/client";
+
+/// A tool call that would send input or change state (frozen while a person is answering).
+pub fn is_action_call(name: &str) -> bool {
+    !GATE_LOCAL.contains(&name) && is_driver_action(name) || name == "run_actions" || name == "__triple_click"
+}
+
+/// The result when automatic input is frozen because a person is answering a request from the gate.
+pub fn frozen_result(name: &str) -> Value {
+    json!({"isError": true,
+        "content": [{"type": "text", "text": format!("[gate] Not executed: a person is answering a request from the gate right now (approval, question, takeover or help). No automatic input (`{name}`) is sent until they finish; wait for their answer, then read the window.")}],
+        "structuredContent": {"gate": {"decision": "deny", "tier": "freeze", "executed": false, "reason": "a person is answering"}}})
+}
+
 const RARE_PARAMS: &[&str] = &["session", "capture_mode", "screenshot_out_file", "verbose", "full_output", "display_only",
     "cursor_id", "delivery_mode", "scope", "from_zoom", "capture_id", "timeout_ms", "max_image_dimension", "target"];
 const AUTO_OBS_TOOLS: &[&str] = &["click", "double_click", "right_click", "press_key", "hotkey", "scroll", "invoke_menu", "drag"];
@@ -500,6 +519,8 @@ pub fn short(text: &str, limit: usize) -> String {
 ///   executed (the driver ran it; isError tells whether it reported a failure), blocked (the gate ran nothing),
 ///   partial (run_actions stopped after some steps; batch.executed says how many ran), done (a non-GUI tool answered).
 const PERMIT_TTL_S: f64 = 30.0;
+/// The fixed reasoning budget hint an extra_reason refusal carries (the client may map it to its model's thinking budget).
+pub const REASON_BUDGET_TOKENS: i64 = 1024;
 
 /// The result of an action whose outcome the gate cannot know (status "unknown").
 pub fn unknown_result(name: &str, why: &str) -> Value {
@@ -523,7 +544,7 @@ pub fn set_status(name: &str, r: &mut Value) {
         "blocked"
     } else if let Some(b) = sc.get("batch") {
         if b.get("stopped").map(|x| !x.is_null()).unwrap_or(false) { if as_i64(b.get("executed")).unwrap_or(0) > 0 { "partial" } else { "blocked" } } else { "executed" }
-    } else if is_gated(name) {
+    } else if is_gated(name) || (is_passthrough_action(name) && !GATE_LOCAL.contains(&name)) {
         if text_of(r).starts_with("[gate] Not executed") { "blocked" } else { "executed" }
     } else {
         "done"
@@ -585,6 +606,10 @@ pub fn nearest(old: &Element, cands: Vec<Element>) -> Vec<Element> {
 
 pub fn ids_of(sig: Option<&str>) -> HashSet<String> {
     sig.unwrap_or("").split(';').filter(|x| !x.is_empty()).map(|x| x.split('@').next().unwrap_or("").to_string()).collect()
+}
+
+fn opt_s(v: Option<i64>) -> String {
+    v.map(|x| x.to_string()).unwrap_or_default()
 }
 
 fn ids_list(sig: &str) -> Vec<String> {
@@ -667,6 +692,9 @@ pub struct Inner {
     pub verdict_nagged: bool,
     pub risk_info: Value,
     pub cur_ack: bool,
+    /// signatures sent back once for an extra reasoning pass (extra_reason): the re-sent step is not sent back again
+    pub rethought: HashSet<String>,
+    pub resets: u64,
 }
 
 pub struct Gate {
@@ -1014,6 +1042,7 @@ impl Gate {
                 probe_disabled: false, denials: vec![], permits: vec![], approval: None, agent_task: String::new(), unknown_sigs: HashMap::new(), step_doubted: HashSet::new(), acted: false, read_streak: 0, hinted: HashSet::new(), cells_seen: HashMap::new(), term_seen: HashMap::new(), denials_consec: 0, denials_total: 0,
                 task_locked, task_source, in_batch: false, batch_ctx: Value::Null, pix_age: HashMap::new(),
                 last_auto: HashMap::new(), seen_rows: HashMap::new(), recent: vec![], plan: vec![], plan_verdict: String::new(), plan_checks: vec![], facts: vec![], briefed: false, history: vec![], verdict_nagged: false, lb: Default::default(), risk_info: Value::Null, cur_ack: false,
+                rethought: HashSet::new(), resets: 0,
             }),
             shared, out, log: Arc::new(EventLog::new(log_path)), child: Mutex::new(child), child_cmd,
             client_elicit, client_pending, restarts: AtomicU64::new(0), human,
@@ -1047,8 +1076,17 @@ impl Gate {
     /// refused unless gated() issued a one-shot permit for exactly this signature and structured effect.
     /// After a send whose outcome is unknown (driver died, timed out, unparseable answer) nothing is re-sent.
     pub fn tool(&self, inn: &mut Inner, name: &str, args: &Value, timeout: f64) -> Value {
-        let action = is_gated(name) && name != "run_command";
+        // every state-changing driver tool (the gated GUI tools, launch_app, bring_to_front, a tool a newer driver adds)
+        let action = (is_gated(name) && name != "run_command") || is_passthrough_action(name);
         if action {
+            if self.human.person_answering() {
+                inn.inc("frozen_refused");
+                self.log.write(json!({"ev": "frozen", "aid": inn.aid, "tool": name, "where": "dispatch"}));
+                return frozen_result(name);
+            }
+            if let Some(refused) = self.own_dialog_check(inn, name, args) {
+                return refused;
+            }
             if let Some(refused) = self.dispatch_check(inn, name, args) {
                 return refused;
             }
@@ -1107,6 +1145,36 @@ impl Gate {
             inn.inc("permits_withheld");
             self.log.write(json!({"ev": "permit_withheld", "aid": inn.aid, "tool": name, "approved": ak.to_json(), "final": k.to_json(), "source": src}));
         }
+    }
+
+    /// Never act on a window of the gate's own dialog helper (zenity / kdialog / osascript / the GTK or PowerShell
+    /// dialog it started): by pid, by the helper's app name, or by a "gui-gate:" window title.
+    fn own_dialog_check(&self, inn: &mut Inner, name: &str, args: &Value) -> Option<Value> {
+        let ctx = build_ctx(name, args, &inn.state);
+        let mut targets: Vec<&Target> = vec![&ctx.target];
+        targets.extend(ctx.steps.iter().map(|s| &s.2));
+        for t in targets {
+            let Some(pid) = t.pid else { continue };
+            let comm = std::fs::read_to_string(format!("/proc/{pid}/comm")).unwrap_or_default().trim().to_lowercase();
+            let title = inn.state.latest_for(Some(pid), t.window_id).map(|o| window_title_of(&inn.state.get(o).text)).unwrap_or_default();
+            let why = if crate::human::is_dialog_pid(pid) {
+                Some(format!("pid {pid} is the gate's own dialog"))
+            } else if crate::human::DIALOG_APPS.contains(&comm.as_str()) {
+                Some(format!("pid {pid} is a dialog helper ({comm})"))
+            } else if title.to_lowercase().starts_with("gui-gate") {
+                Some(format!("the window \"{}\" is the gate's own dialog", trunc(&title, 60)))
+            } else {
+                None
+            };
+            if let Some(why) = why {
+                inn.inc("own_dialog_refused");
+                self.log.write(json!({"ev": "own_dialog_refused", "aid": inn.aid, "tool": name, "pid": pid, "why": why}));
+                return Some(json!({"isError": true,
+                    "content": [{"type": "text", "text": format!("[gate] Not executed: `{name}` targets a window of the gate's own approval dialog ({why}). Only the person answers it; nothing was sent.")}],
+                    "structuredContent": {"gate": {"decision": "deny", "tier": "own_dialog", "executed": false, "reason": why}}}));
+            }
+        }
+        None
     }
 
     /// None = may be sent. Some(refusal) = a risky / hand-off target without a matching one-shot permit.
@@ -1380,7 +1448,20 @@ impl Gate {
                 return;
             }
         }
-        let brief_first = if name != "gate_task" { self.briefing() } else { None };
+        // a person is being asked: no action of any kind (the agent must never operate the approval dialog itself)
+        if is_action_call(&name) && self.human.person_answering() {
+            {
+                let mut inn = self.inner.lock().unwrap_or_else(|e| e.into_inner());
+                inn.inc("frozen_refused");
+            }
+            self.log.write(json!({"ev": "frozen", "tool": name, "where": "call"}));
+            let mut r = frozen_result(&name);
+            set_status(&name, &mut r);
+            self.reply(&msg, r);
+            return;
+        }
+        let client_call = params.get("_meta").and_then(|m| m.get(CLIENT_META)).and_then(|v| v.as_bool()) == Some(true);
+        let brief_first = if name != "gate_task" && name != "gate_next_step" && name != "gate_reset" { self.briefing() } else { None };
         let me = self.clone();
         let nm = name.clone();
         let res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(move || {
@@ -1393,6 +1474,9 @@ impl Gate {
                 "gate_config" => me.config(&args),
                 "request_human" => me.request_human(&args),
                 "gate_task" => me.set_task(&args),
+                "gate_reset" | "gate_next_step" if !client_call => text_result(format!("[gate] {nm} is a client-only tool (the desktop shell calls it itself, marked with _meta \"{CLIENT_META}\": true); it is not available to the model."), true),
+                "gate_reset" => me.reset(),
+                "gate_next_step" => me.next_step(&args),
                 "check_done" => me.check_done(&args),
                 "set_plan" => me.set_plan(&args),
                 "run_actions" => {
@@ -1402,6 +1486,10 @@ impl Gate {
                 n if is_gated(n) => {
                     let mut inn = me.inner.lock().unwrap_or_else(|e| e.into_inner());
                     me.gated(&mut inn, n, args)
+                }
+                n if is_passthrough_action(n) => {
+                    let mut inn = me.inner.lock().unwrap_or_else(|e| e.into_inner());
+                    me.pass_action(&mut inn, n, args)
                 }
                 n => me.passthrough(n, args),
             }
@@ -2136,13 +2224,19 @@ impl Gate {
         if dec.is(&["check", "wait", "heal"]) {
             dec = Decision::new("look_light", dec.p_direct, "could not settle the target cheaply", "grey");
         }
+        // extra_reason was already given for this exact step: the regenerated candidate came back unchanged, so the
+        // extra pass is spent (it still goes through every safety rule above; this only stops a rethink loop)
+        if dec.option == "reason" && inn.rethought.remove(&ctx.signature) {
+            dec = Decision::new("direct", dec.p_direct, "re-sent after the extra reasoning pass", "rule").with_scores(&dec.scores);
+            trail.push("rethought".into());
+        }
         // review: the gate's own independent reviewer looks at this step (the acting model is not asked)
         let mut judge = Value::Null;
         if dec.option == "review" {
             dec = self.review_step(inn, &ctx, dec, &mut trail, &mut judge);
         }
         // a command has no GUI target to look at or re-aim: only the risk path (and the loop breaker) can hold it
-        if name == "run_command" && !dec.is(&["ask_human", "risk_review", "deny", "handoff", "direct"]) {
+        if (name == "run_command" || is_passthrough_action(name)) && !dec.is(&["ask_human", "risk_review", "deny", "handoff", "direct"]) {
             dec = Decision::new("direct", dec.p_direct, format!("command (no GUI target; predictor said {})", dec.option), "rule").with_scores(&dec.scores);
         }
         // loop breaker level >= 2: this exact step already made no progress in the current loop
@@ -2556,6 +2650,15 @@ impl Gate {
                 format!("[gate] Not executed: {}. This keeps failing. Ask your user for help (say what you are trying to do and what happens instead), or try a clearly different way: a keyboard shortcut, another menu path, or another element.", dec.reason)
             }
             "deny" => self.deny_text(inn, &ctx, &dec, "refused"),
+            "reason" => {
+                // extra_reason: one more reasoning pass of the acting model, no new observation; it authorizes nothing
+                inn.inc("model_turns_requested");
+                inn.inc("extra_reason");
+                inn.rethought.insert(ctx.signature.clone());
+                extra.insert("next_action".into(), json!("rethink"));
+                extra.insert("reasoning_budget_tokens".into(), json!(REASON_BUDGET_TOKENS));
+                format!("[gate] Not executed: {}. Rethink this step (about {REASON_BUDGET_TOKENS} tokens of reasoning, no new observation): is this the right target and the right action for the task? Then send the step you decide on: the same one if it is right, or a different one. The new step is checked like any other; this pass approves nothing.", dec.reason)
+            }
             _ => format!("[gate] Not executed: {}.", dec.reason),
         };
         // a refused risky Enter in a terminal leaves the typed command on the input line: the next command the
@@ -2573,6 +2676,11 @@ impl Gate {
         event["gate_ms"] = json!(round_to(gate_ms, 1));
         self.log.write(event);
         let mut res = refusal(&dec, text, Some(extra));
+        if opt == "reason" {
+            res["structuredContent"]["gate"]["decision"] = json!("extra_reason");
+            res["structuredContent"]["next_action"] = json!("rethink");
+            res["structuredContent"]["reasoning_budget_tokens"] = json!(REASON_BUDGET_TOKENS);
+        }
         if opt == "handoff" {
             res["structuredContent"]["status"] = json!("input_required"); // the user must do this step themselves
         }
@@ -2582,7 +2690,7 @@ impl Gate {
         // a step the gate sent back (look again / doubted / loop) is no progress either: the agent re-sending a refused
         // step over and over is the same loop as re-sending a failing one (risk refusals have their own escalation)
         if inn.cfg.policy == "gate" && crate::loopbreak::enabled() && !inn.in_batch && !crate::decide::is_nav_key(&ctx)
-            && dec.is(&["look_light", "look_full", "stop_loop", "ask_help", "review"]) {
+            && dec.is(&["look_light", "look_full", "stop_loop", "ask_help", "review", "reason"]) {
             let mode = crate::loopbreak::mode_of(name, &t.kind);
             let rose = if crate::v097::on("TWO_STRIKES") {
                 let mech = format!("{mode}|{}", mech_target(&ctx));
@@ -3449,7 +3557,8 @@ impl Gate {
     /// Phantom tools (GUI_GATE_PHANTOM): Ok((tool, args, note)) to run, or Err(result) to answer at once.
     fn phantom(&self, name: &str, args: &Value) -> Result<(String, Value, Option<String>), Value> {
         let known = self.shared.lock().unwrap().tool_names.clone();
-        if !crate::v097::on("PHANTOM") || known.is_empty() || known.iter().any(|k| k == name) || name.starts_with("__") {
+        if !crate::v097::on("PHANTOM") || known.is_empty() || known.iter().any(|k| k == name) || name.starts_with("__")
+            || name == "gate_reset" || name == "gate_next_step" {
             return Ok((name.to_string(), args.clone(), None));
         }
         let mapped = crate::v097::phantom_alias(name, args, &known);
@@ -3756,6 +3865,100 @@ impl Gate {
             return text_result(format!("[inspect locate] nothing in the last read of this window matches \"{describe}\" (snapshot {}); it may be off-screen or in a closed menu.", inn.state.get(o).snapshot_id), false);
         }
         text_result(format!("[inspect locate] candidates for \"{describe}\" in snapshot {} (click with element_index from this snapshot):\n{}", inn.state.get(o).snapshot_id, lines.join("\n")), false)
+    }
+
+    /// A state-changing driver tool the gate has no GUI-target model for (launch_app, bring_to_front, a tool a newer
+    /// driver adds): never sent raw. A risky one (launch_app of a terminal running a command, a file manager on a
+    /// path, a URL) takes the same risk path as every action (denial records, operator task, reviewer, person) through
+    /// gated(); a harmless one goes straight to the single final dispatch check in Gate::tool.
+    fn pass_action(&self, inn: &mut Inner, name: &str, args: Value) -> Value {
+        let ctx = build_ctx(name, &args, &inn.state);
+        inn.inc("passthrough_actions");
+        if ctx.risk.is_some() || ctx.handoff.is_some() {
+            return self.gated(inn, name, args);
+        }
+        inn.aid += 1;
+        inn.permits.clear();
+        inn.approval = None;
+        let t0 = Instant::now();
+        let res = self.tool(inn, name, &args, 120.0);
+        let executed = sc(&res).get("gate").and_then(|g| g.get("executed")) != Some(&json!(false));
+        self.log.write(json!({"ev": "pass_action", "aid": inn.aid, "tool": name, "executed": executed, "is_error": is_error(&res),
+                              "ms": round_to(t0.elapsed().as_secs_f64() * 1000.0, 1)}));
+        if executed {
+            inn.history.push(format!("{name} -> {}", if is_error(&res) { "FAILED" } else { "ok" }));
+            if inn.history.len() > 200 { inn.history.remove(0); }
+        }
+        res
+    }
+
+    /// gate_reset (client-only): the client stopped or restarted the agent. Every permit, approval, parked person
+    /// request and cached observation / snapshot id is void afterwards: an old element token no longer resolves, an old
+    /// requestState is rejected, and nothing approved before the reset carries over. Denial records stay (they only
+    /// ever refuse) and so does the operator task.
+    fn reset(&self) -> Value {
+        let mut inn = self.inner.lock().unwrap_or_else(|e| e.into_inner());
+        let permits = inn.permits.len();
+        inn.permits.clear();
+        inn.approval = None;
+        let parked = self.human.pending.clear();
+        let obs = inn.state.obs.len();
+        let text_only = inn.cfg.text_only;
+        inn.state = GateState::with_text_only(text_only);
+        inn.seen_rows.clear();
+        inn.last_auto.clear();
+        inn.seen_pids.clear();
+        inn.cells_seen.clear();
+        inn.term_seen.clear();
+        inn.step_doubted.clear();
+        inn.rethought.clear();
+        inn.resets += 1;
+        inn.inc("resets");
+        self.log.write(json!({"ev": "reset", "permits": permits, "parked": parked, "observations": obs}));
+        let mut r = text_result(format!("[gate] reset: {permits} permits, {parked} pending person requests and {obs} cached observations are void. Read the window again before acting."), false);
+        r["structuredContent"] = json!({"reset": true, "permits_cleared": permits, "pending_cleared": parked, "observations_cleared": obs});
+        r
+    }
+
+    /// gate_next_step (client-only, advisory): before the client's next model turn, should it attach a fresh tree, a
+    /// tree + screenshot, or nothing, and should the model get an extra reasoning pass? Decided by the same policy and
+    /// value model as actions, on the window's state as the gate knows it (no candidate action exists yet, so the
+    /// features are those of a generic element step in that window). It grants nothing: every action still passes
+    /// gated() and the final dispatch check.
+    fn next_step(&self, args: &Value) -> Value {
+        let mut inn = self.inner.lock().unwrap_or_else(|e| e.into_inner());
+        let wid = { let w = pystr(args.get("window_id")); w.trim().parse::<i64>().ok() };
+        let obs = match wid {
+            Some(w) => inn.state.obs.iter().rposition(|o| o.window_id == Some(w)),
+            None => inn.state.latest_by_window.values().max().copied(),
+        };
+        let (pid, wid2) = obs.map(|o| (inn.state.get(o).pid, inn.state.get(o).window_id)).unwrap_or((None, wid));
+        let target = Target { kind: "token".into(), pid, window_id: wid2, obs, ..Default::default() };
+        let ctx = ActionCtx { tool: "click".into(), args: json!({}), signature: format!("next_step|{}", opt_s(wid2)), target, ..Default::default() };
+        let f = features(&ctx, &inn.state, None, None, None, None);
+        let text_only = inn.cfg.text_only;
+        let dec = if obs.is_none() {
+            Decision::new(if text_only { "look_light" } else { "look_full" }, 0.0, "the gate has no observation of this window yet", "rule")
+        } else if let Some(d) = policy_decision(&ctx, &f, &inn.cfg) {
+            d
+        } else {
+            choose(&ctx, &f, &inn.cfg, false, false)
+        };
+        let _ = crate::value::take_last();
+        let (observe, extra) = match dec.option.as_str() {
+            "look_full" if !text_only => ("tree+screenshot", false),
+            "look_light" | "look_full" => ("tree", false),
+            "reason" => ("none", true),
+            _ => ("none", false),
+        };
+        let id = format!("ns-{}", rand_hex(6));
+        inn.inc("next_step_calls");
+        self.log.write(json!({"ev": "next_step", "decision_id": id, "window_id": wid2, "pid": pid, "option": dec.option, "tier": dec.tier,
+                              "observe": observe, "extra_reason": extra, "p_direct": round_to(dec.p_direct, 4), "reason": dec.reason, "policy": inn.cfg.policy}));
+        let mut r = text_result(format!("[gate] next step: observe={observe}, extra_reason={extra} ({}). Advisory only; it authorizes nothing.", dec.reason), false);
+        r["structuredContent"] = json!({"observe": observe, "extra_reason": extra, "reason": dec.reason, "decision_id": id, "advisory": true,
+                                        "option": dec.option, "p_direct": round_to(dec.p_direct, 4)});
+        r
     }
 
     fn request_human(&self, args: &Value) -> Value {

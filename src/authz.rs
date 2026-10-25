@@ -288,7 +288,9 @@ pub fn effect_of(ctx: &ActionCtx, targets: &[String], dialog_text: &str, line: O
     let a = &ctx.args;
     let typed = if crate::util::truthy(a.get("text")) { crate::util::pystr(a.get("text")) } else { crate::util::pystr(a.get("value")) };
     let keys = a.get("keys").map(|k| k.to_string()).unwrap_or_default() + &crate::util::pystr(a.get("key")) + &a.get("modifiers").map(|k| k.to_string()).unwrap_or_default();
-    let payload_src = format!("{cmd}\u{1}{typed}\u{1}{keys}\u{1}{}\u{1}{}", line.unwrap_or(""), crate::util::pystr(a.get("cwd")));
+    // a pass-through action (launch_app, a new driver tool): its whole argument object is the payload
+    let extra = if crate::features::is_passthrough_action(&ctx.tool) { a.to_string() } else { String::new() };
+    let payload_src = format!("{cmd}\u{1}{typed}\u{1}{keys}\u{1}{}\u{1}{}{extra}", line.unwrap_or(""), crate::util::pystr(a.get("cwd")));
     let payload = if payload_src.chars().all(|c| c == '\u{1}') { String::new() } else { digest(&payload_src) };
     EffectKey {
         tool: ctx.tool.clone(), hazard: hazard.to_string(), resources,

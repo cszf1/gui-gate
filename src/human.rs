@@ -32,6 +32,7 @@ use serde_json::{json, Value};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::process::{Command, Stdio};
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
 use std::time::{Duration, Instant};
 
@@ -115,9 +116,37 @@ pub enum Resolved {
     Invalid(&'static str),
 }
 
+/// This gate process: a random instance id and a random signing key, both new on every start. A requestState is
+/// `gg1.<instance>.<nonce>.<hmac>`; one minted by an earlier process (before a restart) is rejected.
+pub fn instance() -> &'static (String, String) {
+    static I: OnceLock<(String, String)> = OnceLock::new();
+    I.get_or_init(|| (rand_hex(8), rand_hex(32)))
+}
+
+fn sign_state(inst: &str, nonce: &str, binding: &str) -> String {
+    let key = &instance().1;
+    hmac_sha256(key.as_bytes(), format!("{inst}.{nonce}|{binding}").as_bytes())[..32].to_string()
+}
+
+/// Dialog helper processes the gate itself started (zenity, kdialog, osascript, PowerShell, python3 GTK): no action
+/// may ever target their windows.
+pub fn dialog_pids() -> &'static Mutex<std::collections::HashSet<i64>> {
+    static D: OnceLock<Mutex<std::collections::HashSet<i64>>> = OnceLock::new();
+    D.get_or_init(Default::default)
+}
+
+pub fn is_dialog_pid(pid: i64) -> bool {
+    dialog_pids().lock().map(|d| d.contains(&pid)).unwrap_or(false)
+}
+
+/// App names of the helpers the gate shows its dialogs with.
+pub const DIALOG_APPS: &[&str] = &["zenity", "kdialog", "osascript"];
+
 impl PendingTable {
     pub fn park(&self, p: Pending) -> String {
-        let id = format!("gg-{}", rand_hex(16));
+        let (inst, _) = instance();
+        let nonce = rand_hex(12);
+        let id = format!("gg1.{inst}.{nonce}.{}", sign_state(inst, &nonce, &p.binding));
         let mut m = self.map.lock().unwrap_or_else(|e| e.into_inner());
         let t = now();
         m.retain(|_, v| v.deadline + 600.0 > t); // forget long-dead requests
@@ -127,8 +156,18 @@ impl PendingTable {
 
     /// Consume a requestState from a retry and map the person's ElicitResult.
     pub fn resolve(&self, state: &str, binding: &str, responses: Option<&Value>) -> Resolved {
+        let parts: Vec<&str> = state.split('.').collect();
+        if parts.len() != 4 || parts[0] != "gg1" {
+            return Resolved::Invalid("malformed requestState");
+        }
+        if parts[1] != instance().0 {
+            return Resolved::Invalid("requestState is from an earlier gate process (the gate restarted); every earlier approval is void");
+        }
         let p = { self.map.lock().unwrap_or_else(|e| e.into_inner()).remove(state) };
         let Some(p) = p else { return Resolved::Invalid("unknown or already used requestState") };
+        if sign_state(parts[1], parts[2], &p.binding) != parts[3] {
+            return Resolved::Invalid("requestState signature does not match");
+        }
         if p.binding != binding {
             return Resolved::Invalid("requestState belongs to a different tool call");
         }
@@ -142,6 +181,20 @@ impl PendingTable {
 
     pub fn len(&self) -> usize {
         self.map.lock().map(|m| m.len()).unwrap_or(0)
+    }
+
+    /// Requests a person may still be answering (not past their deadline + grace).
+    pub fn live(&self) -> usize {
+        let t = now();
+        self.map.lock().map(|m| m.values().filter(|p| p.deadline + MRTR_GRACE_S > t).count()).unwrap_or(0)
+    }
+
+    /// A reset from the client: every parked request is void.
+    pub fn clear(&self) -> usize {
+        let mut m = self.map.lock().unwrap_or_else(|e| e.into_inner());
+        let n = m.len();
+        m.clear();
+        n
     }
 }
 
@@ -267,6 +320,15 @@ pub struct Human {
     elicit: Option<Elicit>,
     can_elicit: CanElicit,
     pub pending: PendingTable,
+    /// questions open right now on a synchronous channel (legacy elicitation, desktop dialog)
+    open: AtomicUsize,
+}
+
+struct OpenGuard<'a>(&'a AtomicUsize);
+impl Drop for OpenGuard<'_> {
+    fn drop(&mut self) {
+        self.0.fetch_sub(1, Ordering::SeqCst);
+    }
 }
 
 fn which(bin: &str) -> bool {
@@ -310,6 +372,15 @@ fn run_with_timeout(mut cmd: Command, timeout: f64, stdin: Option<String>) -> Op
         cmd.stdin(Stdio::piped());
     }
     let mut child = cmd.stdout(Stdio::piped()).stderr(Stdio::null()).spawn().ok()?;
+    let dpid = child.id() as i64;
+    dialog_pids().lock().unwrap_or_else(|e| e.into_inner()).insert(dpid);
+    struct Unreg(i64);
+    impl Drop for Unreg {
+        fn drop(&mut self) {
+            dialog_pids().lock().unwrap_or_else(|e| e.into_inner()).remove(&self.0);
+        }
+    }
+    let _unreg = Unreg(dpid);
     if let (Some(inp), Some(mut w)) = (stdin, child.stdin.take()) {
         let _ = std::io::Write::write_all(&mut w, inp.as_bytes());
     }
@@ -366,7 +437,13 @@ pub fn ps_input(text: &str, title: &str, kind: &str, timeout: f64) -> Value {
 
 impl Human {
     pub fn new(channel: &str, timeout: f64, elicit: Option<Elicit>, can_elicit: CanElicit) -> Self {
-        Human { channel: channel.into(), timeout, elicit, can_elicit, pending: PendingTable::default() }
+        Human { channel: channel.into(), timeout, elicit, can_elicit, pending: PendingTable::default(), open: AtomicUsize::new(0) }
+    }
+
+    /// A person is being asked right now (an MRTR request is parked, or a dialog / legacy elicitation is open):
+    /// the gate sends no automatic input until it ends, so the agent can never operate the approval itself.
+    pub fn person_answering(&self) -> bool {
+        self.open.load(Ordering::SeqCst) > 0 || self.pending.live() > 0
     }
 
     pub fn resolve_channel(&self) -> String {
@@ -459,6 +536,12 @@ impl Human {
         let ch = self.resolve_channel();
         let t0 = Instant::now();
         let mut outcome = String::new();
+        let _open = if ch == "desktop" || (ch == "elicit" && !call_mrtr()) {
+            self.open.fetch_add(1, Ordering::SeqCst);
+            Some(OpenGuard(&self.open))
+        } else {
+            None
+        };
         let ans: String = match ch.as_str() {
             "elicit" if call_mrtr() => {
                 // a retry that carries the person's answer to this very request

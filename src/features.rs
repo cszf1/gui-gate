@@ -19,6 +19,84 @@ pub fn is_gated(t: &str) -> bool {
     GATED_TOOLS.contains(&t)
 }
 
+/// Driver tools that only read (Cua Driver 0.38.0 and the names other drivers use for the same reads). Every other
+/// driver tool - launch_app, bring_to_front, a tool a newer driver adds - is an ACTION: it passes the single final
+/// dispatch check in Gate::tool (and the freeze while a person is answering). Deny by classification: a tool is only
+/// treated as read-only when it is on this list (or on the trusted launcher's GUI_GATE_READONLY_TOOLS list).
+pub const READ_ONLY_TOOLS: &[&str] = &["get_window_state", "get_desktop_state", "get_browser_state", "list_windows", "list_apps",
+    "screenshot", "zoom", "verify_state", "get_cursor_position", "get_screen_size", "list_displays", "list_screens",
+    "check_permissions", "get_permissions", "get_config", "get_version", "get_accessibility_tree", "find_elements",
+    "get_element", "get_focused_element", "get_clipboard_text_length"];
+
+fn extra_read_only() -> &'static Vec<String> {
+    static X: OnceLock<Vec<String>> = OnceLock::new();
+    // a launcher setting (tests mark the fake driver's own harness tools); the agent cannot change the environment
+    X.get_or_init(|| env("GUI_GATE_READONLY_TOOLS").map(|v| v.split(',').map(|x| x.trim().to_string()).filter(|x| !x.is_empty()).collect()).unwrap_or_default())
+}
+
+pub fn is_read_only(t: &str) -> bool {
+    READ_ONLY_TOOLS.contains(&t) || extra_read_only().iter().any(|x| x == t)
+}
+
+/// A driver tool that changes state: the gated GUI tools plus every driver tool not known to be read-only.
+pub fn is_driver_action(t: &str) -> bool {
+    is_gated(t) || !is_read_only(t)
+}
+
+/// A state-changing driver tool the gate has no GUI-target model for (launch_app, bring_to_front, a new driver tool).
+pub fn is_passthrough_action(t: &str) -> bool {
+    !is_gated(t) && !is_read_only(t)
+}
+
+/// launch_app: what it starts. Terminals that run a command, interpreters with code, file managers on a path and URLs
+/// get the same risk classification as the equivalent action. Returns (level, reason, paths).
+pub fn launch_risk(args: &Value) -> Option<(String, String, Vec<String>)> {
+    let app = ["app_name", "name", "bundle_id", "app", "application", "path", "executable"].iter()
+        .map(|k| pystr(args.get(*k))).find(|v| !v.is_empty()).unwrap_or_default();
+    let mut list: Vec<String> = vec![];
+    for k in ["args", "arguments", "argv", "urls", "url", "files", "file", "open", "paths", "documents", "command", "cmd"] {
+        match args.get(k) {
+            Some(Value::Array(a)) => list.extend(a.iter().map(|x| pystr(Some(x)))),
+            Some(v) if !v.is_null() => list.push(pystr(Some(v))),
+            _ => {}
+        }
+    }
+    let base = app.rsplit(['/', '\\']).next().unwrap_or("").to_lowercase();
+    let base = base.trim_end_matches(".exe").trim_end_matches(".app").to_string();
+    let lapp = app.to_lowercase();
+    let is_term = Regex::new(r"(?i)(terminal|konsole|xterm|alacritty|kitty|iterm|wezterm|tilix|terminator|foot|urxvt|xfce4-terminal|^cmd$|powershell|pwsh|^wt$|windowsterminal|^bash$|^sh$|^zsh$|^fish$|^dash$)").unwrap();
+    let is_interp = Regex::new(r"^(python[0-9.]*|perl|ruby|node|osascript|wscript|cscript|php|lua)$").unwrap();
+    let is_fm = Regex::new(r"(?i)(nautilus|^files$|dolphin|thunar|nemo|caja|pcmanfm|finder|explorer)").unwrap();
+    let url = Regex::new(r"(?i)^[a-z][a-z0-9+.-]{1,20}:(//)?\S+").unwrap();
+    // a URL handed to any app (a browser, xdg-open, mail client): the page or mailto/handler acts with the user's accounts
+    if let Some(u) = list.iter().chain(std::iter::once(&app)).find(|x| url.is_match(x.trim()) && !x.trim().starts_with('/') && !x.contains(":\\")) {
+        return Some(("medium".into(), format!("launch_app opens a URL ({})", trunc(u.trim(), 80)), vec![]));
+    }
+    if (is_term.is_match(&base) || is_interp.is_match(&base) || lapp.contains("terminal")) && !list.is_empty() {
+        // the command part: after -e / -x / -- / -c / --command / /c, else everything
+        let flags = ["-e", "-x", "--", "-c", "--command", "--command=", "/c", "/k", "-command", "--exec"];
+        let mut cmd = list.clone();
+        if let Some(i) = list.iter().position(|a| flags.contains(&a.as_str())) {
+            cmd = list[i + 1..].to_vec();
+        }
+        let line = cmd.join(" ");
+        if line.trim().is_empty() {
+            return None;
+        }
+        if let Some((l, r, tg)) = crate::command::command_risk(&line, &crate::util::home()) {
+            return Some((l, format!("launch_app {base}: {r}"), tg));
+        }
+        return Some(("medium".into(), format!("launch_app {base} would run: {}", trunc(&line, 80)), vec![]));
+    }
+    if is_fm.is_match(&base) {
+        if let Some(pth) = list.iter().find(|x| !x.starts_with('-') && !x.trim().is_empty()) {
+            let c = sidefx::canon(&sidefx::p(pth.trim(), &crate::util::home()));
+            return Some(("medium".into(), format!("launch_app opens a file manager on {c}"), vec![c]));
+        }
+    }
+    None
+}
+
 const RISK_HIGH: &[&str] = &["delete", "erase", "wipe", "pay", "pay now", "purchase", "buy now", "place order", "checkout",
     "confirm payment", "transfer", "uninstall", "format disk", "format drive", "format partition", "format volume",
     "factory reset", "empty trash", "permanently", "delete account", "close account", "remove account", "reset password",
@@ -396,6 +474,11 @@ pub fn assess_risk_t(tool: &str, args: &Value, t: &Target, steps: &[(String, Val
         if (tl == "click" || tl == "double_click") && label.is_empty() && tg.pid.is_some() && tg.kind == "pixel"
             && sidefx::overwrite_ctx().is_match(&newest_obs_blob(st, tg.pid)) {
             bump(&mut best, "medium", "pixel click inside a dialog that asks to replace an existing file".into());
+        }
+    }
+    if tool == "launch_app" {
+        if let Some((l, r, tg)) = launch_risk(args) {
+            bump_t(&mut best, &l, r, tg);
         }
     }
     if tool == "kill_app" {
