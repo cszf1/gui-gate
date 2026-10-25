@@ -452,6 +452,75 @@ class DenyAndLoopActions(unittest.TestCase):
             c.close()
 
 
+class BoundaryTests(unittest.TestCase):
+    """The agent cannot loosen the gate: config, baseline policies, healed targets, inherited secrets."""
+    def test_gate_config_is_refused_without_a_trusted_launcher(self):
+        c = Modern(env={"GUI_GATE_ALLOW_CONFIG": "0"})
+        try:
+            names = [t["name"] for t in c.raw("tools/list", {})["result"]["tools"]]
+            self.assertNotIn("gate_config", names)
+            r = c.call("gate_config", policy="direct", risk_confirm=False)
+            self.assertTrue(r.get("isError"))
+            self.assertIn("not available", txt(r))
+            s = c.read()
+            r = c.call("click", element_token=f"{s}:1")  # still gated
+            self.assertEqual(gate(r)["decision"], "ask_human")
+        finally:
+            c.close()
+
+    def test_baseline_policy_does_not_skip_safety(self):
+        for pol in ("direct", "light", "full"):
+            c = Modern("--policy", pol, person=Person(approve=DENY))
+            try:
+                s = c.read(include_screenshot=True)
+                r = c.call("click", element_token=f"{s}:1")
+                self.assertTrue(r.get("isError"), (pol, txt(r)))
+                self.assertNotIn("Delete file", c.clicked())
+                self.assertEqual(len(c.person.asked), 1, pol)
+            finally:
+                c.close()
+
+    def test_heal_onto_a_risky_element_is_not_run(self):
+        c = Modern("--no-auto-observe")
+        try:
+            s1 = c.read()
+            c.call("fake_mutate", elements=[["button", "Plum"], ["button", "Delete file"], ["text", "count=0"]])
+            c.read()  # s1 is stale now
+            c.call("fake_mutate", elements=[["button", "Delete file"], ["button", "Plum"], ["text", "count=0"]])
+            r = c.call("click", element_token=f"{s1}:1")  # "Delete file" by label -> re-binds to index 0, a risky element
+            self.assertTrue(r.get("isError"), txt(r))
+            self.assertNotIn("Delete file", c.clicked())
+        finally:
+            c.close()
+
+    def test_commands_do_not_inherit_secrets(self):
+        c = Modern("--human", "deny", env={"GUI_GATE_RUN_COMMAND": "1", "GUI_PI_HUMAN_TOKEN": "tok-should-not-leak",
+                                           "MY_API_KEY": "sk-should-not-leak"})
+        try:
+            r = c.call("run_command", command="env; echo END", cwd=tempfile.gettempdir())
+            out = txt(r)
+            self.assertIn("END", out)
+            for leak in ("test-key", "tok-should-not-leak", "sk-should-not-leak", "GUI_GATE_"):
+                self.assertNotIn(leak, out)
+        finally:
+            c.close()
+
+    def test_every_result_carries_a_status(self):
+        c = Modern("--human", "deny")
+        try:
+            s = c.read()
+            self.assertEqual(c.call("click", element_token=f"{s}:0")["structuredContent"]["status"], "executed")
+            s = c.read()
+            self.assertEqual(c.call("click", element_token=f"{s}:1")["structuredContent"]["status"], "blocked")
+            s = c.read()
+            r = c.call("run_actions", pid=4242, window_id=777, steps=[{"tool": "click", "args": {"element_token": f"{s}:0"}},
+                                                                      {"tool": "click", "args": {"element_token": f"{s}:1"}}])
+            self.assertEqual(r["structuredContent"]["status"], "partial")
+            self.assertEqual(c.call("gate_report")["structuredContent"]["status"], "done")
+        finally:
+            c.close()
+
+
 class LegacyClientStillWorks(unittest.TestCase):
     def test_legacy_elicitation_create(self):
         from test_gate import Client

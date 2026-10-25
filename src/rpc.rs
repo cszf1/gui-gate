@@ -43,6 +43,7 @@ pub struct ChildMCP {
 impl ChildMCP {
     pub fn spawn(cmd: &[String], on_unsolicited: Handler, debug_stderr: bool) -> std::io::Result<Arc<ChildMCP>> {
         let mut c = Command::new(&cmd[0]);
+        crate::proc::scrub_env(&mut c); // the driver (and the apps it launches) never see keys or the gate's config
         c.args(&cmd[1..]).stdin(Stdio::piped()).stdout(Stdio::piped())
             .stderr(if debug_stderr { Stdio::inherit() } else { Stdio::null() });
         if crate::install::is_gate_bundled(&cmd[0]) {

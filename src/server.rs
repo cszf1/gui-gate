@@ -48,7 +48,14 @@ re!(bg_unavailable, r"(?i)background delivery is not available|no focus-free inp
 re!(no_frame, r"(?i)no screenshot frame");
 re!(loading_rx, r"(?i)(loading|busy|please wait|加载|正在|请稍候)");
 
-const INSTRUCTIONS_NOTE: &str = "\n\n[gui-gate] Actions go through a value gate before they run. Usually they execute at once. If a call returns a message starting with \"[gate]\", nothing was executed: do exactly what it says (re-read, re-aim with a screenshot, take the safe way it names, or ask the user and retry with gate_confirm). The gate settles doubtful and risky steps itself (rules, the user's own words, its own independent reviewer, or a person); it never asks you to approve your own action. To save time the gate omits the screenshot from get_window_state when the element tree is enough; pass include_screenshot:true when you really need pixels. Each action's result already carries a fresh read of the window: do not read it again before the next step. Several steps whose targets you can already see go in ONE run_actions call. If the user's request is known, pass it verbatim once with gate_task. When the gate refuses a risky step it tells you a safe way to go on: take it and finish the task.";
+const INSTRUCTIONS_NOTE: &str = "\n\n[gui-gate] Actions go through a value gate before they run. Usually they execute at once. If a call returns a message starting with \"[gate] Not executed\" (structuredContent.status \"blocked\"), nothing was executed: do exactly what it says (re-read, re-aim with a screenshot, take the safe way it names, or ask the user and retry with gate_confirm). The gate settles doubtful and risky steps itself (rules, the user's own words, its own independent reviewer, or a person); it never asks you to approve your own action. To save time the gate omits the screenshot from get_window_state when the element tree is enough; pass include_screenshot:true when you really need pixels. Each action's result already carries a fresh read of the window: do not read it again before the next step. Several steps whose targets you can already see go in ONE run_actions call. If the user's request is known, pass it verbatim once with gate_task. When the gate refuses a risky step it tells you a safe way to go on: take it and finish the task.";
+
+/// gate_config changes the gate's own safety settings: only a trusted launcher may allow it (bench runs pass
+/// --allow-config / GUI_GATE_ALLOW_CONFIG=1); the acting agent can never call it otherwise, listed or not.
+pub fn config_allowed() -> bool {
+    static A: OnceLock<bool> = OnceLock::new();
+    *A.get_or_init(|| env("GUI_GATE_ALLOW_CONFIG").map(|v| v == "1").unwrap_or(false) || std::env::args().any(|a| a == "--allow-config"))
+}
 
 fn gate_tools() -> Vec<Value> {
     vec![
@@ -410,6 +417,26 @@ pub fn short(text: &str, limit: usize) -> String {
         }
         _ => format!("{} ...", cut.trim_end()),
     }
+}
+
+/// structuredContent.status, so a client never has to guess from the text whether something ran:
+///   executed (the driver ran it; isError tells whether it reported a failure), blocked (the gate ran nothing),
+///   partial (run_actions stopped after some steps; batch.executed says how many ran), done (a non-GUI tool answered).
+pub fn set_status(name: &str, r: &mut Value) {
+    let sc = r.get("structuredContent").cloned().unwrap_or(json!({}));
+    let st = if sc.get("gate").and_then(|g| g.get("executed")) == Some(&json!(false)) {
+        "blocked"
+    } else if let Some(b) = sc.get("batch") {
+        if b.get("stopped").map(|x| !x.is_null()).unwrap_or(false) { if as_i64(b.get("executed")).unwrap_or(0) > 0 { "partial" } else { "blocked" } } else { "executed" }
+    } else if is_gated(name) {
+        if text_of(r).starts_with("[gate] Not executed") { "blocked" } else { "executed" }
+    } else {
+        "done"
+    };
+    if !r.get("structuredContent").map(|v| v.is_object()).unwrap_or(false) {
+        r["structuredContent"] = json!({});
+    }
+    r["structuredContent"]["status"] = json!(st);
 }
 
 pub fn refusal(dec: &Decision, text: String, extra: Option<Obj>) -> Value {
@@ -800,7 +827,7 @@ fn augment_tools(result: &mut Value, shared: &Arc<Mutex<Shared>>, toolset: &str,
         log_err(&format!("this Cua Driver lacks tools the gate needs: {}; run `gui-gate update --to {}`", miss.join(", "), updates::TESTED));
     }
     let mut all = tools;
-    all.extend(gate_tools());
+    all.extend(gate_tools().into_iter().filter(|t| s(t, "name") != "gate_config" || config_allowed()));
     if crate::command::enabled() {
         let mut rc = crate::command::tool_schema();
         if crate::v097::on("JOBS") {
@@ -1161,6 +1188,7 @@ impl Gate {
                 "run_command" if crate::v097::on("JOBS") && matches!(s(&args, "mode"), "poll" | "stop") => me.job_poll(&args),
                 "__triple_click" => me.triple_click(&args),
                 "gate_report" => me.report(),
+                "gate_config" if !config_allowed() => text_result("[gate] gate_config is not available in this session (the gate's settings are fixed by whoever started it).", true),
                 "gate_config" => me.config(&args),
                 "request_human" => me.request_human(&args),
                 "gate_task" => me.set_task(&args),
@@ -1189,6 +1217,7 @@ impl Gate {
             return; // a person is being asked (MRTR): the client retries this call with the answer
         }
         let mut result = result;
+        set_status(&name, &mut result);
         if let Some(n) = alias_note {
             push_text(&mut result, format!("[gate] {n}."));
         }
@@ -1766,7 +1795,9 @@ impl Gate {
         let shadow = if inn.cfg.collect && self.check_available(inn, &ctx) { self.check(inn, &ctx, None) } else { None };
 
         let mut trail: Vec<String> = vec![];
-        let mut dec = match policy_decision(&ctx, &f, &inn.cfg) {
+        // a risky or hand-off step always goes through the safety rules first, whatever the baseline policy says
+        let safety_first = ctx.risk.is_some() || ctx.handoff.is_some();
+        let mut dec = match if safety_first { None } else { policy_decision(&ctx, &f, &inn.cfg) } {
             Some(d) => d,
             None => {
                 let mut d = hard_rules(&ctx, &f, &inn.cfg, confirmed, false);
@@ -1868,10 +1899,17 @@ impl Gate {
                     match self.heal(inn, &ctx) {
                         Some(newtok) => {
                             args["element_token"] = json!(newtok);
+                            let was_risky = ctx.risk.is_some() || ctx.handoff.is_some();
                             ctx = build_ctx(name, &args, &inn.state);
                             f = features(&ctx, &inn.state, wc, wadd, None, None);
-                            dec = Decision::new("direct", p_direct(&f, &inn.cfg), format!("token re-bound to {newtok}"), "rule");
-                            trail.push("healed".into());
+                            if !was_risky && (ctx.risk.is_some() || ctx.handoff.is_some()) {
+                                // the re-bound target is a risky one: never run it on the strength of an earlier check
+                                dec = Decision::new("look_light", 0.0, format!("your stale token re-binds to {newtok}, a risky element; read it and send the step again so the gate can check it"), "rule");
+                                trail.push("heal_risky".into());
+                            } else {
+                                dec = Decision::new("direct", p_direct(&f, &inn.cfg), format!("token re-bound to {newtok}"), "rule");
+                                trail.push("healed".into());
+                            }
                         }
                         None => dec = Decision::new("look_light", 0.0, "stale token and no unique element with the same role+label", "rule"),
                     }

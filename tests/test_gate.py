@@ -19,7 +19,8 @@ FAKE = f"{sys.executable} {os.path.join(HERE, 'fake_driver.py')}"
 # test points GUI_GATE_REVIEWER_URL at its own fake server; GUI_GATE_REVIEWER_ENV keeps the user's file out
 FAKE_REVIEWER = {"GUI_GATE_REVIEWER_URL": "http://127.0.0.1:9/v1/chat/completions", "GUI_GATE_REVIEWER_MODEL": "fake-reviewer",
                  "GUI_GATE_REVIEWER_KEY": "test-key", "GUI_GATE_REVIEWER_TIMEOUT": "2",
-                 "GUI_GATE_REVIEWER_ENV": os.path.join(HERE, "no-such-reviewer.env")}
+                 "GUI_GATE_REVIEWER_ENV": os.path.join(HERE, "no-such-reviewer.env"),
+                 "GUI_GATE_ALLOW_CONFIG": "1"}  # tests flip runtime settings; production sessions cannot
 BIN = os.environ.get("GUI_GATE_BIN") or next(
     (p for p in (os.path.join(ROOT, "target", "release", "gui-gate"), os.path.join(ROOT, "target", "debug", "gui-gate"),
                  "/tmp/gg-target/release/gui-gate", "/tmp/gg-target/debug/gui-gate") if os.path.exists(p)), None)
@@ -306,11 +307,16 @@ class PolicyTests(unittest.TestCase):
         c = Client("--policy", "direct", "--collect")
         try:
             s = c.read()
-            r = c.call("click", element_token=f"{s}:1")  # even a risky one
+            r = c.call("click", element_token=f"{s}:0")
             self.assertFalse(r.get("isError"), txt(r))
             ev = [e for e in c.events() if e["ev"] == "action"][-1]
             self.assertTrue(ev["executed"])
             self.assertTrue(ev["shadow_check"])
+            # the baseline policy never bypasses the safety rules
+            s = c.read()
+            r = c.call("click", element_token=f"{s}:1")
+            self.assertTrue(r.get("isError"), txt(r))
+            self.assertIn("high-risk", txt(r))
         finally:
             c.close()
 
