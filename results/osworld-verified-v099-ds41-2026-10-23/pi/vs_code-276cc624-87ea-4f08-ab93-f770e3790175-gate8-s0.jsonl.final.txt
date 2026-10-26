@@ -1,0 +1,1 @@
+DONE — In VS Code's user Settings (UI), set Editor: Word Wrap Column to 50 and Word Wrap mode to wordWrapColumn, so `/data/home/.config/Code/User/settings.json` now contains `"editor.wordWrapColumn": 50` and `"editor.wordWrap": "wordWrapColumn"`.

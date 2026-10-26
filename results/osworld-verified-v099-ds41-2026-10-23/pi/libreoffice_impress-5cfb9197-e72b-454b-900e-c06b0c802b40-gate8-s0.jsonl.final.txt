@@ -1,0 +1,1 @@
+DONE — Opened /data/home/Desktop/33_1.pptx in Impress, went to slide 4, retyped the table's first row cells as T1, T2, T3, T4, and saved with Ctrl+S (verified in the saved slide4.xml).

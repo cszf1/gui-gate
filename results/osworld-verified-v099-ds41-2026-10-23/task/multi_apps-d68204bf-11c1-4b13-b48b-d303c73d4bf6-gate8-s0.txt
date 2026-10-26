@@ -1,0 +1,1 @@
+Divide my image vertically into three equal sections with command line. Reorder the original sections from warmest to coolest from left to right, without changing the colors or applying any tint/filter, and save the result as "rearranged.png".

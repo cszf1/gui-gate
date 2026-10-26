@@ -1,0 +1,1 @@
+DONE — Selected C2:C8 (the "Spent ($)" column) in the open LibreOffice Calc workbook and applied a 0.00 number format via the Add Decimal Place toolbar control, so values now read 40.00, 50.54, 60.00, 30.75, 25.50, 45.90, 35.40, then saved the file in xlsx format (numFmt "0.00" confirmed in xl/styles.xml).

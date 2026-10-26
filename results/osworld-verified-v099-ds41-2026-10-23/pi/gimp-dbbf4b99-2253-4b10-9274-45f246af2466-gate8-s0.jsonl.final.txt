@@ -1,0 +1,1 @@
+DONE — Opened `/home/user/Desktop/yicun.raw` in GIMP (using File > Open with file type forced to "JPEG image", since GIMP's `.raw` RAW-loader placeholder was blocking it — the file's content is JPEG data) and exported it with File > Export As to `/home/user/Desktop/yicun.jpg` (3648x2736 JPEG, verified on disk).

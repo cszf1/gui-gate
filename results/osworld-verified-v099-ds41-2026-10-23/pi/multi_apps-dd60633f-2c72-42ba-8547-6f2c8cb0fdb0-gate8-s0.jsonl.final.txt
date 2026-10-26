@@ -1,0 +1,1 @@
+DONE — Downloaded Karpathy's `gpt_dev.ipynb` from the open Colab tab (File > Download > Download .ipynb) and merged all 34 non-empty code cells (Python code + every `#` comment, the one `!wget` shell line kept as a comment) into `/data/home/gpt_dev_pure_code.py` (508 lines, valid Python, 4 markdown/header cells excluded).

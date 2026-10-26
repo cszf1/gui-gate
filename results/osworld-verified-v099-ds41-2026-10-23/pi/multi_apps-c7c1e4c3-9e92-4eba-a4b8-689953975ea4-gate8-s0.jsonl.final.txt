@@ -1,0 +1,1 @@
+DONE — Visited each professor's linked homepage in Chromium (Qi Liu → liuqi@cs.hku.hk, Tao Yu → tao.yu.nlp@gmail.com, Lingpeng Kong → lpk@cs.hku.hk), entered them in F3:F5 of /data/home/Desktop/Professor_Contact.xlsx in LibreOffice Calc, and saved the file (verified in the saved XML).

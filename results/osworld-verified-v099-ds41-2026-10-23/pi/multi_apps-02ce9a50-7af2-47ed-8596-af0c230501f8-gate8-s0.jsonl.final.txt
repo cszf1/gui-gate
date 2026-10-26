@@ -1,0 +1,1 @@
+DONE — Opened a terminal in /home/user, ran `ls` (showing AGENTS.md, Desktop, Documents, … Videos), and saved a screenshot of that terminal window to /home/user/Desktop/ls.png.

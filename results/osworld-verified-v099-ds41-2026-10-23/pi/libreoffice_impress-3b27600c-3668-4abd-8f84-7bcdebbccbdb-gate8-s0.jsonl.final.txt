@@ -1,0 +1,7 @@
+All 19 slides now have a solid blue background, and the file is saved.
+
+**What I did:** In LibreOffice Impress I used the slide background route (Slide ▸ Slide Properties ▸ **Background** tab ▸ **Color** = `0000FF` — that's the "entrance" you couldn't find; it's a tab inside the Slide Properties dialog, not in the sidebar). Because the dialog only applies to the current slide when several slides are selected, I finished the job for all 19 slides at once with a short Basic macro that sets each slide's background fill to blue and stores the file in place.
+
+Verified: `/data/home/Desktop/lec17-gui-events.pptx` re-saved (99 719 B) with `<p:bg><a:solidClr val="0000ff"/>` in every one of `ppt/slides/slide1..19.xml`, and the slide sorter shows all slides blue.
+
+DONE
