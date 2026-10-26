@@ -63,6 +63,12 @@ pub(crate) fn outcomes_from_fixture(evs: &[Value], fixture: &str) -> HashMap<i64
 }
 
 fn load(paths: &[String]) -> Vec<Row> {
+    load_opts(paths, false)
+}
+
+/// Executed direct actions with their labels. Commands (run_command) are not GUI steps and are left out unless
+/// `with_commands` (`gui-gate train --commands include`, the 0.10.1 behaviour).
+fn load_opts(paths: &[String], with_commands: bool) -> Vec<Row> {
     let mut rows = vec![];
     let mut retro: HashSet<(String, i64)> = HashSet::new();
     let mut env: HashMap<(String, i64), bool> = HashMap::new();
@@ -83,7 +89,7 @@ fn load(paths: &[String]) -> Vec<Row> {
                 if let Some(a) = as_i64(e.get("aid")) {
                     retro.insert((s(&e, "session").to_string(), a));
                 }
-            } else if s(&e, "ev") == "action" && truthy(e.get("executed")) {
+            } else if s(&e, "ev") == "action" && truthy(e.get("executed")) && (with_commands || !crate::features::is_command_tool(s(&e, "tool"))) {
                 let sig = s(&e, "sig").to_string();
                 if e.get("features").and_then(|f| f.get("sess_fail")).is_none() {
                     let role = e.get("target").map(|t| s(t, "role").to_string()).unwrap_or_default();
@@ -116,14 +122,9 @@ fn load(paths: &[String]) -> Vec<Row> {
             Some(v) => *v && !truthy(e.get("is_error")),
             None => !truthy(e.get("is_error")) && !truthy(e.get("stale_error")) && !(retro.contains(&key) && !crate::decide::nav_signature(s(&e, "sig"))),
         };
-        let mut f: HashMap<String, f64> = e.get("features").and_then(|f| f.as_object())
+        // a collect-mode shadow probe is not copied into the features: the live decision never saw it
+        let f: HashMap<String, f64> = e.get("features").and_then(|f| f.as_object())
             .map(|o| o.iter().map(|(k, v)| (k.clone(), v.as_f64().unwrap_or(0.0))).collect()).unwrap_or_default();
-        if let Some(sc) = e.get("shadow_check").and_then(|v| v.as_bool()) {
-            if f.get("check_pass").copied().unwrap_or(0.0) == 0.0 && f.get("check_fail").copied().unwrap_or(0.0) == 0.0 {
-                f.insert("check_pass".into(), if sc { 1.0 } else { 0.0 });
-                f.insert("check_fail".into(), if sc { 0.0 } else { 1.0 });
-            }
-        }
         (key.0, f, if ok { 1.0 } else { 0.0 })
     }).collect()
 }
@@ -222,6 +223,7 @@ pub fn train_main(argv: &[String]) -> i32 {
     }
     let mut test_paths: Vec<String> = vec![];
     let mut in_test = false;
+    let mut with_commands = false;
     let (mut prior_name, mut split, mut report, mut md, mut fams) = ("v1".to_string(), "session".to_string(), false, None::<String>, None::<String>);
     let mut i = 0;
     while i < argv.len() {
@@ -232,25 +234,26 @@ pub fn train_main(argv: &[String]) -> i32 {
             "--families" => { fams = argv.get(i + 1).cloned(); i += 1; }
             "--md" => { md = argv.get(i + 1).cloned(); i += 1; }
             "--report" => report = true,
+            "--commands" => { with_commands = argv.get(i + 1).map(|v| v == "include").unwrap_or(false); i += 1; }
             "-o" | "--out" => { out = argv.get(i + 1).cloned().unwrap_or(out); i += 1; }
             "--holdout" => { holdout = argv.get(i + 1).and_then(|v| v.parse().ok()).unwrap_or(holdout); i += 1; }
             "--seed" => { seed = argv.get(i + 1).and_then(|v| v.parse().ok()).unwrap_or(seed); i += 1; }
             "--l2" => { l2 = argv.get(i + 1).and_then(|v| v.parse().ok()).unwrap_or(l2); i += 1; }
             "--test" => in_test = true,
-            "-h" | "--help" => { println!("usage: gui-gate train LOGS... [-o weights.json] [--holdout 0.3] [--seed 0] [--l2 0.05] [--test LOGS...] [--prior v1|zero|builtin] [--split session|run|family|run+family] [--report] [--md FILE] [--families map.json]\n  --test: evaluate on these logs instead of a random holdout (e.g. another model's run)\n  --model treatment: the treatment-interaction value model (gui-gate train --model treatment -h)"); return 0; }
+            "-h" | "--help" => { println!("usage: gui-gate train LOGS... [-o weights.json] [--holdout 0.3] [--seed 0] [--l2 0.05] [--test LOGS...] [--prior v1|zero|builtin] [--split session|run|family|run+family] [--report] [--md FILE] [--families map.json] [--commands exclude|include]\n  --commands: run_command rows are not GUI rows (default exclude; include = 0.10.1)\n  --test: evaluate on these logs instead of a random holdout (e.g. another model's run)\n  --model treatment: the treatment-interaction value model (gui-gate train --model treatment -h)"); return 0; }
             p if in_test => test_paths.push(p.to_string()),
             p => paths.push(p.to_string()),
         }
         i += 1;
     }
-    let data = load(&paths);
+    let data = load_opts(&paths, with_commands);
     let mut sessions: Vec<String> = data.iter().map(|d| d.0.clone()).collect::<HashSet<_>>().into_iter().collect();
     sessions.sort();
     if data.len() < 20 || sessions.len() < 2 {
         println!("{}", json!({"error": "need at least 20 direct-executed actions from 2+ sessions", "rows": data.len(), "sessions": sessions.len()}));
         return 1;
     }
-    let ext = if test_paths.is_empty() { vec![] } else { load(&test_paths) };
+    let ext = if test_paths.is_empty() { vec![] } else { load_opts(&test_paths, with_commands) };
     let families = crate::valuetrain::read_families(fams.as_deref());
     let groups = crate::valuetrain::session_groups(&paths, &families);
     let key = |sess: &String| -> (String, String, String, String) {
@@ -423,9 +426,18 @@ pub fn replay_main(argv: &[String]) -> i32 {
         }
         i += 1;
     }
+    println!("{}", serde_json::to_string_pretty(&replay_summary(&paths, &cfg)).unwrap());
+    0
+}
+
+/// The replay itself. Commands (run_command) are executed directly by the live gate whatever the predictor says
+/// (server: "command (no GUI target)"), so they are counted apart and never as a GUI intervention.
+pub fn replay_summary(paths: &[String], cfg: &crate::decide::GateConfig) -> Value {
+    let cfg = cfg.clone();
     let mut by: IndexMap<String, (f64, f64)> = IndexMap::new(); // option -> (n, n that actually failed)
     let (mut n, mut fails): (f64, f64) = (0.0, 0.0);
-    for f in files_of(&paths) {
+    let (mut ncmd, mut fcmd): (f64, f64) = (0.0, 0.0);
+    for f in files_of(paths) {
         let evs = events(&f);
         let retro: HashSet<i64> = evs.iter().filter(|e| s(e, "ev") == "retro_repeat").filter_map(|e| as_i64(e.get("aid"))).collect();
         let mut prev: Vec<(String, bool, bool)> = vec![];
@@ -444,15 +456,20 @@ pub fn replay_main(argv: &[String]) -> i32 {
                 signature: sig.clone(), risk: None, steps: vec![], risk_level: e.get("risk_level").and_then(|v| v.as_str()).map(String::from), handoff: None,
             };
             let ca = matches!(ctx.target.kind.as_str(), "token" | "index" | "name");
-            let d = crate::decide::hard_rules(&ctx, &feats, &cfg, true, true).unwrap_or_else(|| crate::decide::choose(&ctx, &feats, &cfg, ca, false));
             let aid = as_i64(e.get("aid")).unwrap_or(-1);
             // pressing the same arrow/Tab key again is how lists are walked, not a sign the first press failed
             let failed = truthy(e.get("is_error")) || truthy(e.get("stale_error")) || (retro.contains(&aid) && !crate::decide::nav_signature(&sig));
-            n += 1.0;
-            if failed { fails += 1.0; }
-            let ent = by.entry(d.option.clone()).or_default();
-            ent.0 += 1.0;
-            if failed { ent.1 += 1.0; }
+            if crate::features::is_command_tool(&ctx.tool) {
+                ncmd += 1.0;
+                if failed { fcmd += 1.0; }
+            } else {
+                let d = crate::decide::hard_rules(&ctx, &feats, &cfg, true, true).unwrap_or_else(|| crate::decide::choose(&ctx, &feats, &cfg, ca, false));
+                n += 1.0;
+                if failed { fails += 1.0; }
+                let ent = by.entry(d.option.clone()).or_default();
+                ent.0 += 1.0;
+                if failed { ent.1 += 1.0; }
+            }
             // update history exactly as the live gate would
             let ts = e["ts"].as_f64().unwrap_or(0.0);
             let err = truthy(e.get("is_error"));
@@ -468,12 +485,13 @@ pub fn replay_main(argv: &[String]) -> i32 {
     let caught: f64 = by.iter().filter(|(k, _)| k.as_str() != "direct").map(|(_, v)| v.1).sum();
     let internal: f64 = by.iter().filter(|(k, _)| matches!(k.as_str(), "check" | "heal" | "wait")).map(|(_, v)| v.0).sum();
     let opts: serde_json::Map<String, Value> = by.iter().map(|(k, v)| (k.clone(), json!({"n": v.0, "actually_failed": v.1}))).collect();
-    println!("{}", serde_json::to_string_pretty(&json!({
+    json!({
         "model": cfg.model_name, "human": cfg.human_channel, "reviewer": cfg.reviewer, "lambda": cfg.lam, "actions": n, "failed": fails,
         "intervene_rate": round_to(inter / n.max(1.0), 3), "gate_side_rate": round_to(internal / n.max(1.0), 3),
         "failures_caught": round_to(caught / fails.max(1.0), 3), "precision": round_to(caught / inter.max(1.0), 3),
-        "by_option": opts})).unwrap());
-    0
+        "by_option": opts,
+        "commands": {"n": ncmd, "failed": fcmd, "note": "run_command: executed directly by the live gate; not GUI actions, not in the rates above"},
+        "note": "flagged = the gate would not have sent this executed GUI action blind; whether that would have AVOIDED the failure is not measurable from logs"})
 }
 
 /// `gui-gate report LOG...`: what asking a person cost, per session (one session = one task) and overall, from the
@@ -518,4 +536,51 @@ pub fn report_main(argv: &[String]) -> i32 {
                  r["takeover_steps"], r["cancel_timeout_rate"], r["not_asked_again"]);
     }
     0
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn log(dir: &std::path::Path) -> String {
+        let f = json!({"bias": 1.0, "is_token": 1.0});
+        let mut evs = vec![json!({"ev": "client", "ts": 0.5, "session": "a"})];
+        for i in 0..3 {
+            evs.push(json!({"ev": "action", "ts": 1.0 + i as f64, "session": "a", "aid": i + 1, "tool": "run_command", "executed": true, "decision": "direct",
+                            "trail": ["look_light"], "tier": "rule", "features": {"bias": 1.0, "no_obs": 1.0}, "sig": format!("run_command||grep {i} f"),
+                            "is_error": i == 0, "target": {"kind": "command", "role": "command", "label": "grep"}}));
+        }
+        evs.push(json!({"ev": "action", "ts": 9.0, "session": "a", "aid": 9, "tool": "click", "executed": true, "decision": "direct", "trail": ["direct"],
+                        "tier": "model", "features": f, "sig": "click|1|button|OK", "shadow_check": false, "target": {"kind": "token", "role": "push button", "label": "OK"}}));
+        let p = dir.join("chrome-9-gate8-s0.jsonl");
+        std::fs::write(&p, evs.iter().map(|e| e.to_string()).collect::<Vec<_>>().join("\n")).unwrap();
+        p.to_string_lossy().to_string()
+    }
+
+    #[test]
+    fn the_direct_predictor_trains_on_gui_steps_only_and_without_shadow_probes() {
+        let d = std::env::temp_dir().join(format!("gg-tl-{}", rand_hex(4)));
+        std::fs::create_dir_all(&d).unwrap();
+        let p = log(&d);
+        let rows = load_opts(&[p.clone()], false);
+        assert_eq!(rows.len(), 1, "commands are not GUI rows");
+        assert_eq!(rows[0].1.get("check_fail").copied().unwrap_or(0.0), 0.0, "a shadow probe is not a decision-time feature");
+        assert_eq!(load_opts(&[p], true).len(), 4);
+        let _ = std::fs::remove_dir_all(&d);
+    }
+
+    #[test]
+    fn replay_counts_commands_apart_from_gui_interventions() {
+        let d = std::env::temp_dir().join(format!("gg-tr-{}", rand_hex(4)));
+        std::fs::create_dir_all(&d).unwrap();
+        let p = log(&d);
+        let mut cfg = crate::decide::GateConfig::default();
+        cfg.human_channel = "deny".into();
+        let r = replay_summary(&[p], &cfg);
+        assert_eq!(r["actions"], 1.0, "{r}");
+        assert_eq!(r["commands"]["n"], 3.0);
+        assert_eq!(r["commands"]["failed"], 1.0);
+        assert!(r["by_option"].get("look_light").is_none(), "a command is never a GUI intervention: {r}");
+        let _ = std::fs::remove_dir_all(&d);
+    }
 }

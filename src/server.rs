@@ -1190,7 +1190,7 @@ impl Gate {
         let task_cv0 = cfg.task_file.as_ref().and_then(|f| std::fs::read_to_string(f).ok()).and_then(|t| parse_task_file(&t).1);
         Arc::new(Gate {
             inner: Mutex::new(Inner {
-                state: GateState::with_text_only(cfg.text_only), cfg, stats: new_stats(), aid: 0,
+                state: GateState::for_config(cfg.text_only, cfg.value_v2), cfg, stats: new_stats(), aid: 0,
                 want_shot: HashSet::new(), seen_pids: HashSet::new(), fg_sticky: false, pixel_pids: HashSet::new(),
                 probe_disabled: false, denials: vec![], denial_versions: vec![], permits: vec![], approval: None, agent_task: String::new(), unknown_sigs: HashMap::new(), step_doubted: HashSet::new(), acted: false, read_streak: 0, hinted: HashSet::new(), cells_seen: HashMap::new(), term_seen: HashMap::new(), denials_consec: 0, denials_total: 0,
                 task_locked, task_source, in_batch: false, batch_ctx: Value::Null, pix_age: HashMap::new(),
@@ -4233,7 +4233,7 @@ impl Gate {
         let parked = self.human.pending.clear();
         let obs = inn.state.obs.len();
         let text_only = inn.cfg.text_only;
-        inn.state = GateState::with_text_only(text_only);
+        inn.state = GateState::for_config(text_only, inn.cfg.value_v2);
         inn.seen_rows.clear();
         inn.last_auto.clear();
         inn.seen_pids.clear();
