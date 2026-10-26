@@ -886,6 +886,8 @@ pub struct Inner {
     pub unanswered: HashMap<String, u64>,
     pub asked_keys: HashSet<String>,
     pub burden: Burden,
+    /// v0.10.3 decision data contract: hand-back continuation (research.rs)
+    pub research: crate::research::Ledger,
 }
 
 pub struct Gate {
@@ -1241,7 +1243,7 @@ impl Gate {
                 rethought: HashSet::new(), resets: 0,
                 task_version: if task_locked { 1 } else { 0 }, task_hash: task_hash0.clone(), task_stamp: None,
                 task_client_version: task_cv0,
-                unanswered: HashMap::new(), asked_keys: HashSet::new(), burden: Burden::default(),
+                unanswered: HashMap::new(), asked_keys: HashSet::new(), burden: Burden::default(), research: Default::default(),
             }),
             shared, out, log: Arc::new(EventLog::new(log_path)), child: Mutex::new(child), child_cmd,
             client_elicit, client_pending, restarts: AtomicU64::new(0), human,
@@ -2449,9 +2451,12 @@ impl Gate {
     pub fn gated(&self, inn: &mut Inner, name: &str, args: Value) -> Value {
         inn.permits.clear();
         inn.approval = None;
+        let ex0 = inn.stat("executed");
         let r = self.gated_inner(inn, name, args);
         inn.permits.clear();
         inn.approval = None;
+        let executed = inn.stat("executed") > ex0;
+        inn.research.finish(executed); // research.rs: a hand-back that was not executed waits for its continuation
         r
     }
 
@@ -2481,6 +2486,11 @@ impl Gate {
         if name == "run_steps" {
             f["token_stale"] = 0.0; // the driver re-binds stale tokens inside its own batch
         }
+        // research.rs: the decision-time features, before any gate-side option ran (never modified below)
+        let x_pre = crate::research::feats_json(&f);
+        let mut rchain: Vec<Value> = vec![];
+        let mut x_post_observed = Value::Null;
+        let mut rebound = false;
         let mut check_res: Option<bool> = None;
         let shadow = if inn.cfg.collect && self.check_available(inn, &ctx) { self.check(inn, &ctx, None) } else { None };
 
@@ -2520,6 +2530,7 @@ impl Gate {
             inn.inc("safety_assert");
             dec = Decision::new("ask_human", 0.0, format!("{} (safety rule)", ctx.risk.clone().or(ctx.handoff.clone()).unwrap_or_default()), "rule");
         }
+        let proposed = dec.option.clone();
         let soft = |d: &Decision| d.tier != "rule" && d.tier != "policy";
         if dec.is(&["look_light", "look_full", "review", "check"]) && soft(&dec) && fget(&f, "token_stale") < 0.5 && ctx.risk_level.is_none() {
             if let Some(fp) = fast_path(&ctx, &f) {
@@ -2557,7 +2568,12 @@ impl Gate {
                 "check" => {
                     checked = true;
                     trail.push("check".into());
+                    let (c0, a0) = (tg0.elapsed().as_secs_f64() * 1000.0, args.clone());
                     check_res = self.check(inn, &ctx, Some(&mut args));
+                    rebound = rebound || args != a0;
+                    // a check that re-bound the target also repaired it: its value is not pure information
+                    rchain.push(crate::research::chain_step("check", c0, tg0.elapsed().as_secs_f64() * 1000.0,
+                        json!({"result": check_res, "rebound": args != a0, "includes_repair": args != a0})));
                     ctx = build_ctx(name, &args, &inn.state);
                     f = features(&ctx, &inn.state, wc, wadd, check_res, None);
                     if waited {
@@ -2574,6 +2590,7 @@ impl Gate {
                 "wait" => {
                     waited = true;
                     trail.push("wait".into());
+                    let w0 = tg0.elapsed().as_secs_f64() * 1000.0;
                     let mut slept = 0.0;
                     while slept < 1.5 {
                         std::thread::sleep(Duration::from_millis(250));
@@ -2587,6 +2604,11 @@ impl Gate {
                     }
                     (wc, wadd) = self.probe_window_changed(inn, &ctx);
                     f = features(&ctx, &inn.state, wc, wadd, None, None);
+                    // research.rs: what the window showed after the wait; the two keys cleared below are assumptions
+                    // of the (unchanged) default re-decision, not observations
+                    x_post_observed = crate::research::feats_json(&f);
+                    rchain.push(crate::research::chain_step("wait", w0, tg0.elapsed().as_secs_f64() * 1000.0,
+                        json!({"slept_s": slept, "observed": crate::research::observed_after_wait(&f), "assumed_resets": crate::research::WAIT_ASSUMED})));
                     f["loading_cue"] = 0.0;
                     f["last_popup"] = 0.0;
                     let ca = self.check_available(inn, &ctx) && !checked;
@@ -2596,7 +2618,10 @@ impl Gate {
                     }
                 }
                 "heal" => {
-                    match self.heal(inn, &ctx) {
+                    let h0 = tg0.elapsed().as_secs_f64() * 1000.0;
+                    let healed = self.heal(inn, &ctx);
+                    rchain.push(crate::research::chain_step("heal", h0, tg0.elapsed().as_secs_f64() * 1000.0, json!({"rebound": healed.is_some()})));
+                    match healed {
                         Some(newtok) => {
                             args["element_token"] = json!(newtok);
                             let was_risky = ctx.risk.is_some() || ctx.handoff.is_some();
@@ -2660,6 +2685,32 @@ impl Gate {
             "shadow_check": shadow, "judge": judge, "window_changed": wc, "window_added": wadd,
             "ack": ack, "approval": inn.approval.as_ref().map(|a| a.1.clone()), "risk_level": ctx.risk_level, "handoff": ctx.handoff,
             "risk_gate": inn.risk_info, "batch": inn.batch_ctx, "value": crate::value::take_last()});
+        // research.rs decision contract (x_pre immutable, x_post = `features`, chain timings, continuation)
+        {
+            let sess = self.log.session.clone();
+            let did = crate::research::decision_id(&sess, inn.aid);
+            let eid = crate::research::effect_id(&ctx);
+            let cont = inn.research.link(&did, &opt, &ctx.signature, &eid, now());
+            let person = self.human.resolve_channel() != "chat" && inn.cfg.human_channel != "deny";
+            let esc = crate::research::escalation(crate::research::consecutive_failures(&inn.state), inn.lb.level, person);
+            if let Some(o) = event.as_object_mut() {
+                o.insert("decision_id".into(), json!(did));
+                o.insert("x_pre".into(), x_pre.clone());
+                o.insert("x_post".into(), Value::Object(fjson.clone()));
+                if !x_post_observed.is_null() {
+                    o.insert("x_post_observed".into(), x_post_observed.clone());
+                    o.insert("assumed_resets".into(), json!(crate::research::WAIT_ASSUMED));
+                }
+                o.insert("waited".into(), json!(waited));
+                o.insert("rebound".into(), json!(rebound));
+                o.insert("proposed".into(), json!(proposed));
+                o.insert("candidate".into(), json!({"tool": name, "sig": ctx.signature, "effect_id": eid}));
+                o.insert("chain".into(), json!(rchain));
+                o.insert("continues".into(), cont);
+                o.insert("escalation".into(), esc.json());
+                o.insert("contract".into(), json!("decision_v1"));
+            }
+        }
 
         // a person decides / acts, when the gate can reach one itself
         if (opt == "ask_human" || opt == "handoff" || opt == "ask_help") && self.human.resolve_channel() != "chat" {
@@ -2977,6 +3028,8 @@ impl Gate {
             }
             event["executed"] = json!(true);
             event["exec_ms"] = json!(round_to(ms, 1));
+            event["exec_t0_ms"] = json!(round_to(t0.duration_since(tg0).as_secs_f64() * 1000.0, 1));
+            event["labels"] = crate::research::exec_labels(&res, outcome_unknown(&res));
             event["is_error"] = json!(err);
             event["stale_error"] = json!(stale);
             event["effect"] = scv.get("effect").cloned().unwrap_or(Value::Null);
@@ -3555,9 +3608,8 @@ impl Gate {
     fn duplicate_read(&self, inn: &mut Inner, args: &Value) -> Option<Value> {
         let pid = as_i64(args.get("pid"))?;
         let c = inn.last_auto.get(&pid)?.clone();
-        if as_i64(c.get("aid")) != Some(inn.aid as i64) || now() - c["t"].as_f64().unwrap_or(0.0) > 20.0
-            || truthy(c.get("truncated")) || !truthy(c.get("snap")) {
-            return None;
+        if !crate::research::auto_record_fresh(&c, inn.aid, now()) {
+            return None; // the same freshness test gate_next_step uses (research.rs)
         }
         if truthy(args.get("window_id")) && truthy(c.get("wid")) && as_i64(args.get("window_id")) != as_i64(c.get("wid")) {
             return None;
@@ -4434,10 +4486,12 @@ impl Gate {
     }
 
     /// gate_next_step (client-only, advisory): before the client's next model turn, should it attach a fresh tree, a
-    /// tree + screenshot, or nothing, and should the model get an extra reasoning pass? Decided by the same policy and
-    /// value model as actions, on the window's state as the gate knows it (no candidate action exists yet, so the
-    /// features are those of a generic element step in that window). It grants nothing: every action still passes
-    /// gated() and the final dispatch check.
+    /// tree + screenshot, or nothing? v0.10.3: decided by its own freshness rule (research::next_step_rule), NOT by the
+    /// action value model on a fictitious token click (an action predictor calibrated on concrete actions says nothing
+    /// about "observe before the next turn"). It shares the freshness test of auto-observe's duplicate-read check, so a
+    /// tree that came back with the last action is not read again. It also returns the escalation advice
+    /// (switch strategy / ask for help / stop), which is advice only. It grants nothing: every action still passes
+    /// gated() and the final dispatch check. extra_reason is only set by the fixed `extra_reason` value policy.
     fn next_step(&self, args: &Value) -> Value {
         let mut inn = self.inner.lock().unwrap_or_else(|e| e.into_inner());
         let wid = { let w = pystr(args.get("window_id")); w.trim().parse::<i64>().ok() };
@@ -4446,31 +4500,39 @@ impl Gate {
             None => inn.state.latest_by_window.values().max().copied(),
         };
         let (pid, wid2) = obs.map(|o| (inn.state.get(o).pid, inn.state.get(o).window_id)).unwrap_or((None, wid));
-        let target = Target { kind: "token".into(), pid, window_id: wid2, obs, ..Default::default() };
-        let ctx = ActionCtx { tool: "click".into(), args: json!({}), signature: format!("next_step|{}", opt_s(wid2)), target, ..Default::default() };
-        let f = features(&ctx, &inn.state, None, None, None, None);
         let text_only = inn.cfg.text_only;
-        let dec = if obs.is_none() {
-            Decision::new(if text_only { "look_light" } else { "look_full" }, 0.0, "the gate has no observation of this window yet", "rule")
-        } else if let Some(d) = policy_decision(&ctx, &f, &inn.cfg) {
-            d
-        } else {
-            choose(&ctx, &f, &inn.cfg, false, false)
-        };
-        let _ = crate::value::take_last();
-        let (observe, extra) = match dec.option.as_str() {
-            "look_full" if !text_only => ("tree+screenshot", false),
-            "look_light" | "look_full" => ("tree", false),
-            "reason" => ("none", true),
-            _ => ("none", false),
-        };
+        let auto = pid.and_then(|p| inn.last_auto.get(&p).cloned());
+        let fr = crate::research::freshness(&inn.state, pid, wid2, auto.as_ref(), inn.aid, now());
+        let pixel_app = pid.map(|p| inn.pixel_pids.contains(&p) && inn.pix_age.get(&p).copied().unwrap_or(99) <= 1).unwrap_or(false);
+        let (mut observe, mut why) = crate::research::next_step_rule(&fr, text_only, pixel_app);
+        let mut tier = "freshness";
+        // the fixed baseline policies keep their meaning for next-step advice (fair comparisons)
+        if inn.cfg.policy == "direct" || inn.cfg.value_policy == "direct" {
+            (observe, why, tier) = ("none", "baseline: never observe extra".into(), "policy");
+        } else if inn.cfg.policy == "full" || inn.cfg.value_policy == "observe_full" {
+            if fr.acts_since > 0 || !fr.has_obs || !(fr.had_shot || fr.attached_had_shot) {
+                (observe, why, tier) = (if text_only { "tree" } else { "tree+screenshot" }, "baseline: observe before every turn".into(), "policy");
+            }
+        } else if inn.cfg.policy == "light" || inn.cfg.value_policy == "observe_light" {
+            if (fr.acts_since > 0 || !fr.has_obs) && !fr.attached_with_last_action {
+                (observe, why, tier) = ("tree", "baseline: read before every turn".into(), "policy");
+            }
+        }
+        let extra = inn.cfg.value_policy == "extra_reason";
+        let consec = crate::research::consecutive_failures(&inn.state);
+        let person = self.human.resolve_channel() != "chat" && inn.cfg.human_channel != "deny";
+        let esc = crate::research::escalation(consec, inn.lb.level, person);
+        let option = match observe { "tree+screenshot" => "look_full", "tree" => "look_light", _ => "direct" };
         let id = format!("ns-{}", rand_hex(6));
         inn.inc("next_step_calls");
-        self.log.write(json!({"ev": "next_step", "decision_id": id, "window_id": wid2, "pid": pid, "option": dec.option, "tier": dec.tier,
-                              "observe": observe, "extra_reason": extra, "p_direct": round_to(dec.p_direct, 4), "reason": dec.reason, "policy": inn.cfg.policy}));
-        let mut r = text_result(format!("[gate] next step: observe={observe}, extra_reason={extra} ({}). Advisory only; it authorizes nothing.", dec.reason), false);
-        r["structuredContent"] = json!({"observe": observe, "extra_reason": extra, "reason": dec.reason, "decision_id": id, "advisory": true,
-                                        "option": dec.option, "p_direct": round_to(dec.p_direct, 4)});
+        self.log.write(json!({"ev": "next_step", "decision_id": id, "window_id": wid2, "pid": pid, "option": option, "tier": tier,
+                              "observe": observe, "extra_reason": extra, "reason": why, "policy": inn.cfg.policy,
+                              "freshness": {"has_obs": fr.has_obs, "age_s": round_to(fr.age_s, 2), "acts_since": fr.acts_since, "had_shot": fr.had_shot,
+                                            "attached_with_last_action": fr.attached_with_last_action, "last_unverif": fr.last_unverif, "last_err": fr.last_err},
+                              "escalation": esc.json(), "model": "next_step_rule_v1"}));
+        let mut r = text_result(format!("[gate] next step: observe={observe}, extra_reason={extra} ({why}). Advisory only; it authorizes nothing."), false);
+        r["structuredContent"] = json!({"observe": observe, "extra_reason": extra, "reason": why, "decision_id": id, "advisory": true,
+                                        "option": option, "rule": "freshness", "escalation": esc.json()});
         r
     }
 

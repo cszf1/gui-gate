@@ -83,8 +83,10 @@ gui-gate 启动驱动后自己先和驱动做一次老式 `initialize`（驱动�
 
 * `treatment`（处理交互模型）：`P(成功 | 特征, 实际采取的选项)`，逻辑回归 + 选项 one-hot × 特征交互，L2；
   用 `gui-gate train --model treatment` 从日志里**实际采取的选项**及其结果训练。增量 Δ_o = q_o − q_direct
-  可以为零或为负（不再截断到 ≥ P(direct)），每个选项有自助法区间；区间跨零且是低风险步骤时取更便宜的选项。
-  **只有加载了它的训练权重（`GUI_GATE_VALUE_WEIGHTS`）时才是默认。**
+  可以为零或为负（不再截断到 ≥ P(direct)），每个选项有自助法区间。0.10.3 起：只在**当前状态**同时支持 direct 和该选项
+  （保存的记录策略倾向分 e_o(x)、e_direct(x) 都 ≥ 阈值）时才比较它，否则记为「没有估计依据」；全部没有依据时由旧先验决定，
+  日志写 `fallback: legacy_heuristic`、`learned: false`；所有选项都按局部净收益 G_o 的**保守下界**比较（下界 > 0 才介入）。
+  **只有显式 `GUI_GATE_VALUE_MODEL=treatment|v2` 且加载了训练权重时才启用；默认是 `legacy`。**
 * `legacy`（旧先验，`GUI_GATE_VALUE_MODEL=legacy`）：0.9.x 的做法——把特征手工「重置」后再用 P(direct) 打分，
   加上**手写**的残差收益，强制 P_o ≥ P(direct)。**这些收益是手设的，不是估计出来的。** 目前没有处理交互权重，
   所以现在默认仍是它。
@@ -94,6 +96,9 @@ gui-gate 启动驱动后自己先和驱动做一次老式 `initialize`（驱动�
 公平对照的固定策略：`GUI_GATE_VALUE_POLICY=direct|observe_light|observe_full|extra_reason|threshold|heuristic|random|learned`，
 只替换价值选择，安全规则、硬规则、自动观察、自愈等工程底座不变（bench：`vp_*` 条件 + `bench/fair_compare.py`）。
 在拿到真实反事实分支数据（`bench/counterfactual/`）之前，处理交互模型只是观察性估计（受记录策略混杂），不能当作因果增量。
+0.10.3 决策数据契约：每个动作事件记录不可变的处理前特征 `x_pre`、处理后 `x_post`、`decision_id`、处理链及起止时间、
+hand-back 续接关系和三层标签（执行 / 局部进展 / 任务，任务结果不写进单步）；训练只用 `x_pre`。两层目标（Q^π 与 G_o）、
+标签分层和三条证据链见 docs/value-model-v2.md 第 9–12 节，逐条审核状态见 docs/review-v3-checklist-res.md。
 
 选项：`direct` 直接执行 · `check` 门自己探测（0.2 s）· `heal` 修复过期 token · `wait` 等界面稳定 ·
 `look_light` / `look_full` 门自己重读界面（需要时带截图）并随拒绝一起返回，Agent 直接重新瞄准 ·

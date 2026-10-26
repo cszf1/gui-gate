@@ -3,6 +3,23 @@
 
     python3 bench/offline_v2.py RESULTS_DIR -o OUT_DIR [--attempt first_valid|first] [--reps 200] [--seed 0]
                                 [--bin target/release/gui-gate] [--stage all|audit|predictors|costs|replay|treatment]
+                                [--boot 200] [--scroll-repeat failure|not_failure] [--variants map.json]
+                                [--branches branches.jsonl] [--dev-frac 0.7]
+
+v0.10.3 (review 2026-10-26, section 6):
+* groups: a task and its layout variants are ONE group (--variants maps task -> group; `-v2` / `-layout3` suffixes are
+  stripped by default); every bootstrap resamples groups and every split keeps a group on one side;
+* generalisation is reported separately across task families (leave-one-domain-out) and across tasks (held-out task
+  groups); across runs needs a second run and is reported as not available with one run;
+* model, regularisation, calibration, thresholds and budget prices are chosen on the DEVELOPMENT tasks only (inner
+  cross-validation); the test tasks are scored once. No hyper-parameter is ever tried on the test set (0.10.2's docs
+  quoted an L2 tried on the test split, AUC 0.795: that number is post hoc and is not a result);
+* the flagging table is a post-hoc top-k screen of the test rows: it says which executed steps were predicted to fail,
+  never that intervening on them would have avoided a failure;
+* incremental calibration (predicted tau vs paired-branch difference, negative allowed) is computed from paired branch
+  results when given (--branches); without them it is reported empty, marked "no paired branch data";
+* the scroll-repeat label (an immediately repeated scroll counts as a failure) has a switch and both readings are
+  reported; the manual review of those labels is pending (user).
 
 Reads RESULTS_DIR (runs.jsonl, runs_scored.jsonl, retry/*.jsonl, setup/task_list_ovf.txt, gate/*.jsonl, pi/*.jsonl) and
 never writes there. Writes OUT_DIR/report.json, report.md, exclusions.json (and the stage pieces).
@@ -50,6 +67,31 @@ CMD_FEATURES = ["bias", "cmd_grep", "cmd_test", "cmd_find", "cmd_ls", "cmd_cat",
 VALUE_OPTIONS = ["direct", "check", "heal", "wait", "look_light", "look_full", "review", "reason", "ask_help"]
 NO_ANSWER = {"timeout", "expired", "cancelled", "declined", "window_closed", "no_response", "no_channel", "not_asked_again"}
 NAV = re.compile(r"^(up|down|left|right|tab|page_?up|page_?down|pgup|pgdn|home|end|arrow_?(up|down|left|right))$")
+
+
+VARIANT_RX = re.compile(r"(-(v|var|variant|layout)\d+)$")
+
+
+def task_group(task, variants=None):
+    """A task and its layout variants form one group (explicit map first, then a -v<N>/-layout<N> suffix)."""
+    if variants and task in variants:
+        return variants[task]
+    return VARIANT_RX.sub("", task)
+
+
+def split_dev_test(groups_by_domain, dev_frac=0.7, seed=0):
+    """Seeded, stratified by domain: dev_frac of each domain's task groups are development, the rest test."""
+    rng = random.Random(f"devtest:{seed}")
+    dev, test = set(), set()
+    for d in sorted(groups_by_domain):
+        gs = sorted(groups_by_domain[d])
+        rng.shuffle(gs)
+        k = int(round(dev_frac * len(gs)))
+        if len(gs) >= 2:
+            k = max(1, min(k, len(gs) - 1))
+        dev.update(gs[:k])
+        test.update(gs[k:])
+    return dev, test
 
 
 # ------------------------------------------------------------------ run files
@@ -268,7 +310,7 @@ def cmd_feats(text, prev_fail, repeat):
             "cmd_len": math.log1p(len(t)) / 6.0, "prev_cmd_fail": b(prev_fail), "cmd_repeat": b(repeat)}
 
 
-def load_steps(path, task, domain, first_session_only=True):
+def load_steps(path, task, domain, first_session_only=True, scroll_repeat_fails=True):
     """Rows of one gate log. Executed rows carry y (step ok); hand-back rows carry y_next (the next executed GUI action
     of the session within 180 s). f1 = the logged decision-time features (the gate's v1 view, commands included in
     its history); f2 = v2 view (GUI-only history and last_*, plus V2_EXTRA)."""
@@ -317,8 +359,13 @@ def load_steps(path, task, domain, first_session_only=True):
             r["f2"] = f2
         if r["executed"]:
             err = bool(e.get("is_error"))
-            ok = not err and not e.get("stale_error") and not (e.get("aid") in retro and not nav_signature(sig))
+            rep_fail = e.get("aid") in retro and not nav_signature(sig)
+            ok_main = not err and not e.get("stale_error") and not (rep_fail and (scroll_repeat_fails or tool != "scroll"))
+            ok_alt = not err and not e.get("stale_error") and not (rep_fail and ((not scroll_repeat_fails) or tool != "scroll"))
+            ok = ok_main
             r["y"] = 1.0 if ok else 0.0
+            r["y_alt"] = 1.0 if ok_alt else 0.0  # the other scroll-repeat reading
+            r["repeat_label"] = bool(rep_fail)
             if is_cmd:
                 cprev_fail, csig = not ok, sig
             else:
@@ -338,7 +385,7 @@ def load_steps(path, task, domain, first_session_only=True):
     return rows, st
 
 
-def load_all_steps(results_dir, audit, first_session_only=True):
+def load_all_steps(results_dir, audit, first_session_only=True, scroll_repeat_fails=True, variants=None):
     rows, st = [], {"files": 0, "missing_gate_logs": [], "later_sessions_excluded_actions": 0, "files_with_later_sessions": []}
     for t, v in sorted(audit["tasks"].items()):
         if v["status"] != "used":
@@ -347,7 +394,7 @@ def load_all_steps(results_dir, audit, first_session_only=True):
         if not os.path.exists(p):
             st["missing_gate_logs"].append(os.path.basename(p))
             continue
-        r, s = load_steps(p, t, v["domain"], first_session_only)
+        r, s = load_steps(p, t, v["domain"], first_session_only, scroll_repeat_fails)
         st["files"] += 1
         st["later_sessions_excluded_actions"] += s["later_sessions_excluded_actions"]
         if s["later_sessions"]:
@@ -355,6 +402,7 @@ def load_all_steps(results_dir, audit, first_session_only=True):
                                                     "actions_excluded": s["later_sessions_excluded_actions"]})
         for x in r:
             x["success"] = v["success"]
+            x["group"] = task_group(t, variants)
         rows += r
     return rows, st
 
@@ -522,7 +570,8 @@ def builtin_calibration(rows, reps=200, seed=0):
 
 
 def cross_fit(rows, feat_key, names, l2, folds_by="domain"):
-    """Leave-one-domain-out predictions (no task family is ever scored by a model that saw it)."""
+    """Out-of-fold predictions: each value of `folds_by` (domain = task family, group = task with its layout
+    variants) is scored by a model fitted on the others."""
     doms = sorted({r[folds_by] for r in rows})
     preds = [None] * len(rows)
     for d in doms:
@@ -536,8 +585,40 @@ def cross_fit(rows, feat_key, names, l2, folds_by="domain"):
     return preds
 
 
+L2_GRID = (0.1, 1.0, 10.0)
+
+
+def _nll(ps, ys):
+    return -sum(y * math.log(max(p, 1e-6)) + (1 - y) * math.log(max(1 - p, 1e-6)) for p, y in zip(ps, ys)) / max(len(ys), 1)
+
+
+def select_l2_on_dev(dev_rows, feat_key, names, grid=L2_GRID, folds=4, seed=0):
+    """Inner cross-validation on DEVELOPMENT rows only (folds of task groups): the L2 with the lowest out-of-fold NLL.
+    The test rows never enter this choice."""
+    groups = sorted({r["group"] for r in dev_rows})
+    rng = random.Random(f"l2:{seed}")
+    rng.shuffle(groups)
+    fold_of = {g: i % folds for i, g in enumerate(groups)}
+    scores = {}
+    for l2 in grid:
+        ps, ys = [], []
+        for k in range(folds):
+            tr = [r for r in dev_rows if fold_of[r["group"]] != k]
+            te = [r for r in dev_rows if fold_of[r["group"]] == k]
+            if not te or len({r["y"] for r in tr}) < 2:
+                continue
+            w = fit_logistic([r[feat_key] for r in tr], [r["y"] for r in tr], names, l2=l2)
+            ps += [predict(w, r[feat_key]) for r in te]
+            ys += [r["y"] for r in te]
+        scores[l2] = _nll(ps, ys) if ys else float("inf")
+    best = min(grid, key=lambda x: (scores[x], x))
+    return best, {str(k): (round(v, 5) if v != float("inf") else None) for k, v in scores.items()}
+
+
 def flag_stats(ps, ys, budgets=(0.05, 0.10, 0.20, 0.323)):
-    """Flag the share `b` of steps with the highest predicted failure (lowest p): precision / recall of failures."""
+    """POST-HOC top-k screen: flag the share `b` of test rows with the highest predicted failure (lowest p) and count
+    the failures among them. It says which executed steps were predicted to fail; it cannot say that intervening on
+    them would have avoided a failure (the intervention's effect is not observed)."""
     n = len(ps)
     order = sorted(range(n), key=lambda i: ps[i])
     fails = sum(1 for y in ys if y == 0)
@@ -551,24 +632,89 @@ def flag_stats(ps, ys, budgets=(0.05, 0.10, 0.20, 0.323)):
     return out
 
 
-def predictors(rows, reps=200, seed=0, l2=1.0):
+def heuristic_score(f):
+    """value.rs `heuristic` policy as a flagging score (higher = more doubt): loading / popup, two failures in a row,
+    duplicate label or failed signature, three actions since the last read."""
+    return ((f.get("loading_cue", 0) or f.get("last_popup", 0)) * 4 + (f.get("consec_fail", 0) >= 2) * 3
+            + (f.get("label_dup", 0) or f.get("sig_failed", 0)) * 2 + (f.get("acts_since_obs", 0) >= 3) * 1)
+
+
+def baseline_flags(rows, ys, seed=0):
+    """Offline flagging baselines on the same rows: same-budget random (expected precision = base rate) and the fixed
+    heuristic. The other baselines need the environment and are online-only (bench/online_plan.py)."""
+    rng = random.Random(f"rand:{seed}")
+    rnd = [rng.random() for _ in rows]
+    heur = [1.0 / (1.0 + heuristic_score(r["f1"])) + 1e-9 * rnd[i] for i, r in enumerate(rows)]
+    return {"random_same_budget": flag_stats(rnd, ys), "heuristic": flag_stats(heur, ys),
+            "online_only": {"vp_direct": "safety and hard rules kept, value step always direct (GUI_GATE_VALUE_POLICY=direct)",
+                            "fixed_observe": "observe_light / observe_full every step", "fixed_reason": "extra_reason once per step",
+                            "risk_threshold": "threshold on P(direct)", "heuristic": "value.rs heuristic policy",
+                            "random_same_budget": "random interventions at the same rate as the policy under test",
+                            "equal_time_wait": "wait as long as the intervention takes (separates new information from the UI settling)"}}
+
+
+def label_sensitivity(gui):
+    """Both readings of the scroll-repeat label (manual review of those labels pending)."""
+    out = {}
+    for name, key in (("main", "y"), ("alternate", "y_alt")):
+        sc = [r for r in gui if r["tool"] == "scroll"]
+        out[name] = {"failures": sum(1 for r in gui if r[key] == 0), "failure_rate": round(sum(1 for r in gui if r[key] == 0) / max(len(gui), 1), 4),
+                     "scroll_n": len(sc), "scroll_failures": sum(1 for r in sc if r[key] == 0)}
+    out["repeat_labelled_scrolls"] = sum(1 for r in gui if r["tool"] == "scroll" and r.get("repeat_label"))
+    out["note"] = "main = the label the predictors use; alternate = the other reading of an immediately repeated scroll; manual review of these labels: pending (user)"
+    return out
+
+
+def predictors(rows, reps=200, seed=0, l2=None, dev_frac=0.7, scroll_repeat_fails=True):
     ex = [r for r in rows if r["executed"] and not r["risky"]]
     gui = [r for r in ex if not r["is_cmd"]]
     cmd = [r for r in ex if r["is_cmd"]]
-    res = {"builtin": builtin_calibration(rows, reps, seed), "split": "leave-one-domain-out cross-fitting (each domain scored by a model fitted on the others); CIs: session bootstrap"}
+    res = {"builtin": builtin_calibration(rows, reps, seed),
+           "split": "cross-family: leave-one-domain-out cross-fitting; cross-task: development task groups -> held-out test task groups; CIs: task-group bootstrap",
+           "groups": "a task and its layout variants are one group (bootstrap and splits)",
+           "scroll_repeat_label": "failure" if scroll_repeat_fails else "not_failure"}
     ys = [r["y"] for r in gui]
-    gs = [r["session"] for r in gui]
+    gs = [r.get("group", r["session"]) for r in gui]
+    # development / test split by task group, stratified by domain; everything tunable is chosen on development only
+    by_dom = {}
+    for r in gui:
+        by_dom.setdefault(r["domain"], set()).add(r.get("group", r["task"]))
+    dev_g, test_g = split_dev_test(by_dom, dev_frac, seed)
+    dev = [r for r in gui if r.get("group", r["task"]) in dev_g]
+    test = [r for r in gui if r.get("group", r["task"]) in test_g]
+    sel = {}
+    for name, key, names in (("gui_v1_refit", "f1", V1_FEATURES), ("gui_v2", "f2", V2_FEATURES)):
+        if l2 is not None:
+            sel[name] = (l2, {"fixed": l2})
+        elif len(dev) >= 20 and len({r["y"] for r in dev}) == 2:
+            sel[name] = select_l2_on_dev(dev, key, names, seed=seed)
+        else:
+            sel[name] = (1.0, {"note": "too few development rows; default 1.0"})
+    res["hyperparameters"] = {k: {"l2": v[0], "inner_cv_nll": v[1], "chosen_on": "development task groups only"} for k, v in sel.items()}
+    res["dev_test"] = {"development_groups": len(dev_g), "test_groups": len(test_g), "development_rows": len(dev), "test_rows": len(test),
+                       "dev_frac": dev_frac, "seed": seed}
     models = {}
     for name, key, names in (("gui_v1_refit", "f1", V1_FEATURES), ("gui_v2", "f2", V2_FEATURES)):
-        p = cross_fit(gui, key, names, l2)
+        p = cross_fit(gui, key, names, sel[name][0])
         keep = [i for i, x in enumerate(p) if x is not None]
         models[name] = {"metrics": metrics([p[i] for i in keep], [ys[i] for i in keep], [gs[i] for i in keep], reps, seed),
                         "flags": flag_stats([p[i] for i in keep], [ys[i] for i in keep])}
+        # cross-task: fit on development groups, score the held-out test groups once
+        if dev and test and len({r["y"] for r in dev}) == 2:
+            w = fit_logistic([r[key] for r in dev], [r["y"] for r in dev], names, l2=sel[name][0])
+            pt = [predict(w, r[key]) for r in test]
+            yt = [r["y"] for r in test]
+            models[name]["cross_task_test"] = {"metrics": metrics(pt, yt, [r.get("group", r["session"]) for r in test], reps, seed), "flags": flag_stats(pt, yt)}
     bp = [float(r["p_logged"]) for r in gui]
     models["gui_builtin"] = {"metrics": res["builtin"]["gui"], "flags": flag_stats(bp, ys)}
     res["gui"] = models
-    p1 = cross_fit(gui, "f1", V1_FEATURES, l2)
-    p2 = cross_fit(gui, "f2", V2_FEATURES, l2)
+    res["baselines"] = baseline_flags(gui, ys, seed)
+    res["generalisation"] = {"cross_family": "leave-one-domain-out (gui_v1_refit / gui_v2 metrics)",
+                             "cross_task": "development -> test task groups (cross_task_test)" if test else "not available (too few task groups)",
+                             "cross_run": "not available: one run in RESULTS_DIR (needs a second run of the same tasks)"}
+    res["label_sensitivity"] = label_sensitivity(gui)
+    p1 = cross_fit(gui, "f1", V1_FEATURES, sel["gui_v1_refit"][0])
+    p2 = cross_fit(gui, "f2", V2_FEATURES, sel["gui_v2"][0])
     keep = [i for i in range(len(gui)) if p1[i] is not None and p2[i] is not None]
     res["gui_v2_minus_v1"] = paired_auc_diff([p1[i] for i in keep], [p2[i] for i in keep], [ys[i] for i in keep], [gs[i] for i in keep], reps, seed)
     by_tool = {}
@@ -583,17 +729,53 @@ def predictors(rows, reps=200, seed=0, l2=1.0):
     res["gui_by_tool"] = by_tool
     if cmd:
         cy = [r["y"] for r in cmd]
-        cg = [r["session"] for r in cmd]
-        pc = cross_fit(cmd, "fc", CMD_FEATURES, l2)
+        cg = [r.get("group", r["session"]) for r in cmd]
+        pc = cross_fit(cmd, "fc", CMD_FEATURES, 1.0)
         keep = [i for i, x in enumerate(pc) if x is not None]
         base = sum(cy) / len(cy)
         res["command"] = {"command_model": metrics([pc[i] for i in keep], [cy[i] for i in keep], [cg[i] for i in keep], reps, seed),
                           "constant_base_rate": metrics([base] * len(cy), cy, cg, reps, seed),
                           "builtin_gui_predictor": res["builtin"]["command"],
                           "label_note": "command label = exit status 0 (and not an immediate repeat); a non-zero exit is often intended (grep without a match, test -f), so it is a weak failure signal"}
-    w = fit_logistic([r["f2"] for r in gui], ys, V2_FEATURES, l2=l2) if gui else {}
-    res["gui_v2_weights_all_rows"] = {k: round(v, 4) for k, v in w.items()}
+    w = fit_logistic([r["f2"] for r in dev or gui], [r["y"] for r in dev or gui], V2_FEATURES, l2=sel["gui_v2"][0]) if gui else {}
+    res["gui_v2_weights_dev_rows"] = {k: round(v, 4) for k, v in w.items()}
     return res
+
+
+def incremental_calibration(branches, bins=5, reps=200, seed=0):
+    """Incremental calibration: bin paired branch results by the PREDICTED increment tau_hat of option o over direct
+    and compare, per bin, the mean prediction with the mean observed difference y(o) - y(direct) (repeats averaged
+    within a checkpoint first; negative values allowed). `branches`: rows {checkpoint, option, tau_hat, y_option,
+    y_direct} (bench/counterfactual or the incremental pilot of bench/online_plan.py). CIs: checkpoint bootstrap.
+    Without paired branch data the result is empty and says so."""
+    if not branches:
+        return {"status": "no paired branch data", "bins": [], "note": "needs paired branches from the same recoverable checkpoint (bench/online_plan.py increment pilot); logs cannot supply them"}
+    by = {}
+    for b in branches:
+        k = (b["checkpoint"], b["option"])
+        d = by.setdefault(k, {"tau_hat": [], "diff": []})
+        d["tau_hat"].append(float(b["tau_hat"]))
+        d["diff"].append(float(b["y_option"]) - float(b["y_direct"]))
+    cps = [{"checkpoint": k[0], "option": k[1], "tau_hat": sum(v["tau_hat"]) / len(v["tau_hat"]), "diff": sum(v["diff"]) / len(v["diff"]), "n": len(v["diff"])}
+           for k, v in sorted(by.items())]
+    order = sorted(range(len(cps)), key=lambda i: cps[i]["tau_hat"])
+    n = len(order)
+    b = max(1, min(bins, n))
+    rng = random.Random(f"inc:{seed}")
+    out = []
+    for k in range(b):
+        ix = order[k * n // b:(k + 1) * n // b]
+        if not ix:
+            continue
+        mt = sum(cps[i]["tau_hat"] for i in ix) / len(ix)
+        md = sum(cps[i]["diff"] for i in ix) / len(ix)
+        bs = []
+        for _ in range(reps):
+            sm = [cps[ix[rng.randrange(len(ix))]]["diff"] for _ in ix]
+            bs.append(sum(sm) / len(sm))
+        out.append({"n_checkpoints": len(ix), "mean_tau_hat": round(mt, 4), "mean_observed_diff": round(md, 4),
+                    "ci95": [round(_q(bs, 0.025), 4), round(_q(bs, 0.975), 4)] if len(ix) > 1 else None})
+    return {"status": "ok", "bins": out, "checkpoints": n, "unit": "checkpoint (repeats averaged first)"}
 
 
 # ------------------------------------------------------------------ interventions (what the logs can say)
@@ -643,7 +825,7 @@ def costs(results_dir, audit, first_session_only=True):
     """Per refused option: wall seconds from the refusal to the session's next action (the model's extra turn), the real
     model tokens of the assistant turns that ended in between (Pi turn_end usage), and the person seconds. Gate-side options
     (executed after wait / check / heal / reviewer allow): their gate_ms over the median direct gate_ms."""
-    acc, gate_side, direct_ms, turns_all = {}, {}, [], []
+    acc, gate_side, direct_ms, turns_all, censored = {}, {}, [], [], {}
     for t, v in sorted(audit["tasks"].items()):
         if v["status"] != "used":
             continue
@@ -684,6 +866,7 @@ def costs(results_dir, audit, first_session_only=True):
             t0, t1 = float(e["ts"]), float(nxt["ts"])
             gap = t1 - t0
             if gap < 0 or gap > 600:
+                censored[key] = censored.get(key, 0) + 1  # timed out / censored: counted, not averaged
                 continue
             lo, hi = bisect.bisect_right(tts, t0), bisect.bisect_right(tts, t1)
             sel = turns[lo:hi]
@@ -694,6 +877,8 @@ def costs(results_dir, audit, first_session_only=True):
     for k, v in sorted(acc.items()):
         n = len(v)
         out[k] = {"n": n, "extra_s_mean": round(sum(x[0] for x in v) / n, 3), "extra_s_median": round(_q([x[0] for x in v], 0.5), 3),
+                  "extra_s_p90": round(_q([x[0] for x in v], 0.9), 3), "extra_s_p99": round(_q([x[0] for x in v], 0.99), 3),
+                  "censored_over_600s": censored.get(k, 0), "kind": "next_action_gap_upper_bound",
                   "tokens_input_mean": round(sum(x[1] for x in v) / n, 1), "tokens_output_mean": round(sum(x[2] for x in v) / n, 1),
                   "tokens_cache_read_mean": round(sum(x[3] for x in v) / n, 1), "model_turns_mean": round(sum(x[4] for x in v) / n, 2),
                   "person_s_mean": round(sum(x[5] for x in v) / n, 2), "src": "gate ts + pi turn_end usage"}
@@ -720,6 +905,8 @@ def costs(results_dir, audit, first_session_only=True):
                                                                             "person_s": v.get("person_s_mean", 0.0), "n": v["n"]}
                                                                         for k, v in ((("review" if k == "review_combined" else k), v) for k, v in out.items()
                                                                                      if k in VALUE_OPTIONS and k != "review" or k == "review_combined")})},
+            "censored": censored,
+            "interpretation": "these logs have no component timers: a hand-back's cost is the gap from the refusal to the session's next action of ANY kind, which includes everything the model did in between - an upper bound / correlated proxy of the option's extra cost, not a measurement of it. v0.10.3 logs time each component (chain, continues) and `gui-gate costs` uses those",
             "note": "means are expected costs; hand-back tokens are the real tokens of the model turns that ended between the refusal and the next action (the prompt grows with the conversation, so input tokens include the whole context of that turn; cache_read is reported apart)"}
 
 
@@ -739,14 +926,14 @@ def rust_replay(bin_path, logs):
     return out
 
 
-def rust_treatment(bin_path, logs, out_json, task_labels=None, seed=0):
+def rust_treatment(bin_path, logs, out_json, task_labels=None, seed=0, boot=200):
     """gui-gate train --model treatment --features v2 on the selected logs, family split: IPW-weighted (its coverage
     diagnostics decide which options the model may choose) and unweighted (same split, for comparison)."""
     out = {}
     for name, extra in (("ipw", ["--ipw"]), ("unweighted", [])):
         args = [bin_path, "train", "--model", "treatment", *logs, "-o", out_json.replace(".json", f"_{name}.json"), "--split", "family",
-                "--features", "v2", "--commands", "exclude", "--boot", "30", "--seed", str(seed), *extra]
-        r = subprocess.run(args, capture_output=True, text=True, timeout=115)
+                "--features", "v2", "--commands", "exclude", "--boot", str(boot), "--seed", str(seed), *extra]
+        r = subprocess.run(args, capture_output=True, text=True, timeout=max(115, 30 * boot))
         out[name] = _treatment_summary(r)
     return out
 
@@ -755,7 +942,7 @@ def _treatment_summary(r):
     if r.returncode != 0:
         return {"error": r.stderr[-400:] or r.stdout[-400:]}
     ev = json.loads(r.stdout)
-    keep = {k: ev.get(k) for k in ("split", "train_rows", "test_rows", "coverage", "intervals", "load_opts", "ipw", "load")}
+    keep = {k: ev.get(k) for k in ("split", "train_rows", "test_rows", "coverage", "intervals", "load_opts", "ipw", "load", "state_coverage", "dr")}
     keep["treatment_on_test"] = {k: v for k, v in (ev.get("treatment_on_test") or {}).items() if k != "reliability_equal_mass"}
     keep["by_option"] = {o: {k: v for k, v in m.items() if k in ("n", "base_rate", "auc", "ece_mass", "brier")}
                          for o, m in (ev.get("treatment_on_test_by_option") or {}).items()}
@@ -768,6 +955,10 @@ def claims():
     return {
         "predicted_execution_failure": {"status": "measured",
                                         "meaning": "an executed step that errored or was immediately redone had a low predicted success beforehand (AUC, precision/recall at an intervention budget)"},
+        "flagging_budget": {"status": "post_hoc_top_k_screen",
+                            "meaning": "the share b of test steps with the lowest predicted success, counted afterwards: a post-hoc top-k screen; it cannot be read as 'intervening on b % avoids x % of failures'"},
+        "incremental_value": {"status": "needs_paired_branches",
+                              "meaning": "E[Y(o) - Y(direct) | h] is checked by incremental calibration on paired branches (bench/online_plan.py increment pilot); not from logs"},
         "avoided_failure_after_intervention": {"status": "not_estimable_from_logs",
                                                "meaning": "whether an intervention made a step succeed that would otherwise have failed; the refused step's outcome under direct is unobserved and the agent's next step is a different action. Needs paired counterfactual branches or a randomized online comparison (bench/online_plan.py)"},
     }
@@ -813,11 +1004,31 @@ def render_md(rep):
                 m = P["command"][name]
                 L.append(f"| command | {name} | {m['n']} | {m.get('base_rate')} | {_fmt(m, 'auc')} | {_fmt(m, 'ece_mass')} | {_fmt(m, 'brier')} |")
         L += ["", P["builtin"]["note"], "",
-              "### Flagging executed GUI steps by predicted failure (what the logs CAN say: the step was predicted to fail and did)", "",
+              "### Post-hoc top-k screen of executed GUI steps by predicted failure", "",
+              "This is a post-hoc top-k screen of the scored rows: the share b with the lowest predicted success, counted afterwards. "
+              "It cannot be read as avoiding failures: whether intervening on those steps would have helped is not observed.", "",
               "| model | budget | flagged | failed among flagged | precision | recall | base failure rate |", "|---|---|---|---|---|---|---|"]
         for name in ("gui_builtin", "gui_v1_refit", "gui_v2"):
             for f in P["gui"][name]["flags"]:
                 L.append(f"| {name} | {f['budget']:.1%} | {f['flagged']} | {f['failed_flagged']} | {f['precision']} | {f['recall']} | {f['base_failure_rate']} |")
+        for name, fl in (P.get("baselines") or {}).items():
+            if name == "online_only":
+                continue
+            for f in fl:
+                L.append(f"| baseline {name} | {f['budget']:.1%} | {f['flagged']} | {f['failed_flagged']} | {f['precision']} | {f['recall']} | {f['base_failure_rate']} |")
+        if P.get("baselines"):
+            L += ["", "Online-only baselines (need the environment; arms of bench/online_plan.py): "
+                  + "; ".join(f"{k}: {v}" for k, v in P["baselines"]["online_only"].items()), ""]
+        if P.get("hyperparameters"):
+            L += ["", f"Hyper-parameters chosen on development task groups only: {json.dumps(P['hyperparameters'])}", f"Split: {json.dumps(P.get('dev_test'))}", ""]
+            for name in ("gui_v1_refit", "gui_v2"):
+                ct = P["gui"][name].get("cross_task_test")
+                if ct:
+                    m = ct["metrics"]
+                    L.append(f"- cross-task (dev -> test groups) {name}: n={m['n']}, AUC {_fmt(m, 'auc')}, ECE {_fmt(m, 'ece_mass')}, Brier {_fmt(m, 'brier')}")
+            L += ["", f"Generalisation: {json.dumps(P.get('generalisation'))}", ""]
+        if P.get("label_sensitivity"):
+            L += [f"Scroll-repeat label (both readings; manual review pending): {json.dumps(P['label_sensitivity'])}", ""]
         if "gui_v2_minus_v1" in P:
             d = P["gui_v2_minus_v1"]
             L += ["", f"AUC v2 - v1 refit (paired session bootstrap): {d['auc_diff']} {d['ci95']}", "",
@@ -835,14 +1046,19 @@ def render_md(rep):
     if "costs" in rep:
         C = rep["costs"]
         L += ["## Costs from the logs", "", f"model turn: {json.dumps(C['model_turn'])}", "",
-              "| option | n | extra s mean | extra s median | input tokens | output tokens | cache read | turns | person s |", "|---|---|---|---|---|---|---|---|---|"]
+              "| option | n | extra s mean | median | p90 | p99 | censored (>600 s) | input tokens | output tokens | cache read | turns | person s |", "|---|---|---|---|---|---|---|---|---|---|---|---|"]
         for k, v in C["options"].items():
-            L.append(f"| {k} | {v['n']} | {v['extra_s_mean']} | {v.get('extra_s_median', '')} | {v['tokens_input_mean']} | {v['tokens_output_mean']} | "
-                     f"{v.get('tokens_cache_read_mean', '')} | {v.get('model_turns_mean', '')} | {v.get('person_s_mean', '')} |")
-        L += ["", C["note"], ""]
+            L.append(f"| {k} | {v['n']} | {v['extra_s_mean']} | {v.get('extra_s_median', '')} | {v.get('extra_s_p90', '')} | {v.get('extra_s_p99', '')} | {v.get('censored_over_600s', '')} | "
+                     f"{v['tokens_input_mean']} | {v['tokens_output_mean']} | {v.get('tokens_cache_read_mean', '')} | {v.get('model_turns_mean', '')} | {v.get('person_s_mean', '')} |")
+        L += ["", C.get("interpretation", ""), "", C["note"], ""]
     if rep.get("treatment"):
         L += ["## Treatment model v2 (gui-gate train --model treatment --features v2, family split; IPW and unweighted)", "", "```",
               json.dumps(rep["treatment"], indent=1)[:4000], "```", ""]
+    ic = rep.get("incremental_calibration") or {}
+    L += ["## Incremental calibration (predicted tau vs paired-branch difference)", "", f"status: {ic.get('status')}"]
+    for b in ic.get("bins") or []:
+        L.append(f"- n={b['n_checkpoints']}: mean predicted tau {b['mean_tau_hat']}, observed difference {b['mean_observed_diff']} {b['ci95']}")
+    L += [""]
     L += ["## Claims", ""]
     for k, v in rep["claims"].items():
         L.append(f"- **{k}**: {v['status']} - {v['meaning']}")
@@ -858,18 +1074,32 @@ def _rel(path):
         return os.path.abspath(path)
 
 
-def run_all(results_dir, out_dir, reps=200, seed=0, bin_path=None, attempt_policy="first_valid", stages=("audit", "predictors", "costs", "replay", "treatment")):
+def read_branches(path):
+    if not path:
+        return []
+    out = []
+    for line in _lines(path):
+        try:
+            out.append(json.loads(line))
+        except ValueError:
+            continue
+    return out
+
+
+def run_all(results_dir, out_dir, reps=200, seed=0, bin_path=None, attempt_policy="first_valid", stages=("audit", "predictors", "costs", "replay", "treatment"),
+            boot=200, scroll_repeat_fails=True, variants=None, branches=None, dev_frac=0.7):
     os.makedirs(out_dir, exist_ok=True)
     piece = lambda n: os.path.join(out_dir, f"_{n}.json")  # noqa: E731
     audit = audit_runs(results_dir, attempt_policy)
-    rows, st = load_all_steps(results_dir, audit)
+    rows, st = load_all_steps(results_dir, audit, scroll_repeat_fails=scroll_repeat_fails, variants=variants)
     st["executed_gui"] = sum(1 for r in rows if r["executed"] and not r["is_cmd"])
     st["executed_cmd"] = sum(1 for r in rows if r["executed"] and r["is_cmd"])
     st["multi_session_logs_all"] = multi_session_logs(results_dir)
     rep = {"kind": "offline_v2", "results_dir": _rel(results_dir), "seed": seed, "reps": reps, "audit": {k: v for k, v in audit.items() if k != "tasks"},
-           "steps": st, "interventions": interventions(rows), "claims": claims()}
+           "steps": st, "interventions": interventions(rows), "claims": claims(), "boot": boot,
+           "incremental_calibration": incremental_calibration(branches or [], reps=reps, seed=seed)}
     if "predictors" in stages:
-        rep["predictors"] = predictors(rows, reps, seed)
+        rep["predictors"] = predictors(rows, reps, seed, dev_frac=dev_frac, scroll_repeat_fails=scroll_repeat_fails)
         _dump_json(rep["predictors"], piece("predictors"))
     elif os.path.exists(piece("predictors")):
         rep["predictors"] = _load_json(piece("predictors"))
@@ -880,7 +1110,7 @@ def run_all(results_dir, out_dir, reps=200, seed=0, bin_path=None, attempt_polic
         rep["costs"] = _load_json(piece("costs"))
     logs = selected_logs(results_dir, audit)
     for name, fn in (("replay", lambda: rust_replay(bin_path, logs)),
-                     ("treatment", lambda: rust_treatment(bin_path, logs, os.path.join(out_dir, "treatment_v2.json"), seed=seed))):
+                     ("treatment", lambda: rust_treatment(bin_path, logs, os.path.join(out_dir, "treatment_v2.json"), seed=seed, boot=boot))):
         if name in stages and bin_path:
             rep[name] = fn()
             _dump_json(rep[name], piece(name))
@@ -909,9 +1139,16 @@ def main(argv=None):
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--bin", default=None, help="gui-gate binary for the replay / treatment stages")
     ap.add_argument("--stage", action="append", help="audit | predictors | costs | replay | treatment (repeatable; default all)")
+    ap.add_argument("--boot", type=int, default=200, help="bootstrap refits of the treatment model (200; 30 is a pipeline check only)")
+    ap.add_argument("--scroll-repeat", default="failure", choices=["failure", "not_failure"], help="label of an immediately repeated scroll (both readings are reported)")
+    ap.add_argument("--variants", default=None, help="json map task -> group (layout variants of one task)")
+    ap.add_argument("--branches", default=None, help="paired branch results (jsonl: checkpoint, option, tau_hat, y_option, y_direct) for incremental calibration")
+    ap.add_argument("--dev-frac", type=float, default=0.7, help="share of task groups (per domain) used for development; the rest is test")
     a = ap.parse_args(argv)
     stages = tuple(a.stage) if a.stage else ("audit", "predictors", "costs", "replay", "treatment")
-    rep = run_all(a.results_dir, a.out, a.reps, a.seed, a.bin, a.attempt, stages)
+    variants = _load_json(a.variants) if a.variants else None
+    rep = run_all(a.results_dir, a.out, a.reps, a.seed, a.bin, a.attempt, stages, a.boot, a.scroll_repeat == "failure", variants,
+                  read_branches(a.branches), a.dev_frac)
     print(json.dumps({"out": a.out, "used": rep["audit"]["counts"]["used"], "stages": stages}))
     return 0
 

@@ -1,0 +1,1406 @@
+{
+ "kind": "increment_pilot_v1",
+ "dry": true,
+ "seed": 20261026,
+ "treatment": "look_full",
+ "checkpoints": [
+  "ckpt-01",
+  "ckpt-02",
+  "ckpt-03",
+  "ckpt-04",
+  "ckpt-05",
+  "ckpt-06",
+  "ckpt-07",
+  "ckpt-08",
+  "ckpt-09",
+  "ckpt-10",
+  "ckpt-11",
+  "ckpt-12",
+  "ckpt-13",
+  "ckpt-14",
+  "ckpt-15",
+  "ckpt-16",
+  "ckpt-17",
+  "ckpt-18",
+  "ckpt-19",
+  "ckpt-20",
+  "ckpt-21",
+  "ckpt-22",
+  "ckpt-23",
+  "ckpt-24"
+ ],
+ "checkpoint_selection": {
+  "source": "slots: to be filled by the pre-registered rule before freezing",
+  "rule": "safe (no risky effect pending), fully restorable (app state + files + window layout snapshot verified by hash), the gate's decision at the checkpoint is not a safety ask; one per task"
+ },
+ "arms": {
+  "direct": "send the candidate action now",
+  "look_full": "return a tree + screenshot to the acting model before the step (the model may change the action)",
+  "matched_wait": "wait as long as look_full takes (pre-registered: median look_full extra time of the pilot), then send the candidate action; separates new information from the UI settling"
+ },
+ "repeats": 3,
+ "branches": 216,
+ "schedule": [
+  {
+   "slot": 0,
+   "checkpoint": "ckpt-06",
+   "condition": "look_full",
+   "repeat": 1
+  },
+  {
+   "slot": 1,
+   "checkpoint": "ckpt-06",
+   "condition": "direct",
+   "repeat": 1
+  },
+  {
+   "slot": 2,
+   "checkpoint": "ckpt-06",
+   "condition": "matched_wait",
+   "repeat": 1
+  },
+  {
+   "slot": 3,
+   "checkpoint": "ckpt-04",
+   "condition": "look_full",
+   "repeat": 0
+  },
+  {
+   "slot": 4,
+   "checkpoint": "ckpt-04",
+   "condition": "matched_wait",
+   "repeat": 0
+  },
+  {
+   "slot": 5,
+   "checkpoint": "ckpt-04",
+   "condition": "direct",
+   "repeat": 0
+  },
+  {
+   "slot": 6,
+   "checkpoint": "ckpt-18",
+   "condition": "look_full",
+   "repeat": 1
+  },
+  {
+   "slot": 7,
+   "checkpoint": "ckpt-18",
+   "condition": "matched_wait",
+   "repeat": 1
+  },
+  {
+   "slot": 8,
+   "checkpoint": "ckpt-18",
+   "condition": "direct",
+   "repeat": 1
+  },
+  {
+   "slot": 9,
+   "checkpoint": "ckpt-18",
+   "condition": "look_full",
+   "repeat": 2
+  },
+  {
+   "slot": 10,
+   "checkpoint": "ckpt-18",
+   "condition": "matched_wait",
+   "repeat": 2
+  },
+  {
+   "slot": 11,
+   "checkpoint": "ckpt-18",
+   "condition": "direct",
+   "repeat": 2
+  },
+  {
+   "slot": 12,
+   "checkpoint": "ckpt-13",
+   "condition": "matched_wait",
+   "repeat": 0
+  },
+  {
+   "slot": 13,
+   "checkpoint": "ckpt-13",
+   "condition": "direct",
+   "repeat": 0
+  },
+  {
+   "slot": 14,
+   "checkpoint": "ckpt-13",
+   "condition": "look_full",
+   "repeat": 0
+  },
+  {
+   "slot": 15,
+   "checkpoint": "ckpt-07",
+   "condition": "matched_wait",
+   "repeat": 2
+  },
+  {
+   "slot": 16,
+   "checkpoint": "ckpt-07",
+   "condition": "look_full",
+   "repeat": 2
+  },
+  {
+   "slot": 17,
+   "checkpoint": "ckpt-07",
+   "condition": "direct",
+   "repeat": 2
+  },
+  {
+   "slot": 18,
+   "checkpoint": "ckpt-19",
+   "condition": "direct",
+   "repeat": 1
+  },
+  {
+   "slot": 19,
+   "checkpoint": "ckpt-19",
+   "condition": "look_full",
+   "repeat": 1
+  },
+  {
+   "slot": 20,
+   "checkpoint": "ckpt-19",
+   "condition": "matched_wait",
+   "repeat": 1
+  },
+  {
+   "slot": 21,
+   "checkpoint": "ckpt-05",
+   "condition": "matched_wait",
+   "repeat": 1
+  },
+  {
+   "slot": 22,
+   "checkpoint": "ckpt-05",
+   "condition": "look_full",
+   "repeat": 1
+  },
+  {
+   "slot": 23,
+   "checkpoint": "ckpt-05",
+   "condition": "direct",
+   "repeat": 1
+  },
+  {
+   "slot": 24,
+   "checkpoint": "ckpt-21",
+   "condition": "look_full",
+   "repeat": 2
+  },
+  {
+   "slot": 25,
+   "checkpoint": "ckpt-21",
+   "condition": "direct",
+   "repeat": 2
+  },
+  {
+   "slot": 26,
+   "checkpoint": "ckpt-21",
+   "condition": "matched_wait",
+   "repeat": 2
+  },
+  {
+   "slot": 27,
+   "checkpoint": "ckpt-10",
+   "condition": "look_full",
+   "repeat": 2
+  },
+  {
+   "slot": 28,
+   "checkpoint": "ckpt-10",
+   "condition": "matched_wait",
+   "repeat": 2
+  },
+  {
+   "slot": 29,
+   "checkpoint": "ckpt-10",
+   "condition": "direct",
+   "repeat": 2
+  },
+  {
+   "slot": 30,
+   "checkpoint": "ckpt-15",
+   "condition": "matched_wait",
+   "repeat": 1
+  },
+  {
+   "slot": 31,
+   "checkpoint": "ckpt-15",
+   "condition": "direct",
+   "repeat": 1
+  },
+  {
+   "slot": 32,
+   "checkpoint": "ckpt-15",
+   "condition": "look_full",
+   "repeat": 1
+  },
+  {
+   "slot": 33,
+   "checkpoint": "ckpt-09",
+   "condition": "matched_wait",
+   "repeat": 0
+  },
+  {
+   "slot": 34,
+   "checkpoint": "ckpt-09",
+   "condition": "look_full",
+   "repeat": 0
+  },
+  {
+   "slot": 35,
+   "checkpoint": "ckpt-09",
+   "condition": "direct",
+   "repeat": 0
+  },
+  {
+   "slot": 36,
+   "checkpoint": "ckpt-20",
+   "condition": "look_full",
+   "repeat": 0
+  },
+  {
+   "slot": 37,
+   "checkpoint": "ckpt-20",
+   "condition": "matched_wait",
+   "repeat": 0
+  },
+  {
+   "slot": 38,
+   "checkpoint": "ckpt-20",
+   "condition": "direct",
+   "repeat": 0
+  },
+  {
+   "slot": 39,
+   "checkpoint": "ckpt-23",
+   "condition": "matched_wait",
+   "repeat": 1
+  },
+  {
+   "slot": 40,
+   "checkpoint": "ckpt-23",
+   "condition": "direct",
+   "repeat": 1
+  },
+  {
+   "slot": 41,
+   "checkpoint": "ckpt-23",
+   "condition": "look_full",
+   "repeat": 1
+  },
+  {
+   "slot": 42,
+   "checkpoint": "ckpt-22",
+   "condition": "direct",
+   "repeat": 2
+  },
+  {
+   "slot": 43,
+   "checkpoint": "ckpt-22",
+   "condition": "matched_wait",
+   "repeat": 2
+  },
+  {
+   "slot": 44,
+   "checkpoint": "ckpt-22",
+   "condition": "look_full",
+   "repeat": 2
+  },
+  {
+   "slot": 45,
+   "checkpoint": "ckpt-13",
+   "condition": "matched_wait",
+   "repeat": 1
+  },
+  {
+   "slot": 46,
+   "checkpoint": "ckpt-13",
+   "condition": "look_full",
+   "repeat": 1
+  },
+  {
+   "slot": 47,
+   "checkpoint": "ckpt-13",
+   "condition": "direct",
+   "repeat": 1
+  },
+  {
+   "slot": 48,
+   "checkpoint": "ckpt-13",
+   "condition": "matched_wait",
+   "repeat": 2
+  },
+  {
+   "slot": 49,
+   "checkpoint": "ckpt-13",
+   "condition": "direct",
+   "repeat": 2
+  },
+  {
+   "slot": 50,
+   "checkpoint": "ckpt-13",
+   "condition": "look_full",
+   "repeat": 2
+  },
+  {
+   "slot": 51,
+   "checkpoint": "ckpt-08",
+   "condition": "matched_wait",
+   "repeat": 2
+  },
+  {
+   "slot": 52,
+   "checkpoint": "ckpt-08",
+   "condition": "look_full",
+   "repeat": 2
+  },
+  {
+   "slot": 53,
+   "checkpoint": "ckpt-08",
+   "condition": "direct",
+   "repeat": 2
+  },
+  {
+   "slot": 54,
+   "checkpoint": "ckpt-21",
+   "condition": "look_full",
+   "repeat": 1
+  },
+  {
+   "slot": 55,
+   "checkpoint": "ckpt-21",
+   "condition": "matched_wait",
+   "repeat": 1
+  },
+  {
+   "slot": 56,
+   "checkpoint": "ckpt-21",
+   "condition": "direct",
+   "repeat": 1
+  },
+  {
+   "slot": 57,
+   "checkpoint": "ckpt-22",
+   "condition": "direct",
+   "repeat": 0
+  },
+  {
+   "slot": 58,
+   "checkpoint": "ckpt-22",
+   "condition": "matched_wait",
+   "repeat": 0
+  },
+  {
+   "slot": 59,
+   "checkpoint": "ckpt-22",
+   "condition": "look_full",
+   "repeat": 0
+  },
+  {
+   "slot": 60,
+   "checkpoint": "ckpt-23",
+   "condition": "direct",
+   "repeat": 2
+  },
+  {
+   "slot": 61,
+   "checkpoint": "ckpt-23",
+   "condition": "look_full",
+   "repeat": 2
+  },
+  {
+   "slot": 62,
+   "checkpoint": "ckpt-23",
+   "condition": "matched_wait",
+   "repeat": 2
+  },
+  {
+   "slot": 63,
+   "checkpoint": "ckpt-15",
+   "condition": "matched_wait",
+   "repeat": 2
+  },
+  {
+   "slot": 64,
+   "checkpoint": "ckpt-15",
+   "condition": "look_full",
+   "repeat": 2
+  },
+  {
+   "slot": 65,
+   "checkpoint": "ckpt-15",
+   "condition": "direct",
+   "repeat": 2
+  },
+  {
+   "slot": 66,
+   "checkpoint": "ckpt-05",
+   "condition": "matched_wait",
+   "repeat": 0
+  },
+  {
+   "slot": 67,
+   "checkpoint": "ckpt-05",
+   "condition": "look_full",
+   "repeat": 0
+  },
+  {
+   "slot": 68,
+   "checkpoint": "ckpt-05",
+   "condition": "direct",
+   "repeat": 0
+  },
+  {
+   "slot": 69,
+   "checkpoint": "ckpt-04",
+   "condition": "matched_wait",
+   "repeat": 2
+  },
+  {
+   "slot": 70,
+   "checkpoint": "ckpt-04",
+   "condition": "look_full",
+   "repeat": 2
+  },
+  {
+   "slot": 71,
+   "checkpoint": "ckpt-04",
+   "condition": "direct",
+   "repeat": 2
+  },
+  {
+   "slot": 72,
+   "checkpoint": "ckpt-05",
+   "condition": "look_full",
+   "repeat": 2
+  },
+  {
+   "slot": 73,
+   "checkpoint": "ckpt-05",
+   "condition": "matched_wait",
+   "repeat": 2
+  },
+  {
+   "slot": 74,
+   "checkpoint": "ckpt-05",
+   "condition": "direct",
+   "repeat": 2
+  },
+  {
+   "slot": 75,
+   "checkpoint": "ckpt-08",
+   "condition": "look_full",
+   "repeat": 1
+  },
+  {
+   "slot": 76,
+   "checkpoint": "ckpt-08",
+   "condition": "direct",
+   "repeat": 1
+  },
+  {
+   "slot": 77,
+   "checkpoint": "ckpt-08",
+   "condition": "matched_wait",
+   "repeat": 1
+  },
+  {
+   "slot": 78,
+   "checkpoint": "ckpt-12",
+   "condition": "matched_wait",
+   "repeat": 0
+  },
+  {
+   "slot": 79,
+   "checkpoint": "ckpt-12",
+   "condition": "direct",
+   "repeat": 0
+  },
+  {
+   "slot": 80,
+   "checkpoint": "ckpt-12",
+   "condition": "look_full",
+   "repeat": 0
+  },
+  {
+   "slot": 81,
+   "checkpoint": "ckpt-23",
+   "condition": "matched_wait",
+   "repeat": 0
+  },
+  {
+   "slot": 82,
+   "checkpoint": "ckpt-23",
+   "condition": "direct",
+   "repeat": 0
+  },
+  {
+   "slot": 83,
+   "checkpoint": "ckpt-23",
+   "condition": "look_full",
+   "repeat": 0
+  },
+  {
+   "slot": 84,
+   "checkpoint": "ckpt-12",
+   "condition": "matched_wait",
+   "repeat": 1
+  },
+  {
+   "slot": 85,
+   "checkpoint": "ckpt-12",
+   "condition": "look_full",
+   "repeat": 1
+  },
+  {
+   "slot": 86,
+   "checkpoint": "ckpt-12",
+   "condition": "direct",
+   "repeat": 1
+  },
+  {
+   "slot": 87,
+   "checkpoint": "ckpt-07",
+   "condition": "look_full",
+   "repeat": 1
+  },
+  {
+   "slot": 88,
+   "checkpoint": "ckpt-07",
+   "condition": "matched_wait",
+   "repeat": 1
+  },
+  {
+   "slot": 89,
+   "checkpoint": "ckpt-07",
+   "condition": "direct",
+   "repeat": 1
+  },
+  {
+   "slot": 90,
+   "checkpoint": "ckpt-17",
+   "condition": "look_full",
+   "repeat": 2
+  },
+  {
+   "slot": 91,
+   "checkpoint": "ckpt-17",
+   "condition": "direct",
+   "repeat": 2
+  },
+  {
+   "slot": 92,
+   "checkpoint": "ckpt-17",
+   "condition": "matched_wait",
+   "repeat": 2
+  },
+  {
+   "slot": 93,
+   "checkpoint": "ckpt-18",
+   "condition": "direct",
+   "repeat": 0
+  },
+  {
+   "slot": 94,
+   "checkpoint": "ckpt-18",
+   "condition": "look_full",
+   "repeat": 0
+  },
+  {
+   "slot": 95,
+   "checkpoint": "ckpt-18",
+   "condition": "matched_wait",
+   "repeat": 0
+  },
+  {
+   "slot": 96,
+   "checkpoint": "ckpt-04",
+   "condition": "direct",
+   "repeat": 1
+  },
+  {
+   "slot": 97,
+   "checkpoint": "ckpt-04",
+   "condition": "look_full",
+   "repeat": 1
+  },
+  {
+   "slot": 98,
+   "checkpoint": "ckpt-04",
+   "condition": "matched_wait",
+   "repeat": 1
+  },
+  {
+   "slot": 99,
+   "checkpoint": "ckpt-19",
+   "condition": "direct",
+   "repeat": 0
+  },
+  {
+   "slot": 100,
+   "checkpoint": "ckpt-19",
+   "condition": "matched_wait",
+   "repeat": 0
+  },
+  {
+   "slot": 101,
+   "checkpoint": "ckpt-19",
+   "condition": "look_full",
+   "repeat": 0
+  },
+  {
+   "slot": 102,
+   "checkpoint": "ckpt-03",
+   "condition": "look_full",
+   "repeat": 0
+  },
+  {
+   "slot": 103,
+   "checkpoint": "ckpt-03",
+   "condition": "direct",
+   "repeat": 0
+  },
+  {
+   "slot": 104,
+   "checkpoint": "ckpt-03",
+   "condition": "matched_wait",
+   "repeat": 0
+  },
+  {
+   "slot": 105,
+   "checkpoint": "ckpt-16",
+   "condition": "matched_wait",
+   "repeat": 2
+  },
+  {
+   "slot": 106,
+   "checkpoint": "ckpt-16",
+   "condition": "look_full",
+   "repeat": 2
+  },
+  {
+   "slot": 107,
+   "checkpoint": "ckpt-16",
+   "condition": "direct",
+   "repeat": 2
+  },
+  {
+   "slot": 108,
+   "checkpoint": "ckpt-11",
+   "condition": "look_full",
+   "repeat": 2
+  },
+  {
+   "slot": 109,
+   "checkpoint": "ckpt-11",
+   "condition": "matched_wait",
+   "repeat": 2
+  },
+  {
+   "slot": 110,
+   "checkpoint": "ckpt-11",
+   "condition": "direct",
+   "repeat": 2
+  },
+  {
+   "slot": 111,
+   "checkpoint": "ckpt-19",
+   "condition": "direct",
+   "repeat": 2
+  },
+  {
+   "slot": 112,
+   "checkpoint": "ckpt-19",
+   "condition": "matched_wait",
+   "repeat": 2
+  },
+  {
+   "slot": 113,
+   "checkpoint": "ckpt-19",
+   "condition": "look_full",
+   "repeat": 2
+  },
+  {
+   "slot": 114,
+   "checkpoint": "ckpt-24",
+   "condition": "matched_wait",
+   "repeat": 1
+  },
+  {
+   "slot": 115,
+   "checkpoint": "ckpt-24",
+   "condition": "direct",
+   "repeat": 1
+  },
+  {
+   "slot": 116,
+   "checkpoint": "ckpt-24",
+   "condition": "look_full",
+   "repeat": 1
+  },
+  {
+   "slot": 117,
+   "checkpoint": "ckpt-21",
+   "condition": "look_full",
+   "repeat": 0
+  },
+  {
+   "slot": 118,
+   "checkpoint": "ckpt-21",
+   "condition": "direct",
+   "repeat": 0
+  },
+  {
+   "slot": 119,
+   "checkpoint": "ckpt-21",
+   "condition": "matched_wait",
+   "repeat": 0
+  },
+  {
+   "slot": 120,
+   "checkpoint": "ckpt-09",
+   "condition": "direct",
+   "repeat": 2
+  },
+  {
+   "slot": 121,
+   "checkpoint": "ckpt-09",
+   "condition": "look_full",
+   "repeat": 2
+  },
+  {
+   "slot": 122,
+   "checkpoint": "ckpt-09",
+   "condition": "matched_wait",
+   "repeat": 2
+  },
+  {
+   "slot": 123,
+   "checkpoint": "ckpt-09",
+   "condition": "look_full",
+   "repeat": 1
+  },
+  {
+   "slot": 124,
+   "checkpoint": "ckpt-09",
+   "condition": "matched_wait",
+   "repeat": 1
+  },
+  {
+   "slot": 125,
+   "checkpoint": "ckpt-09",
+   "condition": "direct",
+   "repeat": 1
+  },
+  {
+   "slot": 126,
+   "checkpoint": "ckpt-24",
+   "condition": "matched_wait",
+   "repeat": 2
+  },
+  {
+   "slot": 127,
+   "checkpoint": "ckpt-24",
+   "condition": "direct",
+   "repeat": 2
+  },
+  {
+   "slot": 128,
+   "checkpoint": "ckpt-24",
+   "condition": "look_full",
+   "repeat": 2
+  },
+  {
+   "slot": 129,
+   "checkpoint": "ckpt-01",
+   "condition": "matched_wait",
+   "repeat": 1
+  },
+  {
+   "slot": 130,
+   "checkpoint": "ckpt-01",
+   "condition": "direct",
+   "repeat": 1
+  },
+  {
+   "slot": 131,
+   "checkpoint": "ckpt-01",
+   "condition": "look_full",
+   "repeat": 1
+  },
+  {
+   "slot": 132,
+   "checkpoint": "ckpt-14",
+   "condition": "matched_wait",
+   "repeat": 2
+  },
+  {
+   "slot": 133,
+   "checkpoint": "ckpt-14",
+   "condition": "look_full",
+   "repeat": 2
+  },
+  {
+   "slot": 134,
+   "checkpoint": "ckpt-14",
+   "condition": "direct",
+   "repeat": 2
+  },
+  {
+   "slot": 135,
+   "checkpoint": "ckpt-08",
+   "condition": "look_full",
+   "repeat": 0
+  },
+  {
+   "slot": 136,
+   "checkpoint": "ckpt-08",
+   "condition": "matched_wait",
+   "repeat": 0
+  },
+  {
+   "slot": 137,
+   "checkpoint": "ckpt-08",
+   "condition": "direct",
+   "repeat": 0
+  },
+  {
+   "slot": 138,
+   "checkpoint": "ckpt-10",
+   "condition": "look_full",
+   "repeat": 0
+  },
+  {
+   "slot": 139,
+   "checkpoint": "ckpt-10",
+   "condition": "matched_wait",
+   "repeat": 0
+  },
+  {
+   "slot": 140,
+   "checkpoint": "ckpt-10",
+   "condition": "direct",
+   "repeat": 0
+  },
+  {
+   "slot": 141,
+   "checkpoint": "ckpt-20",
+   "condition": "direct",
+   "repeat": 2
+  },
+  {
+   "slot": 142,
+   "checkpoint": "ckpt-20",
+   "condition": "look_full",
+   "repeat": 2
+  },
+  {
+   "slot": 143,
+   "checkpoint": "ckpt-20",
+   "condition": "matched_wait",
+   "repeat": 2
+  },
+  {
+   "slot": 144,
+   "checkpoint": "ckpt-22",
+   "condition": "matched_wait",
+   "repeat": 1
+  },
+  {
+   "slot": 145,
+   "checkpoint": "ckpt-22",
+   "condition": "look_full",
+   "repeat": 1
+  },
+  {
+   "slot": 146,
+   "checkpoint": "ckpt-22",
+   "condition": "direct",
+   "repeat": 1
+  },
+  {
+   "slot": 147,
+   "checkpoint": "ckpt-07",
+   "condition": "look_full",
+   "repeat": 0
+  },
+  {
+   "slot": 148,
+   "checkpoint": "ckpt-07",
+   "condition": "matched_wait",
+   "repeat": 0
+  },
+  {
+   "slot": 149,
+   "checkpoint": "ckpt-07",
+   "condition": "direct",
+   "repeat": 0
+  },
+  {
+   "slot": 150,
+   "checkpoint": "ckpt-17",
+   "condition": "direct",
+   "repeat": 1
+  },
+  {
+   "slot": 151,
+   "checkpoint": "ckpt-17",
+   "condition": "matched_wait",
+   "repeat": 1
+  },
+  {
+   "slot": 152,
+   "checkpoint": "ckpt-17",
+   "condition": "look_full",
+   "repeat": 1
+  },
+  {
+   "slot": 153,
+   "checkpoint": "ckpt-06",
+   "condition": "look_full",
+   "repeat": 2
+  },
+  {
+   "slot": 154,
+   "checkpoint": "ckpt-06",
+   "condition": "direct",
+   "repeat": 2
+  },
+  {
+   "slot": 155,
+   "checkpoint": "ckpt-06",
+   "condition": "matched_wait",
+   "repeat": 2
+  },
+  {
+   "slot": 156,
+   "checkpoint": "ckpt-14",
+   "condition": "direct",
+   "repeat": 1
+  },
+  {
+   "slot": 157,
+   "checkpoint": "ckpt-14",
+   "condition": "matched_wait",
+   "repeat": 1
+  },
+  {
+   "slot": 158,
+   "checkpoint": "ckpt-14",
+   "condition": "look_full",
+   "repeat": 1
+  },
+  {
+   "slot": 159,
+   "checkpoint": "ckpt-10",
+   "condition": "look_full",
+   "repeat": 1
+  },
+  {
+   "slot": 160,
+   "checkpoint": "ckpt-10",
+   "condition": "direct",
+   "repeat": 1
+  },
+  {
+   "slot": 161,
+   "checkpoint": "ckpt-10",
+   "condition": "matched_wait",
+   "repeat": 1
+  },
+  {
+   "slot": 162,
+   "checkpoint": "ckpt-03",
+   "condition": "look_full",
+   "repeat": 1
+  },
+  {
+   "slot": 163,
+   "checkpoint": "ckpt-03",
+   "condition": "matched_wait",
+   "repeat": 1
+  },
+  {
+   "slot": 164,
+   "checkpoint": "ckpt-03",
+   "condition": "direct",
+   "repeat": 1
+  },
+  {
+   "slot": 165,
+   "checkpoint": "ckpt-12",
+   "condition": "matched_wait",
+   "repeat": 2
+  },
+  {
+   "slot": 166,
+   "checkpoint": "ckpt-12",
+   "condition": "direct",
+   "repeat": 2
+  },
+  {
+   "slot": 167,
+   "checkpoint": "ckpt-12",
+   "condition": "look_full",
+   "repeat": 2
+  },
+  {
+   "slot": 168,
+   "checkpoint": "ckpt-15",
+   "condition": "direct",
+   "repeat": 0
+  },
+  {
+   "slot": 169,
+   "checkpoint": "ckpt-15",
+   "condition": "matched_wait",
+   "repeat": 0
+  },
+  {
+   "slot": 170,
+   "checkpoint": "ckpt-15",
+   "condition": "look_full",
+   "repeat": 0
+  },
+  {
+   "slot": 171,
+   "checkpoint": "ckpt-03",
+   "condition": "direct",
+   "repeat": 2
+  },
+  {
+   "slot": 172,
+   "checkpoint": "ckpt-03",
+   "condition": "look_full",
+   "repeat": 2
+  },
+  {
+   "slot": 173,
+   "checkpoint": "ckpt-03",
+   "condition": "matched_wait",
+   "repeat": 2
+  },
+  {
+   "slot": 174,
+   "checkpoint": "ckpt-06",
+   "condition": "look_full",
+   "repeat": 0
+  },
+  {
+   "slot": 175,
+   "checkpoint": "ckpt-06",
+   "condition": "matched_wait",
+   "repeat": 0
+  },
+  {
+   "slot": 176,
+   "checkpoint": "ckpt-06",
+   "condition": "direct",
+   "repeat": 0
+  },
+  {
+   "slot": 177,
+   "checkpoint": "ckpt-02",
+   "condition": "look_full",
+   "repeat": 1
+  },
+  {
+   "slot": 178,
+   "checkpoint": "ckpt-02",
+   "condition": "direct",
+   "repeat": 1
+  },
+  {
+   "slot": 179,
+   "checkpoint": "ckpt-02",
+   "condition": "matched_wait",
+   "repeat": 1
+  },
+  {
+   "slot": 180,
+   "checkpoint": "ckpt-16",
+   "condition": "look_full",
+   "repeat": 1
+  },
+  {
+   "slot": 181,
+   "checkpoint": "ckpt-16",
+   "condition": "matched_wait",
+   "repeat": 1
+  },
+  {
+   "slot": 182,
+   "checkpoint": "ckpt-16",
+   "condition": "direct",
+   "repeat": 1
+  },
+  {
+   "slot": 183,
+   "checkpoint": "ckpt-02",
+   "condition": "matched_wait",
+   "repeat": 2
+  },
+  {
+   "slot": 184,
+   "checkpoint": "ckpt-02",
+   "condition": "look_full",
+   "repeat": 2
+  },
+  {
+   "slot": 185,
+   "checkpoint": "ckpt-02",
+   "condition": "direct",
+   "repeat": 2
+  },
+  {
+   "slot": 186,
+   "checkpoint": "ckpt-11",
+   "condition": "matched_wait",
+   "repeat": 1
+  },
+  {
+   "slot": 187,
+   "checkpoint": "ckpt-11",
+   "condition": "direct",
+   "repeat": 1
+  },
+  {
+   "slot": 188,
+   "checkpoint": "ckpt-11",
+   "condition": "look_full",
+   "repeat": 1
+  },
+  {
+   "slot": 189,
+   "checkpoint": "ckpt-20",
+   "condition": "look_full",
+   "repeat": 1
+  },
+  {
+   "slot": 190,
+   "checkpoint": "ckpt-20",
+   "condition": "direct",
+   "repeat": 1
+  },
+  {
+   "slot": 191,
+   "checkpoint": "ckpt-20",
+   "condition": "matched_wait",
+   "repeat": 1
+  },
+  {
+   "slot": 192,
+   "checkpoint": "ckpt-02",
+   "condition": "matched_wait",
+   "repeat": 0
+  },
+  {
+   "slot": 193,
+   "checkpoint": "ckpt-02",
+   "condition": "direct",
+   "repeat": 0
+  },
+  {
+   "slot": 194,
+   "checkpoint": "ckpt-02",
+   "condition": "look_full",
+   "repeat": 0
+  },
+  {
+   "slot": 195,
+   "checkpoint": "ckpt-17",
+   "condition": "look_full",
+   "repeat": 0
+  },
+  {
+   "slot": 196,
+   "checkpoint": "ckpt-17",
+   "condition": "matched_wait",
+   "repeat": 0
+  },
+  {
+   "slot": 197,
+   "checkpoint": "ckpt-17",
+   "condition": "direct",
+   "repeat": 0
+  },
+  {
+   "slot": 198,
+   "checkpoint": "ckpt-01",
+   "condition": "look_full",
+   "repeat": 0
+  },
+  {
+   "slot": 199,
+   "checkpoint": "ckpt-01",
+   "condition": "matched_wait",
+   "repeat": 0
+  },
+  {
+   "slot": 200,
+   "checkpoint": "ckpt-01",
+   "condition": "direct",
+   "repeat": 0
+  },
+  {
+   "slot": 201,
+   "checkpoint": "ckpt-14",
+   "condition": "direct",
+   "repeat": 0
+  },
+  {
+   "slot": 202,
+   "checkpoint": "ckpt-14",
+   "condition": "matched_wait",
+   "repeat": 0
+  },
+  {
+   "slot": 203,
+   "checkpoint": "ckpt-14",
+   "condition": "look_full",
+   "repeat": 0
+  },
+  {
+   "slot": 204,
+   "checkpoint": "ckpt-24",
+   "condition": "matched_wait",
+   "repeat": 0
+  },
+  {
+   "slot": 205,
+   "checkpoint": "ckpt-24",
+   "condition": "look_full",
+   "repeat": 0
+  },
+  {
+   "slot": 206,
+   "checkpoint": "ckpt-24",
+   "condition": "direct",
+   "repeat": 0
+  },
+  {
+   "slot": 207,
+   "checkpoint": "ckpt-16",
+   "condition": "look_full",
+   "repeat": 0
+  },
+  {
+   "slot": 208,
+   "checkpoint": "ckpt-16",
+   "condition": "direct",
+   "repeat": 0
+  },
+  {
+   "slot": 209,
+   "checkpoint": "ckpt-16",
+   "condition": "matched_wait",
+   "repeat": 0
+  },
+  {
+   "slot": 210,
+   "checkpoint": "ckpt-01",
+   "condition": "look_full",
+   "repeat": 2
+  },
+  {
+   "slot": 211,
+   "checkpoint": "ckpt-01",
+   "condition": "matched_wait",
+   "repeat": 2
+  },
+  {
+   "slot": 212,
+   "checkpoint": "ckpt-01",
+   "condition": "direct",
+   "repeat": 2
+  },
+  {
+   "slot": 213,
+   "checkpoint": "ckpt-11",
+   "condition": "matched_wait",
+   "repeat": 0
+  },
+  {
+   "slot": 214,
+   "checkpoint": "ckpt-11",
+   "condition": "direct",
+   "repeat": 0
+  },
+  {
+   "slot": 215,
+   "checkpoint": "ckpt-11",
+   "condition": "look_full",
+   "repeat": 0
+  }
+ ],
+ "continuation": {
+  "policy": "the frozen agent (same Pi, model, prompts) continues from the branch",
+  "budget": "fixed continuation budget (turns and seconds) per branch, the same for every arm",
+  "local_postcondition": "pre-registered per checkpoint (target control / file / app state)",
+  "untested_options": "remain unknown (not estimated)"
+ },
+ "analysis": {
+  "unit": "checkpoint (cluster)",
+  "aggregation": "the 3 repeats of an arm are averaged within the checkpoint first",
+  "estimands": [
+   "E[Y(look_full) - Y(direct)]",
+   "E[Y(look_full) - Y(matched_wait)]",
+   "same for the local post-condition and the remaining time"
+  ],
+  "tests": [
+   "checkpoint-cluster bootstrap of the mean paired difference",
+   "sign-flip permutation over checkpoints"
+  ],
+  "incremental_calibration": "bin checkpoints by the frozen model's predicted tau and compare with the observed paired difference (bench/offline_v2.py incremental_calibration; negative allowed)",
+  "not_used": "McNemar on repeat averages"
+ },
+ "infra": {
+  "primary": "keep every planned unit; a unit that is still infra after the allowed re-run counts as a failure in its condition",
+  "rerun": "external infra only (box setup failure, relay/API outage, evaluator crash with a logged external cause): at most one re-run, same rule in every condition, decided before looking at outcomes",
+  "valid_pairs": "reported separately: tasks with a valid run in every condition",
+  "not_infra": "algorithm hangs (gate, Pi loop, model loop, check_done or role deadline) are failures of the condition, never infra",
+  "never": "no retry until success"
+ },
+ "note": "plan only: never runs anything",
+ "status": "draft",
+ "frozen": {
+  "complete": false,
+  "hashes": {
+   "gate_commit": "acaba69"
+  },
+  "missing": [
+   "pi",
+   "main_model",
+   "main_thinking",
+   "reviewer_model",
+   "roles",
+   "prompts",
+   "driver",
+   "app_env",
+   "timeouts",
+   "cost_config",
+   "value_weights"
+  ],
+  "required": [
+   "pi",
+   "main_model",
+   "main_thinking",
+   "reviewer_model",
+   "roles",
+   "prompts",
+   "driver",
+   "app_env",
+   "timeouts",
+   "cost_config",
+   "gate_commit",
+   "value_weights"
+  ]
+ },
+ "note_draft": "DRAFT: not frozen (missing: pi, main_model, main_thinking, reviewer_model, roles, prompts, driver, app_env, timeouts, cost_config, value_weights); it must not be run as the pre-registered experiment",
+ "plan_sha256": "ac67ddb74263008cad9eb5623affc25073a87049cd06d1988c42ec2710b97398"
+}
