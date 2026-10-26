@@ -466,8 +466,8 @@ pub fn assess_risk_t(tool: &str, args: &Value, t: &Target, steps: &[(String, Val
         if ["click", "double_click", "browser_click", "invoke_menu", "set_value"].contains(&tl) || tg.is_elem() {
             let (mut lv, w) = risk_of_label(&label);
             let rl = role.to_lowercase();
-            if lv.is_some() && opener_role().is_match(&rl) {
-                lv = None; // opening a menu, tab or list shows choices; it changes nothing
+            if lv.is_some() && (opener_role().is_match(&rl) || tg.element.as_ref().map(|e| e.opens_submenu()).unwrap_or(false)) {
+                lv = None; // opening a menu, tab, list or submenu shows choices; it changes nothing
             } else if lv == Some("high") && rl.contains("menu") {
                 lv = Some("medium"); // an app command from a menu is usually undoable
             }
@@ -826,6 +826,30 @@ mod tests {
         assert_eq!(risk("menu item", "Delete Rows").as_deref(), Some("medium"));
         assert_eq!(risk("button", "Delete").as_deref(), Some("high"));
         assert_eq!(risk("button", "Format Disk").as_deref(), Some("high"));
+    }
+
+    /// v0.10.2 regression (docs/failure-analysis-v099.md, chrome-35253b65): Chromium's "Cast, save, and share" row
+    /// offers only `open` (a submenu parent), so clicking it shares nothing; leaf items (select / click) keep their risk.
+    #[test]
+    fn submenu_parent_is_not_risky_but_leaf_items_are() {
+        let el = |role: &str, label: &str, acts: &[&str]| {
+            let mut e = Element::new(1, role, label);
+            e.actions = acts.iter().map(|x| x.to_string()).collect();
+            let t = Target { kind: "token".into(), pid: Some(999999), element: Some(e), ..Default::default() };
+            assess_risk("click", &json!({}), &t, &[], &GateState::default()).1
+        };
+        assert_eq!(el("menu item", "Cast, save, and share", &["open", "showcontextmenu"]), None);
+        assert_eq!(el("menu item", "Share", &["expand"]), None);
+        assert_eq!(el("menu item", "Share", &["select", "showcontextmenu"]).as_deref(), Some("medium"));
+        assert_eq!(el("menu item", "Delete", &["open", "click"]).as_deref(), Some("medium"));
+        assert_eq!(el("menu item", "Share", &[]).as_deref(), Some("medium"), "no action list: unchanged");
+        assert_eq!(el("push button", "Share", &["open"]).as_deref(), Some("medium"), "only menu items");
+        // the row's action list is read from the tree markdown
+        let md = "- [183] menu item \"More tools\" [actions=[open,showContextMenu]]\n- [184] menu item \"Share page\" [actions=[select,showContextMenu]]";
+        let els = crate::state::parse_elements(&json!({"tree_markdown": md}));
+        assert!(els[&183].opens_submenu());
+        assert!(!els[&184].opens_submenu());
+        assert_eq!(els[&183].actions, vec!["open", "showcontextmenu"]);
     }
 
     #[test]

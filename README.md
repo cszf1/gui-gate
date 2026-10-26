@@ -1,5 +1,15 @@
 # gui-gate
 
+> **v0.10.2 是 gui-gate 作为独立 MCP 的最后一版。** 之后的开发转到
+> [cszf1/gui-pi-desktop](https://github.com/cszf1/gui-pi-desktop)（Pi 桌面版 computer-use agent），门的代码随桌面版演进；
+> 本仓库保留，不再计划发布独立版本。
+> **v0.10.2 is the last release of gui-gate as a standalone MCP server; development continues in cszf1/gui-pi-desktop.**
+>
+> OSWorld 免责声明：本仓库里的 OSWorld / OSWorld-Verified 数字都来自**基于 OSWorld 任务与评测器的自定义环境**
+> （原生 Debian/XFCE、无 VM、Chromium、应用版本与预算不同、--human deny），不是 OSWorld 官方成绩，不能与排行榜比较
+> （custom environment based on OSWorld tasks and evaluators; not an official OSWorld-Verified score, not comparable to
+> the leaderboard）。v0.9.9 运行的失败归类见 docs/failure-analysis-v099.md。
+
 **一个完整的 MCP：门控 + Cua Driver + 批量执行，装一次就能用。** 任何支持 MCP 的 Agent（Claude Code、Codex、Cursor、Pi……）都能接。
 门控本身是一个 Rust 程序（约 4 MB，无运行时依赖）；Cua Driver 用它官方的安装器装最新版，一条命令全部装好。
 

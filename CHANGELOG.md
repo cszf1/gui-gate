@@ -1,6 +1,27 @@
 # Changelog
 
-## Unreleased (goes into 0.10.2)
+## 0.10.2 (2026-10-26) - last release of gui-gate as a standalone MCP
+
+**This is the last release of gui-gate as an independent MCP server.** Development moves to
+[cszf1/gui-pi-desktop](https://github.com/cszf1/gui-pi-desktop); the gate code evolves with the desktop app from here on
+(the desktop builds pin this tag). This repository stays available; no further standalone releases are planned.
+
+Failure analysis of the v0.9.9 OSWorld-Verified run (docs/failure-analysis-v099.md, bench/failure_analysis.py,
+results/failure-analysis-v099-2026-10-26/): the 147 valid failures classified by cause from the logs; only generic gate
+defects with log evidence are fixed here, everything that could fit the 361 tasks is listed as desktop research.
+- The string method `x.replace(a, b)` in interpreter code is no longer read as a file move: `.replace(` with two or more
+  top-level arguments is Python str / JS String; `os.replace`, one-argument `Path.replace(target)`, `shutil.move`,
+  `os.remove` ... unchanged, an unclosed call keeps the old reading. Evidence: 40 refusals of read-only scripts in the
+  v0.9.9 run (39 of the 40 original commands are no longer flagged; the 40th really calls `os.unlink`).
+  Test: `command::tests::string_replace_is_not_a_file_move`.
+- A menu item whose only activating accessibility action is `open` / `expand` (a submenu parent, e.g. Chromium's
+  "Cast, save, and share" `[actions=[open,showContextMenu]]`) is treated like opening a menu: its label words do not make
+  it risky. Leaf items (select / click / press ...) and rows without an action list are unchanged. Elements now keep
+  their action list (`Element::actions`, from the tree markdown or the elements JSON). Evidence: chrome-35253b65 failed
+  after the reviewer refused that click as "share". Test: `features::tests::submenu_parent_is_not_risky_but_leaf_items_are`.
+- The value model default stays `legacy`; no thresholds changed.
+
+Merged since 0.10.1 (branches v2-sec, v2-hum, v2-val):
 
 Security regressions (branch v2-sec; tests/test_sec_regressions.py drives each one against tests/fake_driver.py):
 - Person answers fail closed on conflict: an accepted form that says yes and no at once (`{allow: true, decision:
