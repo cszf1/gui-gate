@@ -1,5 +1,10 @@
 # Value model (v0.10.1)
 
+> **2026-10-26 (branch v2-val):** default `GUI_GATE_VALUE_MODEL=legacy` (was `auto`); a treatment model without
+> bootstrap replicates has unknown intervals and is not used; `GUI_GATE_VALUE_MODEL=v2` keeps commands out of the GUI
+> predictor and history and adds click/scroll/role features. See docs/value-model-v2.md for the model, the leakage and
+> overlap fixes and the offline evaluation on the gui-pi3 OSWorld-Verified run.
+
 Response to the 2026-10-25 external review (predictor, research, P1, P2). What changed, what is active, and what is
 still only scaffolding.
 
@@ -12,7 +17,7 @@ still only scaffolding.
 | Δ_o = P_o − P_direct | any sign; no clamp | ≥ 0 by construction |
 | uncertainty | bootstrap replicates (sessions resampled): interval of every Δ_o and of the net benefit (seconds) of the chosen option over the cheapest one | none |
 | `check` | value of information (below) | forced probe before any hand-back (`grey`) |
-| active when | trained weights are loaded: `GUI_GATE_VALUE_WEIGHTS=value.json` or a `treatment` block in the `--weights` file, and `GUI_GATE_VALUE_MODEL` is `auto` (default) or `treatment` | otherwise (**the default today: no treatment weights ship**), or `GUI_GATE_VALUE_MODEL=legacy` |
+| active when | trained weights are loaded (`GUI_GATE_VALUE_WEIGHTS=value.json` or a `treatment` block in the `--weights` file) **and** `GUI_GATE_VALUE_MODEL` is `treatment`, `auto` or `v2`, **and** the model has >= 20 bootstrap replicates | otherwise; **`GUI_GATE_VALUE_MODEL=legacy` is the default since v2-val (2026-10-26)**: loading weights alone no longer switches the model |
 
 Every action line of the gate log has a `value` record: `model` (`legacy_prior` with `gains: "hand-set (not
 estimated)"`, or the treatment model's name with `kind: treatment_v1`), `policy`, `p_direct`, `q_direct`,
