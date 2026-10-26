@@ -802,6 +802,59 @@ mod tests {
         let _ = std::fs::remove_file(p);
     }
 
+    /// The default path (no switch set) must produce exactly the decisions and value logs of c3893bc:
+    /// a fixed grid of contexts x states x configs, compared with src/testdata/value_default_golden.json
+    /// (written once from c3893bc with GG_WRITE_GOLDEN=1).
+    #[test]
+    fn default_path_output_is_unchanged() {
+        let ctxs = [("click", "token", "Bold"), ("click", "token", "Save"), ("click", "pixel", ""), ("scroll", "pixel", ""),
+                    ("press_key", "keyboard", ""), ("type_text", "token", "Name"), ("run_command", "command", "ls /tmp")];
+        let states: Vec<Vec<(&str, f64)>> = vec![
+            vec![],
+            vec![("label_dup", 1.0)],
+            vec![("acts_since_obs", 3.0), ("log_obs_age", 2.5)],
+            vec![("loading_cue", 1.0)],
+            vec![("last_popup", 1.0), ("window_changed", 1.0)],
+            vec![("consec_fail", 2.0), ("sess_fail", -0.3), ("sig_failed", 1.0), ("repeat", 1.0)],
+            vec![("no_obs", 1.0)],
+            vec![("check_pass", 1.0), ("role_menu", 1.0)],
+            vec![("elem_unknown", 1.0), ("small_target", 1.0), ("label_empty", 1.0)],
+        ];
+        let mut out = vec![];
+        for (ci, (tool, kind, label)) in ctxs.iter().enumerate() {
+            for (si, st) in states.iter().enumerate() {
+                for variant in 0..3 {
+                    let mut cfg = GateConfig::default();
+                    if variant == 1 { cfg.reviewer = true; }
+                    if variant == 2 { cfg.human_channel = "deny".into(); }
+                    let mut f = feats();
+                    if *kind != "token" { f["is_token"] = 0.0; }
+                    if *kind == "pixel" { f["is_pixel"] = 1.0; }
+                    if *kind == "keyboard" { f["is_keyboard"] = 1.0; }
+                    for (k, v) in st { f[*k] = *v; }
+                    let c = ctx(tool, kind, label);
+                    let _ = take_last();
+                    let d = choose(&c, &f, &cfg, *kind == "token", false);
+                    let hard = crate::decide::hard_rules(&c, &f, &cfg, false, false).map(|h| h.option);
+                    out.push(json!({"c": ci, "s": si, "v": variant, "option": d.option, "tier": d.tier, "p": round_to(d.p_direct, 9),
+                        "reason": d.reason, "scores": d.scores.iter().map(|(k, v)| (k.clone(), json!(round_to(*v, 9)))).collect::<serde_json::Map<_, _>>(),
+                        "log": take_last(), "hard": hard, "fail_cost": round_to(fail_cost(&c, &f, &cfg), 9)}));
+                }
+            }
+        }
+        let path = concat!(env!("CARGO_MANIFEST_DIR"), "/src/testdata/value_default_golden.json");
+        let got = Value::Array(out);
+        if std::env::var("GG_WRITE_GOLDEN").is_ok() {
+            std::fs::write(path, serde_json::to_string_pretty(&got).unwrap()).unwrap();
+        }
+        let want: Value = serde_json::from_str(&std::fs::read_to_string(path).expect("golden file")).unwrap();
+        let (g, w) = (got.as_array().unwrap(), want.as_array().unwrap());
+        assert_eq!(g.len(), w.len());
+        for (a, b) in g.iter().zip(w) {
+            assert_eq!(a, b, "default-path decision changed");
+        }
+    }
+
     #[test]
     fn model_json_roundtrip() {
         let mut m = model();
