@@ -13,6 +13,7 @@ import time
 import unittest
 
 from test_gate import Client, txt
+from test_v04 import _Rev
 
 FLAGS_OFF = {k: "" for k in ["GUI_GATE_097", "GUI_GATE_INSPECT", "GUI_GATE_JOBS", "GUI_GATE_PHANTOM", "GUI_GATE_TWO_STRIKES",
                              "GUI_GATE_FEASIBILITY_FIRST", "GUI_GATE_STATE_PLAN", "GUI_GATE_VERIFY_PLUS", "GUI_GATE_SKILLS",
@@ -460,8 +461,14 @@ class RoleBriefingTests(unittest.TestCase):
 
 
 class LoopTests(unittest.TestCase):
+    # v0.10.3: a failed click sent again is a doubtful step for the gate's reviewer; these loop tests need the clicks to
+    # really go out and fail, so the reviewer allows (an unanswered review is no longer a fallback to direct)
+    def setUp(self):
+        self.rev = _Rev("allow")
+        self.addCleanup(self.rev.close)
+
     def test_two_strikes_on_the_same_mechanism(self):
-        c = Client("--human", "deny", env={"GUI_GATE_TWO_STRIKES": "1"})
+        c = Client("--human", "deny", env={"GUI_GATE_TWO_STRIKES": "1", "GUI_GATE_REVIEWER_URL": self.rev.url})
         try:
             c.call("fake_mutate", fail_next=2)
             r1 = c.call("click", element_token=f"{c.read()}:0")
@@ -485,7 +492,7 @@ class LoopTests(unittest.TestCase):
 
     def test_loop_judge_at_level_three(self):
         llm = FakeLLM(lambda sys, user: json.dumps({"final": {"verdict": "SWITCH", "blacklist": "clicking OK", "advice": "use the keyboard shortcut instead."}}))
-        c = Client("--human", "deny", "--task", "press the button", env={"GUI_GATE_TWO_STRIKES": "1", **llm.env("judge")})
+        c = Client("--human", "deny", "--task", "press the button", env={"GUI_GATE_TWO_STRIKES": "1", "GUI_GATE_REVIEWER_URL": self.rev.url, **llm.env("judge")})
         try:
             c.call("fake_mutate", fail_next=60, elements=[["button", f"B{i}"] for i in range(14)])
             out = ""
@@ -622,6 +629,8 @@ class VerifyPlusTests(unittest.TestCase):
         c = Client("--human", "deny", "--task", f"Write 42 into {d}/r.txt", env={"GUI_GATE_VERIFY_PLUS": "1", **llm.env("verifier")})
         try:
             c.call("run_command", command=f"echo 41 > {d}/r.txt")
+            # v0.10.3: the verifier checks explicit postconditions only (a plan milestone)
+            c.call("set_plan", milestones=[{"state": f"{d}/r.txt contains 42", "check": None}])
             r = c.call("check_done")
             self.assertIn("Independent verifier (api:chat:fake-verifier): FAILED", txt(r))
             self.assertIn("suggestion: write 42 into the named file", txt(r))
