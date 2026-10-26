@@ -24,7 +24,7 @@
 //! extra_reason, threshold, heuristic, random, learned (default). They replace ONLY this module's choice; the safety
 //! rules, hard rules, auto-observe, heals and every other mechanism of the gate stay the same.
 use crate::decide::{fail_cost, p_direct, sigmoid, Decision, GateConfig};
-use crate::features::{fget, ActionCtx, Feats, FEATURE_NAMES};
+use crate::features::{fget, ActionCtx, Feats, ALL_FEATURES};
 use crate::util::*;
 use indexmap::IndexMap;
 use serde_json::{json, Value};
@@ -35,6 +35,11 @@ use std::sync::Mutex;
 /// Options the value module ranks (safety outcomes - ask_human, handoff, deny, risk_review - are never valued here).
 pub const VALUE_OPTIONS: &[&str] = &["direct", "check", "heal", "wait", "look_light", "look_full", "review", "reason", "ask_help"];
 pub const VALUE_POLICIES: &[&str] = &["learned", "direct", "observe_light", "observe_full", "extra_reason", "threshold", "heuristic", "random"];
+/// GUI_GATE_VALUE_MODEL values; `legacy` is the default.
+pub const VALUE_MODELS: &[&str] = &["legacy", "treatment", "auto", "v2"];
+/// Fewer bootstrap replicates than this: the 90 % percentile interval is unknown (not zero-width), and the treatment
+/// model is not used for decisions (the legacy prior decides instead).
+pub const MIN_BOOT: usize = 20;
 
 // ---------------------------------------------------------------- the decision log of the last choose() call
 
@@ -61,11 +66,12 @@ pub struct Coefs {
 }
 
 impl Coefs {
+    /// Over ALL_FEATURES: a v1 state has no v2 entries (fget = 0), so v1 models score exactly as before.
     pub fn logit(&self, f: &Feats, o: &str) -> f64 {
-        let mut z: f64 = FEATURE_NAMES.iter().map(|k| self.base.get(*k).copied().unwrap_or(0.0) * fget(f, k)).sum();
+        let mut z: f64 = ALL_FEATURES.iter().map(|k| self.base.get(*k).copied().unwrap_or(0.0) * fget(f, k)).sum();
         if o != "direct" {
             if let Some(m) = self.inter.get(o) {
-                z += FEATURE_NAMES.iter().map(|k| m.get(*k).copied().unwrap_or(0.0) * fget(f, k)).sum::<f64>();
+                z += ALL_FEATURES.iter().map(|k| m.get(*k).copied().unwrap_or(0.0) * fget(f, k)).sum::<f64>();
             }
         }
         z
@@ -95,11 +101,20 @@ impl Interval {
     pub fn point(x: f64) -> Self {
         Interval { mean: x, lo: x, hi: x }
     }
+    /// No (or too few) bootstrap replicates: the interval is unknown, i.e. (-inf, +inf), never a zero-width point.
+    pub fn unknown(mean: f64) -> Self {
+        Interval { mean, lo: f64::NEG_INFINITY, hi: f64::INFINITY }
+    }
+    pub fn known(&self) -> bool {
+        self.lo.is_finite() && self.hi.is_finite()
+    }
     pub fn crosses_zero(&self) -> bool {
         self.lo <= 0.0 && self.hi >= 0.0
     }
+    /// [lo, mean, hi]; an unknown bound is null
     pub fn json(&self) -> Value {
-        json!([round_to(self.lo, 4), round_to(self.mean, 4), round_to(self.hi, 4)])
+        let b = |x: f64| if x.is_finite() { json!(round_to(x, 4)) } else { Value::Null };
+        json!([b(self.lo), round_to(self.mean, 4), b(self.hi)])
     }
 }
 
@@ -119,8 +134,10 @@ pub fn quantile(xs: &[f64], q: f64) -> f64 {
 pub struct TreatmentModel {
     pub name: String,
     pub coef: Coefs,
-    /// bootstrap replicates (resampled by session); empty = no interval available
+    /// bootstrap replicates (resampled by session); fewer than MIN_BOOT = interval unknown, model not used
     pub boot: Vec<Coefs>,
+    /// treatment_v1 (31 features) | treatment_v2 (ALL_FEATURES, GUI-only history, commands excluded)
+    pub kind: String,
     /// training rows per option: options below min_rows are "uncovered" and never chosen by this model
     pub n_by_option: IndexMap<String, usize>,
     /// P(check passes | x) - logistic over the base features (None: derived from q_direct, see check_pass_prob)
@@ -131,7 +148,7 @@ pub struct TreatmentModel {
 
 impl Default for TreatmentModel {
     fn default() -> Self {
-        TreatmentModel { name: "treatment".into(), coef: Coefs::default(), boot: vec![], n_by_option: IndexMap::new(), probe: None, level: 0.9, min_rows: 30 }
+        TreatmentModel { name: "treatment".into(), coef: Coefs::default(), boot: vec![], kind: "treatment_v1".into(), n_by_option: IndexMap::new(), probe: None, level: 0.9, min_rows: 30 }
     }
 }
 
@@ -142,12 +159,16 @@ impl TreatmentModel {
     pub fn covered(&self, o: &str) -> bool {
         o == "direct" || self.n_by_option.get(o).copied().unwrap_or(0) >= self.min_rows
     }
-    /// Δ_o = q_o − q_direct with a bootstrap percentile interval at `level`.
+    /// Enough bootstrap replicates for a percentile interval at `level`.
+    pub fn has_intervals(&self) -> bool {
+        self.boot.len() >= MIN_BOOT
+    }
+    /// Δ_o = q_o − q_direct with a bootstrap percentile interval at `level` (unknown without enough replicates).
     pub fn delta(&self, f: &Feats, o: &str) -> Interval {
         let d = |c: &Coefs| sigmoid(c.logit(f, o)) - sigmoid(c.logit(f, "direct"));
         let mean = d(&self.coef);
-        if self.boot.is_empty() {
-            return Interval::point(mean);
+        if !self.has_intervals() {
+            return Interval::unknown(mean);
         }
         let xs: Vec<f64> = self.boot.iter().map(d).collect();
         let a = (1.0 - self.level) / 2.0;
@@ -157,29 +178,30 @@ impl TreatmentModel {
     pub fn net_benefit(&self, f: &Feats, a: &str, b: &str, cf: f64, lam_dcost: f64) -> Interval {
         let nb = |c: &Coefs| (sigmoid(c.logit(f, a)) - sigmoid(c.logit(f, b))) * cf - lam_dcost;
         let mean = nb(&self.coef);
-        if self.boot.is_empty() {
-            return Interval::point(mean);
+        if !self.has_intervals() {
+            return Interval::unknown(mean);
         }
         let xs: Vec<f64> = self.boot.iter().map(nb).collect();
         let al = (1.0 - self.level) / 2.0;
         Interval { mean, lo: quantile(&xs, al), hi: quantile(&xs, 1.0 - al) }
     }
     pub fn to_json(&self) -> Value {
-        json!({"kind": "treatment_v1", "name": self.name, "level": self.level, "min_rows": self.min_rows,
+        json!({"kind": self.kind, "name": self.name, "level": self.level, "min_rows": self.min_rows,
                "coef": self.coef.to_json(), "boot": self.boot.iter().map(|c| c.to_json()).collect::<Vec<_>>(),
                "n_by_option": Value::Object(self.n_by_option.iter().map(|(k, n)| (k.clone(), json!(n))).collect()),
                "probe": self.probe.as_ref().map(|p| Value::Object(p.iter().map(|(k, x)| (k.clone(), json!(x))).collect()))})
     }
     pub fn from_json(v: &Value) -> Result<TreatmentModel, String> {
-        if s(v, "kind") != "treatment_v1" {
-            return Err("not a treatment_v1 model (kind)".into());
+        let kind = s(v, "kind").to_string();
+        if kind != "treatment_v1" && kind != "treatment_v2" {
+            return Err("not a treatment_v1 / treatment_v2 model (kind)".into());
         }
         let coef = Coefs::from_json(v.get("coef").unwrap_or(&Value::Null));
         if coef.base.is_empty() {
             return Err("treatment model has no coefficients".into());
         }
         Ok(TreatmentModel {
-            name: v.get("name").and_then(|n| n.as_str()).unwrap_or("treatment").to_string(), coef,
+            name: v.get("name").and_then(|n| n.as_str()).unwrap_or("treatment").to_string(), coef, kind,
             boot: v.get("boot").and_then(|b| b.as_array()).map(|a| a.iter().map(Coefs::from_json).collect()).unwrap_or_default(),
             n_by_option: v.get("n_by_option").and_then(|o| o.as_object())
                 .map(|o| o.iter().map(|(k, n)| (k.clone(), n.as_u64().unwrap_or(0) as usize)).collect()).unwrap_or_default(),
@@ -312,7 +334,7 @@ pub fn legacy_po(f: &Feats, o: &str, pixel: bool, cfg: &GateConfig) -> f64 {
 /// makes the predictor coherent: q(x) = P(pass)·q(x, pass) + (1 − P(pass))·q(x, fail).
 pub fn check_pass_prob(f: &Feats, q_direct: &dyn Fn(&Feats) -> f64, probe: Option<&IndexMap<String, f64>>) -> f64 {
     if let Some(w) = probe {
-        let z: f64 = FEATURE_NAMES.iter().filter(|k| !matches!(**k, "check_pass" | "check_fail")).map(|k| w.get(*k).copied().unwrap_or(0.0) * fget(f, k)).sum();
+        let z: f64 = ALL_FEATURES.iter().filter(|k| !matches!(**k, "check_pass" | "check_fail")).map(|k| w.get(*k).copied().unwrap_or(0.0) * fget(f, k)).sum();
         return sigmoid(z).clamp(0.01, 0.99);
     }
     let (fp, ff) = probe_states(f);
@@ -472,6 +494,13 @@ fn costs_json(cfg: &GateConfig, opts: &[&str]) -> Value {
 
 /// The value step: E[cost(o)] = λ·cost(o) + (1 − P_o)·C_fail over the options available here.
 pub fn choose(ctx: &ActionCtx, f: &Feats, cfg: &GateConfig, check_available: bool, check_done: bool) -> Decision {
+    // v2: a command is not a GUI step. It has no window to observe, so the GUI predictor (which punishes no_obs) does
+    // not score it; only the safety rules and the loop breaker (which run elsewhere) can hold it
+    if cfg.value_v2 && crate::features::is_command_tool(&ctx.tool) {
+        set_last(json!({"policy": cfg.value_policy, "model": "command", "p_direct": Value::Null,
+                        "note": "commands are not scored by the GUI predictor (v2)", "chosen": "direct"}));
+        return Decision::new("direct", f64::NAN, "command: not scored by the GUI predictor (value model v2)", "command");
+    }
     let p = p_direct(f, cfg);
     if let Some(d) = fixed_policy(ctx, f, cfg, p) {
         set_last(json!({"policy": cfg.value_policy, "model": "fixed", "p_direct": round_to(p, 4), "chosen": d.option}));
@@ -496,8 +525,36 @@ pub fn choose(ctx: &ActionCtx, f: &Feats, cfg: &GateConfig, check_available: boo
     let cf = fail_cost(ctx, f, cfg);
     match cfg.treatment.as_ref().filter(|_| cfg.value_model == "treatment") {
         None => legacy_choose(ctx, f, cfg, &avail, p, cf, check_available, check_done),
+        Some(m) if !m.has_intervals() => {
+            // no bootstrap replicates: every interval is unknown, so the model cannot back a choice; the legacy prior
+            // (with its own check rule) decides, exactly as on the default path
+            let mut lc = cfg.clone();
+            lc.check_model = "legacy".into();
+            let d = legacy_choose(ctx, f, &lc, &avail, p, cf, check_available, check_done);
+            LAST.with(|l| {
+                if let Some(o) = l.borrow_mut().as_object_mut() {
+                    o.insert("fallback".into(), json!(format!("treatment model {} has {} bootstrap replicates (< {MIN_BOOT}): interval unknown, legacy prior used", m.name, m.boot.len())));
+                }
+            });
+            d
+        }
         Some(m) => {
             avail.push("reason"); // one more think of the acting model; only kept when the model has data for it
+            if cfg.value_v2 {
+                let mut f2 = f.clone();
+                let mut extra = serde_json::Map::new();
+                for (k, v) in crate::features::v2_feats(&ctx.tool, &ctx.target.kind, ctx.target.the_role()) {
+                    let v = *f2.entry(k).or_insert(v);
+                    extra.insert(k.to_string(), json!(v));
+                }
+                let d = treatment_choose(ctx, &f2, cfg, m, &avail, p, cf);
+                LAST.with(|l| {
+                    if let Some(o) = l.borrow_mut().as_object_mut() {
+                        o.insert("v2_features".into(), Value::Object(extra));
+                    }
+                });
+                return d;
+            }
             treatment_choose(ctx, f, cfg, m, &avail, p, cf)
         }
     }
@@ -568,7 +625,7 @@ fn treatment_choose(ctx: &ActionCtx, f: &Feats, cfg: &GateConfig, m: &TreatmentM
         voi = v.json();
     }
     let qd = m.q(f, "direct");
-    set_last(json!({"policy": cfg.value_policy, "model": m.name, "kind": "treatment_v1", "p_direct": round_to(p, 4), "q_direct": round_to(qd, 4),
+    set_last(json!({"policy": cfg.value_policy, "model": m.name, "kind": m.kind, "p_direct": round_to(p, 4), "q_direct": round_to(qd, 4),
         "fail_cost_s": round_to(cf, 2), "delta": deltas, "level": m.level, "net": nb_log, "uncovered": uncovered,
         "costs": costs_json(cfg, &opts), "voi": voi, "chosen": best}));
     let mut d = Decision::new(&best, p, reason_line(qd, f, &scores), tier).with_scores(&scores);
@@ -581,7 +638,7 @@ fn treatment_choose(ctx: &ActionCtx, f: &Feats, cfg: &GateConfig, m: &TreatmentM
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::features::Target;
+    use crate::features::{Target, FEATURE_NAMES};
 
     fn ctx(tool: &str, kind: &str, label: &str) -> ActionCtx {
         ActionCtx { tool: tool.into(), args: json!({}), target: Target { kind: kind.into(), label: label.into(), ..Default::default() },
@@ -613,13 +670,106 @@ mod tests {
         c
     }
 
+    /// 20 identical replicates: a confident interval (the model's own point estimate everywhere)
+    fn with_boot(mut m: TreatmentModel) -> TreatmentModel {
+        for _ in 0..20 { let c = m.coef.clone(); m.boot.push(c); }
+        m
+    }
+
+    #[test]
+    fn no_bootstrap_means_an_unknown_interval_not_a_zero_width_one() {
+        let mut f = feats();
+        f["label_dup"] = 1.0;
+        let m = model();
+        assert!(m.boot.is_empty());
+        let iv = m.delta(&f, "look_full");
+        assert!(iv.lo == f64::NEG_INFINITY && iv.hi == f64::INFINITY, "no replicates must not look certain: {iv:?}");
+        assert!(iv.crosses_zero());
+        assert!(iv.json()[0].is_null() && iv.json()[2].is_null(), "{}", iv.json());
+        let nb = m.net_benefit(&f, "look_full", "direct", 19.0, 9.0);
+        assert!(nb.lo == f64::NEG_INFINITY && nb.hi == f64::INFINITY);
+        // too few replicates for a 90 % percentile interval are no better than none
+        let mut few = model();
+        for _ in 0..3 { let c = few.coef.clone(); few.boot.push(c); }
+        assert!(few.delta(&f, "look_full").hi == f64::INFINITY);
+        // with enough replicates the interval is finite
+        let ok = with_boot(model()).delta(&f, "look_full");
+        assert!(ok.lo.is_finite() && ok.hi.is_finite());
+    }
+
+    #[test]
+    fn a_treatment_model_without_intervals_is_not_used_the_legacy_choice_runs() {
+        let mut f = feats();
+        f["label_dup"] = 1.0;
+        let c = ctx("click", "token", "Save");
+        let legacy = choose(&c, &f, &GateConfig::default(), false, false);
+        let _ = take_last();
+        let d = choose(&c, &f, &cfg_with(model()), false, false);
+        assert_eq!(d.option, legacy.option, "no bootstrap -> fall back to the legacy prior ({})", d.reason);
+        assert_eq!(d.scores, legacy.scores);
+        let log = take_last();
+        assert_eq!(log["model"], "legacy_prior");
+        assert!(log["fallback"].as_str().unwrap_or("").contains("bootstrap"), "{log}");
+    }
+
+    #[test]
+    fn treatment_weights_alone_do_not_switch_the_default() {
+        let mut cfg = GateConfig::default();
+        assert_eq!(cfg.value_model_req, "legacy", "default request is the legacy prior");
+        let p = std::env::temp_dir().join(format!("gg-tm2-{}.json", rand_hex(4)));
+        std::fs::write(&p, json!({"name": "w", "weights": {"bias": 1.0}, "treatment": with_boot(model()).to_json()}).to_string()).unwrap();
+        cfg.load_weights(p.to_str().unwrap()).unwrap();
+        assert_eq!(cfg.value_model, "legacy", "loading treatment weights must not change the default decision path");
+        cfg.value_model_req = "treatment".into();
+        cfg.resolve_value_model();
+        assert_eq!(cfg.value_model, "treatment");
+        let _ = std::fs::remove_file(p);
+    }
+
+    #[test]
+    fn v2_commands_are_not_scored_by_the_gui_predictor() {
+        let mut cfg = GateConfig::default();
+        cfg.value_model_req = "v2".into();
+        cfg.resolve_value_model();
+        let mut f = feats();
+        f["is_token"] = 0.0;
+        f["no_obs"] = 1.0; // a command never has a window observation: v1 punished it for that
+        let c = ctx("run_command", "command", "grep x f");
+        let d = choose(&c, &f, &cfg, false, false);
+        assert_eq!(d.option, "direct");
+        assert_eq!(d.tier, "command");
+        assert!(d.p_direct.is_nan(), "no GUI probability for a command: {}", d.p_direct);
+        let log = take_last();
+        assert_eq!(log["model"], "command");
+        assert!(log["p_direct"].is_null());
+        // the default path still scores it (unchanged legacy behaviour)
+        let d0 = choose(&c, &f, &GateConfig::default(), false, false);
+        assert!(d0.p_direct < 0.5 && d0.tier != "command");
+    }
+
+    #[test]
+    fn v2_uses_its_extra_features_when_the_model_has_them() {
+        // a v2 model: scrolling at a pixel fails more often; it must see tool_scroll at decision time
+        let mut m = with_boot(model());
+        m.coef.base.insert("tool_scroll".into(), -3.0);
+        let mut cfg = cfg_with(m);
+        cfg.value_model_req = "v2".into();
+        cfg.resolve_value_model();
+        assert_eq!(cfg.value_model, "treatment");
+        let f = feats();
+        let _ = choose(&ctx("scroll", "token", "list"), &f, &cfg, false, false);
+        let log = take_last();
+        assert_eq!(log["v2_features"]["tool_scroll"], 1.0, "{log}");
+        assert!(log["q_direct"].as_f64().unwrap() < 0.1, "{log}");
+    }
+
     #[test]
     fn negative_gain_is_kept_and_direct_wins() {
         let m = model();
         let f = feats();
         let d = m.delta(&f, "look_light");
         assert!(d.mean < -0.2, "negative incremental value must not be clamped: {d:?}");
-        let c = choose(&ctx("click", "token", "Bold"), &f, &cfg_with(m), false, false);
+        let c = choose(&ctx("click", "token", "Bold"), &f, &cfg_with(with_boot(m)), false, false);
         assert_eq!(c.option, "direct", "{} {:?}", c.reason, c.scores);
         // the legacy prior would never let a look be worse than acting: P_o >= P_direct
         let cfg = GateConfig::default();
@@ -632,7 +782,7 @@ mod tests {
         f["label_dup"] = 1.0;
         let m = model();
         assert!(m.delta(&f, "look_full").mean > 0.3);
-        let c = choose(&ctx("click", "token", "Save"), &f, &cfg_with(m), false, false);
+        let c = choose(&ctx("click", "token", "Save"), &f, &cfg_with(with_boot(m)), false, false);
         assert_eq!(c.option, "look_full", "{} {:?}", c.reason, c.scores);
         let log = take_last();
         assert_eq!(log["kind"], "treatment_v1");
@@ -666,7 +816,7 @@ mod tests {
         assert_eq!(choose(&risky, &f, &cfg, false, false).option, "look_full");
         // with confident replicates the option stays
         let mut m2 = model();
-        for _ in 0..10 { m2.boot.push(m2.coef.clone()); }
+        for _ in 0..20 { m2.boot.push(m2.coef.clone()); }
         assert_eq!(choose(&ctx("click", "token", "Save"), &f, &cfg_with(m2), false, false).option, "look_full");
     }
 
@@ -676,7 +826,7 @@ mod tests {
         f["label_dup"] = 1.0;
         let mut m = model();
         m.n_by_option.insert("look_full".into(), 3);
-        let c = choose(&ctx("click", "token", "Save"), &f, &cfg_with(m), false, false);
+        let c = choose(&ctx("click", "token", "Save"), &f, &cfg_with(with_boot(m)), false, false);
         assert_ne!(c.option, "look_full");
         assert!(take_last()["uncovered"].as_array().unwrap().iter().any(|x| x == "look_full"));
     }
@@ -685,7 +835,7 @@ mod tests {
     fn measured_costs_replace_the_prior_when_there_are_enough() {
         let mut f = feats();
         f["label_dup"] = 1.0;
-        let mut cfg = cfg_with(model());
+        let mut cfg = cfg_with(with_boot(model()));
         assert_eq!(cost_of(&cfg, "look_full"), (9.0, "prior"));
         let mut t = CostTable::default();
         t.measured.insert("look_full".into(), MeasuredCost { extra_s: 60.0, tokens: 2000.0, person_s: 0.0, n: 50 });
@@ -716,7 +866,7 @@ mod tests {
         inter.insert("look_full".to_string(), w(&[("bias", 1.0), ("check_fail", 4.0)]));
         let n: IndexMap<String, usize> = ["direct", "look_full", "check"].iter().map(|o| (o.to_string(), 100)).collect();
         let m = TreatmentModel { coef: Coefs { base: base.clone(), inter: inter.clone() }, n_by_option: n.clone(), ..Default::default() };
-        let cfg = cfg_with(m.clone());
+        let cfg = cfg_with(with_boot(m.clone()));
         let f = feats();
         let score = |g: &Feats, o: &str| cfg.lam * cost_of(&cfg, o).0 + (1.0 - m.q(g, o)) * 19.0;
         let v = check_voi(&f, &["direct", "look_full", "check"], &score, 0.5, 0.2);
@@ -731,7 +881,7 @@ mod tests {
         base.insert("check_fail".into(), 0.0);
         inter.get_mut("look_full").unwrap().insert("check_fail".into(), 0.0);
         let m2 = TreatmentModel { coef: Coefs { base, inter }, n_by_option: n, ..Default::default() };
-        let c2 = choose(&ctx("click", "token", "Bold"), &f, &cfg_with(m2), true, false);
+        let c2 = choose(&ctx("click", "token", "Bold"), &f, &cfg_with(with_boot(m2)), true, false);
         assert_ne!(c2.option, "check");
         assert!(take_last()["voi"]["gain_s"].as_f64().unwrap() <= 0.0);
         // coherent P(pass) without a probe model
@@ -781,11 +931,12 @@ mod tests {
     }
 
     #[test]
-    fn treatment_is_default_only_when_its_weights_are_loaded() {
+    fn treatment_is_used_only_when_requested_and_its_weights_are_loaded() {
         let mut cfg = GateConfig::default();
         assert_eq!(cfg.value_model, "legacy");
         let p = std::env::temp_dir().join(format!("gg-tm-{}.json", rand_hex(4)));
-        std::fs::write(&p, json!({"name": "w", "weights": {"bias": 1.0}, "treatment": model().to_json()}).to_string()).unwrap();
+        std::fs::write(&p, json!({"name": "w", "weights": {"bias": 1.0}, "treatment": with_boot(model()).to_json()}).to_string()).unwrap();
+        cfg.value_model_req = "auto".into(); // the 0.10.1 default, now opt-in
         cfg.load_weights(p.to_str().unwrap()).unwrap();
         assert_eq!(cfg.value_model, "treatment");
         assert_eq!(cfg.check_model, "voi");
@@ -800,6 +951,59 @@ mod tests {
         assert_eq!(none.value_model, "legacy", "no weights: the legacy prior stays active");
         assert!(TreatmentModel::load(p.to_str().unwrap()).is_ok());
         let _ = std::fs::remove_file(p);
+    }
+
+    /// The default path (no switch set) must produce exactly the decisions and value logs of c3893bc:
+    /// a fixed grid of contexts x states x configs, compared with src/testdata/value_default_golden.json
+    /// (written once from c3893bc with GG_WRITE_GOLDEN=1).
+    #[test]
+    fn default_path_output_is_unchanged() {
+        let ctxs = [("click", "token", "Bold"), ("click", "token", "Save"), ("click", "pixel", ""), ("scroll", "pixel", ""),
+                    ("press_key", "keyboard", ""), ("type_text", "token", "Name"), ("run_command", "command", "ls /tmp")];
+        let states: Vec<Vec<(&str, f64)>> = vec![
+            vec![],
+            vec![("label_dup", 1.0)],
+            vec![("acts_since_obs", 3.0), ("log_obs_age", 2.5)],
+            vec![("loading_cue", 1.0)],
+            vec![("last_popup", 1.0), ("window_changed", 1.0)],
+            vec![("consec_fail", 2.0), ("sess_fail", -0.3), ("sig_failed", 1.0), ("repeat", 1.0)],
+            vec![("no_obs", 1.0)],
+            vec![("check_pass", 1.0), ("role_menu", 1.0)],
+            vec![("elem_unknown", 1.0), ("small_target", 1.0), ("label_empty", 1.0)],
+        ];
+        let mut out = vec![];
+        for (ci, (tool, kind, label)) in ctxs.iter().enumerate() {
+            for (si, st) in states.iter().enumerate() {
+                for variant in 0..3 {
+                    let mut cfg = GateConfig::default();
+                    if variant == 1 { cfg.reviewer = true; }
+                    if variant == 2 { cfg.human_channel = "deny".into(); }
+                    let mut f = feats();
+                    if *kind != "token" { f["is_token"] = 0.0; }
+                    if *kind == "pixel" { f["is_pixel"] = 1.0; }
+                    if *kind == "keyboard" { f["is_keyboard"] = 1.0; }
+                    for (k, v) in st { f[*k] = *v; }
+                    let c = ctx(tool, kind, label);
+                    let _ = take_last();
+                    let d = choose(&c, &f, &cfg, *kind == "token", false);
+                    let hard = crate::decide::hard_rules(&c, &f, &cfg, false, false).map(|h| h.option);
+                    out.push(json!({"c": ci, "s": si, "v": variant, "option": d.option, "tier": d.tier, "p": round_to(d.p_direct, 9),
+                        "reason": d.reason, "scores": d.scores.iter().map(|(k, v)| (k.clone(), json!(round_to(*v, 9)))).collect::<serde_json::Map<_, _>>(),
+                        "log": take_last(), "hard": hard, "fail_cost": round_to(fail_cost(&c, &f, &cfg), 9)}));
+                }
+            }
+        }
+        let path = concat!(env!("CARGO_MANIFEST_DIR"), "/src/testdata/value_default_golden.json");
+        let got = Value::Array(out);
+        if std::env::var("GG_WRITE_GOLDEN").is_ok() {
+            std::fs::write(path, serde_json::to_string_pretty(&got).unwrap()).unwrap();
+        }
+        let want: Value = serde_json::from_str(&std::fs::read_to_string(path).expect("golden file")).unwrap();
+        let (g, w) = (got.as_array().unwrap(), want.as_array().unwrap());
+        assert_eq!(g.len(), w.len());
+        for (a, b) in g.iter().zip(w) {
+            assert_eq!(a, b, "default-path decision changed");
+        }
     }
 
     #[test]

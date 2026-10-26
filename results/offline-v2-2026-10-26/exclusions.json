@@ -1,0 +1,322 @@
+{
+ "attempt_policy": "first_valid",
+ "corrupt_lines": [
+  {
+   "line": 240,
+   "bytes": 380,
+   "prefix": "{\"tag\":\"multi_apps-48d05431-6cd5-4e76-82eb-12b60d823f7d-gate8-s0\",\"task\":\"multi_apps-48d05431-6cd5-4e76-82eb-12b60d823f7",
+   "tag": "multi_apps-48d05431-6cd5-4e76-82eb-12b60d823f7d-gate8-s0",
+   "file": "retry/runs.before_retry.jsonl"
+  },
+  {
+   "line": 199,
+   "bytes": 380,
+   "prefix": "{\"tag\":\"multi_apps-48d05431-6cd5-4e76-82eb-12b60d823f7d-gate8-s0\",\"task\":\"multi_apps-48d05431-6cd5-4e76-82eb-12b60d823f7",
+   "tag": "multi_apps-48d05431-6cd5-4e76-82eb-12b60d823f7d-gate8-s0",
+   "file": "retry/runs.retry_partial.jsonl"
+  }
+ ],
+ "tasks_excluded": {
+  "libreoffice_calc-2bd59342-0664-4ccb-ba87-79379096cc08": {
+   "status": "excluded",
+   "reason": "infra:relay_error",
+   "attempts": 3
+  },
+  "libreoffice_calc-30e3e107-1cfb-46ee-a755-2cd080d7ba6a": {
+   "status": "excluded",
+   "reason": "infra:eval_error",
+   "attempts": 1
+  },
+  "libreoffice_writer-e246f6d8-78d7-44ac-b668-fcf47946cb50": {
+   "status": "excluded",
+   "reason": "infra:relay_error",
+   "attempts": 3
+  },
+  "multi_apps-0e5303d4-8820-42f6-b18d-daf7e633de21": {
+   "status": "excluded",
+   "reason": "infra:setup_failed",
+   "attempts": 1
+  },
+  "multi_apps-185f29bd-5da0-40a6-b69c-ba7f4e0324ef": {
+   "status": "excluded",
+   "reason": "infra:setup_failed",
+   "attempts": 1
+  },
+  "multi_apps-2b9493d7-49b8-493a-a71b-56cd1f4d6908": {
+   "status": "excluded",
+   "reason": "infra:setup_failed",
+   "attempts": 1
+  },
+  "multi_apps-2c9fc0de-3ee7-45e1-a5df-c86206ad78b5": {
+   "status": "excluded",
+   "reason": "infra:setup_failed",
+   "attempts": 1
+  },
+  "multi_apps-36037439-2044-4b50-b9d1-875b5a332143": {
+   "status": "excluded",
+   "reason": "infra:setup_failed",
+   "attempts": 1
+  },
+  "multi_apps-3680a5ee-6870-426a-a997-eba929a0d25c": {
+   "status": "excluded",
+   "reason": "infra:setup_failed",
+   "attempts": 1
+  },
+  "multi_apps-3f05f3b9-29ba-4b6b-95aa-2204697ffc06": {
+   "status": "excluded",
+   "reason": "infra:setup_failed",
+   "attempts": 1
+  },
+  "multi_apps-415ef462-bed3-493a-ac36-ca8c6d23bf1b": {
+   "status": "excluded",
+   "reason": "infra:setup_failed",
+   "attempts": 1
+  },
+  "multi_apps-42d25c08-fb87-4927-8b65-93631280a26f": {
+   "status": "excluded",
+   "reason": "infra:setup_failed",
+   "attempts": 1
+  },
+  "multi_apps-48d05431-6cd5-4e76-82eb-12b60d823f7d": {
+   "status": "excluded",
+   "reason": "no_result_row (runs.jsonl line truncated)"
+  },
+  "multi_apps-510f64c8-9bcc-4be1-8d30-638705850618": {
+   "status": "excluded",
+   "reason": "infra:setup_failed",
+   "attempts": 1
+  },
+  "multi_apps-5990457f-2adb-467b-a4af-5c857c92d762": {
+   "status": "excluded",
+   "reason": "infra:setup_failed",
+   "attempts": 1
+  },
+  "multi_apps-5df7b33a-9f77-4101-823e-02f863e1c1ae": {
+   "status": "excluded",
+   "reason": "infra:setup_failed",
+   "attempts": 1
+  },
+  "multi_apps-74d5859f-ed66-4d3e-aa0e-93d7a592ce41": {
+   "status": "excluded",
+   "reason": "infra:setup_failed",
+   "attempts": 1
+  },
+  "multi_apps-788b3701-3ec9-4b67-b679-418bfa726c22": {
+   "status": "excluded",
+   "reason": "infra:setup_failed",
+   "attempts": 1
+  },
+  "multi_apps-82e3c869-49f6-4305-a7ce-f3e64a0618e7": {
+   "status": "excluded",
+   "reason": "infra:relay_error",
+   "attempts": 3
+  },
+  "multi_apps-a82b78bb-7fde-4cb3-94a4-035baf10bcf0": {
+   "status": "excluded",
+   "reason": "infra:setup_failed",
+   "attempts": 1
+  },
+  "multi_apps-aceb0368-56b8-4073-b70e-3dc9aee184e0": {
+   "status": "excluded",
+   "reason": "infra:setup_failed",
+   "attempts": 1
+  },
+  "multi_apps-b5062e3e-641c-4e3a-907b-ac864d2e7652": {
+   "status": "excluded",
+   "reason": "infra:setup_failed",
+   "attempts": 1
+  },
+  "multi_apps-ee9a3c83-f437-4879-8918-be5efbb9fac7": {
+   "status": "excluded",
+   "reason": "infra:setup_failed",
+   "attempts": 1
+  },
+  "multi_apps-f5c13cdd-205c-4719-a562-348ae5cd1d91": {
+   "status": "excluded",
+   "reason": "infra:setup_failed",
+   "attempts": 1
+  },
+  "multi_apps-f7dfbef3-7697-431c-883a-db8583a4e4f9": {
+   "status": "excluded",
+   "reason": "infra:setup_failed",
+   "attempts": 1
+  },
+  "os-28cc3b7e-b194-4bc9-8353-d04c0f4d56d2": {
+   "status": "excluded",
+   "reason": "infra:setup_failed",
+   "attempts": 1
+  },
+  "os-3ce045a0-877b-42aa-8d2c-b4a863336ab8": {
+   "status": "excluded",
+   "reason": "infra:relay_error",
+   "attempts": 3
+  },
+  "os-4127319a-8b79-4410-b58a-7a151e15f3d7": {
+   "status": "excluded",
+   "reason": "infra:setup_failed",
+   "attempts": 1
+  },
+  "vlc-386dbd0e-0241-4a0a-b6a2-6704fba26b1c": {
+   "status": "excluded",
+   "reason": "infra:setup_failed",
+   "attempts": 1
+  }
+ },
+ "attempts_not_used": {
+  "chrome-1704f00f-79e6-43a7-961b-cedd3724d5fd": [
+   {
+    "attempt": 1,
+    "reason": "infra:relay_error"
+   }
+  ],
+  "chrome-93eabf48-6a27-4cb6-b963-7d5fe1e0d3a9": [
+   {
+    "attempt": 1,
+    "reason": "infra:relay_error"
+   }
+  ],
+  "chrome-f79439ad-3ee8-4f99-a518-0eb60e5652b0": [
+   {
+    "attempt": 1,
+    "reason": "infra:relay_error"
+   }
+  ],
+  "gimp-62f7fd55-0687-4a43-b6e1-3eda16fc6252": [
+   {
+    "attempt": 1,
+    "reason": "infra:relay_error"
+   }
+  ],
+  "gimp-d16c99dc-2a1e-46f2-b350-d97c86c85c15": [
+   {
+    "attempt": 1,
+    "reason": "infra:relay_error"
+   },
+   {
+    "attempt": 2,
+    "reason": "infra:relay_error"
+   }
+  ],
+  "libreoffice_calc-04d9aeaf-7bed-4024-bedb-e10e6f00eb7f": [
+   {
+    "attempt": 1,
+    "reason": "infra:relay_error"
+   },
+   {
+    "attempt": 2,
+    "reason": "infra:relay_error"
+   }
+  ],
+  "libreoffice_calc-21ab7b40-77c2-4ae6-8321-e00d3a086c73": [
+   {
+    "attempt": 1,
+    "reason": "infra:relay_error"
+   }
+  ],
+  "libreoffice_calc-535364ea-05bd-46ea-9937-9f55c68507e8": [
+   {
+    "attempt": 1,
+    "reason": "infra:relay_error"
+   }
+  ],
+  "libreoffice_calc-7a4e4bc8-922c-4c84-865c-25ba34136be1": [
+   {
+    "attempt": 1,
+    "reason": "infra:relay_error"
+   }
+  ],
+  "libreoffice_calc-aa3a8974-2e85-438b-b29e-a64df44deb4b": [
+   {
+    "attempt": 1,
+    "reason": "infra:relay_error"
+   }
+  ],
+  "libreoffice_impress-08aced46-45a2-48d7-993b-ed3fb5b32302": [
+   {
+    "attempt": 1,
+    "reason": "infra:relay_error"
+   }
+  ],
+  "libreoffice_impress-21760ecb-8f62-40d2-8d85-0cee5725cb72": [
+   {
+    "attempt": 1,
+    "reason": "infra:relay_error"
+   }
+  ],
+  "libreoffice_impress-af23762e-2bfd-4a1d-aada-20fa8de9ce07": [
+   {
+    "attempt": 1,
+    "reason": "infra:relay_error"
+   }
+  ],
+  "multi_apps-98e8e339-5f91-4ed2-b2b2-12647cb134f4": [
+   {
+    "attempt": 1,
+    "reason": "infra:relay_error"
+   }
+  ],
+  "multi_apps-a74b607e-6bb5-4ea8-8a7c-5d97c7bbcd2a": [
+   {
+    "attempt": 1,
+    "reason": "infra:relay_error"
+   }
+  ],
+  "multi_apps-deec51c9-3b1e-4b9e-993c-4776f20e8bb2": [
+   {
+    "attempt": 1,
+    "reason": "infra:relay_error"
+   },
+   {
+    "attempt": 2,
+    "reason": "infra:relay_error"
+   }
+  ],
+  "thunderbird-3f28fe4f-5d9d-4994-a456-efd78cfae1a3": [
+   {
+    "attempt": 1,
+    "reason": "infra:relay_error"
+   }
+  ],
+  "thunderbird-5203d847-2572-4150-912a-03f062254390": [
+   {
+    "attempt": 1,
+    "reason": "infra:relay_error"
+   }
+  ],
+  "thunderbird-f201fbc3-44e6-46fc-bcaa-432f9815454c": [
+   {
+    "attempt": 1,
+    "reason": "infra:relay_error"
+   }
+  ],
+  "vlc-9195653c-f4aa-453d-aa95-787f6ccfaae9": [
+   {
+    "attempt": 1,
+    "reason": "infra:relay_error"
+   }
+  ],
+  "vlc-aa4b5023-aef6-4ed9-bdc9-705f59ab9ad6": [
+   {
+    "attempt": 1,
+    "reason": "infra:relay_error"
+   }
+  ],
+  "vs_code-7c4cc09e-7a92-40dd-8338-b2286535c4ed": [
+   {
+    "attempt": 1,
+    "reason": "infra:relay_error"
+   }
+  ]
+ },
+ "later_sessions": [],
+ "multi_session_logs_all": [
+  {
+   "file": "multi_apps-98e8e339-5f91-4ed2-b2b2-12647cb134f4-gate8-s0.jsonl",
+   "actions_by_session": {
+    "8ca7eff5": 60,
+    "804622db": 41
+   }
+  }
+ ],
+ "missing_gate_logs": []
+}

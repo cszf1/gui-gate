@@ -630,6 +630,39 @@ pub fn role_feats(role: &str) -> [(&'static str, f64); 3] {
      ("role_toggle", b(r.contains("toggle") || r.contains("check") || r.contains("radio")))]
 }
 
+/// v2 features (GUI_GATE_VALUE_MODEL=v2 only; never computed or logged on the default path): the kind of GUI
+/// action and of its target, both known at decision time and present in every gate log (tool, target.role).
+pub const V2_FEATURES: &[&str] = &["tool_click", "tool_scroll", "tool_type", "tool_key", "tool_set_value", "scroll_pixel",
+    "role_button", "role_text", "role_link_tab", "role_list_item", "role_combo"];
+
+/// FEATURE_NAMES followed by V2_FEATURES (the offline trainer's row layout; v1 rows keep the v2 slots at 0).
+pub const ALL_FEATURES: &[&str] = &["bias", "is_pixel", "is_token", "is_name", "is_keyboard", "no_obs", "token_stale",
+    "log_obs_age", "acts_since_obs", "obs_had_shot", "last_err", "last_unverif", "last_popup", "repeat", "edge_close",
+    "small_target", "label_empty", "label_dup", "loading_cue", "window_changed", "window_added", "elem_unknown",
+    "check_pass", "check_fail", "prev_none", "sess_fail", "consec_fail", "sig_failed", "role_menu", "role_cell", "role_toggle",
+    "tool_click", "tool_scroll", "tool_type", "tool_key", "tool_set_value", "scroll_pixel",
+    "role_button", "role_text", "role_link_tab", "role_list_item", "role_combo"];
+
+/// A command (run_command) is not a GUI step: v2 keeps it out of the GUI predictor and out of the GUI history.
+pub fn is_command_tool(tool: &str) -> bool {
+    tool == "run_command"
+}
+
+/// The v2 features of one step from its tool, target kind and target role (shared by the gate and the trainer).
+pub fn v2_feats(tool: &str, kind: &str, role: &str) -> [(&'static str, f64); 11] {
+    let r = role.to_lowercase();
+    let b = |x: bool| if x { 1.0 } else { 0.0 };
+    let scroll = tool == "scroll";
+    [("tool_click", b(tool.contains("click"))), ("tool_scroll", b(scroll)), ("tool_type", b(tool == "type_text")),
+     ("tool_key", b(tool == "press_key" || tool == "hotkey")), ("tool_set_value", b(tool == "set_value")),
+     ("scroll_pixel", b(scroll && kind == "pixel")),
+     ("role_button", b(r.contains("button") && !r.contains("radio") && !r.contains("toggle") && !r.contains("menu"))),
+     ("role_text", b(r.contains("text") || r.contains("entry") || r.contains("edit") || r.contains("paragraph") || r.contains("document"))),
+     ("role_link_tab", b(r.contains("link") || r.contains("tab"))),
+     ("role_list_item", b(r.contains("list item") || r.contains("tree item") || r.contains("row") || r == "item")),
+     ("role_combo", b(r.contains("combo")))]
+}
+
 pub type Feats = IndexMap<&'static str, f64>;
 
 pub fn fget(f: &Feats, k: &str) -> f64 {
@@ -668,7 +701,9 @@ pub fn features(ctx: &ActionCtx, st: &GateState, window_changed: Option<bool>, w
         f["obs_had_shot"] = b(o.with_screenshot || st.text_only);
         f["loading_cue"] = b(o.loading_cue);
     }
-    if let Some(la) = st.last_action() {
+    // v2 (st.gui_history): command exit codes are not GUI outcomes; the GUI history skips commands
+    let gui = |a: &&crate::state::ActionRecord| !(st.gui_history && is_command_tool(&a.tool));
+    if let Some(la) = st.actions.iter().rev().find(gui) {
         f["last_err"] = b(la.is_error);
         f["last_unverif"] = b(la.unverifiable);
         f["last_popup"] = b(la.popup);
@@ -708,13 +743,18 @@ pub fn features(ctx: &ActionCtx, st: &GateState, window_changed: Option<bool>, w
         Some(false) => f["check_fail"] = 1.0,
         None => {}
     }
-    let prev: Vec<(String, bool, bool)> = st.actions.iter().map(|a| (a.key.clone(), a.known_fail(), a.no_effect)).collect();
+    let prev: Vec<(String, bool, bool)> = st.actions.iter().filter(gui).map(|a| (a.key.clone(), a.known_fail(), a.no_effect)).collect();
     for (k, v) in history_feats(&prev, &ctx.signature) {
         f[k] = v;
     }
     let role = t.element.as_ref().map(|e| e.role.clone()).unwrap_or_else(|| t.role.clone());
     for (k, v) in role_feats(&role) {
         f[k] = v;
+    }
+    if st.gui_history {
+        for (k, v) in v2_feats(&ctx.tool, &t.kind, &role) {
+            f.insert(k, v);
+        }
     }
     f
 }
@@ -747,6 +787,35 @@ mod tests {
     fn risk(role: &str, label: &str) -> Option<String> {
         let t = Target { kind: "token".into(), pid: Some(999999), element: Some(Element::new(1, role, label)), ..Default::default() };
         assess_risk("click", &json!({}), &t, &[], &GateState::default()).1
+    }
+
+    #[test]
+    fn v2_gui_history_skips_commands_and_the_default_keeps_its_features() {
+        let rec = |tool: &str, key: &str, err: bool| crate::state::ActionRecord { t: 1.0, tool: tool.into(), key: key.into(), window_key: None,
+            is_error: err, unverifiable: false, popup: false, stale_error: false, aid: 1, no_effect: false, retro: false };
+        let ctx = ActionCtx { tool: "click".into(), args: json!({}), target: Target { kind: "token".into(), role: "push button".into(), label: "OK".into(), ..Default::default() },
+                              signature: "click|1|push button|OK".into(), ..Default::default() };
+        for v2 in [false, true] {
+            let mut st = GateState::for_config(false, v2);
+            st.record_action(rec("click", "click|1|push button|OK", false));
+            for i in 0..3 {
+                st.record_action(rec("run_command", &format!("run_command||grep {i}"), true));
+            }
+            let f = features(&ctx, &st, None, None, None, Some(2.0));
+            if v2 {
+                assert_eq!(f["consec_fail"], 0.0, "a grep exit code is not a GUI failure");
+                assert_eq!(f["last_err"], 0.0);
+                assert_eq!(f["tool_click"], 1.0);
+                assert_eq!(f["role_button"], 1.0);
+            } else {
+                assert_eq!(f["consec_fail"], 3.0, "default path: unchanged (commands count)");
+                assert_eq!(f["last_err"], 1.0);
+                assert_eq!(f.keys().cloned().collect::<Vec<_>>(), FEATURE_NAMES.to_vec(), "no v2 keys on the default path");
+            }
+        }
+        assert_eq!(&ALL_FEATURES[..FEATURE_NAMES.len()], FEATURE_NAMES);
+        assert_eq!(ALL_FEATURES.len(), FEATURE_NAMES.len() + V2_FEATURES.len());
+        assert_eq!(&ALL_FEATURES[FEATURE_NAMES.len()..], V2_FEATURES);
     }
 
     #[test]

@@ -1,0 +1,8157 @@
+[
+  {
+    "c": 0,
+    "s": 0,
+    "v": 0,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.727549363,
+    "reason": "P(direct)=0.73; expected cost direct=5.2s, check=5.2s, look_light=11.4s",
+    "scores": {
+      "direct": 5.176562105,
+      "look_light": 11.400077789,
+      "look_full": 11.423275305,
+      "check": 5.221265242
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.7275,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 0,
+    "s": 0,
+    "v": 1,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.727549363,
+    "reason": "P(direct)=0.73; expected cost direct=5.2s, check=5.2s, review=6.4s",
+    "scores": {
+      "direct": 5.176562105,
+      "look_light": 11.400077789,
+      "look_full": 11.423275305,
+      "review": 6.364765368,
+      "check": 5.221265242
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.7275,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "review": {
+          "s": 3.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 0,
+    "s": 0,
+    "v": 2,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.727549363,
+    "reason": "P(direct)=0.73; expected cost direct=5.2s, check=5.2s, look_light=11.4s",
+    "scores": {
+      "direct": 5.176562105,
+      "look_light": 11.400077789,
+      "look_full": 11.423275305,
+      "check": 5.221265242
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.7275,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 0,
+    "s": 1,
+    "v": 0,
+    "option": "check",
+    "tier": "model",
+    "p": 0.575047439,
+    "reason": "P(direct)=0.58; expected cost check=8.0s, direct=8.1s, look_full=13.1s",
+    "scores": {
+      "direct": 8.074098652,
+      "look_light": 13.862983854,
+      "look_full": 13.061701639,
+      "check": 8.031875692
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.575,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 0,
+    "s": 1,
+    "v": 1,
+    "option": "check",
+    "tier": "grey",
+    "p": 0.575047439,
+    "reason": "P(direct)=0.58; expected cost review=6.4s, check=8.0s, direct=8.1s",
+    "scores": {
+      "direct": 8.074098652,
+      "look_light": 13.862983854,
+      "look_full": 13.061701639,
+      "review": 6.364765368,
+      "check": 8.031875692
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.575,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "review": {
+          "s": 3.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 0,
+    "s": 1,
+    "v": 2,
+    "option": "check",
+    "tier": "model",
+    "p": 0.575047439,
+    "reason": "P(direct)=0.58; expected cost check=8.0s, direct=8.1s, look_full=13.1s",
+    "scores": {
+      "direct": 8.074098652,
+      "look_light": 13.862983854,
+      "look_full": 13.061701639,
+      "check": 8.031875692
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.575,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 0,
+    "s": 2,
+    "v": 0,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.877766681,
+    "reason": "P(direct)=0.88; expected cost direct=2.3s, check=2.5s, look_light=9.0s",
+    "scores": {
+      "direct": 2.322433061,
+      "look_light": 8.974068102,
+      "look_full": 10.625703143,
+      "check": 2.452760069
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.8778,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 0,
+    "s": 2,
+    "v": 1,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.877766681,
+    "reason": "P(direct)=0.88; expected cost direct=2.3s, check=2.5s, review=4.5s",
+    "scores": {
+      "direct": 2.322433061,
+      "look_light": 8.974068102,
+      "look_full": 10.625703143,
+      "review": 4.50958149,
+      "check": 2.452760069
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.8778,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "review": {
+          "s": 3.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 0,
+    "s": 2,
+    "v": 2,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.877766681,
+    "reason": "P(direct)=0.88; expected cost direct=2.3s, check=2.5s, look_light=9.0s",
+    "scores": {
+      "direct": 2.322433061,
+      "look_light": 8.974068102,
+      "look_full": 10.625703143,
+      "check": 2.452760069
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.8778,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 0,
+    "s": 3,
+    "v": 0,
+    "option": "wait",
+    "tier": "model",
+    "p": 0.453903445,
+    "reason": "P(direct)=0.45; expected cost wait=5.1s, check=10.3s, direct=10.4s",
+    "scores": {
+      "direct": 10.375834538,
+      "look_light": 15.819459357,
+      "look_full": 14.548465567,
+      "check": 10.264559502,
+      "wait": 5.141249684
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.4539,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        },
+        "wait": {
+          "s": 1.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "wait"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 0,
+    "s": 3,
+    "v": 1,
+    "option": "wait",
+    "tier": "model",
+    "p": 0.453903445,
+    "reason": "P(direct)=0.45; expected cost wait=5.1s, review=9.7s, check=10.3s",
+    "scores": {
+      "direct": 10.375834538,
+      "look_light": 15.819459357,
+      "look_full": 14.548465567,
+      "review": 9.744292449,
+      "check": 10.264559502,
+      "wait": 5.141249684
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.4539,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "review": {
+          "s": 3.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        },
+        "wait": {
+          "s": 1.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "wait"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 0,
+    "s": 3,
+    "v": 2,
+    "option": "wait",
+    "tier": "model",
+    "p": 0.453903445,
+    "reason": "P(direct)=0.45; expected cost wait=5.1s, check=10.3s, direct=10.4s",
+    "scores": {
+      "direct": 10.375834538,
+      "look_light": 15.819459357,
+      "look_full": 14.548465567,
+      "check": 10.264559502,
+      "wait": 5.141249684
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.4539,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        },
+        "wait": {
+          "s": 1.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "wait"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 0,
+    "s": 4,
+    "v": 0,
+    "option": "wait",
+    "tier": "model",
+    "p": 0.180124267,
+    "reason": "P(direct)=0.18; expected cost wait=9.2s, look_light=11.4s, look_full=11.4s",
+    "scores": {
+      "direct": 15.577638931,
+      "look_light": 11.400077789,
+      "look_full": 11.423275305,
+      "check": 15.310309763,
+      "wait": 9.229257331
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.1801,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        },
+        "wait": {
+          "s": 1.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "wait"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 0,
+    "s": 4,
+    "v": 1,
+    "option": "wait",
+    "tier": "model",
+    "p": 0.180124267,
+    "reason": "P(direct)=0.18; expected cost wait=9.2s, look_light=11.4s, look_full=11.4s",
+    "scores": {
+      "direct": 15.577638931,
+      "look_light": 11.400077789,
+      "look_full": 11.423275305,
+      "review": 13.125465305,
+      "check": 15.310309763,
+      "wait": 9.229257331
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.1801,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "review": {
+          "s": 3.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        },
+        "wait": {
+          "s": 1.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "wait"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 0,
+    "s": 4,
+    "v": 2,
+    "option": "wait",
+    "tier": "model",
+    "p": 0.180124267,
+    "reason": "P(direct)=0.18; expected cost wait=9.2s, look_light=11.4s, look_full=11.4s",
+    "scores": {
+      "direct": 15.577638931,
+      "look_light": 11.400077789,
+      "look_full": 11.423275305,
+      "check": 15.310309763,
+      "wait": 9.229257331
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.1801,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        },
+        "wait": {
+          "s": 1.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "wait"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 0,
+    "s": 5,
+    "v": 0,
+    "option": "check",
+    "tier": "grey",
+    "p": 0.504877813,
+    "reason": "P(direct)=0.50; 2 failed in a row; expected cost look_full=23.7s, check=27.6s, direct=28.2s",
+    "scores": {
+      "direct": 28.221964673,
+      "look_light": 30.988669972,
+      "look_full": 23.701893387,
+      "check": 27.575305733,
+      "ask_help": 47.822196467
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.5049,
+      "fail_cost_s": 57.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        },
+        "ask_help": {
+          "s": 45.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": null,
+    "fail_cost": 57.0
+  },
+  {
+    "c": 0,
+    "s": 5,
+    "v": 1,
+    "option": "check",
+    "tier": "grey",
+    "p": 0.504877813,
+    "reason": "P(direct)=0.50; 2 failed in a row; expected cost review=14.3s, look_full=23.7s, check=27.6s",
+    "scores": {
+      "direct": 28.221964673,
+      "look_light": 30.988669972,
+      "look_full": 23.701893387,
+      "review": 14.306125396,
+      "check": 27.575305733,
+      "ask_help": 47.822196467
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.5049,
+      "fail_cost_s": 57.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "review": {
+          "s": 3.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        },
+        "ask_help": {
+          "s": 45.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": null,
+    "fail_cost": 57.0
+  },
+  {
+    "c": 0,
+    "s": 5,
+    "v": 2,
+    "option": "check",
+    "tier": "grey",
+    "p": 0.504877813,
+    "reason": "P(direct)=0.50; 2 failed in a row; expected cost look_full=23.7s, check=27.6s, direct=28.2s",
+    "scores": {
+      "direct": 28.221964673,
+      "look_light": 30.988669972,
+      "look_full": 23.701893387,
+      "check": 27.575305733
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.5049,
+      "fail_cost_s": 57.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": null,
+    "fail_cost": 57.0
+  },
+  {
+    "c": 0,
+    "s": 6,
+    "v": 0,
+    "option": "check",
+    "tier": "grey",
+    "p": 0.19422102,
+    "reason": "P(direct)=0.19; expected cost look_light=11.4s, look_full=11.4s, check=15.1s",
+    "scores": {
+      "direct": 15.309800627,
+      "look_light": 11.400077789,
+      "look_full": 11.423275305,
+      "check": 15.050506608
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.1942,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": "look_light",
+    "fail_cost": 19.0
+  },
+  {
+    "c": 0,
+    "s": 6,
+    "v": 1,
+    "option": "check",
+    "tier": "grey",
+    "p": 0.19422102,
+    "reason": "P(direct)=0.19; expected cost look_light=11.4s, look_full=11.4s, review=13.0s",
+    "scores": {
+      "direct": 15.309800627,
+      "look_light": 11.400077789,
+      "look_full": 11.423275305,
+      "review": 12.951370408,
+      "check": 15.050506608
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.1942,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "review": {
+          "s": 3.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": "look_light",
+    "fail_cost": 19.0
+  },
+  {
+    "c": 0,
+    "s": 6,
+    "v": 2,
+    "option": "check",
+    "tier": "grey",
+    "p": 0.19422102,
+    "reason": "P(direct)=0.19; expected cost look_light=11.4s, look_full=11.4s, check=15.1s",
+    "scores": {
+      "direct": 15.309800627,
+      "look_light": 11.400077789,
+      "look_full": 11.423275305,
+      "check": 15.050506608
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.1942,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": "look_light",
+    "fail_cost": 19.0
+  },
+  {
+    "c": 0,
+    "s": 7,
+    "v": 0,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.85478164,
+    "reason": "P(direct)=0.85; expected cost direct=2.8s, check=2.9s, look_light=9.3s",
+    "scores": {
+      "direct": 2.759148849,
+      "look_light": 9.345276522,
+      "look_full": 10.220900216,
+      "check": 2.876374384
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.8548,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 0,
+    "s": 7,
+    "v": 1,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.85478164,
+    "reason": "P(direct)=0.85; expected cost direct=2.8s, check=2.9s, review=4.8s",
+    "scores": {
+      "direct": 2.759148849,
+      "look_light": 9.345276522,
+      "look_full": 10.220900216,
+      "review": 4.793446752,
+      "check": 2.876374384
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.8548,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "review": {
+          "s": 3.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 0,
+    "s": 7,
+    "v": 2,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.85478164,
+    "reason": "P(direct)=0.85; expected cost direct=2.8s, check=2.9s, look_light=9.3s",
+    "scores": {
+      "direct": 2.759148849,
+      "look_light": 9.345276522,
+      "look_full": 10.220900216,
+      "check": 2.876374384
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.8548,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 0,
+    "s": 8,
+    "v": 0,
+    "option": "check",
+    "tier": "model",
+    "p": 0.344704986,
+    "reason": "P(direct)=0.34; expected cost check=12.3s, direct=12.5s, look_full=13.9s",
+    "scores": {
+      "direct": 12.45060527,
+      "look_light": 15.008697261,
+      "look_full": 13.910197547,
+      "check": 12.277087112
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.3447,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 0,
+    "s": 8,
+    "v": 1,
+    "option": "check",
+    "tier": "grey",
+    "p": 0.344704986,
+    "reason": "P(direct)=0.34; expected cost review=11.1s, check=12.3s, direct=12.5s",
+    "scores": {
+      "direct": 12.45060527,
+      "look_light": 15.008697261,
+      "look_full": 13.910197547,
+      "review": 11.092893425,
+      "check": 12.277087112
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.3447,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "review": {
+          "s": 3.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 0,
+    "s": 8,
+    "v": 2,
+    "option": "check",
+    "tier": "model",
+    "p": 0.344704986,
+    "reason": "P(direct)=0.34; expected cost check=12.3s, direct=12.5s, look_full=13.9s",
+    "scores": {
+      "direct": 12.45060527,
+      "look_light": 15.008697261,
+      "look_full": 13.910197547,
+      "check": 12.277087112
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.3447,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 1,
+    "s": 0,
+    "v": 0,
+    "option": "check",
+    "tier": "model",
+    "p": 0.727549363,
+    "reason": "P(direct)=0.73; expected cost check=10.2s, direct=10.4s, look_full=13.8s",
+    "scores": {
+      "direct": 10.35312421,
+      "look_light": 15.800155579,
+      "look_full": 13.84655061,
+      "check": 10.242530484
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.7275,
+      "fail_cost_s": 38.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": null,
+    "fail_cost": 38.0
+  },
+  {
+    "c": 1,
+    "s": 0,
+    "v": 1,
+    "option": "check",
+    "tier": "grey",
+    "p": 0.727549363,
+    "reason": "P(direct)=0.73; expected cost review=9.7s, check=10.2s, direct=10.4s",
+    "scores": {
+      "direct": 10.35312421,
+      "look_light": 15.800155579,
+      "look_full": 13.84655061,
+      "review": 9.729530737,
+      "check": 10.242530484
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.7275,
+      "fail_cost_s": 38.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "review": {
+          "s": 3.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": null,
+    "fail_cost": 38.0
+  },
+  {
+    "c": 1,
+    "s": 0,
+    "v": 2,
+    "option": "check",
+    "tier": "model",
+    "p": 0.727549363,
+    "reason": "P(direct)=0.73; expected cost check=10.2s, direct=10.4s, look_full=13.8s",
+    "scores": {
+      "direct": 10.35312421,
+      "look_light": 15.800155579,
+      "look_full": 13.84655061,
+      "check": 10.242530484
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.7275,
+      "fail_cost_s": 38.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": null,
+    "fail_cost": 38.0
+  },
+  {
+    "c": 1,
+    "s": 1,
+    "v": 0,
+    "option": "check",
+    "tier": "model",
+    "p": 0.575047439,
+    "reason": "P(direct)=0.58; expected cost check=15.9s, direct=16.1s, look_full=17.1s",
+    "scores": {
+      "direct": 16.148197304,
+      "look_light": 20.725967708,
+      "look_full": 17.123403278,
+      "check": 15.863751385
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.575,
+      "fail_cost_s": 38.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": null,
+    "fail_cost": 38.0
+  },
+  {
+    "c": 1,
+    "s": 1,
+    "v": 1,
+    "option": "check",
+    "tier": "grey",
+    "p": 0.575047439,
+    "reason": "P(direct)=0.58; expected cost review=9.7s, check=15.9s, direct=16.1s",
+    "scores": {
+      "direct": 16.148197304,
+      "look_light": 20.725967708,
+      "look_full": 17.123403278,
+      "review": 9.729530737,
+      "check": 15.863751385
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.575,
+      "fail_cost_s": 38.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "review": {
+          "s": 3.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": null,
+    "fail_cost": 38.0
+  },
+  {
+    "c": 1,
+    "s": 1,
+    "v": 2,
+    "option": "check",
+    "tier": "model",
+    "p": 0.575047439,
+    "reason": "P(direct)=0.58; expected cost check=15.9s, direct=16.1s, look_full=17.1s",
+    "scores": {
+      "direct": 16.148197304,
+      "look_light": 20.725967708,
+      "look_full": 17.123403278,
+      "check": 15.863751385
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.575,
+      "fail_cost_s": 38.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": null,
+    "fail_cost": 38.0
+  },
+  {
+    "c": 1,
+    "s": 2,
+    "v": 0,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.877766681,
+    "reason": "P(direct)=0.88; expected cost direct=4.6s, check=4.7s, look_light=10.9s",
+    "scores": {
+      "direct": 4.644866122,
+      "look_light": 10.948136204,
+      "look_full": 12.251406285,
+      "check": 4.705520138
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.8778,
+      "fail_cost_s": 38.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 38.0
+  },
+  {
+    "c": 1,
+    "s": 2,
+    "v": 1,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.877766681,
+    "reason": "P(direct)=0.88; expected cost direct=4.6s, check=4.7s, review=6.0s",
+    "scores": {
+      "direct": 4.644866122,
+      "look_light": 10.948136204,
+      "look_full": 12.251406285,
+      "review": 6.019162979,
+      "check": 4.705520138
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.8778,
+      "fail_cost_s": 38.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "review": {
+          "s": 3.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 38.0
+  },
+  {
+    "c": 1,
+    "s": 2,
+    "v": 2,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.877766681,
+    "reason": "P(direct)=0.88; expected cost direct=4.6s, check=4.7s, look_light=10.9s",
+    "scores": {
+      "direct": 4.644866122,
+      "look_light": 10.948136204,
+      "look_full": 12.251406285,
+      "check": 4.705520138
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.8778,
+      "fail_cost_s": 38.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 38.0
+  },
+  {
+    "c": 1,
+    "s": 3,
+    "v": 0,
+    "option": "wait",
+    "tier": "model",
+    "p": 0.453903445,
+    "reason": "P(direct)=0.45; expected cost wait=9.3s, look_full=20.1s, check=20.3s",
+    "scores": {
+      "direct": 20.751669075,
+      "look_light": 24.638918714,
+      "look_full": 20.096931134,
+      "check": 20.329119003,
+      "wait": 9.282499368
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.4539,
+      "fail_cost_s": 38.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        },
+        "wait": {
+          "s": 1.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "wait"
+    },
+    "hard": null,
+    "fail_cost": 38.0
+  },
+  {
+    "c": 1,
+    "s": 3,
+    "v": 1,
+    "option": "wait",
+    "tier": "model",
+    "p": 0.453903445,
+    "reason": "P(direct)=0.45; expected cost wait=9.3s, review=16.5s, look_full=20.1s",
+    "scores": {
+      "direct": 20.751669075,
+      "look_light": 24.638918714,
+      "look_full": 20.096931134,
+      "review": 16.488584899,
+      "check": 20.329119003,
+      "wait": 9.282499368
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.4539,
+      "fail_cost_s": 38.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "review": {
+          "s": 3.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        },
+        "wait": {
+          "s": 1.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "wait"
+    },
+    "hard": null,
+    "fail_cost": 38.0
+  },
+  {
+    "c": 1,
+    "s": 3,
+    "v": 2,
+    "option": "wait",
+    "tier": "model",
+    "p": 0.453903445,
+    "reason": "P(direct)=0.45; expected cost wait=9.3s, look_full=20.1s, check=20.3s",
+    "scores": {
+      "direct": 20.751669075,
+      "look_light": 24.638918714,
+      "look_full": 20.096931134,
+      "check": 20.329119003,
+      "wait": 9.282499368
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.4539,
+      "fail_cost_s": 38.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        },
+        "wait": {
+          "s": 1.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "wait"
+    },
+    "hard": null,
+    "fail_cost": 38.0
+  },
+  {
+    "c": 1,
+    "s": 4,
+    "v": 0,
+    "option": "check",
+    "tier": "grey",
+    "p": 0.180124267,
+    "reason": "P(direct)=0.18; expected cost look_full=13.8s, look_light=15.8s, wait=17.5s",
+    "scores": {
+      "direct": 31.155277861,
+      "look_light": 15.800155579,
+      "look_full": 13.84655061,
+      "check": 30.420619525,
+      "wait": 17.458514662
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.1801,
+      "fail_cost_s": 38.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        },
+        "wait": {
+          "s": 1.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": null,
+    "fail_cost": 38.0
+  },
+  {
+    "c": 1,
+    "s": 4,
+    "v": 1,
+    "option": "check",
+    "tier": "grey",
+    "p": 0.180124267,
+    "reason": "P(direct)=0.18; expected cost look_full=13.8s, look_light=15.8s, wait=17.5s",
+    "scores": {
+      "direct": 31.155277861,
+      "look_light": 15.800155579,
+      "look_full": 13.84655061,
+      "review": 23.25093061,
+      "check": 30.420619525,
+      "wait": 17.458514662
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.1801,
+      "fail_cost_s": 38.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "review": {
+          "s": 3.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        },
+        "wait": {
+          "s": 1.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": null,
+    "fail_cost": 38.0
+  },
+  {
+    "c": 1,
+    "s": 4,
+    "v": 2,
+    "option": "check",
+    "tier": "grey",
+    "p": 0.180124267,
+    "reason": "P(direct)=0.18; expected cost look_full=13.8s, look_light=15.8s, wait=17.5s",
+    "scores": {
+      "direct": 31.155277861,
+      "look_light": 15.800155579,
+      "look_full": 13.84655061,
+      "check": 30.420619525,
+      "wait": 17.458514662
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.1801,
+      "fail_cost_s": 38.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        },
+        "wait": {
+          "s": 1.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": null,
+    "fail_cost": 38.0
+  },
+  {
+    "c": 1,
+    "s": 5,
+    "v": 0,
+    "option": "check",
+    "tier": "grey",
+    "p": 0.504877813,
+    "reason": "P(direct)=0.50; 2 failed in a row; expected cost look_full=38.4s, ask_help=50.6s, check=55.0s",
+    "scores": {
+      "direct": 56.443929347,
+      "look_light": 54.977339945,
+      "look_full": 38.403786773,
+      "check": 54.950611466,
+      "ask_help": 50.644392935
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.5049,
+      "fail_cost_s": 114.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        },
+        "ask_help": {
+          "s": 45.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": null,
+    "fail_cost": 114.0
+  },
+  {
+    "c": 1,
+    "s": 5,
+    "v": 1,
+    "option": "check",
+    "tier": "grey",
+    "p": 0.504877813,
+    "reason": "P(direct)=0.50; 2 failed in a row; expected cost review=25.6s, look_full=38.4s, ask_help=50.6s",
+    "scores": {
+      "direct": 56.443929347,
+      "look_light": 54.977339945,
+      "look_full": 38.403786773,
+      "review": 25.612250793,
+      "check": 54.950611466,
+      "ask_help": 50.644392935
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.5049,
+      "fail_cost_s": 114.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "review": {
+          "s": 3.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        },
+        "ask_help": {
+          "s": 45.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": null,
+    "fail_cost": 114.0
+  },
+  {
+    "c": 1,
+    "s": 5,
+    "v": 2,
+    "option": "check",
+    "tier": "grey",
+    "p": 0.504877813,
+    "reason": "P(direct)=0.50; 2 failed in a row; expected cost look_full=38.4s, check=55.0s, look_light=55.0s",
+    "scores": {
+      "direct": 56.443929347,
+      "look_light": 54.977339945,
+      "look_full": 38.403786773,
+      "check": 54.950611466
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.5049,
+      "fail_cost_s": 114.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": null,
+    "fail_cost": 114.0
+  },
+  {
+    "c": 1,
+    "s": 6,
+    "v": 0,
+    "option": "check",
+    "tier": "grey",
+    "p": 0.19422102,
+    "reason": "P(direct)=0.19; expected cost look_full=13.8s, look_light=15.8s, check=29.9s",
+    "scores": {
+      "direct": 30.619601254,
+      "look_light": 15.800155579,
+      "look_full": 13.84655061,
+      "check": 29.901013217
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.1942,
+      "fail_cost_s": 38.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": "look_light",
+    "fail_cost": 38.0
+  },
+  {
+    "c": 1,
+    "s": 6,
+    "v": 1,
+    "option": "check",
+    "tier": "grey",
+    "p": 0.19422102,
+    "reason": "P(direct)=0.19; expected cost look_full=13.8s, look_light=15.8s, review=22.9s",
+    "scores": {
+      "direct": 30.619601254,
+      "look_light": 15.800155579,
+      "look_full": 13.84655061,
+      "review": 22.902740815,
+      "check": 29.901013217
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.1942,
+      "fail_cost_s": 38.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "review": {
+          "s": 3.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": "look_light",
+    "fail_cost": 38.0
+  },
+  {
+    "c": 1,
+    "s": 6,
+    "v": 2,
+    "option": "check",
+    "tier": "grey",
+    "p": 0.19422102,
+    "reason": "P(direct)=0.19; expected cost look_full=13.8s, look_light=15.8s, check=29.9s",
+    "scores": {
+      "direct": 30.619601254,
+      "look_light": 15.800155579,
+      "look_full": 13.84655061,
+      "check": 29.901013217
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.1942,
+      "fail_cost_s": 38.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": "look_light",
+    "fail_cost": 38.0
+  },
+  {
+    "c": 1,
+    "s": 7,
+    "v": 0,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.85478164,
+    "reason": "P(direct)=0.85; expected cost direct=5.5s, check=5.6s, look_full=11.4s",
+    "scores": {
+      "direct": 5.518297698,
+      "look_light": 11.690553043,
+      "look_full": 11.441800432,
+      "check": 5.552748767
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.8548,
+      "fail_cost_s": 38.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 38.0
+  },
+  {
+    "c": 1,
+    "s": 7,
+    "v": 1,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.85478164,
+    "reason": "P(direct)=0.85; expected cost direct=5.5s, check=5.6s, review=6.6s",
+    "scores": {
+      "direct": 5.518297698,
+      "look_light": 11.690553043,
+      "look_full": 11.441800432,
+      "review": 6.586893504,
+      "check": 5.552748767
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.8548,
+      "fail_cost_s": 38.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "review": {
+          "s": 3.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 38.0
+  },
+  {
+    "c": 1,
+    "s": 7,
+    "v": 2,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.85478164,
+    "reason": "P(direct)=0.85; expected cost direct=5.5s, check=5.6s, look_full=11.4s",
+    "scores": {
+      "direct": 5.518297698,
+      "look_light": 11.690553043,
+      "look_full": 11.441800432,
+      "check": 5.552748767
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.8548,
+      "fail_cost_s": 38.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 38.0
+  },
+  {
+    "c": 1,
+    "s": 8,
+    "v": 0,
+    "option": "check",
+    "tier": "grey",
+    "p": 0.344704986,
+    "reason": "P(direct)=0.34; expected cost look_full=18.8s, look_light=23.0s, check=24.4s",
+    "scores": {
+      "direct": 24.90121054,
+      "look_light": 23.017394523,
+      "look_full": 18.820395094,
+      "check": 24.354174223
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.3447,
+      "fail_cost_s": 38.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": null,
+    "fail_cost": 38.0
+  },
+  {
+    "c": 1,
+    "s": 8,
+    "v": 1,
+    "option": "check",
+    "tier": "grey",
+    "p": 0.344704986,
+    "reason": "P(direct)=0.34; expected cost look_full=18.8s, review=19.2s, look_light=23.0s",
+    "scores": {
+      "direct": 24.90121054,
+      "look_light": 23.017394523,
+      "look_full": 18.820395094,
+      "review": 19.185786851,
+      "check": 24.354174223
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.3447,
+      "fail_cost_s": 38.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "review": {
+          "s": 3.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": null,
+    "fail_cost": 38.0
+  },
+  {
+    "c": 1,
+    "s": 8,
+    "v": 2,
+    "option": "check",
+    "tier": "grey",
+    "p": 0.344704986,
+    "reason": "P(direct)=0.34; expected cost look_full=18.8s, look_light=23.0s, check=24.4s",
+    "scores": {
+      "direct": 24.90121054,
+      "look_light": 23.017394523,
+      "look_full": 18.820395094,
+      "check": 24.354174223
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.3447,
+      "fail_cost_s": 38.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": null,
+    "fail_cost": 38.0
+  },
+  {
+    "c": 2,
+    "s": 0,
+    "v": 0,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.666674271,
+    "reason": "P(direct)=0.67; expected cost direct=6.3s, look_full=11.2s",
+    "scores": {
+      "direct": 6.333188852,
+      "look_full": 11.178024156
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.6667,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 2,
+    "s": 0,
+    "v": 1,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.666674271,
+    "reason": "P(direct)=0.67; expected cost direct=6.3s, look_full=11.2s",
+    "scores": {
+      "direct": 6.333188852,
+      "look_full": 11.178024156
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.6667,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 2,
+    "s": 0,
+    "v": 2,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.666674271,
+    "reason": "P(direct)=0.67; expected cost direct=6.3s, look_full=11.2s",
+    "scores": {
+      "direct": 6.333188852,
+      "look_full": 11.178024156
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.6667,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 2,
+    "s": 1,
+    "v": 0,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.50335795,
+    "reason": "P(direct)=0.50; expected cost direct=9.4s, look_full=12.5s",
+    "scores": {
+      "direct": 9.436198959,
+      "look_full": 12.513901955
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.5034,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 2,
+    "s": 1,
+    "v": 1,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.50335795,
+    "reason": "P(direct)=0.50; expected cost direct=9.4s, look_full=12.5s",
+    "scores": {
+      "direct": 9.436198959,
+      "look_full": 12.513901955
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.5034,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 2,
+    "s": 1,
+    "v": 2,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.50335795,
+    "reason": "P(direct)=0.50; expected cost direct=9.4s, look_full=12.5s",
+    "scores": {
+      "direct": 9.436198959,
+      "look_full": 12.513901955
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.5034,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 2,
+    "s": 2,
+    "v": 0,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.843222882,
+    "reason": "P(direct)=0.84; expected cost direct=3.0s, look_full=10.5s",
+    "scores": {
+      "direct": 2.978765238,
+      "look_full": 10.489382619
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.8432,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 2,
+    "s": 2,
+    "v": 1,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.843222882,
+    "reason": "P(direct)=0.84; expected cost direct=3.0s, look_full=10.5s",
+    "scores": {
+      "direct": 2.978765238,
+      "look_full": 10.489382619
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.8432,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 2,
+    "s": 2,
+    "v": 2,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.843222882,
+    "reason": "P(direct)=0.84; expected cost direct=3.0s, look_full=10.5s",
+    "scores": {
+      "direct": 2.978765238,
+      "look_full": 10.489382619
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.8432,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 2,
+    "s": 3,
+    "v": 0,
+    "option": "wait",
+    "tier": "model",
+    "p": 0.383680742,
+    "reason": "P(direct)=0.38; expected cost wait=6.1s, direct=11.7s, look_full=13.6s",
+    "scores": {
+      "direct": 11.710065904,
+      "look_full": 13.642368227,
+      "wait": 6.066551082
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.3837,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "wait": {
+          "s": 1.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "wait"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 2,
+    "s": 3,
+    "v": 1,
+    "option": "wait",
+    "tier": "model",
+    "p": 0.383680742,
+    "reason": "P(direct)=0.38; expected cost wait=6.1s, direct=11.7s, look_full=13.6s",
+    "scores": {
+      "direct": 11.710065904,
+      "look_full": 13.642368227,
+      "wait": 6.066551082
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.3837,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "wait": {
+          "s": 1.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "wait"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 2,
+    "s": 3,
+    "v": 2,
+    "option": "wait",
+    "tier": "model",
+    "p": 0.383680742,
+    "reason": "P(direct)=0.38; expected cost wait=6.1s, direct=11.7s, look_full=13.6s",
+    "scores": {
+      "direct": 11.710065904,
+      "look_full": 13.642368227,
+      "wait": 6.066551082
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.3837,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "wait": {
+          "s": 1.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "wait"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 2,
+    "s": 4,
+    "v": 0,
+    "option": "wait",
+    "tier": "model",
+    "p": 0.141298244,
+    "reason": "P(direct)=0.14; expected cost wait=10.3s, look_full=11.2s, direct=16.3s",
+    "scores": {
+      "direct": 16.315333363,
+      "look_full": 11.178024156,
+      "wait": 10.299837377
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.1413,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "wait": {
+          "s": 1.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "wait"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 2,
+    "s": 4,
+    "v": 1,
+    "option": "wait",
+    "tier": "model",
+    "p": 0.141298244,
+    "reason": "P(direct)=0.14; expected cost wait=10.3s, look_full=11.2s, direct=16.3s",
+    "scores": {
+      "direct": 16.315333363,
+      "look_full": 11.178024156,
+      "wait": 10.299837377
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.1413,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "wait": {
+          "s": 1.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "wait"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 2,
+    "s": 4,
+    "v": 2,
+    "option": "wait",
+    "tier": "model",
+    "p": 0.141298244,
+    "reason": "P(direct)=0.14; expected cost wait=10.3s, look_full=11.2s, direct=16.3s",
+    "scores": {
+      "direct": 16.315333363,
+      "look_full": 11.178024156,
+      "wait": 10.299837377
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.1413,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "wait": {
+          "s": 1.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "wait"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 2,
+    "s": 5,
+    "v": 0,
+    "option": "look_full",
+    "tier": "model",
+    "p": 0.433022206,
+    "reason": "P(direct)=0.43; 2 failed in a row; expected cost look_full=21.5s, direct=32.3s, ask_help=48.2s",
+    "scores": {
+      "direct": 32.317734283,
+      "look_full": 21.479726474,
+      "ask_help": 48.231773428
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.433,
+      "fail_cost_s": 57.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "ask_help": {
+          "s": 45.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "look_full"
+    },
+    "hard": null,
+    "fail_cost": 57.0
+  },
+  {
+    "c": 2,
+    "s": 5,
+    "v": 1,
+    "option": "look_full",
+    "tier": "model",
+    "p": 0.433022206,
+    "reason": "P(direct)=0.43; 2 failed in a row; expected cost look_full=21.5s, direct=32.3s, ask_help=48.2s",
+    "scores": {
+      "direct": 32.317734283,
+      "look_full": 21.479726474,
+      "ask_help": 48.231773428
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.433,
+      "fail_cost_s": 57.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "ask_help": {
+          "s": 45.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "look_full"
+    },
+    "hard": null,
+    "fail_cost": 57.0
+  },
+  {
+    "c": 2,
+    "s": 5,
+    "v": 2,
+    "option": "look_full",
+    "tier": "model",
+    "p": 0.433022206,
+    "reason": "P(direct)=0.43; 2 failed in a row; expected cost look_full=21.5s, direct=32.3s",
+    "scores": {
+      "direct": 32.317734283,
+      "look_full": 21.479726474
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.433,
+      "fail_cost_s": 57.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "look_full"
+    },
+    "hard": null,
+    "fail_cost": 57.0
+  },
+  {
+    "c": 2,
+    "s": 6,
+    "v": 0,
+    "option": "look_full",
+    "tier": "model",
+    "p": 0.152923178,
+    "reason": "P(direct)=0.15; expected cost look_full=11.2s, direct=16.1s",
+    "scores": {
+      "direct": 16.094459621,
+      "look_full": 11.178024156
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.1529,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "look_full"
+    },
+    "hard": "look_full",
+    "fail_cost": 19.0
+  },
+  {
+    "c": 2,
+    "s": 6,
+    "v": 1,
+    "option": "look_full",
+    "tier": "model",
+    "p": 0.152923178,
+    "reason": "P(direct)=0.15; expected cost look_full=11.2s, direct=16.1s",
+    "scores": {
+      "direct": 16.094459621,
+      "look_full": 11.178024156
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.1529,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "look_full"
+    },
+    "hard": "look_full",
+    "fail_cost": 19.0
+  },
+  {
+    "c": 2,
+    "s": 6,
+    "v": 2,
+    "option": "look_full",
+    "tier": "model",
+    "p": 0.152923178,
+    "reason": "P(direct)=0.15; expected cost look_full=11.2s, direct=16.1s",
+    "scores": {
+      "direct": 16.094459621,
+      "look_full": 11.178024156
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.1529,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "look_full"
+    },
+    "hard": "look_full",
+    "fail_cost": 19.0
+  },
+  {
+    "c": 2,
+    "s": 7,
+    "v": 0,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.815110374,
+    "reason": "P(direct)=0.82; expected cost direct=3.5s, look_full=10.1s",
+    "scores": {
+      "direct": 3.512902898,
+      "look_full": 10.129592919
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.8151,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 2,
+    "s": 7,
+    "v": 1,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.815110374,
+    "reason": "P(direct)=0.82; expected cost direct=3.5s, look_full=10.1s",
+    "scores": {
+      "direct": 3.512902898,
+      "look_full": 10.129592919
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.8151,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 2,
+    "s": 7,
+    "v": 2,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.815110374,
+    "reason": "P(direct)=0.82; expected cost direct=3.5s, look_full=10.1s",
+    "scores": {
+      "direct": 3.512902898,
+      "look_full": 10.129592919
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.8151,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 2,
+    "s": 8,
+    "v": 0,
+    "option": "look_full",
+    "tier": "model",
+    "p": 0.282632742,
+    "reason": "P(direct)=0.28; expected cost look_full=13.2s, direct=13.6s",
+    "scores": {
+      "direct": 13.629977899,
+      "look_full": 13.167135159
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.2826,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "look_full"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 2,
+    "s": 8,
+    "v": 1,
+    "option": "look_full",
+    "tier": "model",
+    "p": 0.282632742,
+    "reason": "P(direct)=0.28; expected cost look_full=13.2s, direct=13.6s",
+    "scores": {
+      "direct": 13.629977899,
+      "look_full": 13.167135159
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.2826,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "look_full"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 2,
+    "s": 8,
+    "v": 2,
+    "option": "look_full",
+    "tier": "model",
+    "p": 0.282632742,
+    "reason": "P(direct)=0.28; expected cost look_full=13.2s, direct=13.6s",
+    "scores": {
+      "direct": 13.629977899,
+      "look_full": 13.167135159
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.2826,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "look_full"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 3,
+    "s": 0,
+    "v": 0,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.666674271,
+    "reason": "P(direct)=0.67; expected cost direct=3.2s, look_full=10.1s",
+    "scores": {
+      "direct": 3.166594426,
+      "look_full": 10.089012078
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.6667,
+      "fail_cost_s": 9.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 9.5
+  },
+  {
+    "c": 3,
+    "s": 0,
+    "v": 1,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.666674271,
+    "reason": "P(direct)=0.67; expected cost direct=3.2s, look_full=10.1s",
+    "scores": {
+      "direct": 3.166594426,
+      "look_full": 10.089012078
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.6667,
+      "fail_cost_s": 9.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 9.5
+  },
+  {
+    "c": 3,
+    "s": 0,
+    "v": 2,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.666674271,
+    "reason": "P(direct)=0.67; expected cost direct=3.2s, look_full=10.1s",
+    "scores": {
+      "direct": 3.166594426,
+      "look_full": 10.089012078
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.6667,
+      "fail_cost_s": 9.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 9.5
+  },
+  {
+    "c": 3,
+    "s": 1,
+    "v": 0,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.50335795,
+    "reason": "P(direct)=0.50; expected cost direct=4.7s, look_full=10.8s",
+    "scores": {
+      "direct": 4.71809948,
+      "look_full": 10.756950978
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.5034,
+      "fail_cost_s": 9.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 9.5
+  },
+  {
+    "c": 3,
+    "s": 1,
+    "v": 1,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.50335795,
+    "reason": "P(direct)=0.50; expected cost direct=4.7s, look_full=10.8s",
+    "scores": {
+      "direct": 4.71809948,
+      "look_full": 10.756950978
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.5034,
+      "fail_cost_s": 9.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 9.5
+  },
+  {
+    "c": 3,
+    "s": 1,
+    "v": 2,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.50335795,
+    "reason": "P(direct)=0.50; expected cost direct=4.7s, look_full=10.8s",
+    "scores": {
+      "direct": 4.71809948,
+      "look_full": 10.756950978
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.5034,
+      "fail_cost_s": 9.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 9.5
+  },
+  {
+    "c": 3,
+    "s": 2,
+    "v": 0,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.843222882,
+    "reason": "P(direct)=0.84; expected cost direct=1.5s, look_full=9.7s",
+    "scores": {
+      "direct": 1.489382619,
+      "look_full": 9.744691309
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.8432,
+      "fail_cost_s": 9.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 9.5
+  },
+  {
+    "c": 3,
+    "s": 2,
+    "v": 1,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.843222882,
+    "reason": "P(direct)=0.84; expected cost direct=1.5s, look_full=9.7s",
+    "scores": {
+      "direct": 1.489382619,
+      "look_full": 9.744691309
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.8432,
+      "fail_cost_s": 9.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 9.5
+  },
+  {
+    "c": 3,
+    "s": 2,
+    "v": 2,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.843222882,
+    "reason": "P(direct)=0.84; expected cost direct=1.5s, look_full=9.7s",
+    "scores": {
+      "direct": 1.489382619,
+      "look_full": 9.744691309
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.8432,
+      "fail_cost_s": 9.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 9.5
+  },
+  {
+    "c": 3,
+    "s": 3,
+    "v": 0,
+    "option": "wait",
+    "tier": "model",
+    "p": 0.383680742,
+    "reason": "P(direct)=0.38; expected cost wait=3.5s, direct=5.9s, look_full=11.3s",
+    "scores": {
+      "direct": 5.855032952,
+      "look_full": 11.321184113,
+      "wait": 3.533275541
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.3837,
+      "fail_cost_s": 9.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "wait": {
+          "s": 1.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "wait"
+    },
+    "hard": null,
+    "fail_cost": 9.5
+  },
+  {
+    "c": 3,
+    "s": 3,
+    "v": 1,
+    "option": "wait",
+    "tier": "model",
+    "p": 0.383680742,
+    "reason": "P(direct)=0.38; expected cost wait=3.5s, direct=5.9s, look_full=11.3s",
+    "scores": {
+      "direct": 5.855032952,
+      "look_full": 11.321184113,
+      "wait": 3.533275541
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.3837,
+      "fail_cost_s": 9.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "wait": {
+          "s": 1.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "wait"
+    },
+    "hard": null,
+    "fail_cost": 9.5
+  },
+  {
+    "c": 3,
+    "s": 3,
+    "v": 2,
+    "option": "wait",
+    "tier": "model",
+    "p": 0.383680742,
+    "reason": "P(direct)=0.38; expected cost wait=3.5s, direct=5.9s, look_full=11.3s",
+    "scores": {
+      "direct": 5.855032952,
+      "look_full": 11.321184113,
+      "wait": 3.533275541
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.3837,
+      "fail_cost_s": 9.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "wait": {
+          "s": 1.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "wait"
+    },
+    "hard": null,
+    "fail_cost": 9.5
+  },
+  {
+    "c": 3,
+    "s": 4,
+    "v": 0,
+    "option": "wait",
+    "tier": "model",
+    "p": 0.141298244,
+    "reason": "P(direct)=0.14; expected cost wait=5.6s, direct=8.2s, look_full=10.1s",
+    "scores": {
+      "direct": 8.157666681,
+      "look_full": 10.089012078,
+      "wait": 5.649918689
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.1413,
+      "fail_cost_s": 9.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "wait": {
+          "s": 1.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "wait"
+    },
+    "hard": null,
+    "fail_cost": 9.5
+  },
+  {
+    "c": 3,
+    "s": 4,
+    "v": 1,
+    "option": "wait",
+    "tier": "model",
+    "p": 0.141298244,
+    "reason": "P(direct)=0.14; expected cost wait=5.6s, direct=8.2s, look_full=10.1s",
+    "scores": {
+      "direct": 8.157666681,
+      "look_full": 10.089012078,
+      "wait": 5.649918689
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.1413,
+      "fail_cost_s": 9.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "wait": {
+          "s": 1.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "wait"
+    },
+    "hard": null,
+    "fail_cost": 9.5
+  },
+  {
+    "c": 3,
+    "s": 4,
+    "v": 2,
+    "option": "wait",
+    "tier": "model",
+    "p": 0.141298244,
+    "reason": "P(direct)=0.14; expected cost wait=5.6s, direct=8.2s, look_full=10.1s",
+    "scores": {
+      "direct": 8.157666681,
+      "look_full": 10.089012078,
+      "wait": 5.649918689
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.1413,
+      "fail_cost_s": 9.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "wait": {
+          "s": 1.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "wait"
+    },
+    "hard": null,
+    "fail_cost": 9.5
+  },
+  {
+    "c": 3,
+    "s": 5,
+    "v": 0,
+    "option": "look_full",
+    "tier": "model",
+    "p": 0.433022206,
+    "reason": "P(direct)=0.43; 2 failed in a row; expected cost look_full=15.2s, direct=16.2s, ask_help=46.6s",
+    "scores": {
+      "direct": 16.158867142,
+      "look_full": 15.239863237,
+      "ask_help": 46.615886714
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.433,
+      "fail_cost_s": 28.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "ask_help": {
+          "s": 45.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "look_full"
+    },
+    "hard": null,
+    "fail_cost": 28.5
+  },
+  {
+    "c": 3,
+    "s": 5,
+    "v": 1,
+    "option": "look_full",
+    "tier": "model",
+    "p": 0.433022206,
+    "reason": "P(direct)=0.43; 2 failed in a row; expected cost look_full=15.2s, direct=16.2s, ask_help=46.6s",
+    "scores": {
+      "direct": 16.158867142,
+      "look_full": 15.239863237,
+      "ask_help": 46.615886714
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.433,
+      "fail_cost_s": 28.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "ask_help": {
+          "s": 45.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "look_full"
+    },
+    "hard": null,
+    "fail_cost": 28.5
+  },
+  {
+    "c": 3,
+    "s": 5,
+    "v": 2,
+    "option": "look_full",
+    "tier": "model",
+    "p": 0.433022206,
+    "reason": "P(direct)=0.43; 2 failed in a row; expected cost look_full=15.2s, direct=16.2s",
+    "scores": {
+      "direct": 16.158867142,
+      "look_full": 15.239863237
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.433,
+      "fail_cost_s": 28.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "look_full"
+    },
+    "hard": null,
+    "fail_cost": 28.5
+  },
+  {
+    "c": 3,
+    "s": 6,
+    "v": 0,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.152923178,
+    "reason": "P(direct)=0.15; expected cost direct=8.0s, look_full=10.1s",
+    "scores": {
+      "direct": 8.047229811,
+      "look_full": 10.089012078
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.1529,
+      "fail_cost_s": 9.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": "look_full",
+    "fail_cost": 9.5
+  },
+  {
+    "c": 3,
+    "s": 6,
+    "v": 1,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.152923178,
+    "reason": "P(direct)=0.15; expected cost direct=8.0s, look_full=10.1s",
+    "scores": {
+      "direct": 8.047229811,
+      "look_full": 10.089012078
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.1529,
+      "fail_cost_s": 9.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": "look_full",
+    "fail_cost": 9.5
+  },
+  {
+    "c": 3,
+    "s": 6,
+    "v": 2,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.152923178,
+    "reason": "P(direct)=0.15; expected cost direct=8.0s, look_full=10.1s",
+    "scores": {
+      "direct": 8.047229811,
+      "look_full": 10.089012078
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.1529,
+      "fail_cost_s": 9.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": "look_full",
+    "fail_cost": 9.5
+  },
+  {
+    "c": 3,
+    "s": 7,
+    "v": 0,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.815110374,
+    "reason": "P(direct)=0.82; expected cost direct=1.8s, look_full=9.6s",
+    "scores": {
+      "direct": 1.756451449,
+      "look_full": 9.564796459
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.8151,
+      "fail_cost_s": 9.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 9.5
+  },
+  {
+    "c": 3,
+    "s": 7,
+    "v": 1,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.815110374,
+    "reason": "P(direct)=0.82; expected cost direct=1.8s, look_full=9.6s",
+    "scores": {
+      "direct": 1.756451449,
+      "look_full": 9.564796459
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.8151,
+      "fail_cost_s": 9.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 9.5
+  },
+  {
+    "c": 3,
+    "s": 7,
+    "v": 2,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.815110374,
+    "reason": "P(direct)=0.82; expected cost direct=1.8s, look_full=9.6s",
+    "scores": {
+      "direct": 1.756451449,
+      "look_full": 9.564796459
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.8151,
+      "fail_cost_s": 9.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 9.5
+  },
+  {
+    "c": 3,
+    "s": 8,
+    "v": 0,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.282632742,
+    "reason": "P(direct)=0.28; expected cost direct=6.8s, look_full=11.1s",
+    "scores": {
+      "direct": 6.814988949,
+      "look_full": 11.083567579
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.2826,
+      "fail_cost_s": 9.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 9.5
+  },
+  {
+    "c": 3,
+    "s": 8,
+    "v": 1,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.282632742,
+    "reason": "P(direct)=0.28; expected cost direct=6.8s, look_full=11.1s",
+    "scores": {
+      "direct": 6.814988949,
+      "look_full": 11.083567579
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.2826,
+      "fail_cost_s": 9.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 9.5
+  },
+  {
+    "c": 3,
+    "s": 8,
+    "v": 2,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.282632742,
+    "reason": "P(direct)=0.28; expected cost direct=6.8s, look_full=11.1s",
+    "scores": {
+      "direct": 6.814988949,
+      "look_full": 11.083567579
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.2826,
+      "fail_cost_s": 9.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 9.5
+  },
+  {
+    "c": 4,
+    "s": 0,
+    "v": 0,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.847199816,
+    "reason": "P(direct)=0.85; expected cost direct=2.9s, look_light=9.5s, look_full=10.3s",
+    "scores": {
+      "direct": 2.903203487,
+      "look_light": 9.467722964,
+      "look_full": 10.288848646
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.8472,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 4,
+    "s": 0,
+    "v": 1,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.847199816,
+    "reason": "P(direct)=0.85; expected cost direct=2.9s, look_light=9.5s, look_full=10.3s",
+    "scores": {
+      "direct": 2.903203487,
+      "look_light": 9.467722964,
+      "look_full": 10.288848646
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.8472,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 4,
+    "s": 0,
+    "v": 2,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.847199816,
+    "reason": "P(direct)=0.85; expected cost direct=2.9s, look_light=9.5s, look_full=10.3s",
+    "scores": {
+      "direct": 2.903203487,
+      "look_light": 9.467722964,
+      "look_full": 10.288848646
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.8472,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 4,
+    "s": 1,
+    "v": 0,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.737507955,
+    "reason": "P(direct)=0.74; expected cost direct=5.0s, look_light=11.2s, look_full=11.3s",
+    "scores": {
+      "direct": 4.987348847,
+      "look_light": 11.23924652,
+      "look_full": 11.324161938
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.7375,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 4,
+    "s": 1,
+    "v": 1,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.737507955,
+    "reason": "P(direct)=0.74; expected cost direct=5.0s, look_light=11.2s, look_full=11.3s",
+    "scores": {
+      "direct": 4.987348847,
+      "look_light": 11.23924652,
+      "look_full": 11.324161938
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.7375,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 4,
+    "s": 1,
+    "v": 2,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.737507955,
+    "reason": "P(direct)=0.74; expected cost direct=5.0s, look_light=11.2s, look_full=11.3s",
+    "scores": {
+      "direct": 4.987348847,
+      "look_light": 11.23924652,
+      "look_full": 11.324161938
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.7375,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 4,
+    "s": 2,
+    "v": 0,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.937146338,
+    "reason": "P(direct)=0.94; expected cost direct=1.2s, look_light=8.0s, look_full=9.8s",
+    "scores": {
+      "direct": 1.194219576,
+      "look_light": 8.01508664,
+      "look_full": 9.835953703
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.9371,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 4,
+    "s": 2,
+    "v": 1,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.937146338,
+    "reason": "P(direct)=0.94; expected cost direct=1.2s, look_light=8.0s, look_full=9.8s",
+    "scores": {
+      "direct": 1.194219576,
+      "look_light": 8.01508664,
+      "look_full": 9.835953703
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.9371,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 4,
+    "s": 2,
+    "v": 2,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.937146338,
+    "reason": "P(direct)=0.94; expected cost direct=1.2s, look_light=8.0s, look_full=9.8s",
+    "scores": {
+      "direct": 1.194219576,
+      "look_light": 8.01508664,
+      "look_full": 9.835953703
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.9371,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 4,
+    "s": 3,
+    "v": 0,
+    "option": "wait",
+    "tier": "model",
+    "p": 0.633130369,
+    "reason": "P(direct)=0.63; expected cost wait=3.3s, direct=7.0s, look_full=12.4s",
+    "scores": {
+      "direct": 6.970522985,
+      "look_light": 12.924944537,
+      "look_full": 12.409648447,
+      "wait": 3.322562789
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.6331,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "wait": {
+          "s": 1.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "wait"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 4,
+    "s": 3,
+    "v": 1,
+    "option": "wait",
+    "tier": "model",
+    "p": 0.633130369,
+    "reason": "P(direct)=0.63; expected cost wait=3.3s, direct=7.0s, look_full=12.4s",
+    "scores": {
+      "direct": 6.970522985,
+      "look_light": 12.924944537,
+      "look_full": 12.409648447,
+      "wait": 3.322562789
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.6331,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "wait": {
+          "s": 1.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "wait"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 4,
+    "s": 3,
+    "v": 2,
+    "option": "wait",
+    "tier": "model",
+    "p": 0.633130369,
+    "reason": "P(direct)=0.63; expected cost wait=3.3s, direct=7.0s, look_full=12.4s",
+    "scores": {
+      "direct": 6.970522985,
+      "look_light": 12.924944537,
+      "look_full": 12.409648447,
+      "wait": 3.322562789
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.6331,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "wait": {
+          "s": 1.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "wait"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 4,
+    "s": 4,
+    "v": 0,
+    "option": "wait",
+    "tier": "model",
+    "p": 0.313259472,
+    "reason": "P(direct)=0.31; expected cost wait=6.5s, look_light=9.5s, look_full=10.3s",
+    "scores": {
+      "direct": 13.048070027,
+      "look_light": 9.467722964,
+      "look_full": 10.288848646,
+      "wait": 6.509728487
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.3133,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "wait": {
+          "s": 1.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "wait"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 4,
+    "s": 4,
+    "v": 1,
+    "option": "wait",
+    "tier": "model",
+    "p": 0.313259472,
+    "reason": "P(direct)=0.31; expected cost wait=6.5s, look_light=9.5s, look_full=10.3s",
+    "scores": {
+      "direct": 13.048070027,
+      "look_light": 9.467722964,
+      "look_full": 10.288848646,
+      "wait": 6.509728487
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.3133,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "wait": {
+          "s": 1.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "wait"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 4,
+    "s": 4,
+    "v": 2,
+    "option": "wait",
+    "tier": "model",
+    "p": 0.313259472,
+    "reason": "P(direct)=0.31; expected cost wait=6.5s, look_light=9.5s, look_full=10.3s",
+    "scores": {
+      "direct": 13.048070027,
+      "look_light": 9.467722964,
+      "look_full": 10.288848646,
+      "wait": 6.509728487
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.3133,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "wait": {
+          "s": 1.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "wait"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 4,
+    "s": 5,
+    "v": 0,
+    "option": "look_full",
+    "tier": "model",
+    "p": 0.679198957,
+    "reason": "P(direct)=0.68; 2 failed in a row; expected cost look_full=17.8s, direct=18.3s, look_light=22.5s",
+    "scores": {
+      "direct": 18.285659477,
+      "look_light": 22.542810556,
+      "look_full": 17.752643083,
+      "ask_help": 46.828565948
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.6792,
+      "fail_cost_s": 57.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "ask_help": {
+          "s": 45.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "look_full"
+    },
+    "hard": null,
+    "fail_cost": 57.0
+  },
+  {
+    "c": 4,
+    "s": 5,
+    "v": 1,
+    "option": "look_full",
+    "tier": "model",
+    "p": 0.679198957,
+    "reason": "P(direct)=0.68; 2 failed in a row; expected cost look_full=17.8s, direct=18.3s, look_light=22.5s",
+    "scores": {
+      "direct": 18.285659477,
+      "look_light": 22.542810556,
+      "look_full": 17.752643083,
+      "ask_help": 46.828565948
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.6792,
+      "fail_cost_s": 57.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "ask_help": {
+          "s": 45.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "look_full"
+    },
+    "hard": null,
+    "fail_cost": 57.0
+  },
+  {
+    "c": 4,
+    "s": 5,
+    "v": 2,
+    "option": "look_full",
+    "tier": "model",
+    "p": 0.679198957,
+    "reason": "P(direct)=0.68; 2 failed in a row; expected cost look_full=17.8s, direct=18.3s, look_light=22.5s",
+    "scores": {
+      "direct": 18.285659477,
+      "look_light": 22.542810556,
+      "look_full": 17.752643083
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.6792,
+      "fail_cost_s": 57.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "look_full"
+    },
+    "hard": null,
+    "fail_cost": 57.0
+  },
+  {
+    "c": 4,
+    "s": 6,
+    "v": 0,
+    "option": "look_light",
+    "tier": "model",
+    "p": 0.333536827,
+    "reason": "P(direct)=0.33; expected cost look_light=9.5s, look_full=10.3s, direct=12.7s",
+    "scores": {
+      "direct": 12.662800292,
+      "look_light": 9.467722964,
+      "look_full": 10.288848646
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.3335,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "look_light"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 4,
+    "s": 6,
+    "v": 1,
+    "option": "look_light",
+    "tier": "model",
+    "p": 0.333536827,
+    "reason": "P(direct)=0.33; expected cost look_light=9.5s, look_full=10.3s, direct=12.7s",
+    "scores": {
+      "direct": 12.662800292,
+      "look_light": 9.467722964,
+      "look_full": 10.288848646
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.3335,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "look_light"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 4,
+    "s": 6,
+    "v": 2,
+    "option": "look_light",
+    "tier": "model",
+    "p": 0.333536827,
+    "reason": "P(direct)=0.33; expected cost look_light=9.5s, look_full=10.3s, direct=12.7s",
+    "scores": {
+      "direct": 12.662800292,
+      "look_light": 9.467722964,
+      "look_full": 10.288848646
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.3335,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "look_light"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 4,
+    "s": 7,
+    "v": 0,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.924365051,
+    "reason": "P(direct)=0.92; expected cost direct=1.4s, look_light=8.2s, look_full=9.6s",
+    "scores": {
+      "direct": 1.437064039,
+      "look_light": 8.221504433,
+      "look_full": 9.617399907
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.9244,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 4,
+    "s": 7,
+    "v": 1,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.924365051,
+    "reason": "P(direct)=0.92; expected cost direct=1.4s, look_light=8.2s, look_full=9.6s",
+    "scores": {
+      "direct": 1.437064039,
+      "look_light": 8.221504433,
+      "look_full": 9.617399907
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.9244,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 4,
+    "s": 7,
+    "v": 2,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.924365051,
+    "reason": "P(direct)=0.92; expected cost direct=1.4s, look_light=8.2s, look_full=9.6s",
+    "scores": {
+      "direct": 1.437064039,
+      "look_light": 8.221504433,
+      "look_full": 9.617399907
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.9244,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 4,
+    "s": 8,
+    "v": 0,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.522031849,
+    "reason": "P(direct)=0.52; expected cost direct=9.1s, look_full=11.9s, look_light=12.2s",
+    "scores": {
+      "direct": 9.081394864,
+      "look_light": 12.191815418,
+      "look_full": 11.924590875
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.522,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 4,
+    "s": 8,
+    "v": 1,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.522031849,
+    "reason": "P(direct)=0.52; expected cost direct=9.1s, look_full=11.9s, look_light=12.2s",
+    "scores": {
+      "direct": 9.081394864,
+      "look_light": 12.191815418,
+      "look_full": 11.924590875
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.522,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 4,
+    "s": 8,
+    "v": 2,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.522031849,
+    "reason": "P(direct)=0.52; expected cost direct=9.1s, look_full=11.9s, look_light=12.2s",
+    "scores": {
+      "direct": 9.081394864,
+      "look_light": 12.191815418,
+      "look_full": 11.924590875
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.522,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 5,
+    "s": 0,
+    "v": 0,
+    "option": "check",
+    "tier": "model",
+    "p": 0.727549363,
+    "reason": "P(direct)=0.73; expected cost check=7.7s, direct=7.8s, look_full=12.6s",
+    "scores": {
+      "direct": 7.764843158,
+      "look_light": 13.600116684,
+      "look_full": 12.634912958,
+      "check": 7.731897863
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.7275,
+      "fail_cost_s": 28.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": null,
+    "fail_cost": 28.5
+  },
+  {
+    "c": 5,
+    "s": 0,
+    "v": 1,
+    "option": "check",
+    "tier": "model",
+    "p": 0.727549363,
+    "reason": "P(direct)=0.73; expected cost check=7.7s, direct=7.8s, review=8.0s",
+    "scores": {
+      "direct": 7.764843158,
+      "look_light": 13.600116684,
+      "look_full": 12.634912958,
+      "review": 8.047148053,
+      "check": 7.731897863
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.7275,
+      "fail_cost_s": 28.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "review": {
+          "s": 3.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": null,
+    "fail_cost": 28.5
+  },
+  {
+    "c": 5,
+    "s": 0,
+    "v": 2,
+    "option": "check",
+    "tier": "model",
+    "p": 0.727549363,
+    "reason": "P(direct)=0.73; expected cost check=7.7s, direct=7.8s, look_full=12.6s",
+    "scores": {
+      "direct": 7.764843158,
+      "look_light": 13.600116684,
+      "look_full": 12.634912958,
+      "check": 7.731897863
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.7275,
+      "fail_cost_s": 28.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": null,
+    "fail_cost": 28.5
+  },
+  {
+    "c": 5,
+    "s": 1,
+    "v": 0,
+    "option": "check",
+    "tier": "model",
+    "p": 0.575047439,
+    "reason": "P(direct)=0.58; expected cost check=11.9s, direct=12.1s, look_full=15.1s",
+    "scores": {
+      "direct": 12.111147978,
+      "look_light": 17.294475781,
+      "look_full": 15.092552458,
+      "check": 11.947813539
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.575,
+      "fail_cost_s": 28.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": null,
+    "fail_cost": 28.5
+  },
+  {
+    "c": 5,
+    "s": 1,
+    "v": 1,
+    "option": "check",
+    "tier": "grey",
+    "p": 0.575047439,
+    "reason": "P(direct)=0.58; expected cost review=8.0s, check=11.9s, direct=12.1s",
+    "scores": {
+      "direct": 12.111147978,
+      "look_light": 17.294475781,
+      "look_full": 15.092552458,
+      "review": 8.047148053,
+      "check": 11.947813539
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.575,
+      "fail_cost_s": 28.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "review": {
+          "s": 3.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": null,
+    "fail_cost": 28.5
+  },
+  {
+    "c": 5,
+    "s": 1,
+    "v": 2,
+    "option": "check",
+    "tier": "model",
+    "p": 0.575047439,
+    "reason": "P(direct)=0.58; expected cost check=11.9s, direct=12.1s, look_full=15.1s",
+    "scores": {
+      "direct": 12.111147978,
+      "look_light": 17.294475781,
+      "look_full": 15.092552458,
+      "check": 11.947813539
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.575,
+      "fail_cost_s": 28.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": null,
+    "fail_cost": 28.5
+  },
+  {
+    "c": 5,
+    "s": 2,
+    "v": 0,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.877766681,
+    "reason": "P(direct)=0.88; expected cost direct=3.5s, check=3.6s, look_light=10.0s",
+    "scores": {
+      "direct": 3.483649591,
+      "look_light": 9.961102153,
+      "look_full": 11.438554714,
+      "check": 3.579140104
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.8778,
+      "fail_cost_s": 28.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 28.5
+  },
+  {
+    "c": 5,
+    "s": 2,
+    "v": 1,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.877766681,
+    "reason": "P(direct)=0.88; expected cost direct=3.5s, check=3.6s, review=5.3s",
+    "scores": {
+      "direct": 3.483649591,
+      "look_light": 9.961102153,
+      "look_full": 11.438554714,
+      "review": 5.264372234,
+      "check": 3.579140104
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.8778,
+      "fail_cost_s": 28.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "review": {
+          "s": 3.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 28.5
+  },
+  {
+    "c": 5,
+    "s": 2,
+    "v": 2,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.877766681,
+    "reason": "P(direct)=0.88; expected cost direct=3.5s, check=3.6s, look_light=10.0s",
+    "scores": {
+      "direct": 3.483649591,
+      "look_light": 9.961102153,
+      "look_full": 11.438554714,
+      "check": 3.579140104
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.8778,
+      "fail_cost_s": 28.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 28.5
+  },
+  {
+    "c": 5,
+    "s": 3,
+    "v": 0,
+    "option": "wait",
+    "tier": "model",
+    "p": 0.453903445,
+    "reason": "P(direct)=0.45; expected cost wait=7.2s, check=15.3s, direct=15.6s",
+    "scores": {
+      "direct": 15.563751806,
+      "look_light": 20.229189036,
+      "look_full": 17.322698351,
+      "check": 15.296839252,
+      "wait": 7.211874526
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.4539,
+      "fail_cost_s": 28.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        },
+        "wait": {
+          "s": 1.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "wait"
+    },
+    "hard": null,
+    "fail_cost": 28.5
+  },
+  {
+    "c": 5,
+    "s": 3,
+    "v": 1,
+    "option": "wait",
+    "tier": "model",
+    "p": 0.453903445,
+    "reason": "P(direct)=0.45; expected cost wait=7.2s, review=13.1s, check=15.3s",
+    "scores": {
+      "direct": 15.563751806,
+      "look_light": 20.229189036,
+      "look_full": 17.322698351,
+      "review": 13.116438674,
+      "check": 15.296839252,
+      "wait": 7.211874526
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.4539,
+      "fail_cost_s": 28.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "review": {
+          "s": 3.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        },
+        "wait": {
+          "s": 1.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "wait"
+    },
+    "hard": null,
+    "fail_cost": 28.5
+  },
+  {
+    "c": 5,
+    "s": 3,
+    "v": 2,
+    "option": "wait",
+    "tier": "model",
+    "p": 0.453903445,
+    "reason": "P(direct)=0.45; expected cost wait=7.2s, check=15.3s, direct=15.6s",
+    "scores": {
+      "direct": 15.563751806,
+      "look_light": 20.229189036,
+      "look_full": 17.322698351,
+      "check": 15.296839252,
+      "wait": 7.211874526
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.4539,
+      "fail_cost_s": 28.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        },
+        "wait": {
+          "s": 1.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "wait"
+    },
+    "hard": null,
+    "fail_cost": 28.5
+  },
+  {
+    "c": 5,
+    "s": 4,
+    "v": 0,
+    "option": "check",
+    "tier": "grey",
+    "p": 0.180124267,
+    "reason": "P(direct)=0.18; expected cost look_full=12.6s, wait=13.3s, look_light=13.6s",
+    "scores": {
+      "direct": 23.366458396,
+      "look_light": 13.600116684,
+      "look_full": 12.634912958,
+      "check": 22.865464644,
+      "wait": 13.343885996
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.1801,
+      "fail_cost_s": 28.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        },
+        "wait": {
+          "s": 1.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": null,
+    "fail_cost": 28.5
+  },
+  {
+    "c": 5,
+    "s": 4,
+    "v": 1,
+    "option": "check",
+    "tier": "grey",
+    "p": 0.180124267,
+    "reason": "P(direct)=0.18; expected cost look_full=12.6s, wait=13.3s, look_light=13.6s",
+    "scores": {
+      "direct": 23.366458396,
+      "look_light": 13.600116684,
+      "look_full": 12.634912958,
+      "review": 18.188197957,
+      "check": 22.865464644,
+      "wait": 13.343885996
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.1801,
+      "fail_cost_s": 28.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "review": {
+          "s": 3.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        },
+        "wait": {
+          "s": 1.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": null,
+    "fail_cost": 28.5
+  },
+  {
+    "c": 5,
+    "s": 4,
+    "v": 2,
+    "option": "check",
+    "tier": "grey",
+    "p": 0.180124267,
+    "reason": "P(direct)=0.18; expected cost look_full=12.6s, wait=13.3s, look_light=13.6s",
+    "scores": {
+      "direct": 23.366458396,
+      "look_light": 13.600116684,
+      "look_full": 12.634912958,
+      "check": 22.865464644,
+      "wait": 13.343885996
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.1801,
+      "fail_cost_s": 28.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        },
+        "wait": {
+          "s": 1.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": null,
+    "fail_cost": 28.5
+  },
+  {
+    "c": 5,
+    "s": 5,
+    "v": 0,
+    "option": "check",
+    "tier": "grey",
+    "p": 0.504877813,
+    "reason": "P(direct)=0.50; 2 failed in a row; expected cost look_full=31.1s, check=41.3s, direct=42.3s",
+    "scores": {
+      "direct": 42.33294701,
+      "look_light": 42.983004959,
+      "look_full": 31.05284008,
+      "check": 41.2629586,
+      "ask_help": 49.233294701
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.5049,
+      "fail_cost_s": 85.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        },
+        "ask_help": {
+          "s": 45.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": null,
+    "fail_cost": 85.5
+  },
+  {
+    "c": 5,
+    "s": 5,
+    "v": 1,
+    "option": "check",
+    "tier": "grey",
+    "p": 0.504877813,
+    "reason": "P(direct)=0.50; 2 failed in a row; expected cost review=20.0s, look_full=31.1s, check=41.3s",
+    "scores": {
+      "direct": 42.33294701,
+      "look_light": 42.983004959,
+      "look_full": 31.05284008,
+      "review": 19.959188095,
+      "check": 41.2629586,
+      "ask_help": 49.233294701
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.5049,
+      "fail_cost_s": 85.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "review": {
+          "s": 3.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        },
+        "ask_help": {
+          "s": 45.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": null,
+    "fail_cost": 85.5
+  },
+  {
+    "c": 5,
+    "s": 5,
+    "v": 2,
+    "option": "check",
+    "tier": "grey",
+    "p": 0.504877813,
+    "reason": "P(direct)=0.50; 2 failed in a row; expected cost look_full=31.1s, check=41.3s, direct=42.3s",
+    "scores": {
+      "direct": 42.33294701,
+      "look_light": 42.983004959,
+      "look_full": 31.05284008,
+      "check": 41.2629586
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.5049,
+      "fail_cost_s": 85.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": null,
+    "fail_cost": 85.5
+  },
+  {
+    "c": 5,
+    "s": 6,
+    "v": 0,
+    "option": "check",
+    "tier": "grey",
+    "p": 0.19422102,
+    "reason": "P(direct)=0.19; expected cost look_full=12.6s, look_light=13.6s, check=22.5s",
+    "scores": {
+      "direct": 22.964700941,
+      "look_light": 13.600116684,
+      "look_full": 12.634912958,
+      "check": 22.475759912
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.1942,
+      "fail_cost_s": 28.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": "look_light",
+    "fail_cost": 28.5
+  },
+  {
+    "c": 5,
+    "s": 6,
+    "v": 1,
+    "option": "check",
+    "tier": "grey",
+    "p": 0.19422102,
+    "reason": "P(direct)=0.19; expected cost look_full=12.6s, look_light=13.6s, review=17.9s",
+    "scores": {
+      "direct": 22.964700941,
+      "look_light": 13.600116684,
+      "look_full": 12.634912958,
+      "review": 17.927055611,
+      "check": 22.475759912
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.1942,
+      "fail_cost_s": 28.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "review": {
+          "s": 3.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": "look_light",
+    "fail_cost": 28.5
+  },
+  {
+    "c": 5,
+    "s": 6,
+    "v": 2,
+    "option": "check",
+    "tier": "grey",
+    "p": 0.19422102,
+    "reason": "P(direct)=0.19; expected cost look_full=12.6s, look_light=13.6s, check=22.5s",
+    "scores": {
+      "direct": 22.964700941,
+      "look_light": 13.600116684,
+      "look_full": 12.634912958,
+      "check": 22.475759912
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.1942,
+      "fail_cost_s": 28.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": "look_light",
+    "fail_cost": 28.5
+  },
+  {
+    "c": 5,
+    "s": 7,
+    "v": 0,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.85478164,
+    "reason": "P(direct)=0.85; expected cost direct=4.1s, check=4.2s, look_light=10.5s",
+    "scores": {
+      "direct": 4.138723274,
+      "look_light": 10.517914783,
+      "look_full": 10.831350324,
+      "check": 4.214561575
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.8548,
+      "fail_cost_s": 28.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 28.5
+  },
+  {
+    "c": 5,
+    "s": 7,
+    "v": 1,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.85478164,
+    "reason": "P(direct)=0.85; expected cost direct=4.1s, check=4.2s, review=5.7s",
+    "scores": {
+      "direct": 4.138723274,
+      "look_light": 10.517914783,
+      "look_full": 10.831350324,
+      "review": 5.690170128,
+      "check": 4.214561575
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.8548,
+      "fail_cost_s": 28.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "review": {
+          "s": 3.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 28.5
+  },
+  {
+    "c": 5,
+    "s": 7,
+    "v": 2,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.85478164,
+    "reason": "P(direct)=0.85; expected cost direct=4.1s, check=4.2s, look_light=10.5s",
+    "scores": {
+      "direct": 4.138723274,
+      "look_light": 10.517914783,
+      "look_full": 10.831350324,
+      "check": 4.214561575
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.8548,
+      "fail_cost_s": 28.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 28.5
+  },
+  {
+    "c": 5,
+    "s": 8,
+    "v": 0,
+    "option": "check",
+    "tier": "grey",
+    "p": 0.344704986,
+    "reason": "P(direct)=0.34; expected cost look_full=16.4s, check=18.3s, direct=18.7s",
+    "scores": {
+      "direct": 18.675907905,
+      "look_light": 19.013045892,
+      "look_full": 16.365296321,
+      "check": 18.315630668
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.3447,
+      "fail_cost_s": 28.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": null,
+    "fail_cost": 28.5
+  },
+  {
+    "c": 5,
+    "s": 8,
+    "v": 1,
+    "option": "check",
+    "tier": "grey",
+    "p": 0.344704986,
+    "reason": "P(direct)=0.34; expected cost review=15.1s, look_full=16.4s, check=18.3s",
+    "scores": {
+      "direct": 18.675907905,
+      "look_light": 19.013045892,
+      "look_full": 16.365296321,
+      "review": 15.139340138,
+      "check": 18.315630668
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.3447,
+      "fail_cost_s": 28.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "review": {
+          "s": 3.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": null,
+    "fail_cost": 28.5
+  },
+  {
+    "c": 5,
+    "s": 8,
+    "v": 2,
+    "option": "check",
+    "tier": "grey",
+    "p": 0.344704986,
+    "reason": "P(direct)=0.34; expected cost look_full=16.4s, check=18.3s, direct=18.7s",
+    "scores": {
+      "direct": 18.675907905,
+      "look_light": 19.013045892,
+      "look_full": 16.365296321,
+      "check": 18.315630668
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.3447,
+      "fail_cost_s": 28.5,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "check": {
+          "s": 0.2,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "check"
+    },
+    "hard": null,
+    "fail_cost": 28.5
+  },
+  {
+    "c": 6,
+    "s": 0,
+    "v": 0,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.773190657,
+    "reason": "P(direct)=0.77; expected cost direct=4.3s, look_light=10.7s, look_full=11.0s",
+    "scores": {
+      "direct": 4.30937751,
+      "look_light": 10.662970883,
+      "look_full": 10.976257707
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.7732,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 6,
+    "s": 0,
+    "v": 1,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.773190657,
+    "reason": "P(direct)=0.77; expected cost direct=4.3s, review=5.8s, look_light=10.7s",
+    "scores": {
+      "direct": 4.30937751,
+      "look_light": 10.662970883,
+      "look_full": 10.976257707,
+      "review": 5.801095381
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.7732,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "review": {
+          "s": 3.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 6,
+    "s": 0,
+    "v": 2,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.773190657,
+    "reason": "P(direct)=0.77; expected cost direct=4.3s, look_light=10.7s, look_full=11.0s",
+    "scores": {
+      "direct": 4.30937751,
+      "look_light": 10.662970883,
+      "look_full": 10.976257707
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.7732,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 6,
+    "s": 1,
+    "v": 0,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.633361848,
+    "reason": "P(direct)=0.63; expected cost direct=7.0s, look_full=12.4s, look_light=12.9s",
+    "scores": {
+      "direct": 6.966124883,
+      "look_light": 12.92120615,
+      "look_full": 12.407121893
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.6334,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 6,
+    "s": 1,
+    "v": 1,
+    "option": "review",
+    "tier": "model",
+    "p": 0.633361848,
+    "reason": "P(direct)=0.63; expected cost review=5.8s, direct=7.0s, look_full=12.4s",
+    "scores": {
+      "direct": 6.966124883,
+      "look_light": 12.92120615,
+      "look_full": 12.407121893,
+      "review": 5.801095381
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.6334,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "review": {
+          "s": 3.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "review"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 6,
+    "s": 1,
+    "v": 2,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.633361848,
+    "reason": "P(direct)=0.63; expected cost direct=7.0s, look_full=12.4s, look_light=12.9s",
+    "scores": {
+      "direct": 6.966124883,
+      "look_light": 12.92120615,
+      "look_full": 12.407121893
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.6334,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 6,
+    "s": 2,
+    "v": 0,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.90164528,
+    "reason": "P(direct)=0.90; expected cost direct=1.9s, look_light=8.6s, look_full=10.3s",
+    "scores": {
+      "direct": 1.868739676,
+      "look_light": 8.588428725,
+      "look_full": 10.308117773
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.9016,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 6,
+    "s": 2,
+    "v": 1,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.90164528,
+    "reason": "P(direct)=0.90; expected cost direct=1.9s, review=4.2s, look_light=8.6s",
+    "scores": {
+      "direct": 1.868739676,
+      "look_light": 8.588428725,
+      "look_full": 10.308117773,
+      "review": 4.21468079
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.9016,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "review": {
+          "s": 3.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 6,
+    "s": 2,
+    "v": 2,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.90164528,
+    "reason": "P(direct)=0.90; expected cost direct=1.9s, look_light=8.6s, look_full=10.3s",
+    "scores": {
+      "direct": 1.868739676,
+      "look_light": 8.588428725,
+      "look_full": 10.308117773
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.9016,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 6,
+    "s": 3,
+    "v": 0,
+    "option": "wait",
+    "tier": "model",
+    "p": 0.514815712,
+    "reason": "P(direct)=0.51; expected cost wait=4.4s, direct=9.2s, look_full=13.8s",
+    "scores": {
+      "direct": 9.218501481,
+      "look_light": 14.835726259,
+      "look_full": 13.77820851,
+      "wait": 4.447502008
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.5148,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "wait": {
+          "s": 1.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "wait"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 6,
+    "s": 3,
+    "v": 1,
+    "option": "wait",
+    "tier": "model",
+    "p": 0.514815712,
+    "reason": "P(direct)=0.51; expected cost wait=4.4s, review=9.0s, direct=9.2s",
+    "scores": {
+      "direct": 9.218501481,
+      "look_light": 14.835726259,
+      "look_full": 13.77820851,
+      "review": 8.992025962,
+      "wait": 4.447502008
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.5148,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "review": {
+          "s": 3.0,
+          "src": "prior"
+        },
+        "wait": {
+          "s": 1.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "wait"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 6,
+    "s": 3,
+    "v": 2,
+    "option": "wait",
+    "tier": "model",
+    "p": 0.514815712,
+    "reason": "P(direct)=0.51; expected cost wait=4.4s, direct=9.2s, look_full=13.8s",
+    "scores": {
+      "direct": 9.218501481,
+      "look_light": 14.835726259,
+      "look_full": 13.77820851,
+      "wait": 4.447502008
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.5148,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "wait": {
+          "s": 1.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "wait"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 6,
+    "s": 4,
+    "v": 0,
+    "option": "wait",
+    "tier": "model",
+    "p": 0.219032349,
+    "reason": "P(direct)=0.22; expected cost wait=8.3s, look_light=10.7s, look_full=11.0s",
+    "scores": {
+      "direct": 14.838385376,
+      "look_light": 10.662970883,
+      "look_full": 10.976257707,
+      "wait": 8.302924943
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.219,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "wait": {
+          "s": 1.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "wait"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 6,
+    "s": 4,
+    "v": 1,
+    "option": "wait",
+    "tier": "model",
+    "p": 0.219032349,
+    "reason": "P(direct)=0.22; expected cost wait=8.3s, look_light=10.7s, look_full=11.0s",
+    "scores": {
+      "direct": 14.838385376,
+      "look_light": 10.662970883,
+      "look_full": 10.976257707,
+      "review": 12.644950495,
+      "wait": 8.302924943
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.219,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "review": {
+          "s": 3.0,
+          "src": "prior"
+        },
+        "wait": {
+          "s": 1.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "wait"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 6,
+    "s": 4,
+    "v": 2,
+    "option": "wait",
+    "tier": "model",
+    "p": 0.219032349,
+    "reason": "P(direct)=0.22; expected cost wait=8.3s, look_light=10.7s, look_full=11.0s",
+    "scores": {
+      "direct": 14.838385376,
+      "look_light": 10.662970883,
+      "look_full": 10.976257707,
+      "wait": 8.302924943
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.219,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "wait": {
+          "s": 1.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "wait"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 6,
+    "s": 5,
+    "v": 0,
+    "option": "look_full",
+    "tier": "model",
+    "p": 0.565546443,
+    "reason": "P(direct)=0.57; 2 failed in a row; expected cost look_full=21.5s, direct=24.8s, look_light=28.0s",
+    "scores": {
+      "direct": 24.763852733,
+      "look_light": 28.049274823,
+      "look_full": 21.515716581,
+      "ask_help": 47.476385273
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.5655,
+      "fail_cost_s": 57.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "ask_help": {
+          "s": 45.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "look_full"
+    },
+    "hard": null,
+    "fail_cost": 57.0
+  },
+  {
+    "c": 6,
+    "s": 5,
+    "v": 1,
+    "option": "review",
+    "tier": "model",
+    "p": 0.565546443,
+    "reason": "P(direct)=0.57; 2 failed in a row; expected cost review=12.5s, look_full=21.5s, direct=24.8s",
+    "scores": {
+      "direct": 24.763852733,
+      "look_light": 28.049274823,
+      "look_full": 21.515716581,
+      "review": 12.483529995,
+      "ask_help": 47.476385273
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.5655,
+      "fail_cost_s": 57.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "review": {
+          "s": 3.0,
+          "src": "prior"
+        },
+        "ask_help": {
+          "s": 45.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "review"
+    },
+    "hard": null,
+    "fail_cost": 57.0
+  },
+  {
+    "c": 6,
+    "s": 5,
+    "v": 2,
+    "option": "look_full",
+    "tier": "model",
+    "p": 0.565546443,
+    "reason": "P(direct)=0.57; 2 failed in a row; expected cost look_full=21.5s, direct=24.8s, look_light=28.0s",
+    "scores": {
+      "direct": 24.763852733,
+      "look_light": 28.049274823,
+      "look_full": 21.515716581
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.5655,
+      "fail_cost_s": 57.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "look_full"
+    },
+    "hard": null,
+    "fail_cost": 57.0
+  },
+  {
+    "c": 6,
+    "s": 6,
+    "v": 0,
+    "option": "look_light",
+    "tier": "model",
+    "p": 0.235300199,
+    "reason": "P(direct)=0.24; expected cost look_light=10.7s, look_full=11.0s, direct=14.5s",
+    "scores": {
+      "direct": 14.529296225,
+      "look_light": 10.662970883,
+      "look_full": 10.976257707
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.2353,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "look_light"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 6,
+    "s": 6,
+    "v": 1,
+    "option": "look_light",
+    "tier": "model",
+    "p": 0.235300199,
+    "reason": "P(direct)=0.24; expected cost look_light=10.7s, look_full=11.0s, review=12.4s",
+    "scores": {
+      "direct": 14.529296225,
+      "look_light": 10.662970883,
+      "look_full": 10.976257707,
+      "review": 12.444042546
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.2353,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "review": {
+          "s": 3.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "look_light"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 6,
+    "s": 6,
+    "v": 2,
+    "option": "look_light",
+    "tier": "model",
+    "p": 0.235300199,
+    "reason": "P(direct)=0.24; expected cost look_light=10.7s, look_full=11.0s, direct=14.5s",
+    "scores": {
+      "direct": 14.529296225,
+      "look_light": 10.662970883,
+      "look_full": 10.976257707
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.2353,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "look_light"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 6,
+    "s": 7,
+    "v": 0,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.882549613,
+    "reason": "P(direct)=0.88; expected cost direct=2.2s, look_light=8.9s, look_full=10.0s",
+    "scores": {
+      "direct": 2.231557353,
+      "look_light": 8.89682375,
+      "look_full": 9.975784394
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.8825,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 6,
+    "s": 7,
+    "v": 1,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.882549613,
+    "reason": "P(direct)=0.88; expected cost direct=2.2s, review=4.5s, look_light=8.9s",
+    "scores": {
+      "direct": 2.231557353,
+      "look_light": 8.89682375,
+      "look_full": 9.975784394,
+      "review": 4.450512279
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.8825,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "review": {
+          "s": 3.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 6,
+    "s": 7,
+    "v": 2,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.882549613,
+    "reason": "P(direct)=0.88; expected cost direct=2.2s, look_light=8.9s, look_full=10.0s",
+    "scores": {
+      "direct": 2.231557353,
+      "look_light": 8.89682375,
+      "look_full": 9.975784394
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.8825,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 6,
+    "s": 8,
+    "v": 0,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.40174366,
+    "reason": "P(direct)=0.40; expected cost direct=11.4s, look_full=13.2s, look_light=14.0s",
+    "scores": {
+      "direct": 11.366870456,
+      "look_light": 14.028687975,
+      "look_full": 13.180757475
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.4017,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 6,
+    "s": 8,
+    "v": 1,
+    "option": "review",
+    "tier": "model",
+    "p": 0.40174366,
+    "reason": "P(direct)=0.40; expected cost review=10.4s, direct=11.4s, look_full=13.2s",
+    "scores": {
+      "direct": 11.366870456,
+      "look_light": 14.028687975,
+      "look_full": 13.180757475,
+      "review": 10.388465797
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.4017,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        },
+        "review": {
+          "s": 3.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "review"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  },
+  {
+    "c": 6,
+    "s": 8,
+    "v": 2,
+    "option": "direct",
+    "tier": "model",
+    "p": 0.40174366,
+    "reason": "P(direct)=0.40; expected cost direct=11.4s, look_full=13.2s, look_light=14.0s",
+    "scores": {
+      "direct": 11.366870456,
+      "look_light": 14.028687975,
+      "look_full": 13.180757475
+    },
+    "log": {
+      "policy": "learned",
+      "model": "legacy_prior",
+      "gains": "hand-set (not estimated)",
+      "p_direct": 0.4017,
+      "fail_cost_s": 19.0,
+      "costs": {
+        "direct": {
+          "s": 0.0,
+          "src": "prior"
+        },
+        "look_light": {
+          "s": 7.0,
+          "src": "prior"
+        },
+        "look_full": {
+          "s": 9.0,
+          "src": "prior"
+        }
+      },
+      "check_model": "legacy",
+      "voi": null,
+      "chosen": "direct"
+    },
+    "hard": null,
+    "fail_cost": 19.0
+  }
+]

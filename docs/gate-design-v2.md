@@ -94,11 +94,33 @@ build_ctx → features
 `structuredContent.status`：`executed | blocked | partial | done | unknown | input_required | done_by_person`（`set_status`）。
 客户端按 status 而不是 `[gate]` 文本前缀判断。
 
-## 4. 价值模型（见 docs/value-model-v2.md）
+## 4. 价值模型（摘要；全文见 docs/value-model-v2.md）
 
-（由 v2-val 填写：选项集合、P_o 的估计与校准、代价表、C_fail、λ、信息价值、离线评估与公平基线。本文只约定接口：
-`decide::choose(ctx, f, cfg, check_available, check_done) -> Decision`，以及“安全必须问的步骤从不进入价值比较”
-—— `safety_decision_ok` 断言。）
+接口不变：`decide::choose(ctx, f, cfg, check_available, check_done) -> Decision`；安全必须问的步骤从不进入价值比较
+（`safety_decision_ok` 断言）。数字来自 `results/offline-v2-2026-10-26/`（gui-pi3 OSWorld-Verified 一次运行，332 个有效任务，只读离线分析）。
+
+**开关与默认。**
+
+- `GUI_GATE_VALUE_MODEL` 默认 **`legacy`**（手设先验，决策与 c3893bc 完全一致，golden 测试 `src/testdata/value_default_golden.json`，
+  189 个决策）。`treatment` / `auto` 需显式打开；只加载 `GUI_GATE_VALUE_WEIGHTS` 不再切换模型。
+- `GUI_GATE_VALUE_MODEL=v2`：`run_command` 不进 GUI 预测器（`tier: command`，`p_direct: null`）；GUI 历史特征只算 GUI 动作；
+  新增 click/scroll/role 等特征（`features::V2_FEATURES`）；只有 `treatment_v2` 权重且区间可用时才用治疗模型。
+- 无 bootstrap 视为不可用：模型文件 bootstrap 次数 < 20 时区间为未知（不再是宽度为 0 的点区间），该模型不被使用，回退 legacy 先验，
+  值日志记 `fallback`。
+
+**校准（命令与 GUI 分开）。** 内置 osworld_v3 预测器：GUI AUC 0.694 / ECE 0.043；命令 AUC 0.543 / ECE 0.674；两者混合 0.617 / 0.202
+（2026-10-25 的“0.626 / 0.197”主要是命令行拉低的）。按留出域（leave-one-domain-out）重拟合：v1 特征 GUI AUC 0.773，v2 新特征 0.770，
+**无增益**（差 −0.003，配对 bootstrap 95 % CI [−0.018, +0.012]）。
+
+**代价。** 从门日志 + Pi 日志重估：look_full 实测平均 26.4 s（假设 9 s），review 15.8 s（假设 3 s），两者被明显低估；
+look_light、wait、check、heal、ask 与假设大致相符。默认代价表未改。
+
+**能估什么、不能估什么。**
+
+- 重叠（IPW 支持度）：只有 `direct` 和 `wait` 有足够重叠；look / review / check / heal 在日志策略下几乎是确定性的，观测数据无法给出其效果。
+- “干预避免了失败”**不可从日志估计**（被拒步骤没执行，反事实结果不可观测），不作此声明；能测的只是“执行失败的事先预测”。
+- 在线方案（`bench/online_plan.py`，`results/offline-v2-2026-10-26/online_plan.json`）：108 个留出任务 × 2 臂（legacy vs v2）= 216 次运行，
+  按任务成对、顺序随机、预注册分析；**未执行**。
 
 ## 5. 问人协议状态机
 
@@ -139,7 +161,7 @@ build_ctx → features
 | ask_help：hint / try_other | **`accepted`**，`choice: another_way`（v2 修正） | 不执行，提示“换个办法”，带人的提示 | 否 | — |
 | LATE | `timeout`（`human_answer.late`） | 拒绝 | 否 | 是 |
 | EXPIRED_NO_RETRY | `timeout`，`no_retry: true`（v2 新增） | —（调用已结束） | 否 | — |
-| VOID | `void`，`why: reset | gate_exit`（v2 新增） | 旧 requestState 被拒（-32602） | 否 | — |
+| VOID | `void`，`why: reset | gate_exit`（v2 新增）；reset 只作废不撤回，到期再记 `timeout`（`voided: true`） | 旧 requestState 被拒（-32602）；reset 后冻结持续到人回答或超时（v2-sec） | 否 | — |
 | ANSWER_UNUSED | 原 outcome，`unused: frozen | effect_changed | not_needed`，`executed: false`（v2 新增） | 不执行；冻结时 fail closed | 否 | — |
 | 重复回复（同一 requestState 再来） | `human_answer_rejected` | JSON-RPC -32602 | — | — |
 | 迟于门重启的回复 | `human_answer_rejected`（earlier gate process） | -32602 | — | — |
@@ -154,6 +176,9 @@ build_ctx → features
   `kind == "approve"` 的判断）。
 - MRTR 回答绑定工具 + 参数（`binding_of`）和提问时的效果键；效果变了就不复用，重新问（`asked_again`）。
 - 超时、关闭、取消、通道不可用都不是“用户反对”：不写拒绝记录，不进训练标签（`valuetrain` 的 no-answer 列表）。
+- `gate_reset`（agent 也能调）只作废待答请求、不撤回：冻结持续到人回答（回答不批准任何东西）或超时（`PendingTable::void_live`，
+  v2-sec）；超时扫描 `sweep_expired` 也处理作废请求，到期记 `timeout` 并解除冻结。
+- ask_help 的冲突 / 含糊表单（如 `{choice: "hint", done: true}`）是拒绝（`conflicting_form`），只有明确的 hint / try_other 才是 `accepted` + `another_way`。
 - 门退出时：MRTR 待答作废并记录；打开着的桌面对话框随门的子进程一起被杀（`run_with_timeout` 把对话框放进自己的进程组并
   `proc::register`，`shutdown` / 信号处理里 `kill_all`）。
 - 桌面对话框的默认按钮永远是拒绝的那个（zenity `--default-cancel`、osascript `default button` = 否、GTK
@@ -229,7 +254,24 @@ build_ctx → features
 - `defang` 只按行首判断；行中间的 `[gate]` 不处理，多行标签被驱动合并成一行时也不处理。
 - 冻结期间到达的、带着人回答的重试会被拒（fail closed），人的回答作废（记 `unused: frozen`），agent 重发时会再问一次。
 
+- 合并 v2-sec 后：`gate_reset` 只作废、不撤回待答请求（冻结持续到人回答或超时），每个新作废请求记一条 `void`（why=reset），
+  到期后扫描再记一条 `timeout`（`voided: true`），因此被 reset 作废的请求有两条 `human_outcome`；人对作废请求的回答只记
+  `human_answer_rejected`，不另记 `human_outcome`。
+- 冻结前已启动的后台命令（`run_command mode=start`、`cmd &`）在冻结期间仍能发输入（xdotool 等）；门拦不住，需要 OS 级隔离。
+- `gate_report` 仍给出日志路径（`gate_report.log`），日志里有审核原话和启动者任务。
+- kdialog `--yesno` 无法把默认按钮设成“否”（没有对应选项）；只有 zenity / osascript / GTK / WinForms 默认拒绝。
+- 标注规则：同一 scroll 立即重复被记为失败（scroll 35 个“失败”里 23 个是立即重复），很可能是标签错而不是 scroll 失败；
+  是否加 scroll 专用重复规则（类似导航键）待定。
+- 治疗模型训练器的默认 L2 可能过强：同一划分上未加权拟合 AUC 0.735，放弱 L2 后 0.795；未改默认（会改变所有已训练模型），
+  只应在开发任务上调。
+
 ## 9. 待在线验证的假设
+
+- 价值模型 v2（`GUI_GATE_VALUE_MODEL=v2`）对任务成功率的影响：离线 AUC 无增益，需按 `online_plan.json`（108 题 × 2 臂 = 216 次运行）
+  做成对在线比较；尚未执行。
+- look_full / review 的代价（实测 26.4 s / 15.8 s vs 假设 9 s / 3 s）若改进默认代价表，决策会变；需在线验证后再改。
+- 冻结前启动的后台命令仍可发输入、`gate_report` 给日志路径、kdialog 无默认拒绝、scroll 重复的标注规则、L2 强度：
+  见第 8 节，均未在本分支解决。
 
 - 桌面壳的弹窗在超时 / 关闭时总是带 `_meta[...].reason`；没有原因的 decline 会被记为 `declined`（人拒绝）。
 - 客户端（gui-pi）把 `human_outcome: accepted` + `status: blocked` 理解为“人回答了但没执行”，不会提示“人拒绝了”；
@@ -244,7 +286,10 @@ build_ctx → features
 
 - Rust（`cargo test`）：`human::tests`（`typed_answers_never_collide_with_button_words`、`dialogs_default_to_the_refusing_button`、
   `expired_requests_are_reported_once_and_still_resolve_late`、`ask_help_another_way_is_an_answer_not_a_refusal`、
-  `mrtr_answer_use_is_tracked` 及原有用例）、`util::defang_tests`、`server::tests`。
+  `mrtr_answer_use_is_tracked`、`a_voided_request_keeps_the_freeze_until_its_timeout_is_swept`、
+  `conflicting_ask_help_forms_are_not_another_way`、v2-sec 的 `conflicting_or_ambiguous_forms_are_refusals`、
+  `nobody_but_the_person_or_the_timeout_ends_a_request` 及原有用例）、`util::defang_tests`、`server::tests`。
 - Python（真门 + `tests/fake_driver.py`）：`tests/test_human_protocol.py`（本分支：问人终态记录、作废、未使用、老客户端错误、
   计数、ask_help 换办法、桌面对话框默认按钮 / 输入文字 / 随门退出、审核原话与模型不泄漏、应用与命令文字去冒充），
+  `tests/test_sec_regressions.py`（v2-sec 五个回归）、`tests/test_offline_v2.py`（v2-val 离线评估）、
   `tests/test_actions_e2e.py`、`tests/test_remaining.py`、`tests/test_security_e2e.py` 等。

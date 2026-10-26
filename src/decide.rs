@@ -142,8 +142,12 @@ pub struct GateConfig {
     pub tree_diff: bool,
     /// the acting model cannot see images (GUI_GATE_TEXT_ONLY=1 / --text-only): no screenshots, tree-only advice
     pub text_only: bool,
-    /// requested value model: auto (treatment when its weights are loaded, else legacy) | legacy | treatment
+    /// requested value model (GUI_GATE_VALUE_MODEL): legacy (default: the reproducible 0.9.x/0.10 prior) |
+    /// treatment | auto (treatment when its weights are loaded) | v2 (commands out of the GUI predictor, GUI-only
+    /// history, v2 features; the treatment model when its weights are loaded and have bootstrap intervals)
     pub value_model_req: String,
+    /// v2 switch (GUI_GATE_VALUE_MODEL=v2); false on the default path
+    pub value_v2: bool,
     /// active value model: "legacy" (hand-set prior) or "treatment" (value::TreatmentModel)
     pub value_model: String,
     pub treatment: Option<std::sync::Arc<crate::value::TreatmentModel>>,
@@ -168,7 +172,7 @@ impl Default for GateConfig {
             human_timeout: 120.0, toolset: "core".into(), auto_observe: true, delivery: "auto".into(), task: String::new(),
             batch: "auto".into(), deny_consecutive: 3, deny_total: 8, costs: default_costs(), weights: prior_weights(),
             gains: prior_gains(), calib: Some(PRIOR_CALIB), model_name: "osworld_v3".into(), fail_exp: 1.0, tree_diff: true, text_only: false,
-            value_model_req: "auto".into(), value_model: "legacy".into(), treatment: None, cost_table: None,
+            value_model_req: "legacy".into(), value_v2: false, value_model: "legacy".into(), treatment: None, cost_table: None,
             value_policy: "learned".into(), value_threshold: 0.7, value_random_rate: 0.1, value_seed: 0, check_model: "legacy".into(),
             task_file: None,
         }
@@ -239,18 +243,29 @@ impl GateConfig {
         if let Some(v) = env("GUI_GATE_VALUE_THRESHOLD").and_then(|v| v.parse().ok()) { c.value_threshold = v; }
         if let Some(v) = env("GUI_GATE_VALUE_RANDOM_RATE").and_then(|v| v.parse().ok()) { c.value_random_rate = v; }
         if let Some(v) = env("GUI_GATE_VALUE_SEED").and_then(|v| v.parse().ok()) { c.value_seed = v; }
-        if let Some(v) = env("GUI_GATE_VALUE_MODEL") { c.value_model_req = v.to_lowercase(); }
+        if let Some(v) = env("GUI_GATE_VALUE_MODEL") {
+            let v = v.to_lowercase();
+            if crate::value::VALUE_MODELS.contains(&v.as_str()) { c.value_model_req = v; } else { log_err(&format!("unknown GUI_GATE_VALUE_MODEL {v}; using legacy")); }
+        }
         c.resolve_value_model();
         if let Some(v) = env("GUI_GATE_CHECK_MODEL") { if v == "voi" || v == "legacy" { c.check_model = v; } }
         c
     }
 
     /// Which value model is active: treatment only when its weights are loaded (auto / treatment), else legacy.
+    /// Default (legacy): loaded treatment weights are NOT used unless GUI_GATE_VALUE_MODEL asks for them.
     pub fn resolve_value_model(&mut self) {
-        let want_treatment = matches!(self.value_model_req.as_str(), "auto" | "treatment");
+        self.value_v2 = self.value_model_req == "v2";
+        let want_treatment = matches!(self.value_model_req.as_str(), "auto" | "treatment" | "v2");
         self.value_model = if want_treatment && self.treatment.is_some() { "treatment".into() } else { "legacy".into() };
-        if self.value_model_req == "treatment" && self.treatment.is_none() {
-            log_err("GUI_GATE_VALUE_MODEL=treatment but no treatment weights are loaded (GUI_GATE_VALUE_WEIGHTS); the legacy value prior is active");
+        if matches!(self.value_model_req.as_str(), "treatment" | "v2") && self.treatment.is_none() {
+            log_err(&format!("GUI_GATE_VALUE_MODEL={} but no treatment weights are loaded (GUI_GATE_VALUE_WEIGHTS); the legacy value prior is active", self.value_model_req));
+        }
+        if let Some(m) = self.treatment.as_ref().filter(|_| self.value_model == "treatment") {
+            if !m.has_intervals() {
+                log_err(&format!("value model {} has {} bootstrap replicates (< {}): its intervals are unknown, so every decision falls back to the legacy value prior",
+                                 m.name, m.boot.len(), crate::value::MIN_BOOT));
+            }
         }
         // check is valued as information with the treatment model; the legacy prior keeps its forced probe
         self.check_model = if self.value_model == "treatment" { "voi".into() } else { "legacy".into() };
