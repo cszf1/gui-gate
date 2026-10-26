@@ -38,6 +38,7 @@ mod ledger;
 mod memory;
 mod plancheck;
 mod proc;
+mod research;
 
 use decide::GateConfig;
 use util::*;

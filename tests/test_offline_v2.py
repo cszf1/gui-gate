@@ -182,6 +182,49 @@ class OfflineV2Tests(unittest.TestCase):
         # the input results are not modified
         self.assertFalse(os.path.exists(os.path.join(self.d, "report.json")))
 
+    def test_v0103_groups_dev_test_baselines_and_label_readings(self):
+        a = ov.audit_runs(self.d)
+        rows, _ = ov.load_all_steps(self.d, a)
+        self.assertTrue(all("group" in r for r in rows))
+        self.assertEqual(ov.task_group("chrome-a-layout2"), "chrome-a", "a layout variant is the same group")
+        self.assertEqual(ov.task_group("x", {"x": "g"}), "g")
+        p = ov.predictors(rows, reps=10, seed=0)
+        self.assertEqual(p["generalisation"]["cross_run"].split(":")[0], "not available")
+        for name in ("gui_v1_refit", "gui_v2"):
+            self.assertEqual(p["hyperparameters"][name]["chosen_on"], "development task groups only")
+        self.assertIn("random_same_budget", p["baselines"])
+        self.assertIn("equal_time_wait", p["baselines"]["online_only"])
+        # the scroll-repeat label has a switch and both readings are reported
+        self.assertIn("alternate", p["label_sensitivity"])
+        rows_nf, _ = ov.load_all_steps(self.d, a, scroll_repeat_fails=False)
+        ex = [r for r in rows if r["executed"]]
+        ex_nf = [r for r in rows_nf if r["executed"]]
+        self.assertEqual([r["y"] for r in ex], [r["y_alt"] for r in ex_nf])
+        self.assertEqual([r["y_alt"] for r in ex], [r["y"] for r in ex_nf])
+        out = os.path.join(self.tmp.name, "out3")
+        rep = ov.run_all(self.d, out, reps=10, seed=0, bin_path=None)
+        with open(os.path.join(out, "report.md"), encoding="utf-8") as fh:
+            md = fh.read()
+        self.assertIn("post-hoc top-k screen", md)
+        self.assertIn("no paired branch data", md)
+        self.assertEqual(rep["claims"]["flagging_budget"]["status"], "post_hoc_top_k_screen")
+        lf = rep["costs"]["options"]["look_full"]
+        self.assertIn("extra_s_p90", lf)
+        self.assertEqual(lf["kind"], "next_action_gap_upper_bound")
+
+    def test_incremental_calibration(self):
+        self.assertEqual(ov.incremental_calibration([])["status"], "no paired branch data")
+        br = []
+        for i in range(10):
+            tau = -0.2 + 0.05 * i
+            for rep in range(3):
+                br.append({"checkpoint": f"c{i}", "option": "look_full", "tau_hat": tau, "y_option": 1.0 if (i >= 5 or rep == 0) else 0.0, "y_direct": 1.0 if i < 3 else 0.0})
+        ic = ov.incremental_calibration(br, bins=2, reps=50)
+        self.assertEqual(ic["status"], "ok")
+        self.assertEqual(ic["checkpoints"], 10)
+        self.assertLess(ic["bins"][0]["mean_tau_hat"], 0.0, "negative predicted increments are kept")
+        self.assertTrue(any(b["mean_observed_diff"] < 0 for b in ic["bins"]) or ic["bins"][0]["mean_observed_diff"] <= ic["bins"][1]["mean_observed_diff"])
+
 
 class OnlinePlanTests(unittest.TestCase):
     def setUp(self):
@@ -232,6 +275,45 @@ class OnlinePlanTests(unittest.TestCase):
         for forbidden in ("subprocess", "os.system", "popen", "run_bench"):
             self.assertNotIn(forbidden + "(", src.lower().replace(" ", ""))
         self.assertNotIn("import subprocess", src)
+
+    def _task_list(self):
+        p = os.path.join(self.tmp.name, "tl.txt")
+        doms = ["chrome", "libreoffice_impress", "libreoffice_calc", "multi_apps", "gimp"]
+        with open(p, "w") as fh:
+            fh.write("\n".join(f"ovf/{d}-{i:04d}-x.json" for d in doms for i in range(6)) + "\n")
+        return p
+
+    def test_pilots_refuse_frozen_without_every_hash(self):
+        tl = self._task_list()
+        draft = op.make_policy_pilot(tl, {"gate_commit": "acaba69"})
+        self.assertEqual(draft["status"], "draft")
+        self.assertIn("main_model", draft["frozen"]["missing"])
+        self.assertIn("DRAFT", draft["note_draft"])
+        with self.assertRaises(ValueError):
+            op.make_policy_pilot(tl, {"gate_commit": "acaba69"}, require_frozen=True)
+        full = {k: "a" * 64 for k in op.FREEZE_KEYS}
+        full["gate_commit"] = "acaba69"
+        pol = op.make_policy_pilot(tl, full)
+        self.assertEqual(pol["status"], "frozen")
+        self.assertEqual(pol["runs"], 108)
+        self.assertEqual(sorted(pol["selection"]["tasks"]), sorted(op.POLICY_DOMAINS))
+        self.assertTrue(all(len(v) == 3 for v in pol["selection"]["tasks"].values()))
+        self.assertEqual(pol["seed"], 20261026)
+        self.assertEqual(pol, op.make_policy_pilot(tl, full), "seeded and reproducible")
+        self.assertEqual(set(pol["conditions"]), {"direct_with_safety", "legacy", "frozen_new"})
+        self.assertIn("McNemar", pol["analysis"]["not_used"])
+        self.assertIn("never infra", pol["infra"]["not_infra"])
+        self.assertEqual(pol["plan_sha256"], op.plan_hash(pol))
+        inc = op.make_increment_pilot(full)
+        self.assertEqual(inc["branches"], 216)
+        self.assertEqual(len(inc["checkpoints"]), 24)
+        self.assertEqual(inc["analysis"]["unit"], "checkpoint (cluster)")
+        self.assertEqual(set(inc["arms"]), {"direct", "look_full", "matched_wait"})
+        out = os.path.join(self.tmp.name, "pil")
+        self.assertEqual(op.main(["pilots", tl, "-o", out]), 0)
+        with open(os.path.join(out, "policy_pilot.json")) as fh:
+            self.assertEqual(json.load(fh)["status"], "draft")
+        self.assertEqual(op.main(["pilots", tl, "-o", out, "--require-frozen"]), 2)
 
 
 if __name__ == "__main__":

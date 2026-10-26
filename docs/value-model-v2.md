@@ -1,5 +1,14 @@
 # Value model v2 (opt-in) and the offline evaluation on gui-pi3 OSWorld-Verified
 
+> **v0.10.3 (branch v3-res, review 2026-10-26 sections 1, 2, 6):** sections 9-12 below define the two objectives
+> (Q^π and the local net gain G_o), the decision data contract (immutable `x_pre`), the three label layers and the three
+> evidence chains, and replace parts of sections 3, 5 and 7. The default decision is still exactly acaba69's
+> (`value::tests::default_path_output_is_unchanged`). Results of the v0.9.9 run, as everywhere in this repository:
+> **185/361 = 51.25 %** of the planned list (infra and the missing task count as failures), **185/332 = 55.72 %** of
+> valid runs, **28 infra** (23 setup_failed, 4 relay_error, 1 eval_error), **1 task never ran**; a **custom environment**
+> based on OSWorld tasks and evaluators, not an official OSWorld-Verified score and not leaderboard-comparable. The
+> older 137/255 = 53.7 % was a partial snapshot of the same run and is superseded.
+
 Status 2026-10-26, branch `v2-val`. Response to the external review of the treatment / IPW value model and to the
 predictor check of 2026-10-25 (built-in osworld_v3 AUC 0.626 / ECE 0.197 with commands mixed in; replay intervening on
 32.3 % of steps with 7.4 % precision). Everything below that changes a decision is **off by default**; the default
@@ -168,7 +177,9 @@ are not failures). Base success rate 93.3 % for both GUI steps and commands.
 
 ### 5.2 Predicting execution failures (what the logs can say)
 
-Flag the share b of executed GUI steps with the lowest predicted success (out-of-fold for the refits):
+**Post-hoc top-k screen** (v0.10.3 wording): flag the share b of executed GUI steps with the lowest predicted success
+(out-of-fold for the refits) and count the failures among them afterwards. This cannot be read as "intervening on
+b % of steps avoids x % of failures": whether the intervention would have helped is not observed.
 
 | model | b = 5 % precision / recall | 10 % | 20 % | 32.3 % |
 |---|---|---|---|---|
@@ -190,10 +201,12 @@ executes commands directly.
 | IPW (clip 0.05) | 3,122 | 0.642 [0.594, 0.690] | 0.012 | 0.269 | direct, wait (ESS + support) |
 
 IPW reweights training toward rarely-chosen states and costs discrimination on the (unweighted) held-out rows; its
-value here is the coverage diagnosis in 3.3, not a better model. With much weaker L2 (`--l2 0.0002 --l2-int 0.002
---l2-main 0.0002 --iters 20000`) the unweighted fit reaches AUC 0.795 on the same split: the default regularisation
-(0.01 on the mean loss) is strong for 4k rows. Defaults were not changed (that changes every trained model); tune on
-development tasks only.
+value here is the coverage diagnosis in 3.3, not a better model.
+
+**Withdrawn (v0.10.3): the "AUC 0.795 with much weaker L2" sentence of 0.10.2.** That L2 (`--l2 0.0002 --l2-int 0.002
+--l2-main 0.0002 --iters 20000`) was tried on the held-out split itself and the best value was quoted: a post-hoc
+number, not a result. It is not used anywhere. Regularisation, calibration, thresholds and budget prices are now
+chosen on development task groups only (bench/offline_v2.py `select_l2_on_dev`, section 12).
 
 ### 5.4 Costs re-estimated from the logs
 
@@ -230,6 +243,10 @@ plus 31,872 cache-read tokens. The prior seconds are about right for look_light,
 
 ## 7. Online experiment plan (not run)
 
+v0.10.3 replaces this by the two pilots of section 12.3 (`bench/online_plan.py pilots`); the generic plan below is
+kept, but it is only called "frozen" when every item of `FREEZE_KEYS` has a hash, it no longer excludes infra cells from
+both arms, and it uses McNemar only with one run per task and arm.
+
 `bench/online_plan.py TASK_LIST -o plan.json` freezes: a seeded, domain-stratified held-out task set (fitting and
 tuning only on the development set), arms that differ only in `GUI_GATE_VALUE_MODEL` (legacy vs v2; both load the same
 weights file, which legacy ignores), a seeded run order blocked by task (both arms of a task back to back, arm order
@@ -246,3 +263,185 @@ reported). The plan carries its sha256. It never starts a box, gate, model or be
 * Viewport / occlusion / enabled-state features need new logging before they can be learned.
 * One run, one model (deepseek-v4.1-flash), one box: domain-held-out CIs do not cover a different agent or desktop.
 * The default L2 of the treatment trainer looks too strong for runs of this size (5.3); not changed here.
+
+
+## 9. Two objectives (v0.10.3)
+
+**Product objective.** h = history, candidate action and observations; b = remaining budget; π = the fixed downstream
+agent policy. For an option o (direct, check, heal, wait, look_light, look_full, review, reason, ask_help):
+
+    Q^π(h, b, o) = E[ L·(1 − Y_o^π) + λ·T_o^π + γ·H_o^π + η·N_o^π | h, b, do(o) ],      o* = argmin_{o ∈ A_safe(h)} Q^π(h, b, o)
+
+| symbol | meaning | source |
+|---|---|---|
+| Y_o^π | task success within the budget after taking o | task evaluator |
+| T_o^π | remaining wall time from this decision to the end (failures and timeouts included) | timers |
+| H_o^π | a person's ACTIVE time | client interaction records (not available yet) |
+| N_o^π | number of optional interventions | decision log |
+| L, λ, γ | trade-offs success / time / person time | set by the product or pre-registered; not learnable from logs |
+| η | price of one optional intervention (the intervention-budget control) | development set / budget controller |
+
+A_safe(h) is what the safety rules allow: deny, approvals, password hand-offs and required safety checks are rules,
+decided before and outside this objective; they never compete on expected value (server.rs asserts this).
+
+**What the gate estimates now: the local net gain over direct**
+
+    G_o(h) = C_recover(h)·Δp_o(h) − λ·Δt_o(h) − γ·ΔH_o(h) − η·1[o ≠ direct]
+
+(`research::local_gain`). Δp_o = P(step succeeds | o) − P(step succeeds | direct); **Δt_o is only the option's EXTRA
+time before the step is attempted** (its own wait / probe / extra model turn), never the recovery time after a
+failure: that is what C_recover·Δp_o already prices, so counting it in Δt would count it twice. C_recover(h) is the
+prior `decide::fail_cost` (2·turn_cost + side_cost, × severity, × stuck factor; documented as a prior, not an
+estimate). λ (`GUI_GATE_LAMBDA`) trades time; γ (`GUI_GATE_GAMMA`, default 1) prices person seconds; η (`GUI_GATE_ETA`,
+default 0) prices the intervention itself, independent of its duration, because one check and one look_full differ
+~100× in time but each spends one intervention of a 5-10 % budget. γ and η act on the treatment model only; the
+legacy default is unchanged.
+
+**Choice rule (treatment model).** An option is a candidate only where the state supports both it and direct
+(section 10.3). For each candidate, the bootstrap replicates give a percentile interval of G_o; the option with the
+largest LOWER bound is taken when that bound is > 0, otherwise direct (`tier: model_lb` when the point estimate alone
+would have picked something else). The same rule applies to every option, check included. No full reinforcement
+learning: the data and labels do not support it.
+
+**Escalation state machine (advice only).** consecutive failures → switch strategy (≥ 2) → ask for help (≥ 4, or loop
+breaker level ≥ 2; only when a person is reachable) → stop (≥ 6, or no person and level ≥ 2/3)
+(`research::escalation`). It is logged on every action (`escalation`) and returned by gate_next_step; it never changes a
+gate decision, and safety-required approvals never pass through it (the v3-sec branch owns asking a person).
+
+## 10. Decision data contract and labels (v0.10.3)
+
+### 10.1 What every action event records (`contract: decision_v1`)
+
+| field | meaning |
+|---|---|
+| `decision_id` | `d-<session>-<aid>` |
+| `x_pre` | features when the decision was first taken, before any gate-side option ran; immutable |
+| `x_post` (= `features`) | features the final decision used |
+| `x_post_observed`, `assumed_resets` | after a wait: what was observed, and the keys (`loading_cue`, `last_popup`) the default re-decision clears by assumption |
+| `waited`, `rebound` | separate flags: having waited is not "loading finished"; a check / heal that re-bound the target also repaired it |
+| `proposed` / `decision` | the option first proposed vs the final one (executed or refused) |
+| `candidate` | tool, signature and a structural `effect_id` (tool, app, window, role, label, payload; research only, not the approval key) |
+| `chain` | each processing step (check / wait / heal) with `t0_ms` / `t1_ms` since the decision started, its result, `includes_repair` for a re-binding check |
+| `exec_t0_ms`, `exec_ms` | driver dispatch start and duration |
+| `continues` | on the first action after a hand-back: its decision_id, `same_candidate`, `same_effect`, `model_switched`, `gap_s`, `attributable` |
+| `labels` | `exec` (delivered / error / unknown), `local` (met / not_met / unknown, from the driver's effect report), `task` (always null in the gate) |
+
+### 10.2 Labels: three layers, never standing in for each other
+
+1. **Execution**: the driver delivered the step, reported an error, or the outcome is unknown. The step model's
+   training label `y` is this layer (no error, no stale token, not immediately redone).
+2. **Local progress**: the post-condition of the step (target control / file / app state), only where it can be judged
+   (driver effect report today; pre-registered post-conditions in the increment pilot).
+3. **Task**: success within the budget and the remaining time, from the evaluator, joined offline per task.
+
+`gui-gate train --model treatment --label task` is refused: the task's success copied onto every action of the task
+weights long trajectories more and mixes in the later policy; it is not an action-value label. `load_rows` keeps the
+task result in `y_task` for task-level description only.
+
+**Hand-back labels** are attributed only to the same candidate action: with the continuation link, the same decision
+and `attributable` (same candidate and effect); in older logs, the same signature within 180 s. Otherwise the hand-back
+is "cannot be attributed": no label, counted (`handback_unattributable`).
+
+### 10.3 Coverage per state
+
+The trainer always fits the logged policy's propensity (softmax logistic on decision-time features, probe results
+excluded) and saves it with the model (`propensity`, `--support-clip`, default 0.05). At run time an option o is
+considered at state x only when e_o(x) ≥ clip AND e_direct(x) ≥ clip AND o has `min_rows` effective rows
+(`TreatmentModel::covered_at`). Otherwise the log lists it under `no_estimate_basis` with the reason. When no option
+but direct is covered, the learned model has nothing to compare: the legacy prior decides and the log says
+`fallback: "legacy_heuristic"`, `learned: false` (never called learned). A model without a saved propensity covers
+nothing but direct.
+
+### 10.4 Training only on pre-decision states
+
+The trainers read `x_pre`. Older logs have no `x_pre`: a row's `features` is the pre-decision state only when no
+gate-side option ran (no wait / check / heal in the trail). The other rows cannot be restored: they are excluded from
+every causal estimate and counted (`pre_decision_state_unrecoverable` in the load statistics; `--include-post` keeps
+them for descriptive statistics only). On the v0.9.9 run (`results/offline-v3-2026-10-26/`): 388 GUI rows have no
+recoverable pre-decision state, 24 hand-backs are attributable to the same candidate and 133 are not; what remains is
+direct 6,863, look_full 16, review 20 rows, and the state-level support of look_full is 0 % and of review 0.18 % of
+training states. Under the new coverage rule the logs give **no estimate basis for any intervention**; a treatment
+model trained on them falls back to the legacy prior everywhere (logged as such).
+
+### 10.5 Uncertainty
+
+Each bootstrap replicate repeats the whole estimation on its session resample: the propensity is refitted (under
+`--ipw`) and the outcome model runs the full iteration count (0.10.2 reused the original weights and a third of the
+iterations). `--boot` defaults to 200; 30 replicates (the 0.10.2 report) are a pipeline check, not an interval to
+decide on. Optional cross-fitted doubly robust estimate (`--dr`, 5 session folds):
+
+    φ_o = m̂_o(X) − m̂_d(X) + 1[A=o]/ê_o(X)·(Y − m̂_o(X)) − 1[A=d]/ê_d(X)·(Y − m̂_d(X)),   τ̂_o = mean φ_o on the overlap region
+
+It requires one treatment definition per option, pre-decision covariates that contain every common cause (x_pre
+only), and overlap (rows with ê_o or ê_d below the clip are trimmed and counted). DR is consistent when either m̂ or ê
+is right; it does not create missing counterfactuals.
+
+### 10.6 check
+
+Without a probe model the gate no longer flips the check features to solve for P(pass) (that inverts the direct
+predictor; it does not measure the probe). Without probe data check is a **cheap verification heuristic** (the
+legacy grey-zone rule) and has no estimate basis in the treatment model. With a probe model its value of information
+
+    VOI_check = min_a Q(h, a) − [ c_check + E_z min_a Q(h, z, a) ]
+
+is computed per bootstrap replicate and enters the same lower-bound rule as every other option. A check that re-binds
+the target also repairs it (`includes_repair` in the chain): its effect is not pure information.
+
+### 10.7 Costs
+
+`gui-gate costs` uses component timers when the log has them (chain steps; hand-back → the continuation of the same
+candidate); a hand-back continued by another action or not within 600 s is censored and counted, not averaged. Every
+option reports mean, median, p90, p99, n and censored. Older logs only give the gap to the next action of any kind:
+an **upper bound / correlated proxy** (`timing_src: next_action_gap_upper_bound`), not the option's extra cost.
+
+## 11. Three evidence chains
+
+1. **The gate constrains execution** (v3-sec): every dispatch checked, unknown non-idempotent outcomes not unlocked by
+   one read, approvals voided when the business preconditions change. Evidence: attack tests that count what the
+   driver actually received.
+2. **The estimated quantity is defined correctly** (this branch): immutable pre-decision features, explicit treatment
+   chain and continuation, separate label layers, commands modelled apart, coverage per state, unknown coverage
+   reported. Evidence: the data contract, the exclusion counts, incremental calibration on paired branches.
+3. **Deciding with the estimate is worth it**: a frozen small policy in paired branch and online comparisons, reporting
+   incremental calibration, task success, total time (and its tail) and the intervention budget together, with fixed
+   failure and infra rules. Offline screening is never reported as online improvement. Evidence: section 12.3, not run.
+
+## 12. Offline and online evaluation (v0.10.3)
+
+### 12.1 bench/offline_v2.py
+
+* A task and its layout variants are one group (`--variants`, or a `-v<N>` / `-layout<N>` suffix); bootstrap and
+  splits use groups.
+* Generalisation is reported separately: across task families (leave-one-domain-out), across tasks (development task
+  groups → held-out test groups, `cross_task_test`); across runs is "not available: one run".
+* L2 is chosen by inner cross-validation on development groups only (`hyperparameters`); test groups are scored once.
+* Baselines on the same rows: same-budget random and the fixed heuristic (flagging); vp_direct, fixed observe, fixed
+  reasoning, risk threshold, heuristic, same-budget random and equal-time wait are online-only arms (listed).
+* The flagging table is a post-hoc top-k screen (claims: `flagging_budget: post_hoc_top_k_screen`).
+* Incremental calibration (`incremental_calibration`, `--branches`): bins of predicted τ̂ vs the paired-branch
+  difference (repeats averaged per checkpoint first, negative allowed, checkpoint bootstrap). Without paired branch
+  data the section is empty and says "no paired branch data".
+* Scroll-repeat label: `--scroll-repeat failure|not_failure`; both readings are reported (`label_sensitivity`). The
+  manual review of those labels is pending (user).
+* Costs: median, p90, p99, censored (> 600 s); labelled as an upper bound for logs without component timers.
+
+### 12.2 What still needs online data (recorded, not done)
+
+Incremental value of look / review / check / heal, a probe model for check, active person time (H), the L / λ / γ /
+η values, and whether any new decision rule helps tasks.
+
+### 12.3 Pilots (bench/online_plan.py pilots, plans only)
+
+Frozen only when every one of pi, main_model, main_thinking, reviewer_model, roles, prompts, driver, app_env, timeouts,
+cost_config, gate_commit, value_weights has a hash; otherwise the plan is written as `status: draft` with the missing
+keys (and `--require-frozen` refuses).
+
+* **Policy pilot**: Chrome, Impress, Calc, multi_apps × 3 tasks (seed 20261026); direct-with-safety / legacy /
+  frozen-new; seeds 0/1/2; 108 task runs, blocked by task in a seeded order.
+* **Increment pilot**: 24 safe, fully restorable checkpoints; direct / look_full / matched wait × 3 repeats = 216
+  branch continuations; fixed continuation policy, local post-condition and continuation budget; clustered by
+  checkpoint; incremental calibration of the frozen model's τ̂.
+* **Analysis**: repeats aggregated within the task (checkpoint) first, then paired bootstrap / sign-flip permutation;
+  no McNemar on repeat averages. **Infra (pre-registered)**: the primary analysis keeps every planned unit, external
+  infra is re-run at most once with the same rule everywhere, valid pairs are reported apart, algorithm hangs are never
+  infra. Example output (draft, nothing frozen yet): `results/online-plan-v3-2026-10-26/`.
