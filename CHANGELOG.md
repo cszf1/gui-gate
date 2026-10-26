@@ -2,6 +2,23 @@
 
 ## Unreleased (goes into 0.10.2)
 
+v2 person hand-off protocol and agent context (branch v2-hum; design: docs/gate-design-v2.md).
+- Every parked person request now ends in one `human_outcome` log record carrying its request id (`req`): answered,
+  late, expired without a retry (`no_retry`), voided by `gate_reset` / gate exit (`void`), or answered but not used by the
+  retried call (`unused: frozen | effect_changed | not_needed`). Before, a request whose retry never came, a reset, a gate
+  exit, or an answer the retried call did not reach left no outcome at all.
+- ask_help "hint" / "try another way" is an answer (`human_outcome: accepted`, `human_choice: another_way`), not
+  `denied`: gui-pi turned `denied` into "the person declined, do not try another way", the opposite of the hint.
+- Desktop dialogs: the default button is the refusing one (zenity `--default-cancel`, osascript, GTK, WinForms); a typed
+  answer that reads "timeout" / "allow" is that answer (text channel kept apart from the buttons); a failed helper is
+  `channel_unavailable`, not a denial; an open dialog is killed when the gate exits.
+- Legacy clients: a JSON-RPC error answer to `elicitation/create` is `channel_unavailable`, not a timeout.
+- `request_human` over MRTR counts one ask (was two); its no-answer check uses the outcome, never the answer text.
+- Takeover without a person channel logs `human_outcome: channel_unavailable` like approve does.
+- Agent context: a reviewer refusal no longer quotes the reviewer's reason (it stays in the log); `gate_report.reviewer`
+  is `configured | none` instead of the reviewer's protocol and model; app / page / terminal / command text lines that
+  start like the gate's own messages (`[gate]`, `[human via`, ...) are prefixed `(app text) `.
+
 Fixes from the gui-pi-desktop 0.3.0 live test on a Linux desktop (2026-10-25).
 - Person results: a declined / cancelled form now keeps the client's reason (`_meta["io.github.cszf1/gui-gate"].reason`
   or a top-level `reason`): `timed_out` -> `human_outcome: "timeout"`, `expired` (the client never showed it: another

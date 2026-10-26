@@ -1167,7 +1167,10 @@ impl Gate {
             cp2.lock().unwrap().insert(cid.clone(), tx);
             o2.send(&json!({"jsonrpc": "2.0", "id": cid, "method": method, "params": params}));
             match rx.recv_timeout(Duration::from_secs_f64(timeout)) {
-                Ok(m) => m.get("result").cloned(),
+                // a JSON-RPC error from the client (no elicitation support, its form failed) is no answer from a
+                // person: a cancel with reason "unavailable" (outcome channel_unavailable), never a timeout or a yes
+                Ok(m) => m.get("result").cloned().or_else(|| m.get("error").map(|e| json!({"action": "cancel", "error": e,
+                    "_meta": {crate::human::META_KEY: {"reason": "unavailable"}}}))),
                 Err(_) => {
                     cp2.lock().unwrap().remove(&cid);
                     None
@@ -1444,7 +1447,9 @@ impl Gate {
         if !self.child().alive() {
             self.respawn();
         }
-        let r = self.child().tool(name, args, timeout);
+        let mut r = self.child().tool(name, args, timeout);
+        // app / page text that imitates the gate's own messages is marked (it can never read as "[gate] ...")
+        defang_result(&mut r);
         let died = is_error(&r) && (!self.child().alive() || text_of(&r) == "driver exited");
         if no_resend {
             let why = if died {
@@ -1466,7 +1471,8 @@ impl Gate {
         }
         if died {
             self.respawn();
-            let r2 = self.child().tool(name, args, timeout);
+            let mut r2 = self.child().tool(name, args, timeout);
+            defang_result(&mut r2);
             if is_error(&r2) && text_of(&r2) == "driver exited" {
                 return text_result("driver exited twice; giving up on this call", true);
             }
@@ -1615,6 +1621,16 @@ impl Gate {
     /// The client closed stdin: leave nothing behind - background jobs and still-running commands are killed (whole
     /// process groups), the throwaway LibreOffice profile run_command suggested is removed, the driver is closed.
     pub fn shutdown(&self) {
+        // a person request still open ends here: parked MRTR requests are void, an open desktop dialog is killed
+        // with the gate's other children (kill_all) instead of staying on screen with buttons that do nothing
+        let open = self.human.open_now();
+        let parked = self.void_person_requests("gate_exit");
+        if open > 0 {
+            self.log.write(json!({"ev": "human_outcome", "outcome": "void", "why": "gate_exit", "open_dialogs": open}));
+        }
+        if open + parked > 0 {
+            self.log.write(json!({"ev": "person_requests_void", "why": "gate_exit", "parked": parked, "open": open}));
+        }
         let jobs = self.jobs.stop_all();
         crate::proc::kill_all();
         let lo = crate::command::lo_profile_dir();
@@ -1640,36 +1656,69 @@ impl Gate {
         let mut cc = crate::human::CallCtx::default();
         cc.mrtr = is_modern(&msg) && params.get("_meta").and_then(|m| m.get(CC_KEY)).and_then(|c| c.get("elicitation")).is_some();
         cc.binding = crate::human::binding_of(&name0, &args0);
+        self.sweep_person_requests();
         if let Some(st) = params.get("requestState") {
             let st = st.as_str().unwrap_or("");
+            cc.req = crate::human::req_id(st);
             match self.human.pending.resolve(st, &cc.binding, params.get("inputResponses")) {
                 crate::human::Resolved::Answer(k, a, n, eff, o) => {
-                    self.log.write(json!({"ev": "human_answer", "kind": k, "answer": trunc(&a, 200), "note": trunc(&n, 200), "outcome": o}));
+                    self.log.write(json!({"ev": "human_answer", "kind": k, "answer": trunc(&a, 200), "note": trunc(&n, 200), "outcome": o, "req": cc.req}));
                     cc.answer = Some((k, a, n, eff, o));
                 }
                 crate::human::Resolved::Late(k, eff) => {
-                    self.log.write(json!({"ev": "human_answer", "kind": k, "answer": "timeout", "late": true, "outcome": "timeout"}));
+                    self.log.write(json!({"ev": "human_answer", "kind": k, "answer": "timeout", "late": true, "outcome": "timeout", "req": cc.req}));
                     cc.answer = Some((k, "timeout".into(), String::new(), eff, "timeout".into()));
                 }
                 crate::human::Resolved::Invalid(why) => {
-                    self.log.write(json!({"ev": "human_answer_rejected", "why": why}));
+                    self.log.write(json!({"ev": "human_answer_rejected", "why": why, "req": cc.req}));
                     self.out.send(&rpc_error(msg["id"].clone(), -32602, &format!("Invalid requestState: {why}"), None));
                     return;
                 }
             }
         }
+        let carried = cc.answer.as_ref().map(|a| (a.0.clone(), a.1.clone(), a.4.clone(), cc.req.clone()));
         crate::human::set_call(cc);
         let msg_for_reply = msg.clone();
         let me0 = self.clone();
         let take_input = move || -> bool {
-            let c = crate::human::take_call();
-            if let Some(req) = c.request {
+            if let Some(req) = crate::human::take_request() {
                 me0.reply(&msg_for_reply, req);
                 return true;
             }
             false
         };
-        self.handle_call_inner(msg, params, name0, args0, take_input);
+        self.handle_call_inner(msg, params, name0.clone(), args0, take_input);
+        // every person answer ends in a human_outcome record: an answer the retried call did not use (the step no
+        // longer needed a person, the target changed, the call was refused before it got there) is logged as unused
+        let c = crate::human::take_call();
+        if let Some((kind, ans, outcome, req)) = carried {
+            if !c.used {
+                self.log.write(json!({"ev": "human_outcome", "kind": kind, "outcome": outcome, "answer": trunc(&ans, 80), "req": req,
+                                      "tool": name0, "unused": c.dropped.unwrap_or("not_needed"), "executed": false}));
+            }
+        }
+    }
+
+    /// MRTR requests whose retry never came (the client went away, or did not retry) by deadline + grace: one
+    /// human_outcome record each (outcome timeout, no_retry), so every request the gate parked ends in the log.
+    fn sweep_person_requests(&self) {
+        for (req, p) in self.human.pending.sweep_expired() {
+            self.log.write(json!({"ev": "human_outcome", "kind": p.kind, "outcome": "timeout", "no_retry": true, "req": req,
+                                  "waited_s": round_to(now() - p.asked, 1)}));
+        }
+    }
+
+    /// Void every parked person request (gate_reset, gate exit): one human_outcome record each (outcome "void").
+    pub fn void_person_requests(&self, why: &str) -> usize {
+        self.sweep_person_requests();
+        let v = self.human.pending.drain();
+        for (req, p) in &v {
+            if !p.reported {
+                self.log.write(json!({"ev": "human_outcome", "kind": p.kind, "outcome": "void", "why": why, "req": req,
+                                      "waited_s": round_to(now() - p.asked, 1)}));
+            }
+        }
+        v.len()
     }
 
     fn handle_call_inner(self: &Arc<Self>, msg: Value, params: Value, name0: String, args0: Value, take_input: impl FnOnce() -> bool) {
@@ -1704,6 +1753,9 @@ impl Gate {
                 inn.inc("frozen_refused");
             }
             self.log.write(json!({"ev": "frozen", "tool": name, "where": "call"}));
+            // a retry carrying a person's answer while another request is open: refused like any action (fail
+            // closed); its answer is logged as unused ("frozen") and the step is asked again when re-sent
+            crate::human::mark_dropped("frozen");
             let mut r = frozen_result(&name);
             set_status(&name, &mut r);
             self.reply(&msg, r);
@@ -1986,8 +2038,8 @@ impl Gate {
             return match r {
                 Ok(g) => {
                     let prev = inn.cells_seen.get(key).cloned();
-                    let out = prev.as_ref().filter(|_| diff).and_then(|(rg, items)| crate::atspi::render_grid_diff(rg, items, &g, 3000))
-                        .unwrap_or_else(|| crate::atspi::render_grid(&g, 6000));
+                    let out = defang(&prev.as_ref().filter(|_| diff).and_then(|(rg, items)| crate::atspi::render_grid_diff(rg, items, &g, 3000))
+                        .unwrap_or_else(|| crate::atspi::render_grid(&g, 6000)));
                     inn.cells_seen.insert(key.to_string(), (g.range(), g.items()));
                     inn.inc("cells_reads");
                     self.log.write(json!({"ev": "tree_extra", "kind": "cells", "pid": pid, "ms": ms, "range": g.range(), "cells": g.cells.len(), "chars": out.len(), "diff": out.contains("changed since") || out.contains("unchanged since")}));
@@ -2028,7 +2080,7 @@ impl Gate {
                     let same = inn.term_seen.get(key) == Some(&t);
                     inn.term_seen.insert(key.to_string(), t.clone());
                     inn.inc("term_reads");
-                    let mut out = if diff && same { "[gate] Terminal text unchanged since the last read.".to_string() } else { t };
+                    let mut out = if diff && same { "[gate] Terminal text unchanged since the last read.".to_string() } else { defang(&t) };
                     if running {
                         out.push_str("\n[gate] No shell prompt yet: the command may still be running (or waiting for input); read the window again to see the rest.");
                     }
@@ -2604,8 +2656,11 @@ impl Gate {
             }
             event["human"] = h.clone();
             event["human_outcome"] = json!(outcome);
+            // ask_help: what the person chose (did_it = they did the step; hint / try_other = go on another way)
+            let choice = if kind != "ask_help" || outcome != "accepted" { Value::Null }
+                else if ans == "allow" { json!("did_it") } else { json!("another_way") };
             self.log.write(json!({"ev": "human_outcome", "aid": inn.aid, "kind": kind, "outcome": outcome, "answer": trunc(&ans, 80),
-                                  "channel": h.get("channel"), "effect": ekey.as_ref().map(|k| k.to_json())}));
+                                  "channel": h.get("channel"), "effect": ekey.as_ref().map(|k| k.to_json()), "req": h.get("req"), "choice": choice}));
             // strict result types: only an accepted APPROVE form approves; an answer, a takeover or a help reply never does
             if ans == "allow" && opt == "ask_human" && kind == "approve" && s(&h, "kind") != "answer" {
                 inn.inc("human_allowed");
@@ -2635,8 +2690,10 @@ impl Gate {
                 self.log.write(event);
                 let note = crate::human::answer_note();
                 let said = if note.is_empty() { String::new() } else { format!(" The person says: \"{note}\".") };
-                let mut r = text_result(format!("[gate] Not executed: {}. No person took this step.{said} Do not send the same action again; try a clearly different way (a keyboard shortcut, another menu path, or another element).", dec.reason), true);
-                r["structuredContent"] = json!({"human_outcome": outcome, "gate": {"decision": opt, "executed": false, "human": ans, "human_outcome": outcome}});
+                let who = if outcome == "accepted" { "The person asked you to try another way".to_string() }
+                    else { format!("No person took this step (the person {})", crate::human::outcome_words(&outcome, inn.cfg.human_timeout)) };
+                let mut r = text_result(format!("[gate] Not executed: {}. {who}.{said} Do not send the same action again; try a clearly different way (a keyboard shortcut, another menu path, or another element).", dec.reason), true);
+                r["structuredContent"] = json!({"human_outcome": outcome, "human_choice": choice, "gate": {"decision": opt, "executed": false, "human": ans, "human_outcome": outcome}});
                 return r;
             } else {
                 let verdict = crate::human::outcome_words(&outcome, inn.cfg.human_timeout);
@@ -2931,6 +2988,7 @@ impl Gate {
             "handoff" => {
                 inn.inc("model_turns_requested");
                 extra.insert("human_outcome".into(), json!("channel_unavailable"));
+                self.log.write(json!({"ev": "human_outcome", "aid": inn.aid, "kind": "takeover", "outcome": "channel_unavailable"}));
                 extra.insert("needs_person".into(), json!("takeover"));
                 format!("[gate] Not executed: {}. A person must do this step, not you. Ask the user to do it themselves, wait until they say it is done, then re-read the window and continue.", dec.reason)
             }
@@ -3336,7 +3394,9 @@ impl Gate {
                     return None;
                 }
                 trail.push("reviewer_deny".into());
-                return Some(Decision::new("deny", 0.0, format!("{}; independent reviewer: {}", dec.reason, s(&r, "reason")), "review"));
+                // the reviewer's own words stay in the log (risk_gate.reviewer): handed to the agent they would be an
+                // oracle for rewording the step (or its stated request) until the reviewer agrees
+                return Some(Decision::new("deny", 0.0, format!("{}; the gate's independent reviewer refused it", dec.reason), "review"));
             }
             trail.push("reviewer_down".into());
         }
@@ -4230,7 +4290,7 @@ impl Gate {
         let permits = inn.permits.len();
         inn.permits.clear();
         inn.approval = None;
-        let parked = self.human.pending.clear();
+        let parked = self.void_person_requests("reset");
         let obs = inn.state.obs.len();
         let text_only = inn.cfg.text_only;
         inn.state = GateState::with_text_only(text_only);
@@ -4295,12 +4355,9 @@ impl Gate {
         let q = if q0.is_empty() { "The agent needs your help.".to_string() } else { q0 };
         let kind = { let k = pystr(args.get("kind")); if k.is_empty() { "answer".to_string() } else { k } };
         let ch = self.human.resolve_channel();
-        let timeout = {
-            let mut inn = self.inner.lock().unwrap_or_else(|e| e.into_inner());
-            inn.inc("human_asked");
-            inn.cfg.human_timeout
-        };
+        let timeout = self.inner.lock().unwrap_or_else(|e| e.into_inner()).cfg.human_timeout;
         if ch == "chat" {
+            self.log.write(json!({"ev": "human_outcome", "kind": pystr(args.get("kind")), "outcome": "channel_unavailable", "tool": "request_human"}));
             let mut r = text_result("[gate] There is no direct line to a person from here. Ask your user in your reply and wait for their answer.", false);
             r["structuredContent"] = json!({"status": "input_required", "human_outcome": "channel_unavailable"});
             return r;
@@ -4342,16 +4399,21 @@ impl Gate {
             return text_result("[gate] waiting for a person", true);
         }
         {
+            // counted once, when the request ended (an MRTR request is parked first and answered on the retry)
             let mut inn = self.inner.lock().unwrap_or_else(|e| e.into_inner());
+            inn.inc("human_asked");
             self.note_burden(&mut inn, &kind, &ask_key, &h);
         }
         self.log.write(json!({"ev": "request_human", "kind": kind, "question": trunc(&q, 200), "human": h, "human_outcome": h.get("outcome")}));
+        self.log.write(json!({"ev": "human_outcome", "kind": kind, "outcome": h.get("outcome"), "answer": trunc(s(&h, "answer"), 80),
+                              "channel": h.get("channel"), "req": h.get("req"), "tool": "request_human"}));
         let ans = s(&h, "answer").to_string();
         let outcome = s(&h, "outcome").to_string();
-        let no_answer = ans == "timeout" || (outcome != "declined" && NO_ANSWER_OUTCOMES.contains(&outcome.as_str()));
+        // decided by the outcome, never by the answer text (a person may type "timeout" as their answer)
+        let no_answer = outcome != "declined" && NO_ANSWER_OUTCOMES.contains(&outcome.as_str());
         let msg = if no_answer {
             // say what really happened: no answer (timed out / expired / closed / unreachable) is not "the person said no"
-            let why = if ans == "timeout" && outcome.is_empty() { "timeout".to_string() } else { outcome.clone() };
+            let why = outcome.clone();
             format!("No answer: the person {}. Do not guess and do not describe this as the person's refusal; stop and report that the question went unanswered.",
                     crate::human::outcome_words(&why, timeout))
         } else if kind == "takeover" {
@@ -4380,7 +4442,8 @@ impl Gate {
         let per = if g("actions") > 0.0 { round_to(g("gate_ms") / g("actions"), 1) } else { 0.0 };
         st.insert("gate_ms_per_action".into(), json!(per));
         st.insert("log".into(), json!(self.log.path));
-        st.insert("reviewer".into(), json!(self.reviewer.backend()));
+        // the agent may call gate_report: it learns THAT a reviewer is configured, never which model or endpoint
+        st.insert("reviewer".into(), json!(if self.reviewer.available() { "configured" } else { "none" }));
         st.insert("screenshot_format".into(), json!(self.shot.name()));
         st.insert("features_097".into(), json!(crate::v097::active()));
         st.insert("roles".into(), json!(self.roles.configured()));
@@ -4398,7 +4461,7 @@ impl Gate {
             format!("gate overhead={per} ms/action"),
             format!("human: asked={} allowed={} channel={} | auto observations={} | driver restarts={}", g("human_asked"), g("human_allowed"),
                     self.human.resolve_channel(), g("auto_obs"), self.restarts.load(Ordering::SeqCst)),
-            format!("reviewer={} reviews={} (allowed {}) | screenshots skipped={}", self.reviewer.backend().unwrap_or_else(|| "none".into()), g("reviews"), g("review_allowed"), g("screenshots_skipped")),
+            format!("reviewer={} reviews={} (allowed {}) | screenshots skipped={}", if self.reviewer.available() { "configured" } else { "none" }, g("reviews"), g("review_allowed"), g("screenshots_skipped")),
 
             format!("screenshot format={} bytes {} -> {} ({} ms re-encoding)", self.shot.name(), g("img_bytes_in"), g("img_bytes_out"), round_to(g("img_ms"), 1)),
             format!("0.9.7 features={:?} roles={:?}", crate::v097::active(), self.roles.configured()),
