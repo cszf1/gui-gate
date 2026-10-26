@@ -1,0 +1,1 @@
+Type the line 'Hello gate' into the open LibreOffice Writer document, make it bold, and save it as /home/user/Documents/hello.docx (Word format).

@@ -1,0 +1,40 @@
+{
+ "providers": {
+  "tokenrhythm": {
+   "baseUrl": "https://tokenrhythm.studio/v1",
+   "api": "openai-completions",
+   "apiKey": "<key file>",
+   "models": [
+    {
+     "id": "deepseek-v4.1-flash-1017",
+     "name": "deepseek-v4.1-flash-1017",
+     "input": [
+      "text",
+      "image"
+     ],
+     "reasoning": true,
+     "contextWindow": 1000000,
+     "maxTokens": 128000,
+     "compat": {
+      "supportsDeveloperRole": false,
+      "requiresReasoningContentOnAssistantMessages": false
+     },
+     "thinkingLevelMap": {
+      "minimal": "minimal",
+      "low": "low",
+      "medium": "medium",
+      "high": "high",
+      "xhigh": "xhigh",
+      "max": "max"
+     },
+     "cost": {
+      "input": 0,
+      "output": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0
+     }
+    }
+   ]
+  }
+ }
+}

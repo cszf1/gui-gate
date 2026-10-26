@@ -1,0 +1,1 @@
+task,domain,attempts,infra,score,success,final_fail,stop,turns,wall_s,tool_calls,screenshots,tok_in,tok_cache,tok_out,request_human,pi_error,error,final,gate_actions,gate_interventions,reviewer_calls
