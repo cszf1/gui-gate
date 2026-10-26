@@ -1,0 +1,126 @@
+{
+ "results_dir": "results/osworld-verified-v099-ds41-2026-10-23",
+ "used": 332,
+ "failed": 147,
+ "infeasible_tasks_known": 26,
+ "infeasible_solved": 21,
+ "by_domain": {
+  "chrome": 31,
+  "gimp": 10,
+  "libreoffice_calc": 6,
+  "libreoffice_impress": 35,
+  "libreoffice_writer": 5,
+  "multi_apps": 37,
+  "os": 9,
+  "thunderbird": 3,
+  "vlc": 7,
+  "vs_code": 4
+ },
+ "causes": {
+  "wrong_result": 96,
+  "budget": 20,
+  "gate_block": 11,
+  "site_blocked": 6,
+  "exec_errors": 5,
+  "loop": 3,
+  "infeasible_missed": 3,
+  "gave_up": 3
+ },
+ "flag_counts": {
+  "observe_first": 73,
+  "own_scratch_or_tmp_residue": 37,
+  "reviewer_deny": 30,
+  "fp_str_replace": 25,
+  "env_difference_named": 24,
+  "risk_deny": 21,
+  "risk_ask_human": 20,
+  "partial_score": 8,
+  "handoff_captcha": 5,
+  "loop_stop": 1
+ },
+ "failed_runs_with_flag": {
+  "observe_first": 53,
+  "own_scratch_or_tmp_residue": 30,
+  "reviewer_deny": 27,
+  "env_difference_named": 24,
+  "risk_ask_human": 20,
+  "risk_deny": 17,
+  "fp_str_replace": 17,
+  "partial_score": 8,
+  "handoff_captcha": 3,
+  "loop_stop": 1
+ },
+ "successful_runs_with_refusal_kind": {
+  "observe_first": 52,
+  "own_scratch_or_tmp_residue": 46,
+  "fp_str_replace": 7,
+  "risk_deny": 6,
+  "risk_ask_human": 6
+ },
+ "budget_sub": {
+  "slow_progress": 11,
+  "model_call_stall": 5,
+  "exec_errors": 3,
+  "tool_call_stall": 1
+ },
+ "wrong_result_flags": {
+  "observe_first": 36,
+  "env_difference_named": 15,
+  "partial_score": 6,
+  "risk_ask_human": 6,
+  "own_scratch_or_tmp_residue": 19,
+  "risk_deny": 5,
+  "reviewer_deny": 14,
+  "fp_str_replace": 9
+ },
+ "causes_by_domain": {
+  "wrong_result": {
+   "chrome": 18,
+   "gimp": 6,
+   "libreoffice_calc": 3,
+   "libreoffice_impress": 25,
+   "libreoffice_writer": 5,
+   "multi_apps": 26,
+   "os": 2,
+   "thunderbird": 1,
+   "vlc": 7,
+   "vs_code": 3
+  },
+  "site_blocked": {
+   "chrome": 6
+  },
+  "gate_block": {
+   "chrome": 3,
+   "libreoffice_impress": 1,
+   "multi_apps": 2,
+   "os": 4,
+   "thunderbird": 1
+  },
+  "budget": {
+   "chrome": 3,
+   "gimp": 2,
+   "libreoffice_calc": 2,
+   "libreoffice_impress": 7,
+   "multi_apps": 5,
+   "vs_code": 1
+  },
+  "loop": {
+   "chrome": 1,
+   "libreoffice_impress": 1,
+   "multi_apps": 1
+  },
+  "infeasible_missed": {
+   "gimp": 2,
+   "os": 1
+  },
+  "exec_errors": {
+   "libreoffice_calc": 1,
+   "libreoffice_impress": 1,
+   "multi_apps": 3
+  },
+  "gave_up": {
+   "os": 2,
+   "thunderbird": 1
+  }
+ }
+}

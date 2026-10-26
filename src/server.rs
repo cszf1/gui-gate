@@ -4659,7 +4659,7 @@ mod tests {
     #[test]
     fn nearest_and_opener() {
         let fr = |x: f64, y: f64| Some(Frame { x, y, w: 40.0, h: 20.0 });
-        let old = Element { index: 5, role: "menu".into(), label: "Insert".into(), frame: fr(100.0, 10.0), enabled: None, value: None };
+        let old = Element { index: 5, role: "menu".into(), label: "Insert".into(), frame: fr(100.0, 10.0), enabled: None, value: None, actions: vec![] };
         let a = Element { index: 7, frame: fr(101.0, 10.0), ..old.clone() };
         let b = Element { index: 90, frame: fr(600.0, 300.0), ..old.clone() };
         assert_eq!(nearest(&old, vec![b, a.clone()])[0].index, 7);

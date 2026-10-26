@@ -137,12 +137,54 @@ fn code_overwrites(code: &str, cwd: &str) -> Vec<String> {
     hit
 }
 
+/// Number of top-level arguments of the call whose `(` is at byte `open` (quotes and nested brackets skipped);
+/// None when the call is not closed in the text.
+fn call_args(code: &str, open: usize) -> Option<usize> {
+    let b = code.as_bytes();
+    let (mut depth, mut args, mut any, mut q): (i32, usize, bool, Option<u8>) = (0, 1, false, None);
+    let mut i = open + 1;
+    while i < b.len() {
+        let c = b[i];
+        if let Some(qc) = q {
+            if c == b'\\' { i += 2; continue; }
+            if c == qc { q = None; }
+            i += 1;
+            continue;
+        }
+        match c {
+            b'\'' | b'"' | b'`' => { q = Some(c); any = true; }
+            b'(' | b'[' | b'{' => { depth += 1; any = true; }
+            b')' | b']' | b'}' => {
+                if depth == 0 { return Some(if any { args } else { 0 }); }
+                depth -= 1;
+            }
+            b',' if depth == 0 => args += 1,
+            c if !c.is_ascii_whitespace() => any = true,
+            _ => {}
+        }
+        i += 1;
+    }
+    None
+}
+
+/// `x.replace('a', 'b')` is the string method (two or more arguments: Python str / JS String), not a file move:
+/// pathlib's Path.replace(target) takes exactly one. os.replace(...) is always a file move and never skipped here.
+/// (OSWorld v0.9.9 run: 40 refusals of read-only scripts like `print(d[:600].replace('\\n',' '))`.)
+fn string_method_replace(code: &str, m: &regex::Match) -> bool {
+    let t = m.as_str();
+    if !t.starts_with(".replace") && !t.starts_with(".REPLACE") && !t.to_lowercase().starts_with(".replace") {
+        return false;
+    }
+    let Some(open) = code[m.start()..m.end()].find('(').map(|o| m.start() + o) else { return false };
+    matches!(call_args(code, open), Some(n) if n >= 2)
+}
+
 fn code_effects(code: &str, cwd: &str) -> Option<Effect> {
     let mut worst = None;
     if let Some(m) = shell_high_all().find(code) {
         worst = worse(worst, Some(("high".into(), format!("run_command would run: script code with a dangerous command ({})", trunc(m.as_str(), 30)), vec![])));
     }
-    if let Some(m) = code_delete().find(code) {
+    if let Some(m) = code_delete().find_iter(code).find(|m| !string_method_replace(code, m)) {
         worst = worse(worst, Some(("medium".into(), format!("script code deletes or moves files ({})", trunc(m.as_str().trim(), 30)), vec![])));
     }
     if code_shell().is_match(code) {
@@ -391,6 +433,39 @@ mod tests {
     }
     fn lvl(e: Option<Effect>) -> String {
         e.map(|x| x.0).unwrap_or_else(|| "-".into())
+    }
+
+    /// v0.10.2 regression (failure analysis of the v0.9.9 OSWorld run, docs/failure-analysis-v099.md): the string
+    /// method `.replace(a, b)` in read-only interpreter code is not a file move; Path.replace(target), os.replace,
+    /// shutil.move and friends still are.
+    #[test]
+    fn string_replace_is_not_a_file_move() {
+        let d = fx();
+        for code in [
+            "python3 - <<'EOF'\nimport zipfile\nz=zipfile.ZipFile('/x.xlsx')\nd=z.read('a').decode()\nprint(d[:600].replace('\\n',' '))\nEOF",
+            "python3 -c \"print(open('/etc/hostname').read().replace(\\\"a\\\", \\\"b\\\"))\"",
+            "python3 -c \"s='x'; print(s.replace('(', '[').replace(')', ']'))\"",
+            "node -e \"console.log('a-b'.replace('-', '+'))\"",
+            "python3 -c \"print(', '.join(x.replace('_', ' ') for x in ['a_b']))\"",
+        ] {
+            assert_eq!(lvl(command_risk(code, &d)), "-", "{code}");
+        }
+        for code in [
+            "python3 -c \"import pathlib; pathlib.Path('a.txt').replace('b.txt')\"",
+            "python3 -c \"import pathlib; pathlib.Path('a.txt').replace('/tmp/b.txt')\"",
+            "python3 -c \"import os; os.replace('a.txt', 'b.txt')\"",
+            "python3 -c \"import shutil; shutil.move('a', 'b')\"",
+            // a file move next to a string replace is still caught
+            "python3 -c \"import os; n='a b'.replace(' ', '_'); os.remove(n)\"",
+            // unclosed call: no argument count, keep the old (cautious) reading
+            "python3 -c \"p.replace('b.txt'\"",
+        ] {
+            assert_eq!(lvl(command_risk(code, &d)), "medium", "{code}");
+        }
+        assert_eq!(call_args("f()", 1), Some(0));
+        assert_eq!(call_args("f('a,b', [1, 2], g(3, 4))", 1), Some(3));
+        assert_eq!(call_args("f('a\\'', 'b')", 1), Some(2));
+        assert_eq!(call_args("f('a'", 1), None);
     }
 
     #[test]

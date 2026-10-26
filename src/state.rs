@@ -36,12 +36,33 @@ pub struct Element {
     pub frame: Option<Frame>,
     pub enabled: Option<bool>,
     pub value: Option<String>,
+    /// accessibility actions the row offers (`[actions=[open,showContextMenu]]`), lower-case; empty when unknown
+    pub actions: Vec<String>,
 }
 
 impl Element {
     pub fn new(index: i64, role: &str, label: &str) -> Self {
-        Element { index, role: role.into(), label: label.into(), frame: None, enabled: None, value: None }
+        Element { index, role: role.into(), label: label.into(), frame: None, enabled: None, value: None, actions: vec![] }
     }
+    /// A menu item whose only activating action is `open` (AT-SPI / Chromium expose a submenu parent this way, while
+    /// leaf commands offer select / click / press): clicking it shows the submenu and changes nothing.
+    pub fn opens_submenu(&self) -> bool {
+        let r = self.role.to_lowercase();
+        if !(r.contains("menu") && r.contains("item")) || self.actions.is_empty() {
+            return false;
+        }
+        let a = |k: &str| self.actions.iter().any(|x| x == k);
+        (a("open") || a("expand")) && !["select", "click", "press", "activate", "invoke", "dodefault", "toggle", "confirm"].iter().any(|k| a(k))
+    }
+}
+
+fn actions_re() -> &'static Regex {
+    static R: OnceLock<Regex> = OnceLock::new();
+    R.get_or_init(|| Regex::new(r"\[actions=\[([^\]]*)\]").unwrap())
+}
+
+fn row_actions(line: &str) -> Vec<String> {
+    actions_re().captures(line).map(|c| c[1].split(',').map(|x| x.trim().to_lowercase()).filter(|x| !x.is_empty()).collect()).unwrap_or_default()
 }
 
 pub type ObsId = usize;
@@ -103,6 +124,8 @@ pub fn parse_elements(sc: &Value) -> IndexMap<i64, Element> {
                 frame: frame_of(e.get("frame")),
                 enabled: e.get("enabled").and_then(|b| b.as_bool()),
                 value: e.get("value").filter(|v| !v.is_null()).map(|v| pystr(Some(v))).filter(|v| !v.is_empty()),
+                actions: e.get("actions").and_then(|a| a.as_array())
+                    .map(|a| a.iter().filter_map(|x| x.as_str()).map(|x| x.trim().to_lowercase()).collect()).unwrap_or_default(),
             });
         }
     }
@@ -110,7 +133,11 @@ pub fn parse_elements(sc: &Value) -> IndexMap<i64, Element> {
     for line in md.lines() {
         if let Some(m) = row_re().captures(line) {
             let idx: i64 = m[1].parse().unwrap_or(-1);
-            els.entry(idx).or_insert_with(|| Element::new(idx, m[2].trim(), &m[3]));
+            let acts = row_actions(line);
+            let e = els.entry(idx).or_insert_with(|| Element::new(idx, m[2].trim(), &m[3]));
+            if e.actions.is_empty() {
+                e.actions = acts;
+            }
             continue;
         }
         if let Some(m) = row_nolabel_re().captures(line) {
