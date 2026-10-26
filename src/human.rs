@@ -58,6 +58,12 @@ pub struct CallCtx {
     pub request: Option<Value>,
     /// a gate-built call inside run_actions: never park it as an MRTR request (the batch would re-run on retry)
     pub in_batch: bool,
+    /// id (the requestState nonce) of the person request this retry answers; "" when none
+    pub req: String,
+    /// the answer this retry carries was used by ask_kind (else it is logged as unused when the call ends)
+    pub used: bool,
+    /// why the carried answer was dropped without being used ("effect_changed"), when it was
+    pub dropped: Option<&'static str>,
 }
 
 thread_local! {
@@ -69,6 +75,14 @@ pub fn set_call(c: CallCtx) {
 }
 pub fn take_call() -> CallCtx {
     CALL.with(|x| std::mem::take(&mut *x.borrow_mut()))
+}
+/// The MRTR input request ask() parked for this call, if any (consumed); the rest of the call context stays.
+pub fn take_request() -> Option<Value> {
+    CALL.with(|x| x.borrow_mut().request.take())
+}
+/// The call ended before it reached the person request its retry answers (e.g. frozen): say why, for the log.
+pub fn mark_dropped(why: &'static str) {
+    CALL.with(|x| { let mut c = x.borrow_mut(); if c.answer.is_some() && !c.used { c.dropped = Some(why); } });
 }
 pub fn call_mrtr() -> bool {
     CALL.with(|x| x.borrow().mrtr)
@@ -116,6 +130,13 @@ pub struct Pending {
     /// voided by a reset while the person may still be answering: it stays open (input stays frozen) until the
     /// person answers or it times out, and whatever the answer is, it approves nothing
     pub voided: bool,
+    /// its expiry without a retry was already logged (sweep_expired)
+    pub reported: bool,
+}
+
+/// The request id of a requestState: its nonce (logged with every person event, never the signed state itself).
+pub fn req_id(state: &str) -> String {
+    state.split('.').nth(2).unwrap_or("").to_string()
 }
 
 thread_local! {
@@ -233,14 +254,51 @@ impl PendingTable {
     /// are NOT ended by it: they stay open, and input stays frozen, until the person answers or the request times out.
     /// Neither the agent nor a reset can withdraw a question that is in front of a person.
     pub fn void_all(&self) -> usize {
+        self.void_live().0
+    }
+
+    /// void_all, plus the requests this call newly voided (request id, request) so each gets one `void` record.
+    /// Requests already dead (past deadline + grace) are forgotten: nobody is answering them any more (the caller
+    /// sweeps them first, so their timeout is logged).
+    pub fn void_live(&self) -> (usize, Vec<(String, Pending)>) {
         let mut m = self.map.lock().unwrap_or_else(|e| e.into_inner());
         let t = now();
         let n = m.len();
-        m.retain(|_, p| p.deadline + MRTR_GRACE_S > t); // dead ones: nobody is answering them any more
-        for p in m.values_mut() {
-            p.voided = true;
+        m.retain(|_, p| p.deadline + MRTR_GRACE_S > t);
+        let mut v = vec![];
+        for (k, p) in m.iter_mut() {
+            if !p.voided {
+                p.voided = true;
+                v.push((req_id(k), p.clone()));
+            }
         }
-        n
+        v.sort_by(|a, b| a.1.asked.total_cmp(&b.1.asked));
+        (n, v)
+    }
+
+    /// Remove and return every parked request (gate exit: the process ends, nobody can answer any more):
+    /// (request id, request).
+    pub fn drain(&self) -> Vec<(String, Pending)> {
+        let mut m = self.map.lock().unwrap_or_else(|e| e.into_inner());
+        let mut v: Vec<(String, Pending)> = m.drain().map(|(k, p)| (req_id(&k), p)).collect();
+        v.sort_by(|a, b| a.1.asked.total_cmp(&b.1.asked));
+        v
+    }
+
+    /// Requests past deadline + grace whose retry never came, not reported before: marked reported and returned
+    /// (request id, request). Voided ones are included: their timeout is what ends the freeze. They stay in the
+    /// table so a very late retry still resolves (a timeout, or void), never an approval.
+    pub fn sweep_expired(&self) -> Vec<(String, Pending)> {
+        let t = now();
+        let mut m = self.map.lock().unwrap_or_else(|e| e.into_inner());
+        let mut v = vec![];
+        for (k, p) in m.iter_mut() {
+            if !p.reported && p.deadline + MRTR_GRACE_S < t {
+                p.reported = true;
+                v.push((req_id(k), p.clone()));
+            }
+        }
+        v
     }
 }
 
@@ -305,7 +363,13 @@ pub fn map_elicit_o(kind: &str, r: Option<&Value>) -> (String, String, String) {
         _ => return ("deny".into(), String::new(), "no_response".into()),
     }
     let (a, n) = map_accepted(kind, r);
-    let o = if a == "deny" { "denied" } else { "accepted" };
+    // ask_help "hint" / "try_other" is an answer (the person tells the agent to go on another way), not a "no":
+    // it must not read as a refusal (a client would tell the model not to try another way, the opposite of the hint)
+    // (a conflicting / ambiguous form stays a refusal: `{choice: "hint", done: true}` is not "try another way")
+    let redirected = kind == "ask_help" && a == "deny"
+        && !conflicting_form(r.get("content").unwrap_or(&Value::Null))
+        && matches!(r.get("content").and_then(|c| c.get("choice")).and_then(|v| v.as_str()), Some("hint") | Some("try_other"));
+    let o = if a == "deny" && !redirected { "denied" } else { "accepted" };
     (a, n, o.into())
 }
 
@@ -402,13 +466,20 @@ entry = None
 if q.get("want_text"):
     entry = Gtk.Entry(); box.add(entry)
 d.add_button(q.get("ok", "Allow"), 1); d.add_button(q.get("no", "Deny"), 2)
+# Enter / a stray keystroke never approves: the default button is the refusing one (a typed answer is sent with Enter)
+d.set_default_response(1 if entry is not None else 2)
+if entry is not None:
+    entry.set_activates_default(True)
 GLib.timeout_add_seconds(int(q.get("timeout", 120)), lambda: (d.response(3), False)[1])
 d.show_all(); d.present()
+if entry is None:
+    d.get_widget_for_response(2).grab_focus()
 r = d.run()
 out = {1: "allow", 2: "deny", 3: "timeout"}.get(r, "closed")
 if entry is not None and r == 1:
-    out = entry.get_text() or "deny"
-print(json.dumps({"answer": out}))
+    print(json.dumps({"answer": entry.get_text(), "typed": True}))
+else:
+    print(json.dumps({"answer": out}))
 "#;
 
 /// Windows: a TopMost WinForms window (PowerShell ships with Windows). Prints allow|deny|timeout|<text>.
@@ -426,10 +497,12 @@ $t = $null
 if ($q.want_text) { $t = New-Object System.Windows.Forms.TextBox; $t.Left = 12; $t.Top = 125; $t.Width = 480; $f.Controls.Add($t) }
 $script:ans = 'closed'
 $ok = New-Object System.Windows.Forms.Button; $ok.Text = $q.ok; $ok.Left = 270; $ok.Top = 160; $ok.Width = 110
-$ok.Add_Click({ if ($t -ne $null) { $script:ans = $t.Text; if ($script:ans -eq '') { $script:ans = 'deny' } } else { $script:ans = 'allow' }; $f.Close() })
+$ok.Add_Click({ if ($t -ne $null) { $script:ans = 'text:' + $t.Text } else { $script:ans = 'allow' }; $f.Close() })
 $no = New-Object System.Windows.Forms.Button; $no.Text = $q.no; $no.Left = 385; $no.Top = 160; $no.Width = 110
 $no.Add_Click({ $script:ans = 'deny'; $f.Close() })
 $f.Controls.Add($ok); $f.Controls.Add($no)
+# Enter never approves: the refusing button has the focus and is the AcceptButton (a typed answer is sent with Enter)
+if ($t -ne $null) { $f.AcceptButton = $ok; $f.ActiveControl = $t } else { $f.AcceptButton = $no; $f.ActiveControl = $no }
 $tm = New-Object System.Windows.Forms.Timer; $tm.Interval = [int]($q.timeout * 1000)
 $tm.Add_Tick({ $script:ans = 'timeout'; $tm.Stop(); $f.Close() }); $tm.Start()
 $f.Add_Shown({ $f.Activate() })
@@ -494,13 +567,22 @@ fn run_with_timeout(mut cmd: Command, timeout: f64, stdin: Option<String>) -> Op
     if stdin.is_some() {
         cmd.stdin(Stdio::piped());
     }
+    // its own process group, registered with the gate's child list: when the gate ends (client gone, signal) an open
+    // dialog is killed with it instead of staying on screen with buttons that no longer do anything
+    #[cfg(unix)]
+    {
+        use std::os::unix::process::CommandExt;
+        cmd.process_group(0);
+    }
     let mut child = cmd.stdout(Stdio::piped()).stderr(Stdio::null()).spawn().ok()?;
     let dpid = child.id() as i64;
     dialog_pids().lock().unwrap_or_else(|e| e.into_inner()).insert(dpid);
+    crate::proc::register(child.id());
     struct Unreg(i64);
     impl Drop for Unreg {
         fn drop(&mut self) {
             dialog_pids().lock().unwrap_or_else(|e| e.into_inner()).remove(&self.0);
+            crate::proc::unregister(self.0 as u32);
         }
     }
     let _unreg = Unreg(dpid);
@@ -546,10 +628,81 @@ fn esc_applescript(t: &str) -> String {
 pub fn applescript(text: &str, title: &str, kind: &str, timeout: f64) -> String {
     let (ok, no) = labels(kind);
     let ans = if kind == "answer" { " default answer \"\"" } else { "" };
-    format!("try\nset r to display dialog \"{}\"{ans} with title \"{}\" buttons {{\"{no}\", \"{ok}\"}} default button \"{ok}\" giving up after {}\n\
+    // Return never approves: the default button is the refusing one, except for a typed answer (sent with Return).
+    // A typed answer comes back as "text:<answer>" so it can never be mistaken for allow / deny / timeout.
+    let dflt = if kind == "answer" { ok } else { no };
+    format!("try\nset r to display dialog \"{}\"{ans} with title \"{}\" buttons {{\"{no}\", \"{ok}\"}} default button \"{dflt}\" giving up after {}\n\
              if gave up of r then return \"timeout\"\nif button returned of r is \"{ok}\" then\n{}\nend if\nreturn \"deny\"\non error\nreturn \"deny\"\nend try",
             esc_applescript(text), esc_applescript(title), timeout.max(1.0) as i64,
-            if kind == "answer" { "if text returned of r is \"\" then return \"deny\"\nreturn text returned of r" } else { "return \"allow\"" })
+            if kind == "answer" { "return \"text:\" & (text returned of r)" } else { "return \"allow\"" })
+}
+
+/// zenity arguments (Linux). A yes/no question defaults to the refusing button (--default-cancel): Enter or a stray
+/// keystroke while the dialog takes focus never approves.
+pub fn zenity_args(text: &str, title: &str, kind: &str, timeout: f64) -> Vec<String> {
+    let (ok, no) = labels(kind);
+    let mut a = vec![format!("--title={title}"), format!("--timeout={}", timeout as i64)];
+    if kind == "answer" {
+        a.extend(["--entry".to_string(), format!("--text={text}"), format!("--ok-label={ok}"), format!("--cancel-label={no}")]);
+    } else {
+        a.extend(["--question".to_string(), "--default-cancel".to_string(), format!("--text={text}"), format!("--ok-label={ok}"), format!("--cancel-label={no}")]);
+    }
+    a
+}
+
+/// A typed answer: empty = nothing given (denied), otherwise accepted as text.
+fn typed(out: &str) -> (String, String) {
+    let o = out.trim().to_string();
+    if o.is_empty() { ("deny".into(), "denied".into()) } else { (o, "accepted".into()) }
+}
+
+/// What a desktop dialog helper's exit (None = killed at our timeout) means: (answer, outcome). The answer is
+/// "allow" | "deny" | "timeout" | typed text; a typed text never collides with those words (it comes from the text
+/// channel of the helper, not from its button channel). Anything unexpected is a refusal, never an approval.
+pub fn dialog_result(tool: &str, res: Option<(i32, String)>, want_text: bool) -> (String, String) {
+    let pair = |a: &str, o: &str| (a.to_string(), o.to_string());
+    let Some((code, out)) = res else { return pair("timeout", "timeout") };
+    match tool {
+        // zenity: 0 OK, 1 Cancel (or the window closed: zenity does not tell them apart), 5 its own timeout
+        "zenity" | "kdialog" => match code {
+            0 if want_text => typed(&out),
+            0 => pair("allow", "accepted"),
+            1 => pair("deny", "denied"),
+            5 if tool == "zenity" => pair("timeout", "timeout"),
+            _ => pair("deny", "window_closed"),
+        },
+        "osascript" | "powershell" => {
+            if code != 0 {
+                return pair("deny", "channel_unavailable"); // the helper failed: nobody answered
+            }
+            let o = out.trim();
+            if let Some(t) = o.strip_prefix("text:") {
+                return if want_text { typed(t) } else { pair("deny", "denied") };
+            }
+            match o {
+                "allow" if !want_text => pair("allow", "accepted"),
+                "deny" => pair("deny", "denied"),
+                "timeout" => pair("timeout", "timeout"),
+                "closed" => pair("deny", "window_closed"),
+                _ => pair("deny", "denied"),
+            }
+        }
+        _ => {
+            // the GTK helper prints one JSON line {"answer": allow|deny|timeout|closed} or {"answer": text, "typed": true}
+            let v = out.lines().last().and_then(|l| serde_json::from_str::<Value>(l).ok());
+            let Some(v) = v else { return pair("deny", "channel_unavailable") };
+            let a = pystr(v.get("answer"));
+            if v.get("typed").and_then(|t| t.as_bool()) == Some(true) {
+                return if want_text { typed(&a) } else { pair("deny", "denied") };
+            }
+            match a.as_str() {
+                "allow" if !want_text => pair("allow", "accepted"),
+                "timeout" => pair("timeout", "timeout"),
+                "closed" => pair("deny", "window_closed"),
+                _ => pair("deny", "denied"),
+            }
+        }
+    }
 }
 
 /// The JSON a PowerShell dialog reads on stdin (Windows).
@@ -569,6 +722,11 @@ impl Human {
         self.open.load(Ordering::SeqCst) > 0 || self.pending.live() > 0
     }
 
+    /// Questions open right now on a synchronous channel (desktop dialog, legacy elicitation).
+    pub fn open_now(&self) -> usize {
+        self.open.load(Ordering::SeqCst)
+    }
+
     pub fn resolve_channel(&self) -> String {
         if self.channel != "auto" {
             return self.channel.clone();
@@ -582,69 +740,40 @@ impl Human {
         "chat".into()
     }
 
-    fn desktop(&self, text: &str, kind: &str, title: &str) -> String {
+    /// Show a native dialog and wait: (answer, outcome), see dialog_result.
+    fn desktop(&self, text: &str, kind: &str, title: &str) -> (String, String) {
         let t = self.timeout;
         let want_text = kind == "answer";
         let (ok, no) = labels(kind);
-        let text_or = |out: String| { let o = out.trim().to_string(); if o.is_empty() { "deny".to_string() } else { o } };
         match desktop_tool() {
             Some("zenity") => {
                 let mut c = Command::new("zenity");
-                c.arg(format!("--title={title}")).arg(format!("--timeout={}", t as i64));
-                if want_text {
-                    c.args(["--entry", &format!("--text={text}"), &format!("--ok-label={ok}"), &format!("--cancel-label={no}")]);
-                } else {
-                    c.args(["--question", &format!("--text={text}"), &format!("--ok-label={ok}"), &format!("--cancel-label={no}")]);
-                }
-                match run_with_timeout(c, t + 10.0, None) {
-                    Some((0, out)) if want_text => text_or(out),
-                    Some((0, _)) => "allow".into(),
-                    Some((5, _)) | None => "timeout".into(),
-                    Some((1, _)) => "deny".into(),
-                    Some(_) => "closed".into(),
-                }
+                c.args(zenity_args(text, title, kind, t));
+                dialog_result("zenity", run_with_timeout(c, t + 10.0, None), want_text)
             }
             Some("kdialog") => {
                 let mut c = Command::new("kdialog");
                 c.arg("--title").arg(title);
                 if want_text { c.arg("--inputbox").arg(text); } else { c.arg("--yesno").arg(text).arg("--yes-label").arg(ok).arg("--no-label").arg(no); }
-                match run_with_timeout(c, t, None) {
-                    Some((0, out)) if want_text => text_or(out),
-                    Some((0, _)) => "allow".into(),
-                    None => "timeout".into(),
-                    Some((1, _)) => "deny".into(),
-                    Some(_) => "closed".into(),
-                }
+                dialog_result("kdialog", run_with_timeout(c, t, None), want_text)
             }
             Some("osascript") => {
                 let mut c = Command::new("osascript");
                 c.arg("-e").arg(applescript(text, title, kind, t));
-                match run_with_timeout(c, t + 10.0, None) {
-                    Some((0, out)) => { let o = out.trim().to_string(); if o.is_empty() { "deny".into() } else { o } }
-                    None => "timeout".into(),
-                    Some(_) => "deny".into(),
-                }
+                dialog_result("osascript", run_with_timeout(c, t + 10.0, None), want_text)
             }
             Some("powershell") => {
                 let mut c = Command::new("powershell");
                 c.args(["-NoProfile", "-NonInteractive", "-STA", "-ExecutionPolicy", "Bypass", "-Command", PS_DIALOG]);
-                match run_with_timeout(c, t + 15.0, Some(ps_input(text, title, kind, t).to_string())) {
-                    Some((0, out)) => { let o = out.trim().to_string(); if o.is_empty() { "deny".into() } else { o } }
-                    None => "timeout".into(),
-                    Some(_) => "deny".into(),
-                }
+                dialog_result("powershell", run_with_timeout(c, t + 15.0, Some(ps_input(text, title, kind, t).to_string())), want_text)
             }
             Some(_) => {
                 let q = json!({"text": text, "want_text": want_text, "timeout": t, "title": title, "ok": ok, "no": no});
                 let mut c = Command::new("python3");
                 c.args(["-c", GTK_DIALOG, &q.to_string()]);
-                match run_with_timeout(c, t + 10.0, None) {
-                    Some((_, out)) => out.lines().last().and_then(|l| serde_json::from_str::<Value>(l).ok())
-                        .map(|v| pystr(v.get("answer"))).filter(|a| !a.is_empty()).unwrap_or_else(|| "deny".into()),
-                    None => "timeout".into(),
-                }
+                dialog_result("gtk", run_with_timeout(c, t + 10.0, None), want_text)
             }
-            None => "unavailable".into(),
+            None => ("timeout".into(), "channel_unavailable".into()),
         }
     }
 
@@ -674,12 +803,13 @@ impl Human {
                 let mut stale = false;
                 if let Some((k, a, _, eff, outcome)) = CALL.with(|x| x.borrow().answer.clone()) {
                     if k == kind && eff == effect_now {
-                        return json!({"answer": a, "channel": "elicit", "mrtr": true, "ms": round_to(waited_s() * 1000.0, 1), "outcome": outcome, "kind": kind});
+                        let req = CALL.with(|x| { let mut c = x.borrow_mut(); c.used = true; c.req.clone() });
+                        return json!({"answer": a, "channel": "elicit", "mrtr": true, "ms": round_to(waited_s() * 1000.0, 1), "outcome": outcome, "kind": kind, "req": req});
                     }
                     if k == kind {
                         // the target / window / payload changed since the person answered: that answer is not reused
                         stale = true;
-                        CALL.with(|x| x.borrow_mut().answer = None);
+                        CALL.with(|x| { let mut c = x.borrow_mut(); c.answer = None; c.dropped = Some("effect_changed"); });
                     }
                 }
                 if CALL.with(|x| x.borrow().in_batch) {
@@ -688,7 +818,7 @@ impl Human {
                 }
                 let binding = CALL.with(|x| x.borrow().binding.clone());
                 let deadline = now() + self.timeout;
-                let state = self.pending.park(Pending { binding, kind: kind.into(), deadline, effect: effect_now, asked: now(), voided: false });
+                let state = self.pending.park(Pending { binding, kind: kind.into(), deadline, effect: effect_now, asked: now(), voided: false, reported: false });
                 let mut m = if meta.is_object() { meta } else { json!({}) };
                 if stale {
                     m["asked_again"] = json!("the action's target, or the task it was asked under, changed since the earlier answer");
@@ -702,7 +832,7 @@ impl Human {
                         "mode": "form", "message": text, "requestedSchema": schema_with_options(kind, m.get("options")), "_meta": {META_KEY: m}}}},
                     "requestState": state});
                 CALL.with(|x| x.borrow_mut().request = Some(req));
-                return json!({"answer": "input_required", "channel": "elicit", "mrtr": true, "ms": 0.0, "stale_answer": stale});
+                return json!({"answer": "input_required", "channel": "elicit", "mrtr": true, "ms": 0.0, "stale_answer": stale, "kind": kind, "req": req_id(&state)});
             }
             "elicit" if self.elicit.is_some() => {
                 let mut params = json!({"message": text, "requestedSchema": schema_for(kind)});
@@ -731,9 +861,13 @@ impl Human {
                 "deny".into()
             }
             "desktop" => {
-                let a = self.desktop(text, kind, if title.is_empty() { "gui-gate: a person is needed" } else { title });
-                let (a, o) = map_desktop(kind, &a);
-                outcome = o.into();
+                let (a, o) = self.desktop(text, kind, if title.is_empty() { "gui-gate: a person is needed" } else { title });
+                // fail closed (v2-sec): on a yes/no dialog only its own buttons count; anything else is a refusal
+                // that is never read as "try another way" either
+                let odd = kind != "answer" && !matches!(a.as_str(), "allow" | "deny" | "timeout");
+                let a = if odd { "deny".to_string() } else { a };
+                // ask_help's second button is "Try another way": an answer, not a refusal (as in the MRTR form)
+                outcome = if odd { "denied".into() } else if kind == "ask_help" && a == "deny" && o == "denied" { "accepted".into() } else { o };
                 a
             }
             _ => return json!({"answer": "chat", "channel": "chat", "ms": 0.0, "outcome": "channel_unavailable"}),
@@ -790,7 +924,7 @@ mod tests {
     #[test]
     fn late_answer_is_a_timeout() {
         let h = Human::new("elicit", 0.0, Some(Arc::new(|_, _| None)), Arc::new(|| true));
-        let st = h.pending.park(Pending { binding: "b".into(), kind: "approve".into(), deadline: now() - MRTR_GRACE_S - 1.0, effect: String::new(), asked: now(), voided: false });
+        let st = h.pending.park(Pending { binding: "b".into(), kind: "approve".into(), deadline: now() - MRTR_GRACE_S - 1.0, effect: String::new(), asked: now(), voided: false, reported: false });
         let resp = json!({"human": {"action": "accept", "content": {"decision": "allow"}}});
         assert!(matches!(h.pending.resolve(&st, "b", Some(&resp)), Resolved::Late(_, _)));
     }
@@ -947,9 +1081,137 @@ mod tests {
         assert!(matches!(h.pending.resolve(&st, "click|{}", Some(&allow)), Resolved::Invalid(_)));
         assert!(!h.person_answering());
         // a timed-out request is over by itself
-        let st = h.pending.park(Pending { binding: "b".into(), kind: "approve".into(), deadline: now() - MRTR_GRACE_S - 1.0, effect: String::new(), asked: now(), voided: false });
+        let st = h.pending.park(Pending { binding: "b".into(), kind: "approve".into(), deadline: now() - MRTR_GRACE_S - 1.0, effect: String::new(), asked: now(), voided: false, reported: false });
         assert!(!h.person_answering());
         assert!(matches!(h.pending.resolve(&st, "b", Some(&allow)), Resolved::Late(_, _)));
+    }
+
+    #[test]
+    fn typed_answers_never_collide_with_button_words() {
+        // a person who types "timeout" / "allow" / "closed" gave that text as their answer, nothing else
+        for w in ["timeout", "allow", "closed", "deny"] {
+            assert_eq!(dialog_result("zenity", Some((0, format!("{w}\n"))), true), (w.to_string(), "accepted".to_string()));
+            assert_eq!(dialog_result("osascript", Some((0, format!("text:{w}"))), true), (w.to_string(), "accepted".to_string()));
+            assert_eq!(dialog_result("powershell", Some((0, format!("text:{w}"))), true), (w.to_string(), "accepted".to_string()));
+            assert_eq!(dialog_result("gtk", Some((0, json!({"answer": w, "typed": true}).to_string())), true), (w.to_string(), "accepted".to_string()));
+        }
+        assert_eq!(dialog_result("osascript", Some((0, "text:".into())), true).1, "denied");
+        // the button channel
+        assert_eq!(dialog_result("osascript", Some((0, "timeout".into())), true), ("timeout".into(), "timeout".into()));
+        assert_eq!(dialog_result("osascript", Some((0, "allow".into())), false), ("allow".into(), "accepted".into()));
+        assert_eq!(dialog_result("powershell", Some((0, "closed".into())), false), ("deny".into(), "window_closed".into()));
+        assert_eq!(dialog_result("gtk", Some((0, "{\"answer\": \"closed\"}".into())), false), ("deny".into(), "window_closed".into()));
+        assert_eq!(dialog_result("zenity", Some((5, String::new())), false), ("timeout".into(), "timeout".into()));
+        assert_eq!(dialog_result("zenity", None, false), ("timeout".into(), "timeout".into()));
+        // a typed text on a yes/no dialog, or "allow" on a text dialog, is never an approval
+        assert_eq!(dialog_result("osascript", Some((0, "text:allow".into())), false).0, "deny");
+        assert_eq!(dialog_result("osascript", Some((0, "allow".into())), true).0, "deny");
+        // a helper that failed is nobody answering, not the person saying no (no denial record)
+        assert_eq!(dialog_result("osascript", Some((1, String::new())), false), ("deny".into(), "channel_unavailable".into()));
+        assert_eq!(dialog_result("powershell", Some((2, String::new())), false), ("deny".into(), "channel_unavailable".into()));
+        assert_eq!(dialog_result("gtk", Some((1, "Traceback ...".into())), false), ("deny".into(), "channel_unavailable".into()));
+    }
+
+    #[test]
+    fn dialogs_default_to_the_refusing_button() {
+        for k in ["approve", "takeover", "ask_help"] {
+            let z = zenity_args("Delete x?", "t", k, 60.0);
+            assert!(z.contains(&"--default-cancel".to_string()), "{k}: {z:?}");
+            let (_, no) = labels(k);
+            assert!(applescript("Delete x?", "t", k, 60.0).contains(&format!("default button \"{no}\"")), "{k}");
+        }
+        assert!(!zenity_args("Which?", "t", "answer", 60.0).contains(&"--default-cancel".to_string()));
+        assert!(applescript("Which?", "t", "answer", 60.0).contains("default button \"Send\""));
+        assert!(applescript("Which?", "t", "answer", 60.0).contains("return \"text:\" & (text returned of r)"));
+        assert!(PS_DIALOG.contains("$f.AcceptButton = $no; $f.ActiveControl = $no"));
+        assert!(PS_DIALOG.contains("'text:' + $t.Text"));
+        assert!(GTK_DIALOG.contains("set_default_response(1 if entry is not None else 2)"));
+    }
+
+    #[test]
+    fn expired_requests_are_reported_once_and_still_resolve_late() {
+        let h = Human::new("elicit", 30.0, Some(Arc::new(|_, _| None)), Arc::new(|| true));
+        let dead = h.pending.park(Pending { binding: "b".into(), kind: "approve".into(), deadline: now() - MRTR_GRACE_S - 1.0, effect: String::new(), asked: now() - 40.0, voided: false, reported: false });
+        let live = h.pending.park(Pending { binding: "c".into(), kind: "takeover".into(), deadline: now() + 60.0, effect: String::new(), asked: now(), voided: false, reported: false });
+        let ex = h.pending.sweep_expired();
+        assert_eq!(ex.len(), 1);
+        assert_eq!(ex[0].0, req_id(&dead));
+        assert_eq!(ex[0].1.kind, "approve");
+        assert!(h.pending.sweep_expired().is_empty(), "reported once");
+        assert_eq!(h.pending.live(), 1);
+        // a retry after the report is still a timeout, never an approval
+        let resp = json!({"human": {"action": "accept", "content": {"decision": "allow"}}});
+        assert!(matches!(h.pending.resolve(&dead, "b", Some(&resp)), Resolved::Late(_, _)));
+        let d = h.pending.drain();
+        assert_eq!(d.len(), 1);
+        assert_eq!(d[0].0, req_id(&live));
+        assert_eq!(h.pending.len(), 0);
+    }
+
+    #[test]
+    fn ask_help_another_way_is_an_answer_not_a_refusal() {
+        let o = |c: Value| map_elicit_o("ask_help", Some(&json!({"action": "accept", "content": c})));
+        assert_eq!(o(json!({"choice": "try_other"})), ("deny".to_string(), String::new(), "accepted".to_string()));
+        assert_eq!(o(json!({"choice": "hint", "note": "Ctrl+S"})), ("deny".to_string(), "Ctrl+S".to_string(), "accepted".to_string()));
+        assert_eq!(o(json!({"choice": "did_it"})).0, "allow");
+        assert_eq!(o(json!({"choice": "?"})).2, "denied");
+        assert_eq!(map_elicit_o("ask_help", Some(&json!({"action": "decline"}))).2, "declined");
+        // other kinds unchanged
+        assert_eq!(map_elicit_o("approve", Some(&json!({"action": "accept", "content": {"decision": "deny"}}))).2, "denied");
+    }
+
+    #[test]
+    fn a_voided_request_keeps_the_freeze_until_its_timeout_is_swept() {
+        let h = Human::new("elicit", 30.0, Some(Arc::new(|_, _| None)), Arc::new(|| true));
+        let live = h.pending.park(Pending { binding: "c".into(), kind: "approve".into(), deadline: now() + 60.0, effect: String::new(), asked: now(), voided: false, reported: false });
+        let (n, v) = h.pending.void_live();
+        assert_eq!((n, v.len()), (1, 1));
+        assert_eq!(v[0].0, req_id(&live));
+        assert!(h.person_answering(), "a reset does not end the freeze");
+        assert!(h.pending.void_live().1.is_empty(), "a second reset does not void (or log) it again");
+        assert!(h.pending.sweep_expired().is_empty(), "not expired yet");
+        // expired: swept once (logged as its timeout) and the freeze is over
+        let dead = h.pending.park(Pending { binding: "d".into(), kind: "approve".into(), deadline: now() - MRTR_GRACE_S - 1.0, effect: String::new(), asked: now() - 40.0, voided: true, reported: false });
+        let ex = h.pending.sweep_expired();
+        assert_eq!(ex.len(), 1);
+        assert!(ex[0].1.voided);
+        assert_eq!(ex[0].0, req_id(&dead));
+        let allow = json!({"human": {"action": "accept", "content": {"decision": "allow"}}});
+        assert!(matches!(h.pending.resolve(&dead, "d", Some(&allow)), Resolved::Invalid(_)), "voided: never an approval");
+        assert!(matches!(h.pending.resolve(&live, "c", Some(&allow)), Resolved::Invalid(_)), "voided: never an approval");
+        assert!(!h.person_answering());
+    }
+
+    #[test]
+    fn conflicting_ask_help_forms_are_not_another_way() {
+        let o = |c: Value| map_elicit_o("ask_help", Some(&json!({"action": "accept", "content": c})));
+        assert_eq!(o(json!({"choice": "hint", "done": true})).2, "denied");
+        assert_eq!(o(json!({"choice": "try_other", "allow": true})).2, "denied");
+        assert_eq!(o(json!({"choice": "try_other"})).2, "accepted");
+    }
+
+    #[test]
+    fn mrtr_answer_use_is_tracked() {
+        let h = Human::new("elicit", 30.0, Some(Arc::new(|_, _| None)), Arc::new(|| true));
+        let e = json!({"hazard": "delete"});
+        set_call(CallCtx { mrtr: true, binding: "k".into(), req: "abc".into(),
+                           answer: Some(("approve".into(), "allow".into(), String::new(), e.to_string(), "accepted".into())), ..Default::default() });
+        let r = h.ask_kind("approve", "q", "t", json!({"effect": e}));
+        assert_eq!(r["req"], "abc");
+        let c = take_call();
+        assert!(c.used && c.dropped.is_none());
+        set_call(CallCtx { mrtr: true, binding: "k".into(), req: "abc".into(),
+                           answer: Some(("approve".into(), "allow".into(), String::new(), e.to_string(), "accepted".into())), ..Default::default() });
+        let r = h.ask_kind("approve", "q", "t", json!({"effect": {"hazard": "send"}}));
+        assert_eq!(r["answer"], "input_required");
+        assert!(r["req"].as_str().unwrap().len() >= 16, "the new request has its own id");
+        assert!(take_request().is_some());
+        let c = take_call();
+        assert!(!c.used);
+        assert_eq!(c.dropped, Some("effect_changed"));
+        set_call(CallCtx { mrtr: true, answer: Some(("approve".into(), "allow".into(), String::new(), String::new(), "accepted".into())), ..Default::default() });
+        mark_dropped("frozen");
+        assert_eq!(take_call().dropped, Some("frozen"));
     }
 
     #[test]

@@ -357,10 +357,11 @@ pub fn result_text(r: &Ran, cwd: &str, out_cap: usize) -> (String, bool) {
         t.push_str("\n(no output)");
     }
     if !so.is_empty() {
-        t.push_str(&format!("\n--- stdout ---\n{}", tail_cap(so, out_cap)));
+        // the command's own output may imitate the gate's messages: such lines are marked (util::defang)
+        t.push_str(&format!("\n--- stdout ---\n{}", crate::util::defang(&tail_cap(so, out_cap))));
     }
     if !se.is_empty() {
-        t.push_str(&format!("\n--- stderr ---\n{}", tail_cap(se, out_cap / 2)));
+        t.push_str(&format!("\n--- stderr ---\n{}", crate::util::defang(&tail_cap(se, out_cap / 2))));
     }
     if !r.changed.is_empty() {
         let names: Vec<String> = r.changed.iter().take(12).map(|(p, n)| format!("{} ({n} B)", sidefx::relpath(p, cwd))).collect();
