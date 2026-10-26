@@ -46,6 +46,22 @@ v2 person hand-off protocol and agent context (branch v2-hum; design: docs/gate-
   is `configured | none` instead of the reviewer's protocol and model; app / page / terminal / command text lines that
   start like the gate's own messages (`[gate]`, `[human via`, ...) are prefixed `(app text) `.
 
+Value model v2 and offline evaluation (branch v2-val, docs/value-model-v2.md). The default decision path is unchanged
+(golden test of 189 decisions generated on c3893bc).
+- `GUI_GATE_VALUE_MODEL` defaults to `legacy`; `auto` (the 0.10.1 default: treatment whenever its weights were loaded)
+  is opt-in. New value `v2`: commands are not scored by the GUI predictor (`tier: command`, `p_direct: null`), GUI
+  history features skip commands, click/scroll/role features (`features::V2_FEATURES`); the treatment model only with
+  `treatment_v2` weights.
+- A treatment model with fewer than 20 bootstrap replicates has an unknown interval (was: zero-width at the point
+  estimate) and is not used: the legacy prior decides and the value log says `fallback`.
+- Trainers: a collect-mode shadow probe is no longer copied into the features; the propensity model never sees probe
+  results; IPW coverage = min(n, ESS) and 0 below `--min-support` (0.2); `run_command` rows and later sessions of a log
+  are excluded by default (`--commands include`, `--all-sessions`); `--features v2`. `gui-gate replay` counts commands
+  apart from GUI interventions.
+- bench/offline_v2.py (offline evaluation with an exclusion audit, GUI vs command calibration, failure-prediction
+  budgets, costs from gate + Pi logs; never claims avoided failures) and bench/online_plan.py (frozen online plan,
+  runs nothing). Results: results/offline-v2-2026-10-26/.
+
 Fixes from the gui-pi-desktop 0.3.0 live test on a Linux desktop (2026-10-25).
 - Person results: a declined / cancelled form now keeps the client's reason (`_meta["io.github.cszf1/gui-gate"].reason`
   or a top-level `reason`): `timed_out` -> `human_outcome: "timeout"`, `expired` (the client never showed it: another

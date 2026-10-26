@@ -172,3 +172,14 @@ mean. META gives what no log knows (participant, benchmark task, condition, orde
   XFCE, other app versions, own reset, own budgets). They are not comparable to the OSWorld leaderboard.
 - Wilson intervals on valid runs ignore task correlation and valid-run selection; report the planned denominator next
   to them.
+
+## 13. Offline v2 evaluation and the online plan (2026-10-26)
+
+`bench/offline_v2.py RESULTS_DIR -o OUT` evaluates one finished run read-only: it lists and excludes corrupt run-file
+lines, tasks without a result row, infra tasks, repeated attempts (first valid attempt by default, `--attempt first` for
+attempt 1 only) and later sessions inside a gate log; reports calibration separately for GUI actions and commands;
+reports failure prediction at fixed intervention budgets; re-estimates option costs from gate and Pi logs. It reports
+"predicted the execution failure" and never "the intervention avoided the failure" (not estimable from logs).
+`bench/online_plan.py` writes the frozen plan for the randomized legacy-vs-v2 comparison (held-out tasks, arms, seeded
+order, analysis) and starts nothing. Details and numbers: docs/value-model-v2.md.
+

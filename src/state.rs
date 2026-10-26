@@ -141,6 +141,8 @@ pub struct GateState {
     pub window_of_pid: HashMap<i64, i64>,
     pub last_typed: HashMap<i64, String>, // pid -> text typed since the last Enter
     pub text_only: bool,                  // the client cannot see images: a tree read is its full observation
+    /// v2 value model (GUI_GATE_VALUE_MODEL=v2): GUI history features skip commands, v2 features are computed
+    pub gui_history: bool,
     shots: u64,
 }
 
@@ -155,6 +157,10 @@ pub fn wkey(pid: Option<i64>, wid: Option<i64>) -> Option<String> {
 impl GateState {
     pub fn with_text_only(text_only: bool) -> Self {
         GateState { text_only, ..Default::default() }
+    }
+    /// A fresh state for a gate config: text-only client and (v2 value model) GUI-only history.
+    pub fn for_config(text_only: bool, gui_history: bool) -> Self {
+        GateState { text_only, gui_history, ..Default::default() }
     }
 
     pub fn get(&self, id: ObsId) -> &Observation {
