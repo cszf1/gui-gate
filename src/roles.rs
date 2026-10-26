@@ -22,13 +22,33 @@ pub const ROLES: &[&str] = &["feasibility", "planner", "verifier", "judge", "sea
 /// GUI_GATE_ROLES_ENABLE=planner,search,compact.
 pub const OFF_BY_DEFAULT: &[&str] = &["planner", "search", "compact"];
 
+/// Is role NAME switched on (its endpoint is checked separately)? One precedence for all seven roles (v0.10.3):
+///   1. an explicit GUI_GATE_ROLE_<NAME>_ENABLE wins: 0/false/off/no = off, 1/true/on/yes = on;
+///   2. else the group list GUI_GATE_ROLES_ENABLE=a,b turns listed roles on;
+///   3. else the default: planner / search / compact off, the others on (they still need an endpoint).
+/// So `_ENABLE=0` switches a role off whatever group switch or endpoint is set.
 pub fn role_enabled(name: &str) -> bool {
-    if !OFF_BY_DEFAULT.contains(&name) {
+    role_enabled_with(name, &|k| env(k))
+}
+
+pub fn role_enabled_with(name: &str, get: &dyn Fn(&str) -> Option<String>) -> bool {
+    let v = get(&format!("GUI_GATE_ROLE_{}_ENABLE", name.to_uppercase())).map(|v| v.trim().to_lowercase());
+    match v.as_deref() {
+        Some("0" | "false" | "off" | "no") => return false,
+        Some("1" | "true" | "on" | "yes") => return true,
+        _ => {}
+    }
+    if get("GUI_GATE_ROLES_ENABLE").map(|v| v.split(',').any(|x| x.trim().eq_ignore_ascii_case(name))).unwrap_or(false) {
         return true;
     }
-    let on = |v: Option<String>| v.map(|v| matches!(v.trim().to_lowercase().as_str(), "1" | "true" | "yes" | "on")).unwrap_or(false);
-    on(env(&format!("GUI_GATE_ROLE_{}_ENABLE", name.to_uppercase())))
-        || env("GUI_GATE_ROLES_ENABLE").map(|v| v.split(',').any(|x| x.trim().eq_ignore_ascii_case(name))).unwrap_or(false)
+    !OFF_BY_DEFAULT.contains(&name)
+}
+
+/// The total time one role call may take across all its model calls and probes (v0.10.3; one check_done once hung
+/// 1938 s): GUI_GATE_ROLE_<NAME>_DEADLINE_S, else GUI_GATE_ROLE_DEADLINE_S, else 120 s.
+pub fn role_deadline_s(name: &str) -> f64 {
+    env(&format!("GUI_GATE_ROLE_{}_DEADLINE_S", name.to_uppercase())).or_else(|| env("GUI_GATE_ROLE_DEADLINE_S"))
+        .and_then(|v| v.trim().parse::<f64>().ok()).filter(|v| v.is_finite() && *v > 0.0).unwrap_or(120.0)
 }
 
 pub struct Role {
@@ -191,13 +211,18 @@ pub fn readonly_problem(cmd: &str) -> Option<String> {
 
 /// Run one probe (read-only), capped output.
 pub fn run_probe(p: &Value, windows: &dyn Fn() -> String) -> String {
+    run_probe_until(p, windows, 15.0)
+}
+
+/// run_probe with at most `max_s` seconds for a command (the role's remaining deadline).
+pub fn run_probe_until(p: &Value, windows: &dyn Fn() -> String, max_s: f64) -> String {
     match s(p, "probe") {
         "sh" | "bash" | "shell" => {
             let cmd = pystr(p.get("command"));
             if let Some(why) = readonly_problem(&cmd) {
                 return format!("refused: {why}");
             }
-            let r = crate::command::run(&cmd, &home(), 15.0);
+            let r = crate::command::run(&cmd, &home(), max_s.clamp(0.1, 15.0));
             let mut out = crate::command::tail_cap(&r.stdout, 3000);
             if !r.stderr.trim().is_empty() {
                 out.push_str(&format!("\n[stderr] {}", crate::command::tail_cap(&r.stderr, 800)));
@@ -217,7 +242,20 @@ const PROBE_PROTOCOL: &str = "\n\nHOW TO ANSWER: every reply is ONE JSON object 
 
 /// The probing loop: the role probes read-only until it gives `{"final": ...}` (or the step budget runs out, then it
 /// is asked for its final answer once more). Returns (final object, probe transcript, model calls, error).
+///
+/// The whole loop has one deadline (role_deadline_s): each model call gets at most the time left, and when it runs out
+/// the error is exactly "timeout" (callers return a structured {"status":"timeout"}), never a hang.
 pub fn probe_agent(role: &Role, system: &str, task_prompt: &str, windows: &dyn Fn() -> String, probes_allowed: bool) -> (Option<Value>, Vec<Value>, usize, Option<String>) {
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs_f64(role_deadline_s(&role.name));
+    crate::reviewer::with_deadline(deadline, || probe_loop(role, system, task_prompt, windows, probes_allowed, deadline))
+}
+
+/// Seconds left before `d` (0 when past).
+pub fn left(d: std::time::Instant) -> f64 {
+    d.saturating_duration_since(std::time::Instant::now()).as_secs_f64()
+}
+
+fn probe_loop(role: &Role, system: &str, task_prompt: &str, windows: &dyn Fn() -> String, probes_allowed: bool, deadline: std::time::Instant) -> (Option<Value>, Vec<Value>, usize, Option<String>) {
     let sys = if probes_allowed { format!("{system}{PROBE_PROTOCOL}") } else { format!("{system}\n\nAnswer with ONE JSON object {{\"final\": ...}} and nothing else.") };
     let mut log: Vec<Value> = vec![];
     let mut calls = 0;
@@ -235,9 +273,16 @@ pub fn probe_agent(role: &Role, system: &str, task_prompt: &str, windows: &dyn F
         if step == steps {
             prompt.push_str("\n\nNo probes left: give your final answer now as {\"final\": ...}.");
         }
+        if left(deadline) < 0.05 {
+            return (None, log, calls, Some("timeout".into()));
+        }
         calls += 1;
         let Some(txt) = role.llm.ask(&sys, &prompt, None) else {
-            return (None, log, calls, role.llm.take_error().or(Some("no answer".into())));
+            let e = role.llm.take_error();
+            if left(deadline) < 0.05 {
+                return (None, log, calls, Some("timeout".into()));
+            }
+            return (None, log, calls, e.or(Some("no answer".into())));
         };
         let Some(v) = first_json(&txt) else {
             log.push(json!({"probe": "(unparsable reply)", "result": format!("reply was not one JSON object: {}", trunc(&txt, 200))}));
@@ -247,7 +292,10 @@ pub fn probe_agent(role: &Role, system: &str, task_prompt: &str, windows: &dyn F
             return (Some(f.clone()), log, calls, None);
         }
         if v.get("probe").is_some() && probes_allowed && step < steps {
-            let r = run_probe(&v, windows);
+            if left(deadline) < 0.05 {
+                return (None, log, calls, Some("timeout".into()));
+            }
+            let r = run_probe_until(&v, windows, left(deadline));
             log.push(json!({"probe": v, "result": r}));
             continue;
         }
@@ -262,8 +310,9 @@ pub fn probe_agent(role: &Role, system: &str, task_prompt: &str, windows: &dyn F
 /// One call with an image (grounder): returns (final, [], calls, error).
 pub fn probe_agent_image(role: &Role, system: &str, prompt: &str, image_b64: &str) -> (Option<Value>, Vec<Value>, usize, Option<String>) {
     let sys = format!("{system}\n\nAnswer with ONE JSON object {{\"final\": ...}} and nothing else.");
-    match role.llm.ask(&sys, prompt, Some(image_b64)) {
-        None => (None, vec![], 1, role.llm.take_error().or(Some("no answer".into()))),
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs_f64(role_deadline_s(&role.name));
+    match crate::reviewer::with_deadline(deadline, || role.llm.ask(&sys, prompt, Some(image_b64))) {
+        None => (None, vec![], 1, if left(deadline) < 0.05 { Some("timeout".into()) } else { role.llm.take_error().or(Some("no answer".into())) }),
         Some(t) => match first_json(&t) {
             Some(v) => (Some(v.get("final").cloned().unwrap_or(v)), vec![], 1, None),
             None => (None, vec![], 1, Some(format!("unparsable reply: {}", trunc(&t, 120)))),
@@ -327,6 +376,22 @@ pub const GROUNDER_SYSTEM: &str = "You locate one UI element in a screenshot of 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn explicit_disable_wins_for_every_role() {
+        let mk = |pairs: &'static [(&'static str, &'static str)]| move |k: &str| pairs.iter().find(|p| p.0 == k).map(|p| p.1.to_string());
+        for r in ROLES {
+            let up = r.to_uppercase();
+            let k: &'static str = Box::leak(format!("GUI_GATE_ROLE_{up}_ENABLE").into_boxed_str());
+            let off: &'static [(&str, &str)] = Box::leak(vec![(k, "0"), ("GUI_GATE_ROLES_ENABLE", "feasibility,planner,verifier,judge,search,compact,grounder")].into_boxed_slice());
+            assert!(!role_enabled_with(r, &mk(off)), "{r}: explicit 0 must win over the group switch");
+            let on: &'static [(&str, &str)] = Box::leak(vec![(k, "1")].into_boxed_slice());
+            assert!(role_enabled_with(r, &mk(on)), "{r}");
+            let grp: &'static [(&str, &str)] = &[("GUI_GATE_ROLES_ENABLE", "planner,compact")];
+            assert_eq!(role_enabled_with(r, &mk(grp)), !["search"].contains(r), "{r}");
+            assert_eq!(role_enabled_with(r, &mk(&[])), !OFF_BY_DEFAULT.contains(r), "{r}");
+        }
+    }
 
     #[test]
     fn planner_search_compact_are_off_unless_enabled() {

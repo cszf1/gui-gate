@@ -67,7 +67,57 @@ def text(t, err=False, sc=None, img=False):
     return r
 
 
+ACTION_TOOLS = ("click", "type_text", "press_key", "hotkey", "run_steps", "launch_app", "set_clipboard", "bring_to_front")
+
+
+def _ctl():
+    """FAKE_CTL=path: a JSON object written there by a test is applied before the next call and the file removed,
+    like a person changing the desktop outside the agent (new rows, another window in front, a file written)."""
+    p = os.environ.get("FAKE_CTL")
+    if not p or not os.path.exists(p):
+        return
+    try:
+        with open(p) as fh:
+            c = json.load(fh)
+    except ValueError:
+        return
+    os.remove(p)
+    _apply(c)
+
+
+def _apply(c):
+    for k in ("read_fail", "list_fail"):
+        if k in c:
+            state[k] = c[k]
+    if "elements" in c:
+        state["elements"] = [tuple(x) for x in c["elements"]]
+    if "front" in c:
+        state["front_window"] = c["front"]
+        if not any(w["window_id"] == c["front"] for w in state["windows"]):
+            state["windows"].append({"window_id": c["front"], "pid": PID + 1, "x": 0, "y": 0, "width": 300,
+                                     "height": 200, "is_on_screen": True, "title": c.get("front_title", "Other")})
+    if "write" in c:
+        with open(c["write"][0], "w") as fh:
+            fh.write(c["write"][1])
+        if len(c["write"]) > 2:  # a later mtime than the gate's last look
+            t = os.path.getmtime(c["write"][0]) + c["write"][2]
+            os.utime(c["write"][0], (t, t))
+
+
+def _log_action(name, a):
+    """FAKE_ACTION_LOG=path: every state-changing call the driver RECEIVED (also one it then fails or dies in),
+    so a test can count what really reached the driver across driver restarts."""
+    p = os.environ.get("FAKE_ACTION_LOG")
+    if p and name in ACTION_TOOLS:
+        with open(p, "a") as fh:
+            fh.write(json.dumps({"tool": name, "args": a}) + "\n")
+            fh.flush()
+            os.fsync(fh.fileno())
+
+
 def call(name, a):
+    _ctl()
+    _log_action(name, a)
     if state.get("crash_on") == name:
         os._exit(4)  # dies while delivering the action: the gate cannot know whether it happened
     if state.get("garbage_on") == name:
@@ -91,8 +141,19 @@ def call(name, a):
     # FAKE_NO_BG=1: like a desktop without a focus-free input backend (no /dev/uinput)
     if (os.environ.get("FAKE_NO_BG") and name in ("type_text", "press_key", "hotkey")
             and a.get("delivery_mode") != "foreground"):
+        # FAKE_ON_BGFAIL=path: JSON applied (once) right when background delivery fails, e.g. the user's task file
+        # changes or the window changes between the undelivered attempt and the gate's foreground retry
+        hook = os.environ.get("FAKE_ON_BGFAIL")
+        if hook and os.path.exists(hook):
+            with open(hook) as fh:
+                c = json.load(fh)
+            os.remove(hook)
+            _apply(c)
         return text("Background delivery is not available: the requested target has no focus-free input backend",
                     err=True)
+    if name == "get_window_state" and state.get("read_fail"):
+        state["read_fail"] -= 1
+        return text("get_window_state failed: accessibility bus not reachable", err=True)
     if name == "get_window_state":
         state["snap"] += 1
         sid = snap_id(state["snap"])
@@ -171,19 +232,25 @@ def call(name, a):
             state["clicked"].append(f"xy:{a['x']},{a['y']}:{a.get('coordinate_frame', 'window')}")
             return text(f"Clicked at {a['x']},{a['y']}", sc={"effect": "unverifiable", "route": "pixel"})
         return text("missing target", err=True)
+    if name == "list_windows" and state.get("list_fail"):
+        state["list_fail"] -= 1
+        return text("list_windows failed: window server not reachable", err=True)
     if name == "list_windows":
         if state["late_popup"]:
             state["late_popup"] -= 1
             if not state["late_popup"]:
                 state["windows"].append({"window_id": WID + 5, "pid": PID, "x": 60, "y": 60, "width": 200,
                                          "height": 100, "is_on_screen": True, "title": "Dialog"})
-        ws = [w for w in state["windows"] if "pid" not in a or w["pid"] == a["pid"]]
+        ws = [dict(w, focused=(w["window_id"] == state.get("front_window", WID))) for w in state["windows"]
+              if "pid" not in a or w["pid"] == a["pid"]]
         return text(f"Found {len(ws)} windows", sc={"windows": ws})
     if name == "verify_state":
         sel = a["expect"][0]["element"]["selector"]
         ok = any((not sel.get("role") or r == sel["role"]) and sel.get("label_contains", "") in l
                  for r, l in state["elements"])
         return text("verify", sc={"status": "satisfied" if ok else "unsatisfied"})
+    if name == "hotkey":
+        state["keys"].append("+".join(a.get("keys") or []))
     if name == "press_key":
         state["keys"].append("+".join(list(a.get("modifiers") or []) + [a.get("key", "")]))
     if name == "fake_state":
@@ -210,6 +277,10 @@ def call(name, a):
             state["crash_on"] = a["crash_on"]
         if "garbage_on" in a:
             state["garbage_on"] = a["garbage_on"]
+        for k in ("read_fail", "list_fail"):
+            if k in a:
+                state[k] = a[k]
+        _apply({k: v for k, v in a.items() if k in ("front", "write")})
         return text("mutated")
     return text(f"{name} ok delivery={a.get('delivery_mode', 'background')}", sc={})
 
@@ -241,6 +312,12 @@ def classify(m):
 
 
 def main():
+    # FAKE_BOOT=path: JSON applied at every driver start (also after the gate restarts a dead driver), e.g. the
+    # window rows a restarted driver shows, or reads that fail from the start
+    boot = os.environ.get("FAKE_BOOT")
+    if boot and os.path.exists(boot):
+        with open(boot) as fh:
+            _apply(json.load(fh))
     # FAKE_PRE_038=1: an older driver without the 2026-07-28 per-request session rules
     old = bool(os.environ.get("FAKE_PRE_038"))
     for line in sys.stdin:

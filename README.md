@@ -146,7 +146,7 @@ GTA1、CoACT-1 的做法，全部放在**同一个 gui-gate MCP 服务**里（Ru
 | `DIGEST` | 每 8 步附一份进度摘要（计划、事实、最近步骤）（Pointer 压缩、OpenAPA、HIPPO） |
 | `GUI_GATE_MEMORY=文件` | 经验记忆：`gui-gate memory add --task-file T --log 门日志` 从成功运行生成；简报和 inspect memory 里给出相似任务的做法（HIPPO / muscle-mem）。评测时只能用不相交的任务集生成 |
 
-**可选模型角色**（全部默认关闭，审核模型仍是风险步骤的唯一模型裁决者，干活的主模型从不批准自己的步骤）。v0.10.1 起 `planner`、`search`、`compact` 三个角色**即使配了接口也默认不启用**（它们以后可能移到客户端），要用须显式打开：`GUI_GATE_ROLE_<NAME>_ENABLE=1` 或 `GUI_GATE_ROLES_ENABLE=planner,search,compact`。角色列表：
+**可选模型角色**（全部默认关闭，审核模型仍是风险步骤的唯一模型裁决者，干活的主模型从不批准自己的步骤）。v0.10.1 起 `planner`、`search`、`compact` 三个角色**即使配了接口也默认不启用**（它们以后可能移到客户端），要用须显式打开：`GUI_GATE_ROLE_<NAME>_ENABLE=1` 或 `GUI_GATE_ROLES_ENABLE=planner,search,compact`。v0.10.3：开关优先级对七个角色统一为“显式 `GUI_GATE_ROLE_<NAME>_ENABLE=0` > 组开关 `GUI_GATE_ROLES_ENABLE` > 配了接口”；每次角色调用（跨全部模型调用和只读探测）有总截止时间 `GUI_GATE_ROLE_DEADLINE_S`（默认 120 s，单角色 `GUI_GATE_ROLE_<NAME>_DEADLINE_S`），到点返回结构化 `timeout`；verifier 只验证明确的后置条件（计划里程碑），没有就不调用。角色列表：
 `feasibility`（可行性判断，只读探测）、`planner`（最终状态里程碑）、`verifier`（终态核验，只读探测，每会话最多 2 次）、
 `judge`（循环第 3 级 KEEP/SWITCH；pick_one 选择）、`search`（howto 教程）、`compact`（进度摘要）、`grounder`（视觉定位）。
 配置同审核模型：`GUI_GATE_ROLE_<NAME>_URL / _MODEL / _KEY 或 _KEY_FILE / _PROTOCOL / _TIMEOUT / _MAX_TOKENS / _MAX_STEPS`，

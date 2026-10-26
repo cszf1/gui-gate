@@ -23,7 +23,7 @@
 |---|---|---|
 | 用户 | 可信 | 只通过两条路影响授权：任务文件（`--task-file`，壳写，`gui-pi-task/1`）和问人表单的回答。 |
 | 桌面壳（gui-pi-desktop） | 可信 | 写任务文件；渲染问人表单（MRTR `elicitation/create`）；持有密钥，经 person IPC 交给门一次。 |
-| gui-pi 扩展 | 半可信（协议搬运） | 只搬运 `inputRequests` / `inputResponses` / `requestState`，不能自己构造“同意”（`requestState` 由门签名，见 4.3）。 |
+| gui-pi 扩展 | **可信计算基**（协议搬运） | 搬运 `inputRequests` / `inputResponses` / `requestState`。`requestState` 的 HMAC 只证明状态由本门进程签发且绑定这次调用，**不证明**带回的 allow 来自真人：经手合法状态的扩展可以代答，所以它和桌面壳一样属于可信计算基（v0.10.3 更正；之前写成“半可信、不能构造同意”是错的）。agent 写不到 `params` 层，这才是边界。 |
 | 模型（agent） | **不可信**（威胁模型：合作但会出错，不是恶意） | 能调工具、写参数、调 `gate_task`；它说的话永远不授权任何风险步骤。 |
 | gui-gate | 安全核心 | 所有动作都经过它；风险判断、批准、派发许可都在这里。 |
 | 审核模型 | 半可信（独立判断） | 只看到用户原话、具体动作、窗口树；看不到 agent 的解释。它的原话不回给 agent（见 5、6）。 |
@@ -122,6 +122,17 @@ look_light、wait、check、heal、ask 与假设大致相符。默认代价表�
 - 在线方案（`bench/online_plan.py`，`results/offline-v2-2026-10-26/online_plan.json`）：108 个留出任务 × 2 臂（legacy vs v2）= 216 次运行，
   按任务成对、顺序随机、预注册分析；**未执行**。
 
+## 4a. 门内模型角色（v0.10.3）
+
+- 开关优先级（七个角色同一个 `roles::role_enabled`）：显式 `GUI_GATE_ROLE_<NAME>_ENABLE=0/1` > 组开关 `GUI_GATE_ROLES_ENABLE=a,b` >
+  默认（planner / search / compact 关；其余开但仍需配接口）。修前 feasibility / verifier / judge / grounder 配了接口后 `_ENABLE=0` 关不掉。
+- planner、search、compact 门内默认关：它们是 agent 功能，应放客户端（桌面扩展管上下文压缩和计划），门只管授权与派发。
+- verifier 只验证明确后置条件：只有计划里程碑（可带机器检查谓词）时才调用，提示里只给这些后置条件、要求逐条探测；
+  没有后置条件时 `check_done.structuredContent.verifier = {"status": "no_postconditions"}`。check_done 模型说“没有缺口”不等于环境证明成功。
+- 总截止时间：每次角色调用（所有模型调用 + 只读探测）共享 `GUI_GATE_ROLE_DEADLINE_S`（默认 120 s），每个 HTTP 请求的超时取
+  min(单次超时, 剩余时间)，探测命令取 min(15 s, 剩余时间)；到点返回 `{"status": "timeout", "after_s": …}`（check_done 里）。
+  修前一次 check_done 1938 s 无返回。审核模型单次 HTTP 整体超时默认 15 s（`GUI_GATE_REVIEWER_TIMEOUT`）。主模型超时在客户端。
+
 ## 5. 问人协议状态机
 
 ### 5.1 通道
@@ -187,8 +198,40 @@ look_light、wait、check、heal、ask 与假设大致相符。默认代价表�
 
 ### 5.3 计数与负担
 
-`human_asked` 只在请求结束时计一次（MRTR 的停放 + 重试不再算两次）；`note_burden` 记录询问数、重复、等待/主动秒数、接管步骤、
-无回答率，进 `gate_report.person_burden` 和日志 `person_burden`。
+`human_asked` 只在请求结束时计一次（MRTR 的停放 + 重试不再算两次）。v0.10.3：负担只在请求的**唯一收尾**（`req_end`）里记：
+- `wait_s` = 弹窗到结束（回答 / 过期 / 作废）；
+- `active_s` 只在客户端给出交互证据时记（回答的 `_meta["io.github.cszf1/gui-gate"].active_ms`）；没有就记缺失（`active_s: null`），
+  另给上界 `active_upper_s`（= 等待时间）。汇总里 `active_measured` / `active_missing` 分开，`person_active_s` 只是有证据的部分，
+  `person_active_upper_s` 是上界。**等待时间不再冒充主动时间。**（`human=deny` 评测里的“问人间隔”也不是人的响应时间。）
+- 没有回答（超时、取消、关窗、通道不可用、MRTR 无重试过期、迟到）→ `unanswered[kind|effect] = 任务版本`：同一效果在同一任务版本内
+  不再弹窗（`not_asked_again`）。v0.10.3 起 MRTR 无重试过期也进这里（之前漏了）。
+
+### 5.4 统一请求记录（v0.10.3）
+
+每个问人请求一条 `person_request`（`req`、`kind`、`task_version`、`resets`、`effect`、`ask_key`、`deadline_ms`），以且仅以一条
+`person_request_end` 结束，终态之一：`answered` / `no_answer` / `expired_no_retry` / `late` / `void`（reset 作废后被回答或到期）/
+`disconnected`（门退出）/ `unused`（重试没用上这个回答）。所有路径都调 `req_end`，同一 `req` 第二次收尾被忽略并记
+`person_request_end_duplicate`。同步通道（桌面对话框、老式 elicitation）用 `local-…` 的本地 id，开始和结束在同一次调用里。
+旧的 `human_outcome` / `person_burden` 事件照旧写（兼容），统计以 `person_request_end` 为准。
+
+### 5.5 接管之后（v0.10.3）
+
+接管 / 求助“我已做”完成后：清空许可和审批；`takeover_at = now`，此后用接管前读取的令牌 / 索引 / 坐标的步骤先被退回重读
+（`trail: takeover_stale`）；重读目标窗口、窗口列表（前台窗口）和接管期间改过的文件（`$HOME` 下，≤10 个），放
+`structuredContent.reread`；同一步骤再发进 unknown 账本（来源 `person`）：可幂等先读一次，非幂等要真人核实。门从不重放原动作。
+
+### 5.6 连续失败 → 换策略 → 求助 → 停止（审核第 1 节末的状态机）
+
+不上 RL；用现有纯规则 loopbreak 的级别，作为显式状态放进每个动作结果的 `structuredContent.loop_state`：
+
+| 状态 | 进入条件（loopbreak，阈值不变） | 门做什么 |
+|---|---|---|
+| `normal` | 最近步骤有进展 | 照常 |
+| `switch_strategy` | 级别 1：最近 6 步里 4 步无进展（或 TWO_STRIKES） | 结果里要求换操作方式（键盘 / 菜单 / 元素 / 命令） |
+| `blocked_repeat` | 级别 2：8 步里 6 步无进展，或同一窗口状态出现 3 次 | 拒绝重发无进展的同一步（不执行） |
+| `help_or_stop` | 级别 3：12 步里 9 步无进展 | 有人 → ask_help（人可代做或给提示）；无人 → 停止、报告做不到 |
+
+状态只往上升，有确认的进展时归零。本分支只把状态显式化，不调阈值（避免拟合 361 题），阈值的在线验证留给研究分支。
 
 ## 6. 返回给 agent 的上下文
 
@@ -231,12 +274,15 @@ look_light、wait、check、heal、ask 与假设大致相符。默认代价表�
    `params` 层被读，不在 `arguments` 里（`binding_of` 去掉它们）。
 2. 只有启动者原话（任务文件）能凭文字授权风险效果；`gate_task` 只是上下文。
 3. 风险 / 接管步骤只能以安全动作结束，除非可信来源（启动者任务、审核、人）批准了这一个效果（`safety_decision_ok`）。
-4. 每次派发都过 `Gate::tool` 的最终检查：风险目标需要一次性许可，绑定最终参数签名、效果键和任务版本。
+4. 每次派发都过 `Gate::tool` 的最终检查：风险目标需要一次性许可，绑定最终参数签名、效果键、任务版本和业务前提（派发前重读）。
+   每一次实际发送（含后台→前台回退、焦点 / 遮挡修复、批量内部步骤）都单独过这个检查；只有驱动明确“未送达”才自动重试。
+4a. unknown 账本：结果未知的动作只有成功重读后才解锁；非幂等效果需要真人核实；读失败不清记录（v0.10.3）。
+4b. 审核失败不退回 direct：有人问人，无人拒绝（v0.10.3）。
 5. 拒绝记录只会拒绝；较新任务版本明确点名时才被取代（agent 做不到）。
 6. 问人：超时 / 关闭 / 取消 / 通道不可用 / 进程退出 / 迟到回复 / 重复回复 都不是批准。
 7. 有人在回答时冻结所有动作类调用；门自己的对话框永远不是目标（`own_dialog_check`）。
 8. 门重启后旧 requestState 全部失效（每进程随机 instance + 签名密钥）。
-9. 每个停放的问人请求都以一条 `human_outcome` 结束（含 `req`）：回答 / 迟到 / 无重试 / 作废 / 未使用。
+9. 每个问人请求都以一条 `person_request_end` 结束（唯一终态，见 5.4）；旧的 `human_outcome` 记录照旧。
 10. 审核模型的原话、模型名不进入 agent 上下文；不可信文字不能以门的消息前缀开头。
 11. 门知道的密钥在每个结果和每行日志里脱敏（`redact_value`）。
 12. 无审核配置时风险步骤拒绝（门不能无审核启动，0.9.3 起）。
@@ -247,9 +293,10 @@ look_light、wait、check、heal、ask 与假设大致相符。默认代价表�
   用 xdotool 之类发合成输入。冻结只拦门自己的动作通道，不拦已在后台运行的命令（`run_command mode=start` 或 `cmd &`）。需要 OS 级隔离。
 - `gate_report.log` 仍给出日志路径（运维用）；日志里有审核原话。
 - zenity / kdialog 的“取消”和“关窗”退出码相同，记为 `denied`（会写拒绝记录，偏保守）；kdialog `--yesno` 没有默认“否”的选项。
-- 一个 MRTR 请求无重试过期后若客户端又迟到重试，会再有一条 `human_outcome`（`timeout`，`human_answer.late`）；按 `req` 去重。
+- 一个 MRTR 请求无重试过期后若客户端又迟到重试，会再有一条 `human_outcome`（`timeout`，`human_answer.late`）；`person_request_end` 只有一条（按 `req` 去重）。
+- 主模型（Pi 调用的 agent 模型）的单次请求超时不在门里：门不调用主模型，只能由客户端设置（桌面壳 / Pi 配置）。门里的审核模型和角色
+  每次 HTTP 都有整体超时（审核默认 15 s，角色默认 60 s），角色调用另有总截止时间（`GUI_GATE_ROLE_DEADLINE_S`，默认 120 s）。
 - `EXPIRED_NO_RETRY` 只在下一次工具调用或门退出时被扫到，时间戳是扫描时刻（`waited_s` 给出真实等待）。
-- 无重试过期的请求不进 `unanswered`（停放时没有存问人键），同一效果之后可能再问一次。
 - 拒绝结果里仍有 `p_direct` 和 `tier`；理论上能帮 agent 探测价值模型，但不影响风险路径。
 - `defang` 只按行首判断；行中间的 `[gate]` 不处理，多行标签被驱动合并成一行时也不处理。
 - 冻结期间到达的、带着人回答的重试会被拒（fail closed），人的回答作废（记 `unused: frozen`），agent 重发时会再问一次。

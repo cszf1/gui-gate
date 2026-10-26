@@ -61,7 +61,7 @@ class PassThroughActions(unittest.TestCase):
         try:
             r = c.call("launch_app", app_name="gedit")
             self.assertFalse(r.get("isError"), txt(r))
-            self.assertEqual(r["structuredContent"]["status"], "executed")
+            self.assertEqual(r["structuredContent"]["status"], "done")
             self.assertEqual(state(c)["passed"], [["launch_app", {"app_name": "gedit"}]])
             self.assertTrue(any(e.get("ev") == "pass_action" and e.get("tool") == "launch_app" for e in c.events()))
         finally:
@@ -72,7 +72,7 @@ class PassThroughActions(unittest.TestCase):
         c = Client("--human", "deny")
         try:
             r = c.call("set_clipboard", text="hello")
-            self.assertEqual(r["structuredContent"]["status"], "executed", txt(r))
+            self.assertEqual(r["structuredContent"]["status"], "done", txt(r))
             self.assertTrue(any(e.get("ev") == "pass_action" and e.get("tool") == "set_clipboard" for e in c.events()))
         finally:
             c.close()
