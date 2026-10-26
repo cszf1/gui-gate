@@ -24,7 +24,7 @@
 //! extra_reason, threshold, heuristic, random, learned (default). They replace ONLY this module's choice; the safety
 //! rules, hard rules, auto-observe, heals and every other mechanism of the gate stay the same.
 use crate::decide::{fail_cost, p_direct, sigmoid, Decision, GateConfig};
-use crate::features::{fget, ActionCtx, Feats, ALL_FEATURES, FEATURE_NAMES};
+use crate::features::{fget, ActionCtx, Feats, ALL_FEATURES};
 use crate::util::*;
 use indexmap::IndexMap;
 use serde_json::{json, Value};
@@ -638,7 +638,7 @@ fn treatment_choose(ctx: &ActionCtx, f: &Feats, cfg: &GateConfig, m: &TreatmentM
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::features::Target;
+    use crate::features::{Target, FEATURE_NAMES};
 
     fn ctx(tool: &str, kind: &str, label: &str) -> ActionCtx {
         ActionCtx { tool: tool.into(), args: json!({}), target: Target { kind: kind.into(), label: label.into(), ..Default::default() },

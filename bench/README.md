@@ -54,6 +54,10 @@ from " - LibreOffice" to " — LibreOffice". Nothing else in any task is changed
   Freeze the task list, exclusion reasons and retry rules before a run; tune on a dev split, report on a held-out one.
 - Counterfactual branches (P1): `bench/counterfactual/` (README there): checkpoints, seven treatments, hash-verified
   restore, task-family split, offline dry run through the real gate. Not run on a desktop or with a model yet.
+- Value model v2 offline evaluation: `python3 bench/offline_v2.py RESULTS_DIR -o OUT --bin target/release/gui-gate`
+  (exclusion audit, GUI vs command calibration, failure prediction at fixed budgets, costs from gate + Pi logs; read
+  only on RESULTS_DIR; never claims that an intervention avoided a failure). `python3 bench/online_plan.py
+  TASK_LIST -o plan.json` writes the frozen legacy-vs-v2 online plan and runs nothing. docs/value-model-v2.md.
 - `weights/costs-osworld-verified-v099.json`: option costs measured from the v0.9.9 run (`gui-gate costs`), usable as
   `VP_COSTS` / `GUI_GATE_COSTS`. `weights/value-observational-2026-10-25.json`: an observational treatment model for
   analysis only (not loaded by default).
