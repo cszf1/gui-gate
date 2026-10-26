@@ -850,6 +850,14 @@ def render_md(rep):
     return "\n".join(L)
 
 
+def _rel(path):
+    """Path relative to the working directory for the report; absolute when that is impossible (Windows: another drive)."""
+    try:
+        return os.path.relpath(path)
+    except ValueError:
+        return os.path.abspath(path)
+
+
 def run_all(results_dir, out_dir, reps=200, seed=0, bin_path=None, attempt_policy="first_valid", stages=("audit", "predictors", "costs", "replay", "treatment")):
     os.makedirs(out_dir, exist_ok=True)
     piece = lambda n: os.path.join(out_dir, f"_{n}.json")  # noqa: E731
@@ -858,7 +866,7 @@ def run_all(results_dir, out_dir, reps=200, seed=0, bin_path=None, attempt_polic
     st["executed_gui"] = sum(1 for r in rows if r["executed"] and not r["is_cmd"])
     st["executed_cmd"] = sum(1 for r in rows if r["executed"] and r["is_cmd"])
     st["multi_session_logs_all"] = multi_session_logs(results_dir)
-    rep = {"kind": "offline_v2", "results_dir": os.path.relpath(results_dir), "seed": seed, "reps": reps, "audit": {k: v for k, v in audit.items() if k != "tasks"},
+    rep = {"kind": "offline_v2", "results_dir": _rel(results_dir), "seed": seed, "reps": reps, "audit": {k: v for k, v in audit.items() if k != "tasks"},
            "steps": st, "interventions": interventions(rows), "claims": claims()}
     if "predictors" in stages:
         rep["predictors"] = predictors(rows, reps, seed)
