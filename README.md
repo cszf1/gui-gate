@@ -1,9 +1,9 @@
 # gui-gate
 
-> **v0.10.2 是 gui-gate 作为独立 MCP 的最后一版。** 之后的开发转到
-> [cszf1/gui-pi-desktop](https://github.com/cszf1/gui-pi-desktop)（Pi 桌面版 computer-use agent），门的代码随桌面版演进；
+> **v0.10.3 是 gui-gate 作为独立 MCP 的最后一版**（v0.10.2 之后又按 2026-10-26 外部审核补了安全 / 问人 / 角色与研究数据契约两部分）。
+> 之后的开发转到 [cszf1/gui-pi-desktop](https://github.com/cszf1/gui-pi-desktop)（Pi 桌面版 computer-use agent），门的代码随桌面版演进；
 > 本仓库保留，不再计划发布独立版本。
-> **v0.10.2 is the last release of gui-gate as a standalone MCP server; development continues in cszf1/gui-pi-desktop.**
+> **v0.10.3 is the final release of gui-gate as a standalone MCP server; development continues in cszf1/gui-pi-desktop.**
 >
 > OSWorld 免责声明：本仓库里的 OSWorld / OSWorld-Verified 数字都来自**基于 OSWorld 任务与评测器的自定义环境**
 > （原生 Debian/XFCE、无 VM、Chromium、应用版本与预算不同、--human deny），不是 OSWorld 官方成绩，不能与排行榜比较

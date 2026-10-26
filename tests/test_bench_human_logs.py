@@ -126,5 +126,87 @@ class FromLogsTests(unittest.TestCase):
         self.assertEqual(res["paired"]["unit"], "participant")  # different tasks per person: participant means
 
 
+def hq2(task, ty, outcome, wait_s, active_s=None, evidence="none", repeated=False, steps=0, refused=False):
+    # the gui-pi-human/2 line desktop 0.3.2 writes (desktop/core/src/human.rs): secs kept = wait_s for old readers
+    return {"ev": "human_q", "schema": "gui-pi-human/2", "task": task, "type": ty, "outcome": outcome, "refused": refused,
+            "wait_s": wait_s, "secs": wait_s, "active_s": active_s, "evidence": evidence, "repeated": repeated,
+            "takeover_steps": steps}
+
+
+class HumanV2Tests(unittest.TestCase):
+    """gui-pi-human/2: wait_s (popup open) is never operating time; active_s only with input evidence, null = missing."""
+
+    def setUp(self):
+        self.d = tempfile.mkdtemp()
+        self.human = os.path.join(self.d, "human.jsonl")
+        w(self.human, [
+            hq("old-1", "approve", "allowed", 6.0),  # a /1 line in the same file still reads
+            hs("old-1", asks=1, person_active_s=6.0, person_wait_s=50.0, agent_blocked_s=6.0, task_s=90.0),
+            hq2("t-1", "approve", "allowed", 9.0, active_s=1.2, evidence="input"),
+            hq2("t-1", "clarify", "answered", 5.0, evidence="answer_only"),
+            hq2("t-1", "takeover", "done by the person", 40.0, evidence="outside_popup", steps=2),
+            {"ev": "human_summary", "schema": "gui-pi-human/2", "task": "t-1", "end": "done", "asks": 3,
+             "by_type": {"approve": 1, "clarify": 1, "takeover": 1, "help": 0}, "repeated": 0, "repeated_ratio": 0.0,
+             "person_active_s": 1.2, "person_active_missing": 2, "person_active_upper_s": 45.0, "question_wait_s": 54.0,
+             "no_question_s": 146.0, "agent_blocked_s": 54.0, "takeover_steps": 2, "cancelled": 0, "timed_out": 0,
+             "declined": 0, "unavailable": 0, "task_s": 200.0},
+            hq2("t-2", "approve", "allowed", 7.0, active_s=2.0, evidence="input"),  # crashed: no summary
+            hq2("t-2", "help", "timed out", 120.0, refused=True),
+        ])
+        self.meta = [
+            {"log_task": "old-1", "participant": "p01", "task": "a", "condition": "value_ask", "order": 0, "success": True},
+            {"log_task": "t-1", "participant": "p01", "task": "b", "condition": "value_ask", "order": 1, "success": True},
+            {"log_task": "t-2", "participant": "p02", "task": "b", "condition": "threshold_ask", "order": 0, "success": False},
+        ]
+
+    def sessions(self):
+        return {s["log_task"]: s for s in human_pilot.from_logs(self.meta, [self.human])}
+
+    def test_v2_summary_keeps_wait_and_evidenced_active_apart(self):
+        s = self.sessions()["t-1"]
+        self.assertEqual(s["source"], "gui-pi-human/2")
+        self.assertEqual(s["active_s"], 1.2)  # never the 54 s the popups were open
+        self.assertEqual((s["active_missing"], s["active_upper_s"], s["question_wait_s"]), (2, 45.0, 54.0))
+        self.assertEqual(s["waiting_s"], 146.0)  # no_question_s (/1 called it person_wait_s)
+        self.assertEqual([a["wait_s"] for a in s["asks"]], [9.0, 5.0, 40.0])
+        self.assertEqual([a["active_s"] for a in s["asks"]], [1.2, None, None])
+        self.assertEqual([a["secs"] for a in s["asks"]], [9.0, 5.0, 40.0])  # secs = wait_s
+        self.assertEqual([a["outcome"] for a in s["asks"]], ["approved", "answered", "taken_over"])
+        self.assertNotIn("warning", s)
+
+    def test_v1_lines_still_read_with_secs_as_wait(self):
+        s = self.sessions()["old-1"]
+        self.assertEqual(s["source"], "gui-pi-human/1")
+        self.assertEqual((s["active_s"], s["waiting_s"]), (6.0, 50.0))
+        self.assertEqual(s["asks"][0]["wait_s"], 6.0)
+        self.assertIsNone(s["asks"][0]["active_s"])
+        self.assertNotIn("active_missing", s)
+
+    def test_v2_crashed_task_uses_only_evidenced_active_time(self):
+        s = self.sessions()["t-2"]
+        self.assertIsNone(s["waiting_s"])
+        self.assertEqual((s["active_s"], s["active_missing"], s["active_upper_s"], s["question_wait_s"]), (2.0, 1, 120.0, 127.0))
+        self.assertTrue(s["timed_out"])
+
+    def test_gate_0103_totals_bound_only_the_missing_questions(self):
+        g = os.path.join(self.d, "gate.jsonl")
+        w(g, [{"ev": "person_burden", "kind": "approve", "outcome": "accepted", "label": "answered", "repeat": False,
+               "wait_s": 8.0, "active_s": None, "totals": {"asks": 1, "person_active_s": 0.0, "active_measured": 0,
+                                                            "active_missing": 1, "person_active_upper_s": 8.0, "person_wait_s": 8.0}}])
+        meta = [{"log_task": "g-1", "participant": "p03", "task": "c", "condition": "value_ask", "order": 0, "success": True}]
+        s = human_pilot.from_logs(meta, [], {"g-1": g})[0]
+        self.assertEqual(s["source"], "gate person_burden")
+        self.assertIsNone(s["asks"][0]["active_s"])
+        self.assertEqual((s["active_s"], s["active_missing"], s["active_upper_s"]), (0.0, 1, 8.0))
+
+    def test_analysis_reports_missing_active_time(self):
+        p = os.path.join(self.d, "s.jsonl")
+        w(p, human_pilot.from_logs(self.meta, [self.human]))
+        res = human_pilot.main([p, "--md", os.path.join(self.d, "h.md")])
+        v = res["conditions"]["value_ask"]
+        self.assertEqual(v["active_missing"], 2)
+        self.assertEqual(v["active_s"], (6.0 + 1.2) / 2)
+
+
 if __name__ == "__main__":
     unittest.main()
