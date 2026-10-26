@@ -24,14 +24,15 @@
 //! * Held-out evaluation keeps runs AND task families apart (default --split run+family): a test row's run and task
 //!   family are both absent from training; rows that cross are discarded and counted.
 use crate::decide::sigmoid;
-use crate::features::FEATURE_NAMES;
+use crate::features::ALL_FEATURES as FEATURE_NAMES;
 use crate::util::*;
 use crate::value::{Coefs, TreatmentModel, VALUE_OPTIONS};
 use indexmap::IndexMap;
 use serde_json::{json, Value};
 use std::collections::{HashMap, HashSet};
 
-const NF: usize = 31;
+/// row layout: features::ALL_FEATURES (the 31 v1 features, then the v2 features; v1 rows keep the v2 slots at 0)
+const NF: usize = 42;
 
 fn fidx(k: &str) -> Option<usize> {
     FEATURE_NAMES.iter().position(|x| *x == k)
@@ -60,6 +61,10 @@ pub struct LoadStats {
     pub risky_excluded: usize,
     pub env_labels: usize,
     pub files_without_task_label: usize,
+    /// run_command rows left out of the GUI rows (--commands exclude, the default)
+    pub commands_excluded: usize,
+    /// actions of a second or later session in one log file (an aborted re-run appended to it; --all-sessions keeps them)
+    pub later_sessions_excluded: usize,
     pub by_option: IndexMap<String, usize>,
     pub by_tier: IndexMap<String, usize>,
 }
@@ -70,6 +75,7 @@ impl LoadStats {
                "interventions_unlabelled_dropped": self.interventions_unlabelled, "safety_outcomes_excluded": self.safety_excluded,
                "risky_steps_excluded": self.risky_excluded, "environment_labels": self.env_labels,
                "files_without_task_label": self.files_without_task_label,
+               "commands_excluded": self.commands_excluded, "later_sessions_excluded": self.later_sessions_excluded,
                "by_option": Value::Object(self.by_option.iter().map(|(k, n)| (k.clone(), json!(n))).collect()),
                "by_tier": Value::Object(self.by_tier.iter().map(|(k, n)| (k.clone(), json!(n))).collect())})
     }
@@ -124,6 +130,9 @@ pub fn option_taken(e: &Value) -> Option<String> {
     }
 }
 
+/// The logged decision-time features. A collect-mode shadow probe (`shadow_check`) is NOT copied in: the live gate
+/// decided without it, so as a feature it would be information from outside the decision (it stays the probe
+/// model's label, TRow::check).
 fn feats_vec(e: &Value) -> Vec<f64> {
     let mut v = vec![0.0; NF];
     let fo = e.get("features");
@@ -131,14 +140,24 @@ fn feats_vec(e: &Value) -> Vec<f64> {
         v[i] = as_f64(fo.and_then(|f| f.get(*k))).unwrap_or(0.0);
     }
     v[0] = 1.0;
-    if let Some(sc) = e.get("shadow_check").and_then(|x| x.as_bool()) {
-        let (p, f) = (fidx("check_pass").unwrap(), fidx("check_fail").unwrap());
-        if v[p] == 0.0 && v[f] == 0.0 {
-            v[p] = if sc { 1.0 } else { 0.0 };
-            v[f] = if sc { 0.0 } else { 1.0 };
-        }
-    }
     v
+}
+
+/// What load_rows keeps.
+#[derive(Clone, Debug)]
+pub struct LoadOpts {
+    /// run_command rows: exclude (default: commands are not GUI steps) | include (0.10.1 behaviour) | only
+    pub commands: String,
+    /// keep every session of a log file (default false: only the first; a later one is an aborted re-run)
+    pub all_sessions: bool,
+    /// v1 (as logged) | v2 (GUI-only history and last_* recomputed without commands, plus features::V2_FEATURES)
+    pub features: String,
+}
+
+impl Default for LoadOpts {
+    fn default() -> Self {
+        LoadOpts { commands: "exclude".into(), all_sessions: false, features: "v1".into() }
+    }
 }
 
 pub fn read_task_labels(paths: &[String]) -> HashMap<String, bool> {
@@ -160,6 +179,11 @@ pub fn read_task_labels(paths: &[String]) -> HashMap<String, bool> {
 
 /// label = "step" (the step's own outcome) or "task" (the run's task success from runs_scored.jsonl)
 pub fn load_rows(paths: &[String], label: &str, task_labels: &HashMap<String, bool>, families: &HashMap<String, String>) -> (Vec<TRow>, LoadStats) {
+    load_rows_opts(paths, label, task_labels, families, &LoadOpts::default())
+}
+
+pub fn load_rows_opts(paths: &[String], label: &str, task_labels: &HashMap<String, bool>, families: &HashMap<String, String>, opts: &LoadOpts) -> (Vec<TRow>, LoadStats) {
+    let v2 = opts.features == "v2";
     let mut rows: Vec<TRow> = vec![];
     let mut st = LoadStats::default();
     for file in crate::tools::files_of(paths) {
@@ -177,13 +201,39 @@ pub fn load_rows(paths: &[String], label: &str, task_labels: &HashMap<String, bo
         let retro: HashSet<i64> = evs.iter().filter(|e| s(e, "ev") == "retro_repeat").filter_map(|e| as_i64(e.get("aid"))).collect();
         let mut prev: Vec<(String, bool, bool)> = vec![];
         let mut last: Option<(String, f64, bool)> = None;
+        let mut last_gui: Option<(bool, bool, bool)> = None; // (is_error, unverifiable, popup) of the last GUI action
         let mut pending: Vec<(usize, f64)> = vec![];
+        let first_sess = evs.iter().map(|e| s(e, "session")).find(|x| !x.is_empty()).unwrap_or("").to_string();
         for e0 in evs.iter().filter(|e| s(e, "ev") == "action") {
             let mut e = e0.clone();
             let sess = s(&e, "session").to_string();
+            if !opts.all_sessions && sess != first_sess {
+                st.later_sessions_excluded += 1;
+                continue;
+            }
+            let is_cmd = crate::features::is_command_tool(s(&e, "tool"));
+            if (is_cmd && opts.commands == "exclude") || (!is_cmd && opts.commands == "only") {
+                if is_cmd { st.commands_excluded += 1; }
+                continue; // not a row, not a label for a pending hand-back, not GUI history
+            }
             let ts = e["ts"].as_f64().unwrap_or(0.0);
             let sig = s(&e, "sig").to_string();
-            if e.get("features").and_then(|f| f.get("sess_fail")).is_none() {
+            if v2 {
+                // the v2 gate computes these over GUI actions only (features::features with GateState::gui_history)
+                let role = e.get("target").map(|t| s(t, "role").to_string()).unwrap_or_default();
+                let kind = e.get("target").map(|t| s(t, "kind").to_string()).unwrap_or_default();
+                let tool = s(&e, "tool").to_string();
+                if let Some(fm) = e.get_mut("features").and_then(|f| f.as_object_mut()) {
+                    for (k, v) in crate::features::history_feats(&prev, &sig).into_iter().chain(crate::features::v2_feats(&tool, &kind, &role)) {
+                        fm.insert(k.to_string(), json!(v));
+                    }
+                    let (le, lu, lp) = last_gui.unwrap_or((false, false, false));
+                    let b = |x: bool| if x { 1.0 } else { 0.0 };
+                    fm.insert("last_err".into(), json!(b(le)));
+                    fm.insert("last_unverif".into(), json!(b(lu)));
+                    fm.insert("last_popup".into(), json!(b(lp)));
+                }
+            } else if e.get("features").and_then(|f| f.get("sess_fail")).is_none() {
                 let role = e.get("target").map(|t| s(t, "role").to_string()).unwrap_or_default();
                 if let Some(fm) = e.get_mut("features").and_then(|f| f.as_object_mut()) {
                     for (k, v) in crate::features::history_feats(&prev, &sig).into_iter().chain(crate::features::role_feats(&role)) {
@@ -224,6 +274,7 @@ pub fn load_rows(paths: &[String], label: &str, task_labels: &HashMap<String, bo
                 }
                 let none = s(&e, "effect") == "none";
                 prev.push((sig.clone(), err || truthy(e.get("stale_error")) || none, none));
+                last_gui = Some((err, s(&e, "effect") == "unverifiable", truthy(e.get("popup"))));
                 last = Some((sig, ts, err));
             } else {
                 match (opt, risky) {
@@ -625,6 +676,9 @@ pub const HYGIENE_NOTES: &[&str] = &[
     "safety outcomes and risky steps are excluded",
     "step labels = no driver error / stale error / immediate repeat; 'no error' is not 'helped the task' (use --label task for run success)",
     "regularisation centre: zero (treatment) / hand-set v1 (direct), not the built-in weights fitted on these logs",
+    "commands (run_command) are not GUI rows by default; only the first session of a log file is used (a later one is an aborted re-run)",
+    "a collect-mode shadow probe is not a feature (the live decision never saw it); propensities never see probe results (post-decision)",
+    "without >= MIN_BOOT bootstrap replicates the model's intervals are unknown and the gate does not use it",
 ];
 
 // ---------------------------------------------------------------- train --model treatment
@@ -637,6 +691,8 @@ pub fn train_treatment_main(argv: &[String]) -> i32 {
         (String::new(), 0.3, 0u64, "run+family".to_string(), "step".to_string(), "zero".to_string());
     let (mut boot, mut level, mut min_rows, mut report, mut md, mut fit_all, mut fams) = (30usize, 0.9, 30usize, false, None::<String>, false, None::<String>);
     let mut ipw: Option<f64> = None;
+    let mut min_support = 0.2;
+    let mut lopts = LoadOpts::default();
     let mut fc = FitCfg::default();
     let mut in_test = false;
     let mut i = 0;
@@ -664,8 +720,12 @@ pub fn train_treatment_main(argv: &[String]) -> i32 {
             "--ipw" => ipw = Some(ipw.unwrap_or(0.05)),
             "--ipw-clip" => ipw = Some(next(&mut i).parse().unwrap_or(0.05)),
             "--fit-all" => fit_all = true,
+            "--commands" => lopts.commands = next(&mut i),
+            "--all-sessions" => lopts.all_sessions = true,
+            "--features" => lopts.features = next(&mut i),
+            "--min-support" => min_support = next(&mut i).parse().unwrap_or(min_support),
             "--test" => in_test = true,
-            "-h" | "--help" => { println!("usage: gui-gate train --model treatment LOGS... -o value.json [--split run+family|run|family|task|session] [--holdout 0.3] [--seed 0] [--l2 0.01] [--l2-main 0.01] [--l2-int 0.05] [--boot 30] [--level 0.9] [--min-rows 30] [--label step|task --task-labels runs_scored.jsonl] [--families map.json] [--prior zero|v1|builtin] [--ipw] [--ipw-clip 0.05] [--report] [--md FILE] [--fit-all] [--test LOGS...]\n  --ipw: weight rows by 1/max(p(option|x), clip) from a propensity model of the logged policy (ESS reported)\n  --report: also compare interaction vs separate-per-option vs boosted-stumps models on the held-out split"); return 0; }
+            "-h" | "--help" => { println!("usage: gui-gate train --model treatment LOGS... -o value.json [--split run+family|run|family|task|session] [--holdout 0.3] [--seed 0] [--l2 0.01] [--l2-main 0.01] [--l2-int 0.05] [--boot 30] [--level 0.9] [--min-rows 30] [--label step|task --task-labels runs_scored.jsonl] [--families map.json] [--prior zero|v1|builtin] [--ipw] [--ipw-clip 0.05] [--min-support 0.2] [--commands exclude|include|only] [--all-sessions] [--features v1|v2] [--report] [--md FILE] [--fit-all] [--test LOGS...]\n  --commands: run_command rows are not GUI rows (default exclude)\n  --all-sessions: keep later sessions of a log file (default: first session only)\n  --features v2: GUI-only history + v2 features (model kind treatment_v2, for GUI_GATE_VALUE_MODEL=v2)\n  --ipw: weight rows by 1/max(p(option|x), clip) from a propensity model of the logged policy (ESS reported)\n  --report: also compare interaction vs separate-per-option vs boosted-stumps models on the held-out split"); return 0; }
             p if in_test => test_paths.push(p.to_string()),
             p => paths.push(p.to_string()),
         }
@@ -673,7 +733,7 @@ pub fn train_treatment_main(argv: &[String]) -> i32 {
     }
     let families = read_families(fams.as_deref());
     let tl = read_task_labels(&task_label_files);
-    let (rows, stats) = load_rows(&paths, &label, &tl, &families);
+    let (rows, stats) = load_rows_opts(&paths, &label, &tl, &families, &lopts);
     if rows.len() < 20 {
         println!("{}", json!({"error": "need at least 20 labelled rows", "rows": rows.len(), "load": stats.json()}));
         return 1;
@@ -685,7 +745,7 @@ pub fn train_treatment_main(argv: &[String]) -> i32 {
         let test: Vec<TRow> = sp.test.iter().map(|i| rows[*i].clone()).collect();
         (sp.train, test, sp.desc)
     } else {
-        let (ext, _) = load_rows(&test_paths, &label, &tl, &families);
+        let (ext, _) = load_rows_opts(&test_paths, &label, &tl, &families, &lopts);
         ((0..rows.len()).collect(), ext, json!({"mode": "external", "test_paths": test_paths}))
     };
     let train: Vec<&TRow> = train_idx.iter().map(|i| &rows[*i]).collect();
@@ -708,8 +768,11 @@ pub fn train_treatment_main(argv: &[String]) -> i32 {
         let sw: Option<Vec<f64>> = wts.as_ref().map(|w| idx.iter().map(|i| w[*i]).collect());
         reps.push(fit_treatment_w(&sample, sw.as_deref(), &bfc, &prior, Some(&coef), &allowed));
     }
+    // under IPW an option is covered only by its effective sample size and only where the logged policy overlaps
+    let n_cov = if ipw.is_some() { ipw_effective_counts(&ipw_info, &n_by, min_rows, min_support) } else { n_by.clone() };
     let mut model = TreatmentModel { name: crate::sidefx::basename(&out).trim_end_matches(".json").to_string(), coef, boot: reps,
-        n_by_option: n_by, probe: fit_probe(&train, &fc), level, min_rows };
+        kind: if lopts.features == "v2" { "treatment_v2".into() } else { "treatment_v1".into() },
+        n_by_option: n_cov.clone(), probe: fit_probe(&train, &fc), level, min_rows };
     if model.name.is_empty() { model.name = "treatment".into(); }
     // evaluation on held-out rows: q of the option actually taken
     let test: Vec<&TRow> = test_rows_ext.iter().collect();
@@ -731,7 +794,12 @@ pub fn train_treatment_main(argv: &[String]) -> i32 {
         "load": stats.json(), "train_rows": train.len(), "test_rows": test.len(),
         "treatment_on_test": metrics_ci(&ps, &ys, &gs, creps, seed), "treatment_on_test_by_option": per_opt,
         "incremental_calibration": "not estimable from logs (no paired branches per state); run bench/counterfactual and its analyze.py",
-        "ipw": ipw_info, "hygiene": HYGIENE_NOTES});
+        "ipw": ipw_info, "coverage": {"rows_by_option": Value::Object(n_by.iter().map(|(k, n)| (k.clone(), json!(n))).collect()),
+            "counted_by_option": Value::Object(n_cov.iter().map(|(k, n)| (k.clone(), json!(n))).collect()), "min_rows": min_rows, "min_support": min_support,
+            "rule": if ipw.is_some() { "IPW: min(n, ESS), 0 when support < min_support" } else { "rows (no IPW)" }},
+        "load_opts": {"commands": lopts.commands, "all_sessions": lopts.all_sessions, "features": lopts.features},
+        "intervals": {"bootstrap_replicates": boot, "min_boot": crate::value::MIN_BOOT, "usable": boot >= crate::value::MIN_BOOT},
+        "hygiene": HYGIENE_NOTES});
     let mut eval = eval;
     if report {
         eval["variants"] = compare_variants(&train, &test, &fc, &prior, &allowed, ipw, creps, seed);
@@ -739,7 +807,9 @@ pub fn train_treatment_main(argv: &[String]) -> i32 {
     if fit_all && test_paths.is_empty() {
         let all: Vec<&TRow> = rows.iter().collect();
         model.coef = fit_treatment(&all, &fc, &prior, Some(&model.coef), &allowed);
-        model.n_by_option = VALUE_OPTIONS.iter().map(|o| (o.to_string(), all.iter().filter(|r| r.option == *o).count())).collect();
+        if ipw.is_none() {
+            model.n_by_option = VALUE_OPTIONS.iter().map(|o| (o.to_string(), all.iter().filter(|r| r.option == *o).count())).collect();
+        }
     }
     if let Some(p) = md {
         let mut s = format!("# value model report ({})\n\nsplit: {}\n\nprior centre: {prior_name} (leak risk: {leak})\n\nload: {}\n\n", model.name, eval["split"], eval["load"]);
@@ -781,6 +851,14 @@ pub struct Propensity {
     pub w: Vec<Vec<f64>>, // per option, NF weights (the first option is the reference with all zeros)
 }
 
+/// Features that exist only AFTER an option ran (the probe result of `check`): never a propensity input, or
+/// "check was taken" becomes perfectly predictable and the overlap diagnostics lie.
+pub const POST_DECISION_FEATURES: &[&str] = &["check_pass", "check_fail"];
+
+fn post_decision_mask() -> Vec<bool> {
+    FEATURE_NAMES.iter().map(|k| POST_DECISION_FEATURES.contains(k)).collect()
+}
+
 impl Propensity {
     pub fn fit(rows: &[&TRow], fc: &FitCfg) -> Propensity {
         let mut opts: Vec<String> = rows.iter().map(|r| r.option.clone()).collect::<HashSet<_>>().into_iter().collect();
@@ -789,6 +867,7 @@ impl Propensity {
         let mut w = vec![vec![0.0; NF]; k];
         let n = rows.len().max(1) as f64;
         let iters = (fc.iters / 2).max(300);
+        let post = post_decision_mask();
         for _ in 0..iters {
             let mut g = vec![vec![0.0; NF]; k];
             for r in rows {
@@ -797,7 +876,7 @@ impl Propensity {
                 for c in 1..k {
                     let d = p[c] - if c == yi { 1.0 } else { 0.0 };
                     for (j, x) in r.f.iter().enumerate() {
-                        if *x != 0.0 {
+                        if *x != 0.0 && !post[j] {
                             g[c][j] += d * x;
                         }
                     }
@@ -805,6 +884,9 @@ impl Propensity {
             }
             for c in 1..k {
                 for j in 0..NF {
+                    if post[j] {
+                        continue; // stays 0: not a decision-time input
+                    }
                     let reg = if j == 0 { 0.0 } else { fc.l2 * w[c][j] };
                     w[c][j] -= fc.lr * (g[c][j] / n + reg);
                 }
@@ -822,8 +904,13 @@ impl Propensity {
     }
 
     pub fn p(&self, r: &TRow) -> f64 {
+        self.p_of(r, &r.option)
+    }
+
+    /// P(option o | the row's state), whatever option the row took (0 for an option never seen in training)
+    pub fn p_of(&self, r: &TRow, o: &str) -> f64 {
         let ps = Self::probs(&self.w, &r.f);
-        self.opts.iter().position(|o| *o == r.option).map(|i| ps[i]).unwrap_or(0.0)
+        self.opts.iter().position(|x| x == o).map(|i| ps[i]).unwrap_or(0.0)
     }
 }
 
@@ -841,11 +928,34 @@ pub fn ipw_weights(rows: &[&TRow], prop: &Propensity, clip: f64) -> (Vec<f64>, V
     for o in &prop.opts {
         let ix: Vec<usize> = (0..rows.len()).filter(|i| rows[*i].option == *o).collect();
         let pm = ix.iter().map(|i| ps[*i]).sum::<f64>() / ix.len().max(1) as f64;
-        per.insert(o.clone(), json!({"n": ix.len(), "ess": round_to(ess(&ix), 1), "mean_propensity": round_to(pm, 3)}));
+        // overlap: on what share of ALL logged states could the logged policy have taken o (p̂(o|x) >= clip)?
+        let support = rows.iter().filter(|r| prop.p_of(r, o) >= clip).count() as f64 / rows.len().max(1) as f64;
+        let clipped_o = ix.iter().filter(|i| ps[**i] < clip).count();
+        per.insert(o.clone(), json!({"n": ix.len(), "ess": round_to(ess(&ix), 1), "mean_propensity": round_to(pm, 3),
+                                     "support": round_to(support, 3), "clipped_rows": clipped_o}));
     }
     (w.clone(), json!({"clip": clip, "clipped_rows": clipped, "n": rows.len(), "ess": round_to(ess(&all), 1),
                        "max_weight": round_to(w.iter().cloned().fold(0.0, f64::max), 2), "by_option": per,
-                       "note": "propensities estimated from the logged policy (softmax logistic on the same features); a near-deterministic policy gives tiny overlap and a small ESS"}))
+                       "post_decision_features_excluded": POST_DECISION_FEATURES,
+                       "note": "propensities estimated from the logged policy (softmax logistic on the decision-time features, probe results excluded); a near-deterministic policy gives tiny overlap and a small ESS; support = share of all states with p(o|x) >= clip"}))
+}
+
+/// Coverage under IPW: an option counts min(n, ⌊ESS⌋) rows, and 0 (uncovered: never chosen) when its support - the
+/// share of logged states where the logged policy could have taken it - is below `min_support`. `direct` is the
+/// reference and keeps its n. Clipping weights does not create overlap; this keeps the model from acting where it
+/// has none.
+pub fn ipw_effective_counts(info: &Value, n_by: &IndexMap<String, usize>, min_rows: usize, min_support: f64) -> IndexMap<String, usize> {
+    let _ = min_rows; // TreatmentModel::covered applies min_rows to the counts returned here
+    n_by.iter().map(|(o, n)| {
+        if o == "direct" || *n == 0 {
+            return (o.clone(), *n);
+        }
+        let b = &info["by_option"][o.as_str()];
+        let sup = b["support"].as_f64().unwrap_or(0.0);
+        let ess = b["ess"].as_f64().unwrap_or(0.0);
+        let eff = if sup < min_support { 0 } else { (*n).min(ess.floor().max(0.0) as usize) };
+        (o.clone(), eff)
+    }).collect()
 }
 
 /// Variant: one separate logistic model per option (no shared base), each L2 toward zero.
@@ -1173,6 +1283,113 @@ mod tests {
         assert!(q("direct", 0.0) > q("direct", 1.0) + 0.2);
         let sep = SeparateModels::fit(&all, None, &fc);
         assert!(sep.q(&row("look_full", &[("label_dup", 1.0)], 0.0, "x")) > 0.75);
+    }
+
+    #[test]
+    fn a_shadow_probe_is_not_a_decision_time_feature() {
+        // collect mode probes every step for labelling; the live decision never sees that result, so training must not
+        let e = json!({"ev": "action", "features": {"bias": 1.0, "is_token": 1.0}, "shadow_check": true});
+        let v = feats_vec(&e);
+        assert_eq!(v[fidx("check_pass").unwrap()], 0.0);
+        assert_eq!(v[fidx("check_fail").unwrap()], 0.0);
+        // a probe the gate really ran before deciding stays a feature
+        let e2 = json!({"ev": "action", "features": {"bias": 1.0, "check_pass": 1.0}});
+        assert_eq!(feats_vec(&e2)[fidx("check_pass").unwrap()], 1.0);
+    }
+
+    #[test]
+    fn propensity_does_not_see_the_result_of_the_option_it_explains() {
+        // check_pass / check_fail exist only AFTER the check option ran: as propensity inputs they predict
+        // "check was taken" perfectly and hide the real overlap
+        let mut rows = vec![];
+        for i in 0..400 {
+            let chk = i % 4 == 0;
+            let r = if chk { row("check", &[("check_pass", 1.0)], 1.0, &format!("s{}", i % 40)) } else { row("direct", &[], 1.0, &format!("s{}", i % 40)) };
+            rows.push(r);
+        }
+        let all: Vec<&TRow> = rows.iter().collect();
+        let prop = Propensity::fit(&all, &FitCfg { iters: 600, ..FitCfg::default() });
+        let pc = prop.p(&rows[0]);
+        assert!((pc - 0.25).abs() < 0.05, "P(check|x) must be the base rate when x carries no pre-decision signal: {pc}");
+    }
+
+    #[test]
+    fn ipw_coverage_follows_effective_sample_size_and_overlap() {
+        // the logged policy takes look_full only on duplicate labels (deterministic): no overlap off that region
+        let mut rows = vec![];
+        for i in 0..600 {
+            let dup = i % 2 == 0;
+            let full = dup && i % 6 == 0;
+            rows.push(row(if full { "look_full" } else { "direct" }, &[("label_dup", if dup { 1.0 } else { 0.0 })], 1.0, &format!("s{}", i % 50)));
+        }
+        let all: Vec<&TRow> = rows.iter().collect();
+        let prop = Propensity::fit(&all, &FitCfg { iters: 600, ..FitCfg::default() });
+        let (_, info) = ipw_weights(&all, &prop, 0.05);
+        let sup = info["by_option"]["look_full"]["support"].as_f64().unwrap();
+        assert!(sup < 0.6, "look_full has support only where labels are duplicated: {info}");
+        let n_by: IndexMap<String, usize> = [("direct".to_string(), 500usize), ("look_full".to_string(), 100)].into_iter().collect();
+        let eff = ipw_effective_counts(&info, &n_by, 30, 0.8);
+        assert_eq!(eff["direct"], 500);
+        assert_eq!(eff["look_full"], 0, "an option without overlap over most states is uncovered: {info}");
+        let eff2 = ipw_effective_counts(&info, &n_by, 30, 0.2);
+        assert!(eff2["look_full"] > 0 && eff2["look_full"] <= 100);
+    }
+
+    fn cmd_log(dir: &std::path::Path) -> String {
+        let f = json!({"bias": 1.0, "is_token": 1.0});
+        let fc = json!({"bias": 1.0, "no_obs": 1.0});
+        let mut evs = vec![json!({"ev": "client", "ts": 0.5, "session": "a"})];
+        for i in 0..4 {
+            evs.push(json!({"ev": "action", "ts": 1.0 + i as f64, "session": "a", "aid": i + 1, "tool": "run_command", "executed": true, "decision": "direct",
+                            "trail": ["look_light"], "tier": "rule", "features": fc, "sig": format!("run_command||grep {i} f"), "is_error": true,
+                            "target": {"kind": "command", "role": "command", "label": "grep"}}));
+        }
+        evs.push(json!({"ev": "action", "ts": 9.0, "session": "a", "aid": 9, "tool": "scroll", "executed": true, "decision": "direct", "trail": ["direct"],
+                        "tier": "model", "features": {"bias": 1.0, "is_pixel": 1.0, "sess_fail": 0.0, "consec_fail": 3.0}, "sig": "scroll|1|700|500",
+                        "target": {"kind": "pixel", "role": "", "label": ""}}));
+        evs.push(json!({"ev": "action", "ts": 10.0, "session": "a", "aid": 10, "tool": "click", "executed": true, "decision": "direct", "trail": ["direct"],
+                        "tier": "model", "features": f, "sig": "click|1|button|OK", "target": {"kind": "token", "role": "push button", "label": "OK"}}));
+        // a second session in the same file (an aborted re-run appended to it)
+        evs.push(json!({"ev": "client", "ts": 500.0, "session": "b"}));
+        evs.push(json!({"ev": "action", "ts": 501.0, "session": "b", "aid": 1, "tool": "click", "executed": true, "decision": "direct", "trail": ["direct"],
+                        "tier": "model", "features": f, "sig": "click|1|button|OK", "is_error": true, "target": {"kind": "token", "role": "push button", "label": "OK"}}));
+        write_log(dir, "chrome-9-gate8-s0.jsonl", &evs)
+    }
+
+    #[test]
+    fn commands_and_later_sessions_are_not_gui_training_rows() {
+        let d = std::env::temp_dir().join(format!("gg-vc-{}", rand_hex(4)));
+        std::fs::create_dir_all(d.join("runA/gate")).unwrap();
+        let p = cmd_log(&d.join("runA/gate"));
+        let (rows, st) = load_rows_opts(&[p.clone()], "step", &HashMap::new(), &HashMap::new(), &LoadOpts::default());
+        assert_eq!(rows.len(), 2, "4 commands and the second session are out: {rows:?}");
+        assert_eq!(st.commands_excluded, 4);
+        assert_eq!(st.later_sessions_excluded, 1);
+        assert!(rows.iter().all(|r| r.session == "a"));
+        // v1 features: as logged (the command failures leaked into consec_fail of the scroll)
+        assert_eq!(rows[0].f[fidx("consec_fail").unwrap()], 3.0);
+        // the old behaviour stays reachable
+        let (all, _) = load_rows_opts(&[p.clone()], "step", &HashMap::new(), &HashMap::new(),
+                                      &LoadOpts { commands: "include".into(), all_sessions: true, ..LoadOpts::default() });
+        assert_eq!(all.len(), 7);
+        let (only, _) = load_rows_opts(&[p.clone()], "step", &HashMap::new(), &HashMap::new(), &LoadOpts { commands: "only".into(), ..LoadOpts::default() });
+        assert_eq!(only.len(), 4);
+        let _ = std::fs::remove_dir_all(&d);
+    }
+
+    #[test]
+    fn v2_features_recompute_gui_history_without_commands() {
+        let d = std::env::temp_dir().join(format!("gg-v2f-{}", rand_hex(4)));
+        std::fs::create_dir_all(d.join("runA/gate")).unwrap();
+        let p = cmd_log(&d.join("runA/gate"));
+        let (rows, _) = load_rows_opts(&[p], "step", &HashMap::new(), &HashMap::new(), &LoadOpts { features: "v2".into(), ..LoadOpts::default() });
+        let (scroll, click) = (&rows[0], &rows[1]);
+        assert_eq!(scroll.f[fidx("consec_fail").unwrap()], 0.0, "command exit codes are not GUI failures");
+        assert_eq!(scroll.f[fidx("tool_scroll").unwrap()], 1.0);
+        assert_eq!(click.f[fidx("tool_click").unwrap()], 1.0);
+        assert_eq!(click.f[fidx("role_button").unwrap()], 1.0);
+        assert_eq!(click.f[fidx("tool_scroll").unwrap()], 0.0);
+        let _ = std::fs::remove_dir_all(&d);
     }
 
     #[test]
