@@ -73,6 +73,11 @@ def call(name, a):
     if state.get("garbage_on") == name:
         state.pop("garbage_on")
         return "not-an-mcp-result"
+    # like cua-driver's screenshot_out_file: a read that ALSO writes the capture to a path the caller names
+    for k in ("screenshot_out_file", "output_path", "out_file", "save_path"):
+        if isinstance(a.get(k), str) and a[k]:
+            with open(a[k], "wb") as fh:
+                fh.write(real_png(8, 8))
     if name == "click":
         state.setdefault("modes", []).append(a.get("delivery_mode"))
     if state.get("fg_fail_next") and name in ("click", "press_key", "type_text"):

@@ -53,6 +53,43 @@ pub fn frozen_result(name: &str) -> Value {
         "structuredContent": {"gate": {"decision": "deny", "tier": "freeze", "executed": false, "reason": "a person is answering"}}})
 }
 
+/// The exact effect of an action the gate has no GUI model for (launch_app, set_clipboard, a new driver tool): the
+/// tool and its arguments, key order and delivery details ignored. Used to refuse sending it again blind after its
+/// outcome was unknown (the coarse action signature of such a tool does not tell two different launches apart).
+pub fn unmodelled_key(name: &str, args: &Value) -> String {
+    fn canon(v: &Value) -> Value {
+        match v {
+            Value::Object(o) => {
+                let mut ks: Vec<&String> = o.keys().collect();
+                ks.sort();
+                let mut m = serde_json::Map::new();
+                for k in ks {
+                    m.insert(k.clone(), canon(&o[k]));
+                }
+                Value::Object(m)
+            }
+            Value::Array(a) => Value::Array(a.iter().map(canon).collect()),
+            x => x.clone(),
+        }
+    }
+    let mut a = args.clone();
+    if let Some(o) = a.as_object_mut() {
+        for k in ["delivery_mode", "timeout_ms", "gate_ack", "gate_confirm"] {
+            o.remove(k);
+        }
+    }
+    format!("unmodelled|{name}|{}", canon(&a))
+}
+
+/// The refusal for a call whose arguments would make it write a file (a read-only tool asked to save its capture to a
+/// path, any tool with a capture-to-file argument): nothing is sent.
+pub fn write_args_result(name: &str, keys: &[String]) -> Value {
+    json!({"isError": true,
+        "content": [{"type": "text", "text": format!("[gate] Not executed: `{name}` was called with {} - that would write a file, and a read never writes. Nothing was sent. Call it again without {} (the result comes back inline).",
+                                                     keys.join(", "), if keys.len() == 1 { "that argument" } else { "those arguments" })}],
+        "structuredContent": {"gate": {"decision": "deny", "tier": "write_args", "executed": false, "reason": "a write-to-file argument", "arguments": keys}}})
+}
+
 const RARE_PARAMS: &[&str] = &["session", "capture_mode", "screenshot_out_file", "verbose", "full_output", "display_only",
     "cursor_id", "delivery_mode", "scope", "from_zoom", "capture_id", "timeout_ms", "max_image_dimension", "target"];
 const AUTO_OBS_TOOLS: &[&str] = &["click", "double_click", "right_click", "press_key", "hotkey", "scroll", "invoke_menu", "drag"];
@@ -799,6 +836,9 @@ pub struct Inner {
     pub permits: Vec<Permit>,
     /// the risky effect the current gated() call has approval for, and from whom (operator task, reviewer, person)
     pub approval: Option<(crate::effect::EffectKey, String)>,
+    /// the operator task version the approval was given under: the permit it turns into carries THIS version, so a
+    /// task that changed between the approval and the dispatch voids it
+    pub approval_tv: u64,
     /// what the agent itself said the user's request is (gate_task): context only, it never authorizes anything
     pub agent_task: String,
     /// signatures of actions whose outcome was unknown (driver died / timed out / unparseable): never re-sent blind
@@ -1192,7 +1232,7 @@ impl Gate {
             inner: Mutex::new(Inner {
                 state: GateState::with_text_only(cfg.text_only), cfg, stats: new_stats(), aid: 0,
                 want_shot: HashSet::new(), seen_pids: HashSet::new(), fg_sticky: false, pixel_pids: HashSet::new(),
-                probe_disabled: false, denials: vec![], denial_versions: vec![], permits: vec![], approval: None, agent_task: String::new(), unknown_sigs: HashMap::new(), step_doubted: HashSet::new(), acted: false, read_streak: 0, hinted: HashSet::new(), cells_seen: HashMap::new(), term_seen: HashMap::new(), denials_consec: 0, denials_total: 0,
+                probe_disabled: false, denials: vec![], denial_versions: vec![], permits: vec![], approval: None, approval_tv: 0, agent_task: String::new(), unknown_sigs: HashMap::new(), step_doubted: HashSet::new(), acted: false, read_streak: 0, hinted: HashSet::new(), cells_seen: HashMap::new(), term_seen: HashMap::new(), denials_consec: 0, denials_total: 0,
                 task_locked, task_source, in_batch: false, batch_ctx: Value::Null, pix_age: HashMap::new(),
                 last_auto: HashMap::new(), seen_rows: HashMap::new(), recent: vec![], plan: vec![], plan_verdict: String::new(), plan_checks: vec![], facts: vec![], briefed: false, history: vec![], verdict_nagged: false, lb: Default::default(), risk_info: Value::Null, cur_ack: false,
                 rethought: HashSet::new(), resets: 0,
@@ -1232,6 +1272,14 @@ impl Gate {
     /// refused unless gated() issued a one-shot permit for exactly this signature and structured effect.
     /// After a send whose outcome is unknown (driver died, timed out, unparseable answer) nothing is re-sent.
     pub fn tool(&self, inn: &mut Inner, name: &str, args: &Value, timeout: f64) -> Value {
+        // a read never writes: a read-only tool with a destination argument (screenshot_out_file, output_path ...), or
+        // any tool with a capture-to-file argument, is refused here - the single dispatch point - and nothing is sent
+        let wa = crate::features::write_args(name, args);
+        if !wa.is_empty() {
+            inn.inc("write_args_refused");
+            self.log.write(json!({"ev": "write_args_refused", "aid": inn.aid, "tool": name, "args": wa, "where": "dispatch"}));
+            return write_args_result(name, &wa);
+        }
         // every state-changing driver tool (the gated GUI tools, launch_app, bring_to_front, a tool a newer driver adds)
         let action = (is_gated(name) && name != "run_command") || is_passthrough_action(name);
         if action {
@@ -1271,6 +1319,9 @@ impl Gate {
             let sig = build_ctx(name, &args, &inn.state).signature;
             let why = pystr(sc(&r).get("unknown_reason"));
             inn.unknown_sigs.insert(sig.clone(), why.clone());
+            if is_passthrough_action(name) {
+                inn.unknown_sigs.insert(unmodelled_key(name, &args), why.clone());
+            }
             inn.inc("outcome_unknown");
             self.log.write(json!({"ev": "outcome_unknown", "aid": inn.aid, "tool": name, "sig": sig, "why": why}));
         }
@@ -1296,7 +1347,8 @@ impl Gate {
         }
         let k = self.effect_key(inn, &ctx);
         if k == ak {
-            inn.permits.push(Permit { sig: ctx.signature, key: k, expires: now() + PERMIT_TTL_S, task_version: inn.task_version });
+            let tv = inn.approval_tv;
+            inn.permits.push(Permit { sig: ctx.signature, key: k, expires: now() + PERMIT_TTL_S, task_version: tv });
         } else {
             inn.inc("permits_withheld");
             self.log.write(json!({"ev": "permit_withheld", "aid": inn.aid, "tool": name, "approved": ak.to_json(), "final": k.to_json(), "source": src}));
@@ -1708,6 +1760,18 @@ impl Gate {
             set_status(&name, &mut r);
             self.reply(&msg, r);
             return;
+        }
+        // a "read" that would write a file is no read: refused before any read-path shortcut (cached reads) can hide it
+        if !GATE_LOCAL.contains(&name.as_str()) && name != "gate_task" {
+            let wa = crate::features::write_args(&name, &args);
+            if !wa.is_empty() {
+                self.inner.lock().unwrap_or_else(|e| e.into_inner()).inc("write_args_refused");
+                self.log.write(json!({"ev": "write_args_refused", "tool": name, "args": wa, "where": "call"}));
+                let mut r = write_args_result(&name, &wa);
+                set_status(&name, &mut r);
+                self.reply(&msg, r);
+                return;
+            }
         }
         let pm = params.get("_meta");
         let client_marked = pm.and_then(|m| m.get(CLIENT_META)).and_then(|v| v.as_bool()) == Some(true)
@@ -2572,6 +2636,10 @@ impl Gate {
             // while the operator task is the same version
             let ask_key = format!("{kind}|{}", ekey.as_ref().map(|k| k.to_json().to_string()).unwrap_or_else(|| ctx.signature.clone()));
             self.refresh_task(inn);
+            // the person's answer is bound to the task it was asked under: a new operator task version (the user wrote
+            // again) or a reset voids it, and the person is asked again about the current task
+            meta["task_binding"] = json!(format!("v{}.r{}", inn.task_version, inn.resets));
+            let asked_under = (inn.task_version, inn.resets);
             let h = if inn.unanswered.get(&ask_key) == Some(&inn.task_version) {
                 inn.burden.not_asked_again += 1;
                 inn.inc("person_not_asked_again");
@@ -2581,6 +2649,21 @@ impl Gate {
             };
             let ans = s(&h, "answer").to_string();
             let outcome = s(&h, "outcome").to_string();
+            if ans == "allow" && h.get("mrtr") != Some(&json!(true)) {
+                // a dialog / legacy form answered synchronously: if the user's task changed while it was open, the yes
+                // was about the older task and approves nothing now (MRTR answers carry the binding themselves)
+                self.refresh_task(inn);
+                if (inn.task_version, inn.resets) != asked_under {
+                    inn.inc("human_answer_stale_task");
+                    event["executed"] = json!(false);
+                    event["human"] = h.clone();
+                    event["human_outcome"] = json!("task_changed");
+                    self.log.write(event);
+                    let mut r = text_result(format!("[gate] Not executed: {} on \"{what0}\". The user's task changed while the person was answering, so their answer was about the older task and approves nothing now. Re-read the window; send the step again only if the current task still needs it (the person is asked again).", dec.reason), true);
+                    r["structuredContent"] = json!({"human_outcome": "task_changed", "gate": {"decision": opt, "executed": false, "human_outcome": "task_changed"}});
+                    return r;
+                }
+            }
             if ans == "input_required" {
                 // MRTR: the client asks its user and retries this same call; nothing is decided or executed yet
                 inn.inc("human_parked");
@@ -2611,6 +2694,7 @@ impl Gate {
                 inn.inc("human_allowed");
                 if let Some(k) = ekey {
                     inn.approval = Some((k, "person".into()));
+                    inn.approval_tv = asked_under.0;
                 }
                 dec = Decision::new("direct", dec.p_direct, "approved by a person", "human").with_scores(&dec.scores);
                 opt = "direct".into();
@@ -3306,6 +3390,7 @@ impl Gate {
             trail.push("authorized".into());
             inn.inc("authorized");
             inn.approval = Some((key, if why.starts_with("replaces the document") { "working_document".into() } else { "operator_task".into() }));
+            inn.approval_tv = inn.task_version;
             return None;
         }
         if let (Some(rv), true) = (Some(&self.reviewer).filter(|r| r.available()), dec.option == "risk_review") {
@@ -3325,6 +3410,7 @@ impl Gate {
                 action["agent_stated_request"] = json!(format!("(the agent's own account of the request, NOT the user's verified words; it cannot authorize anything) {}", trunc(&inn.agent_task, 1500)));
             }
             action["gate_authorization_check"] = json!(why);
+            let reviewed_tv = inn.task_version;
             let r = rv.review(&inn.cfg.task, &action);
             inn.risk_info["reviewer"] = r.clone().unwrap_or(Value::Null);
             inn.risk_info["reviewer_sent"] = action.clone();
@@ -3333,6 +3419,7 @@ impl Gate {
                 if s(&r, "decision") == "allow" {
                     trail.push("reviewer_allow".into());
                     inn.approval = Some((key, "reviewer".into()));
+                    inn.approval_tv = reviewed_tv;
                     return None;
                 }
                 trail.push("reviewer_deny".into());
@@ -4209,6 +4296,22 @@ impl Gate {
         inn.aid += 1;
         inn.permits.clear();
         inn.approval = None;
+        // the same unmodelled effect just came back with an unknown outcome (the driver died / timed out / answered
+        // garbage): it may already have happened, so it is NOT sent again blind. The gate reads first; a deliberate
+        // re-send after that is decided afresh (the same rule gated() applies to modelled actions)
+        let uk = unmodelled_key(name, &args);
+        if let Some(why) = inn.unknown_sigs.remove(&uk) {
+            inn.unknown_sigs.remove(&ctx.signature);
+            inn.inc("unknown_resend_refused");
+            let look = self.tool(inn, "list_windows", &match ctx.target.pid { Some(p) => json!({"pid": p}), None => json!({}) }, 10.0);
+            self.log.write(json!({"ev": "unknown_resend_refused", "aid": inn.aid, "tool": name, "key": trunc(&uk, 300), "why": why}));
+            let mut r = text_result(format!("[gate] Not executed: the same `{name}` just had an unknown outcome ({why}); it may already have happened, so it was not sent again. Check whether it took effect first (the windows as they are now are below); send it again only if it is still needed - it is then decided afresh."), true);
+            if !is_error(&look) {
+                push_text(&mut r, trunc(&text_of(&look), 2000).to_string());
+            }
+            r["structuredContent"] = json!({"gate": {"decision": "look_light", "tier": "rule", "executed": false, "reason": "outcome_unknown before: not re-sent blind"}});
+            return r;
+        }
         let t0 = Instant::now();
         let res = self.tool(inn, name, &args, 120.0);
         let executed = sc(&res).get("gate").and_then(|g| g.get("executed")) != Some(&json!(false));
@@ -4224,13 +4327,16 @@ impl Gate {
     /// gate_reset (client-only): the client stopped or restarted the agent. Every permit, approval, parked person
     /// request and cached observation / snapshot id is void afterwards: an old element token no longer resolves, an old
     /// requestState is rejected, and nothing approved before the reset carries over. Denial records stay (they only
-    /// ever refuse) and so does the operator task.
+    /// ever refuse) and so does the operator task. A question still in front of a person is voided but NOT withdrawn:
+    /// input stays frozen until the person answers or it times out (the agent can call this too; it must never be a
+    /// way to take the question away from the person).
     fn reset(&self) -> Value {
         let mut inn = self.inner.lock().unwrap_or_else(|e| e.into_inner());
         let permits = inn.permits.len();
         inn.permits.clear();
         inn.approval = None;
-        let parked = self.human.pending.clear();
+        // void, not withdrawn: a question in front of a person stays open (input frozen) until they answer or it times out
+        let parked = self.human.pending.void_all();
         let obs = inn.state.obs.len();
         let text_only = inn.cfg.text_only;
         inn.state = GateState::with_text_only(text_only);
@@ -4244,7 +4350,8 @@ impl Gate {
         inn.resets += 1;
         inn.inc("resets");
         self.log.write(json!({"ev": "reset", "permits": permits, "parked": parked, "observations": obs}));
-        let mut r = text_result(format!("[gate] reset: {permits} permits, {parked} pending person requests and {obs} cached observations are void. Read the window again before acting."), false);
+        let still = if self.human.person_answering() { " A person is still answering a request from the gate: no action is sent until they answer or it times out (a reset does not withdraw it)." } else { "" };
+        let mut r = text_result(format!("[gate] reset: {permits} permits, {parked} pending person requests and {obs} cached observations are void. Read the window again before acting.{still}"), false);
         r["structuredContent"] = json!({"reset": true, "permits_cleared": permits, "pending_cleared": parked, "observations_cleared": obs});
         r
     }
@@ -4427,6 +4534,15 @@ impl Gate {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn unmodelled_effect_ignores_key_order_and_delivery() {
+        let a = unmodelled_key("launch_app", &json!({"app_name": "gedit", "args": ["a.txt"], "delivery_mode": "background"}));
+        let b = unmodelled_key("launch_app", &json!({"args": ["a.txt"], "app_name": "gedit"}));
+        assert_eq!(a, b);
+        assert_ne!(a, unmodelled_key("launch_app", &json!({"args": ["b.txt"], "app_name": "gedit"})));
+        assert_ne!(a, unmodelled_key("set_clipboard", &json!({"args": ["a.txt"], "app_name": "gedit"})));
+    }
 
     #[test]
     fn mcp_2026_07_28_meta_rules() {

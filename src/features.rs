@@ -38,6 +38,83 @@ pub fn is_read_only(t: &str) -> bool {
     READ_ONLY_TOOLS.contains(&t) || extra_read_only().iter().any(|x| x == t)
 }
 
+/// Lower-case words of an argument name: `screenshot_out_file`, `outputPath`, `save-to` -> [screenshot, out, file] ...
+fn key_words(k: &str) -> Vec<String> {
+    let mut out = vec![];
+    let mut cur = String::new();
+    let mut prev_lower = false;
+    for ch in k.chars() {
+        if !ch.is_alphanumeric() {
+            if !cur.is_empty() { out.push(std::mem::take(&mut cur)); }
+            prev_lower = false;
+            continue;
+        }
+        if ch.is_uppercase() && prev_lower && !cur.is_empty() {
+            out.push(std::mem::take(&mut cur));
+        }
+        prev_lower = ch.is_lowercase() || ch.is_ascii_digit();
+        cur.extend(ch.to_lowercase());
+    }
+    if !cur.is_empty() { out.push(cur); }
+    out
+}
+
+/// Words that make an argument a place to WRITE to (a file, a path, a directory, "save to" ...).
+const WRITE_WORDS: &[&str] = &["file", "filename", "filepath", "files", "path", "paths", "dir", "dirs", "directory", "folder",
+    "dest", "destination", "outfile", "outpath", "outdir", "save", "saveto", "savepath", "write", "export", "dump"];
+/// Words that make an argument about a capture (screenshot, image, recording ...).
+const CAPTURE_WORDS: &[&str] = &["screenshot", "shot", "capture", "image", "img", "png", "jpeg", "jpg", "snapshot", "recording", "record", "video"];
+
+fn looks_like_fs_path(v: &str) -> bool {
+    let v = v.trim();
+    let b = v.as_bytes();
+    v.starts_with('/') || v.starts_with("~/") || v.starts_with("./") || v.starts_with("../") || v.starts_with("\\\\")
+        || v.starts_with("file:") || (b.len() >= 3 && b[0].is_ascii_alphabetic() && b[1] == b':' && (b[2] == b'\\' || b[2] == b'/'))
+}
+
+fn collect_write_args(prefix: &str, v: &Value, read_only: bool, out: &mut Vec<String>) {
+    let Some(o) = v.as_object() else {
+        if let Some(a) = v.as_array() {
+            for (i, x) in a.iter().enumerate() {
+                collect_write_args(&format!("{prefix}[{i}]"), x, read_only, out);
+            }
+        }
+        return;
+    };
+    for (k, x) in o {
+        let name = if prefix.is_empty() { k.clone() } else { format!("{prefix}.{k}") };
+        let w = key_words(k);
+        let writes = w.iter().any(|t| WRITE_WORDS.contains(&t.as_str()));
+        let capture = w.iter().any(|t| CAPTURE_WORDS.contains(&t.as_str()));
+        let present = !(x.is_null() || x == &Value::Bool(false) || x.as_str() == Some(""));
+        let hit = if read_only {
+            // a read takes no destination at all: any write-shaped argument, or any value that is a filesystem path
+            // (top level only: a nested selector may legitimately look for a label that is a path)
+            (writes && present) || (prefix.is_empty() && x.as_str().map(looks_like_fs_path).unwrap_or(false))
+        } else {
+            // an action's own targets may be paths (launch_app path, a file manager's folder): only a capture that is
+            // written somewhere (screenshot_out_file ...) is a side effect the gate does not model
+            capture && writes && present
+        };
+        if hit {
+            out.push(name.clone());
+        }
+        if x.is_object() || x.is_array() {
+            collect_write_args(&name, x, read_only, out);
+        }
+    }
+}
+
+/// Arguments that would make a driver call WRITE a file (save a screenshot to a path, dump a tree to a file ...).
+/// A read-only tool may carry none of them (any write-shaped argument name, or a value that is a filesystem path);
+/// any tool may not carry a capture-to-file argument (`screenshot_out_file` ...). Such a call is not a read: the gate
+/// refuses it and sends nothing.
+pub fn write_args(tool: &str, args: &Value) -> Vec<String> {
+    let mut out = vec![];
+    collect_write_args("", args, is_read_only(tool) && !is_gated(tool), &mut out);
+    out
+}
+
 /// A driver tool that changes state: the gated GUI tools plus every driver tool not known to be read-only.
 pub fn is_driver_action(t: &str) -> bool {
     is_gated(t) || !is_read_only(t)
@@ -645,6 +722,26 @@ pub fn features(ctx: &ActionCtx, st: &GateState, window_changed: Option<bool>, w
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_read_takes_no_destination() {
+        use serde_json::json;
+        let w = |t: &str, a: Value| write_args(t, &a);
+        assert_eq!(w("get_window_state", json!({"pid": 1, "screenshot_out_file": "/tmp/x.png"})), vec!["screenshot_out_file"]);
+        assert_eq!(w("screenshot", json!({"outputPath": "x.png"})), vec!["outputPath"]);
+        assert_eq!(w("zoom", json!({"save_to": "x.png"})), vec!["save_to"]);
+        assert_eq!(w("list_windows", json!({"to": "/home/u/.bashrc"})), vec!["to"]);
+        assert_eq!(w("screenshot", json!({"to": "C:\\Users\\u\\a.png"})), vec!["to"]);
+        assert_eq!(w("get_window_state", json!({"opts": {"dump_dir": "d"}})), vec!["opts.dump_dir"]);
+        // ordinary read arguments stay reads
+        assert!(w("get_window_state", json!({"pid": 1, "window_id": 2, "include_screenshot": true, "tree_format": "elements",
+            "full_output": true, "capture_mode": "window", "max_image_dimension": 800, "timeout_ms": 500, "screenshot_out_file": null})).is_empty());
+        assert!(w("verify_state", json!({"expect": [{"element": {"selector": {"label_contains": "/tmp/report.txt"}}}]})).is_empty());
+        // an action's own path targets are its business (risk rules); a capture written to a file is not
+        assert!(w("launch_app", json!({"app_name": "nautilus", "path": "/home/u"})).is_empty());
+        assert!(w("click", json!({"element_token": "s1:1"})).is_empty());
+        assert_eq!(w("click", json!({"element_token": "s1:1", "screenshot_out_file": "/tmp/a.png"})), vec!["screenshot_out_file"]);
+    }
     use serde_json::json;
 
     fn risk(role: &str, label: &str) -> Option<String> {
