@@ -1,14 +1,14 @@
 # All test data (kept from the very first run)
 
 > **How to read the v0.9.9 OSWorld-Verified number (osworld-verified-v099-ds41-2026-10-23/, added 2026-10-25, external review):** it is a
-> **custom environment based on OSWorld tasks and evaluators**, a **custom-environment partial result**,
-> not an official OSWorld-Verified score and **not comparable to the OSWorld leaderboard**. The committed data give 137/256 = 53.5 % of
-> *valid* runs (Wilson 95 % CI **47.4 %–59.5 %**; the review quoted the 137/255 = 53.7 % snapshot, 47.6 %–59.7 %),
-> ignoring task correlation and the selection of valid runs. Over the planned list (361 tasks; missing and infra runs
-> count as failures) it is **137/361 = 38.0 %** (Wilson 33.1 %–43.1 %); 23 runs were infra failures (18 setup_failed,
-> 4 relay_error, 1 eval_error) and 82 tasks never ran. The run used OSWorld's tasks and evaluators natively on Debian 13 /
-> XFCE 1440x900 with Chromium, LibreOffice 25.2 and other app versions (no VM, no snapshot revert), its own reset and a
-> 100-turn / 3600 s budget, stopped before all 361 tasks finished, and had no baseline of any kind, so it says nothing
+> **custom environment based on OSWorld tasks and evaluators**, a **custom-environment result** (final 361/361 rows, 1 task never ran),
+> not an official OSWorld-Verified score and **not comparable to the OSWorld leaderboard**. The committed data give 185/332 = 55.7 % of
+> *valid* runs (Wilson 95 % CI **50.3 %–61.0 %**; numbers of the final 361/361 data, updated 2026-10-26; the review quoted
+> the 137/255 = 53.7 % snapshot), ignoring task correlation and the selection of valid runs. Over the planned list (361
+> tasks; missing and infra runs count as failures) it is **185/361 = 51.2 %** (Wilson 46.1 %–56.4 %); 28 runs were infra
+> failures (23 setup_failed, 4 relay_error, 1 eval_error) and 1 task never ran. The run used OSWorld's tasks and evaluators
+> natively on Debian 13 / XFCE 1440x900 with Chromium, LibreOffice 25.2 and other app versions (no VM, no snapshot revert),
+> its own reset and a 100-turn / 3600 s budget, and had no baseline of any kind, so it says nothing
 > about the value model. Fair comparisons: bench/fair_compare.py under docs/eval-protocol.md.
 >
 > **All OSWorld / OSGuard numbers in this folder** come from the same kind of setup: a **custom environment based on
@@ -43,7 +43,7 @@
 | screenshot-format-2026-10-21/ | 2026-10-21 21:00-21:55 | Screenshot format experiment on gate screenshots (15 OSWorld shots, 73 click/read questions, 980 calls, 1 and 3 images). JPEG q60 full size: accuracy = PNG, TTFT 7 s vs 21 s (1 img), 17 s vs 65 s (3 img). Half-size JPEG loses accuracy (25% vs 43%); WebP faster but trends lower. Recommendation: JPEG q60. | tokenrhythm deepseek-v4.1-flash-1017, reasoning medium |
 | smoke-v099-ds41-2026-10-23/ | 2026-10-22 23:50 - 10-23 00:08 CST | Smoke for the full OSWorld-Verified run: direct MCP role check (all 7 roles OK) + 3 tasks (thunderbird success; chrome setup_failed -> Chromium; calc eval_error -> harness fix) + chrome retry stopped. gui-gate 0.9.9, box gui-pi3. | Pi + tokenrhythm deepseek-v4.1-flash-1017; reviewer System One; roles deepseek-v4.1-flash-1017 |
 | smoke2-v099-ds41-2026-10-23/ | 2026-10-23 ~01:00 CST | Second smoke on gui-pi3 after the harness fixes (Chromium, PI_MCP_TIMEOUT, reference dates). gui-gate 0.9.9. | Pi + tokenrhythm deepseek-v4.1-flash-1017; reviewer System One; roles deepseek-v4.1-flash-1017 |
-| osworld-verified-v099-ds41-2026-10-23/ | 2026-10-23 00:08 CST - | **FULL OSWorld-Verified** (361 = 369 - 8 Google Drive), gui-gate 0.9.9 release, all 0.9.7+ features, 7 roles on deepseek, gate8 only, seed 0, 100 turns / 3600 s, --human deny, box gui-pi3. State: final 361/361: first pass, infra retry stopped by user, 28 infra. Success 185/361 (51.25 %) of the list, 185/332 valid, infra 28. | Pi + tokenrhythm deepseek-v4.1-flash-1017, think medium; reviewer System One decision-model-preview; roles deepseek-v4.1-flash-1017 |
+| osworld-verified-v099-ds41-2026-10-23/ | 2026-10-23 00:08 CST - | **FULL OSWorld-Verified** (361 = 369 - 8 Google Drive), gui-gate 0.9.9 release, all 0.9.7+ features, 7 roles on deepseek, gate8 only, seed 0, 100 turns / 3600 s, --human deny, box gui-pi3. State: final 361/361: first pass, infra retry stopped by user, 28 infra. Success 185/361 (51.25 %) of the list, 185/332 valid, infra 28. Custom environment based on OSWorld tasks and evaluators; not leaderboard-comparable. | Pi + tokenrhythm deepseek-v4.1-flash-1017, think medium; reviewer System One decision-model-preview; roles deepseek-v4.1-flash-1017 |
 | smoke-pi2-v093-2026-10-21/ | 2026-10-21 21:48-22:13 CST | Smoke on gui-pi2, gui-gate 0.9.3: ow01 calc + og02 writer, direct / gate8, seed 0. 0/4 success. | Pi + deepseek-v4.1-flash-1017; reviewer System One |
 | smoke-m3-v095-2026-10-22/ | 2026-10-22 09:20 CST | Smoke on gui-pi2, 0.9.5 + mercury-3 text-only: ow07 writer, direct fail, gate8 success. | Pi + Inception mercury-3 |
 | box-gui-pi2-2026-10-21-23/ | 2026-10-21 - 10-23 | gui-pi2 setup/build/validate logs, kept before the box was deleted. | - |

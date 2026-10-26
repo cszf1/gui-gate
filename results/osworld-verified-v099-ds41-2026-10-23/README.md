@@ -1,5 +1,16 @@
 # OSWorld-Verified full run: gui-gate v0.9.9 (all 0.9.7+ features, 7 DeepSeek roles) + Pi + deepseek-v4.1-flash, box gui-pi3
 
+> **How to read this number (wording restored 2026-10-26 after the final 361/361 refresh dropped it again; numbers from
+> this folder's data, runs_scored.jsonl):** this is a **custom environment based on OSWorld tasks and evaluators**, a
+> **custom-environment result**, not an official OSWorld-Verified score and **not comparable to the OSWorld leaderboard**.
+> The committed data give 185/332 = 55.7 % of *valid* runs (Wilson 95 % CI **50.3 %–61.0 %**), ignoring task correlation
+> and the selection of valid runs. Over the planned list (361 tasks; missing and infra runs count as failures) it is
+> **185/361 = 51.2 %** (Wilson 46.1 %–56.4 %); 28 runs were infra failures (23 setup_failed, 4 relay_error, 1 eval_error)
+> and 1 task never ran (the infra retry was stopped by the user). The run used OSWorld's tasks and evaluators natively on
+> Debian 13 / XFCE 1440x900 with Chromium, LibreOffice 25.2 and other app versions (no VM, no snapshot revert), its own
+> reset and a 100-turn / 3600 s budget, and had no baseline of any kind, so it says nothing about the value model. Fair
+> comparisons: bench/fair_compare.py under docs/eval-protocol.md.
+
 Started 2026-10-23 00:07:58 CST. Condition: gate only (bench cond `gate8` = gate policy + task text + reviewer), seed 0.
 No direct baseline in this run.
 

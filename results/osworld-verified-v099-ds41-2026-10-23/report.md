@@ -1,5 +1,16 @@
 # OSWorld-Verified report
 
+> **How to read this number (wording restored 2026-10-26 after the final 361/361 refresh dropped it again; numbers from
+> this folder's data, runs_scored.jsonl):** this is a **custom environment based on OSWorld tasks and evaluators**, a
+> **custom-environment result**, not an official OSWorld-Verified score and **not comparable to the OSWorld leaderboard**.
+> The committed data give 185/332 = 55.7 % of *valid* runs (Wilson 95 % CI **50.3 %–61.0 %**), ignoring task correlation
+> and the selection of valid runs. Over the planned list (361 tasks; missing and infra runs count as failures) it is
+> **185/361 = 51.2 %** (Wilson 46.1 %–56.4 %); 28 runs were infra failures (23 setup_failed, 4 relay_error, 1 eval_error)
+> and 1 task never ran (the infra retry was stopped by the user). The run used OSWorld's tasks and evaluators natively on
+> Debian 13 / XFCE 1440x900 with Chromium, LibreOffice 25.2 and other app versions (no VM, no snapshot revert), its own
+> reset and a 100-turn / 3600 s budget, and had no baseline of any kind, so it says nothing about the value model. Fair
+> comparisons: bench/fair_compare.py under docs/eval-protocol.md.
+
 - tasks expected 361, finished rows 360, valid 332, infra 28 {'eval_error': 1, 'relay_error': 4, 'setup_failed': 23}
 - **success 185/361 = 51.25 %** (official-style: every expected task counts, infra/missing = 0); 185/332 = 55.72 % of valid runs; score sum 192.24
 - stops {'agent': 308, 'max_turns': 4, 'timeout': 20}; turns mean 31.0 / median 25.0; wall mean 684.0 s / median 344.8 s; total 65.19 h
