@@ -69,7 +69,7 @@ gui-gate 防的是**合作但会犯错的 agent**：它想完成用户的任务�
 | `Gate::tool_raw` | 动作工具在驱动退出、超时、返回无法解析时**不重发**，重启驱动，返回 `status: "unknown"`；同一签名下次发来时门先读窗口（look_light），之后重新决策。 |
 | `gated()` | 安全规则先于基线策略；未知结果规则；风险路径（拒绝记录 → 授权 → 审核 → 人）；人的回答结果（human_outcome）。 |
 | `risk_gate` | 拒绝记录覆盖检查；只用启动者任务授权；审核模型。 |
-| `human.rs` | MRTR requestState 一次性、绑定工具+参数、过期即超时、伪造/重放/串线回 -32602；回答绑定效果，效果变了重新问；记录结束原因。 |
+| `human.rs` | MRTR requestState 一次性、绑定工具+参数、过期即超时、伪造/重放/串线回 -32602；回答绑定效果和任务版本，变了重新问；冲突回答按拒绝；待答请求只能由人或超时结束；记录结束原因。 |
 | `proc.rs scrub_env` | 子进程（驱动、命令、角色探测）只拿白名单环境变量，不继承密钥。 |
 | `gate_config` | 只有可信启动者用 `--allow-config` / `GUI_GATE_ALLOW_CONFIG=1` 才可用。 |
 
@@ -174,6 +174,19 @@ instance、nonce 和绑定（工具 + 参数）。门重启后旧进程签发的
   别的窗口的批准、用过的、过期的许可都被拒，驱动只收到一次）。
 - Python（真门二进制 + tests/fake_driver.py）：`tests/test_security_e2e.py` 的绕过测试，`tests/test_remaining.py`（0.10.1：透传动作、launch_app、冻结、自己的对话框、gate_reset、签名 requestState、任务文件版本、严格回答类型、不再问、脱敏），`tests/test_actions_e2e.py`、`tests/test_gate.py`、
   `tests/test_v04.py`、`tests/test_commands.py` 中的边界测试。
+
+## v2-sec（2026-10-26）：五个回归修复
+
+- **冲突回答一律拒绝**：approve / takeover / ask_help 表单里同时出现“是”和“否”（如 `{allow: true, decision: "deny"}`）、
+  `allow` 不是布尔值、`decision` 不是精确的 `allow`/`deny`，都按拒绝处理（`human::conflicting_form`）；原生对话框输出不是它自己的按钮也按拒绝（`human::map_desktop`）。
+- **批准绑定任务版本**：MRTR 回答绑定提问时的任务版本和 reset 次数（`task_binding`），任务文件出了新版本后重新问人；
+  同步通道（对话框 / 老式 elicitation）回答期间任务变了，回答不批准任何东西（`human_outcome: "task_changed"`）；许可记的是批准时的版本（`approval_tv`）。
+- **读不写盘**：只读工具带写入目标参数（`screenshot_out_file`、`output_path`、`save_to`、值是文件路径的参数……），以及任何工具带“截图存文件”参数，
+  在调用入口和唯一派发点都被拒绝，什么也不发（`features::write_args`，`tier: "write_args"`）。
+- **待答问题只能由人或超时结束**：`gate_reset`（agent 也能调）只作废待答请求、不撤回，输入冻结到人回答或超时；
+  绑定别的调用或不带回答的重试会烧掉这次批准，但同样不结束冻结（`PendingTable::resolve` / `void_all`）。
+- **未建模动作结果 unknown 后不盲目重发**：透传动作（launch_app、set_clipboard、新驱动工具）结果 unknown 后，同一工具 + 参数（忽略键顺序和投递方式）
+  再次派发先被拒一次并附当前窗口列表，之后的有意重发重新决策（`Gate::pass_action`、`unmodelled_key`）。
 
 ## 已知限制
 

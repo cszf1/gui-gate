@@ -279,8 +279,8 @@ gui-gate --weights weights.json   # 用训练好的预测器
 
 v0.9.9 的 OSWorld-Verified 运行（`results/osworld-verified-v099-ds41-2026-10-23/`）是**基于 OSWorld 任务与评估器的自定义环境**
 （custom environment based on OSWorld tasks and evaluators, not comparable to the leaderboard：原生 Debian/XFCE、无 VM、应用版本和预算不同）
-上的部分结果，is not an official OSWorld-Verified score。按提交的数据：有效运行 143/266 = 53.8 %（Wilson 95 % 区间 47.8 %–59.7 %，
-未计任务相关性与有效样本选择）；按计划的 361 题算 143/361 = 39.6 %（Wilson 34.7 %–44.7 %，基础设施失败 / 缺失记 0）。
+上的部分结果，is not an official OSWorld-Verified score。按提交的数据：有效运行 185/332 = 55.7 %（Wilson 95 % 区间 50.3 %–61.0 %，
+未计任务相关性与有效样本选择）；按计划的 361 题算 185/361 = 51.2 %（Wilson 46.1 %–56.4 %，基础设施失败 / 缺失记 0）。
 不要和榜单数字直接比较。评测协议见 docs/eval-protocol.md 和 bench/README.md。
 
 ## 采数据 → 训练 → 对比

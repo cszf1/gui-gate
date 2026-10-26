@@ -92,6 +92,17 @@ pub fn binding_of(tool: &str, args: &Value) -> String {
     format!("{tool}|{}", a)
 }
 
+/// What a person's MRTR answer is bound to besides the call: the structured effect asked about and, when the gate
+/// passes it, the task context it was asked under (`task_binding`: operator task version + reset epoch). An answer
+/// whose binding differs from the request being decided now is never reused.
+pub fn answer_binding(meta: &Value) -> String {
+    let eff = meta.get("effect").map(|e| e.to_string()).unwrap_or_default();
+    match meta.get("task_binding").and_then(|v| v.as_str()) {
+        Some(tb) if !tb.is_empty() => format!("{eff}#task={tb}"),
+        _ => eff,
+    }
+}
+
 /// A person request the gate handed to the client and has not had answered yet.
 #[derive(Clone)]
 pub struct Pending {
@@ -102,6 +113,9 @@ pub struct Pending {
     pub effect: String,
     /// when it was parked (person waiting time = answer time - this)
     pub asked: f64,
+    /// voided by a reset while the person may still be answering: it stays open (input stays frozen) until the
+    /// person answers or it times out, and whatever the answer is, it approves nothing
+    pub voided: bool,
 }
 
 thread_local! {
@@ -174,13 +188,27 @@ impl PendingTable {
         if parts[1] != instance().0 {
             return Resolved::Invalid("requestState is from an earlier gate process (the gate restarted); every earlier approval is void");
         }
-        let p = { self.map.lock().unwrap_or_else(|e| e.into_inner()).remove(state) };
-        let Some(p) = p else { return Resolved::Invalid("unknown or already used requestState") };
-        if sign_state(parts[1], parts[2], &p.binding) != parts[3] {
-            return Resolved::Invalid("requestState signature does not match");
-        }
-        if p.binding != binding {
-            return Resolved::Invalid("requestState belongs to a different tool call");
+        // Only the person's own retry (the right call, carrying an answer) or the timeout ends a request. A wrong call
+        // or an answer-less retry burns the approval (it can never approve afterwards) but does NOT withdraw the
+        // question: input stays frozen until the person answers or it times out, so nobody else can take it away.
+        let p = {
+            let mut m = self.map.lock().unwrap_or_else(|e| e.into_inner());
+            let Some(p) = m.get_mut(state) else { return Resolved::Invalid("unknown or already used requestState") };
+            if sign_state(parts[1], parts[2], &p.binding) != parts[3] {
+                return Resolved::Invalid("requestState signature does not match");
+            }
+            if p.binding != binding {
+                p.voided = true;
+                return Resolved::Invalid("requestState belongs to a different tool call");
+            }
+            if responses.and_then(|r| r.get("human")).is_none() && now() <= p.deadline + MRTR_GRACE_S {
+                p.voided = true;
+                return Resolved::Invalid("the retry carries no answer from the person");
+            }
+            m.remove(state).unwrap()
+        };
+        if p.voided {
+            return Resolved::Invalid("this request was voided (gate_reset, or a wrong / answer-less retry); the answer approves nothing");
         }
         WAITED.with(|w| *w.borrow_mut() = (now() - p.asked).max(0.0));
         if now() > p.deadline + MRTR_GRACE_S {
@@ -201,11 +229,17 @@ impl PendingTable {
         self.map.lock().map(|m| m.values().filter(|p| p.deadline + MRTR_GRACE_S > t).count()).unwrap_or(0)
     }
 
-    /// A reset from the client: every parked request is void.
-    pub fn clear(&self) -> usize {
+    /// A reset: every parked request is void (its answer approves nothing). Requests a person may still be answering
+    /// are NOT ended by it: they stay open, and input stays frozen, until the person answers or the request times out.
+    /// Neither the agent nor a reset can withdraw a question that is in front of a person.
+    pub fn void_all(&self) -> usize {
         let mut m = self.map.lock().unwrap_or_else(|e| e.into_inner());
+        let t = now();
         let n = m.len();
-        m.clear();
+        m.retain(|_, p| p.deadline + MRTR_GRACE_S > t); // dead ones: nobody is answering them any more
+        for p in m.values_mut() {
+            p.voided = true;
+        }
         n
     }
 }
@@ -291,8 +325,36 @@ fn refusal_outcome(r: &Value, dflt: &str) -> String {
     }
 }
 
+/// Does an accepted form ALSO carry a refusal or a value that is not one of the form's own? Then the answer is
+/// ambiguous, and an ambiguous answer is a refusal (fail closed): `{allow: true, decision: "deny"}`, a `done: true`
+/// next to `decision: "deny"`, a non-boolean `allow`, a decision that is not exactly "allow"/"deny" ...
+fn conflicting_form(c: &Value) -> bool {
+    let Some(o) = c.as_object() else { return !c.is_null() };
+    let mut yes = false;
+    let mut no = false;
+    for (k, v) in o {
+        match k.as_str() {
+            "decision" => match v.as_str() { Some("allow") => yes = true, Some("deny") => no = true, _ => return true },
+            "allow" | "done" => match v.as_bool() { Some(true) => yes = true, Some(false) => no = true, None => return true },
+            "choice" => match v.as_str() {
+                Some("deny") | Some("try_other") | Some("hint") => no = true,
+                Some("did_it") | Some("allow") => yes = true,
+                Some(_) => {}
+                None => return true,
+            },
+            _ => {}
+        }
+    }
+    yes && no
+}
+
 fn map_accepted(kind: &str, r: &Value) -> (String, String) {
     let c = r.get("content").cloned().unwrap_or(json!({}));
+    if kind != "answer" && conflicting_form(&c) {
+        // a form that says yes and no at once (or a value outside the form) never approves anything
+        let note = if kind == "ask_help" { trunc(pystr(c.get("note")).trim(), 300).to_string() } else { String::new() };
+        return ("deny".into(), note);
+    }
     match kind {
         "answer" => {
             let typed = pystr(c.get("answer")).trim().to_string();
@@ -304,9 +366,24 @@ fn map_accepted(kind: &str, r: &Value) -> (String, String) {
             let note = trunc(pystr(c.get("note")).trim(), 300).to_string();
             (if s(&c, "choice") == "did_it" { "allow".into() } else { "deny".into() }, note)
         }
-        // approve: the enum form, or the pre-2026 boolean form some clients still send
-        _ => (if s(&c, "decision") == "allow" || c.get("allow").and_then(|v| v.as_bool()) == Some(true) { "allow".into() } else { "deny".into() },
+        // approve: the enum form, or the pre-2026 boolean form some clients still send (never both disagreeing:
+        // conflicting_form above already refused that)
+        _ => (if c.get("decision").and_then(|v| v.as_str()) == Some("allow") || c.get("allow").and_then(|v| v.as_bool()) == Some(true) { "allow".into() } else { "deny".into() },
               String::new()),
+    }
+}
+
+/// What a native dialog printed -> (answer, outcome). Only the dialog's own buttons count; a yes/no dialog's output
+/// that is none of them is ambiguous and a refusal (fail closed). Only an "answer" dialog has typed text.
+pub fn map_desktop(kind: &str, raw: &str) -> (String, &'static str) {
+    match raw {
+        "allow" => ("allow".into(), "accepted"),
+        "deny" => ("deny".into(), "denied"),
+        "timeout" => ("timeout".into(), "timeout"),
+        "closed" => ("deny".into(), "window_closed"),
+        "unavailable" => ("timeout".into(), "channel_unavailable"),
+        _ if kind == "answer" => (raw.to_string(), "accepted"),
+        _ => ("deny".into(), "denied"),
     }
 }
 
@@ -591,7 +668,9 @@ impl Human {
         let ans: String = match ch.as_str() {
             "elicit" if call_mrtr() => {
                 // a retry that carries the person's answer to this very request
-                let effect_now = meta.get("effect").map(|e| e.to_string()).unwrap_or_default();
+                // bound to the effect AND to the task it was asked under (operator task version + session): an answer
+                // given about an older task is not used, the person is asked again about the current one
+                let effect_now = answer_binding(&meta);
                 let mut stale = false;
                 if let Some((k, a, _, eff, outcome)) = CALL.with(|x| x.borrow().answer.clone()) {
                     if k == kind && eff == effect_now {
@@ -609,10 +688,10 @@ impl Human {
                 }
                 let binding = CALL.with(|x| x.borrow().binding.clone());
                 let deadline = now() + self.timeout;
-                let state = self.pending.park(Pending { binding, kind: kind.into(), deadline, effect: effect_now, asked: now() });
+                let state = self.pending.park(Pending { binding, kind: kind.into(), deadline, effect: effect_now, asked: now(), voided: false });
                 let mut m = if meta.is_object() { meta } else { json!({}) };
                 if stale {
-                    m["asked_again"] = json!("the action's target changed since the earlier answer");
+                    m["asked_again"] = json!("the action's target, or the task it was asked under, changed since the earlier answer");
                 }
                 m["kind"] = json!(kind);
                 m["title"] = json!(title);
@@ -653,14 +732,7 @@ impl Human {
             }
             "desktop" => {
                 let a = self.desktop(text, kind, if title.is_empty() { "gui-gate: a person is needed" } else { title });
-                let (a, o) = match a.as_str() {
-                    "allow" => (a.clone(), "accepted"),
-                    "deny" => (a.clone(), "denied"),
-                    "timeout" => (a.clone(), "timeout"),
-                    "closed" => ("deny".to_string(), "window_closed"),
-                    "unavailable" => ("timeout".to_string(), "channel_unavailable"),
-                    _ => (a.clone(), "accepted"), // a typed answer
-                };
+                let (a, o) = map_desktop(kind, &a);
                 outcome = o.into();
                 a
             }
@@ -718,7 +790,7 @@ mod tests {
     #[test]
     fn late_answer_is_a_timeout() {
         let h = Human::new("elicit", 0.0, Some(Arc::new(|_, _| None)), Arc::new(|| true));
-        let st = h.pending.park(Pending { binding: "b".into(), kind: "approve".into(), deadline: now() - MRTR_GRACE_S - 1.0, effect: String::new(), asked: now() });
+        let st = h.pending.park(Pending { binding: "b".into(), kind: "approve".into(), deadline: now() - MRTR_GRACE_S - 1.0, effect: String::new(), asked: now(), voided: false });
         let resp = json!({"human": {"action": "accept", "content": {"decision": "allow"}}});
         assert!(matches!(h.pending.resolve(&st, "b", Some(&resp)), Resolved::Late(_, _)));
     }
@@ -790,6 +862,94 @@ mod tests {
             Resolved::Answer(_, a, _, eff, _) => { assert_eq!(a, "allow"); assert_eq!(eff, e2.to_string()); }
             _ => panic!("expected an answer"),
         }
+    }
+
+    #[test]
+    fn conflicting_or_ambiguous_forms_are_refusals() {
+        let a = |k: &str, c: Value| map_elicit(k, Some(&json!({"action": "accept", "content": c}))).0;
+        // the regression: allow:true next to decision:deny used to approve
+        assert_eq!(a("approve", json!({"allow": true, "decision": "deny"})), "deny");
+        assert_eq!(a("approve", json!({"decision": "deny", "allow": true})), "deny");
+        assert_eq!(a("approve", json!({"decision": "allow", "allow": false})), "deny");
+        assert_eq!(a("approve", json!({"decision": "allow", "allow": "true"})), "deny");
+        assert_eq!(a("approve", json!({"decision": "Allow"})), "deny");
+        assert_eq!(a("approve", json!({"decision": ["allow"]})), "deny");
+        assert_eq!(a("approve", json!({"allow": 1})), "deny");
+        assert_eq!(a("approve", json!({"decision": "allow", "choice": "deny"})), "deny");
+        assert_eq!(a("approve", json!("allow")), "deny");
+        assert_eq!(map_elicit_o("approve", Some(&json!({"action": "accept", "content": {"allow": true, "decision": "deny"}}))).2, "denied");
+        assert_eq!(a("takeover", json!({"done": true, "decision": "deny"})), "deny");
+        assert_eq!(a("takeover", json!({"done": "yes"})), "deny");
+        assert_eq!(a("ask_help", json!({"choice": "did_it", "done": false})), "deny");
+        assert_eq!(a("ask_help", json!({"choice": "did_it", "allow": false})), "deny");
+        // unambiguous forms are unchanged
+        assert_eq!(a("approve", json!({"decision": "allow"})), "allow");
+        assert_eq!(a("approve", json!({"allow": true})), "allow");
+        assert_eq!(a("approve", json!({"decision": "allow", "allow": true})), "allow");
+        assert_eq!(a("takeover", json!({"done": true})), "allow");
+        assert_eq!(a("ask_help", json!({"choice": "did_it", "note": "done"})), "allow");
+        let (h, n) = map_elicit("ask_help", Some(&json!({"action": "accept", "content": {"choice": "hint", "note": "Ctrl+S"}})));
+        assert_eq!((h.as_str(), n.as_str()), ("deny", "Ctrl+S"));
+    }
+
+    #[test]
+    fn native_dialog_output_must_be_a_button() {
+        assert_eq!(map_desktop("approve", "allow"), ("allow".to_string(), "accepted"));
+        assert_eq!(map_desktop("approve", "deny"), ("deny".to_string(), "denied"));
+        assert_eq!(map_desktop("approve", "closed"), ("deny".to_string(), "window_closed"));
+        for odd in ["allow\ndeny", "Allow", "yes", "allow deny", "deny allow"] {
+            assert_eq!(map_desktop("approve", odd).0, "deny", "{odd}");
+            assert_eq!(map_desktop("takeover", odd).0, "deny", "{odd}");
+        }
+        assert_eq!(map_desktop("answer", "use Ctrl+S"), ("use Ctrl+S".to_string(), "accepted"));
+    }
+
+    #[test]
+    fn an_answer_about_an_older_task_is_not_reused() {
+        let h = Human::new("elicit", 30.0, Some(Arc::new(|_, _| None)), Arc::new(|| true));
+        let e = json!({"tool": "click", "hazard": "delete"});
+        let m1 = json!({"effect": e, "task_binding": "v1.r0"});
+        let m2 = json!({"effect": e, "task_binding": "v2.r0"});
+        set_call(CallCtx { mrtr: true, binding: "k".into(), answer: Some(("approve".into(), "allow".into(), String::new(), answer_binding(&m1), "accepted".into())), ..Default::default() });
+        assert_eq!(h.ask_kind("approve", "q", "t", m1.clone())["answer"], "allow", "same task version: the answer counts");
+        set_call(CallCtx { mrtr: true, binding: "k".into(), answer: Some(("approve".into(), "allow".into(), String::new(), answer_binding(&m1), "accepted".into())), ..Default::default() });
+        let r = h.ask_kind("approve", "q", "t", m2);
+        assert_eq!(r["answer"], "input_required", "a new task version: asked again");
+        assert_eq!(r["stale_answer"], true);
+        let _ = take_call();
+    }
+
+    #[test]
+    fn nobody_but_the_person_or_the_timeout_ends_a_request() {
+        let h = Human::new("elicit", 30.0, Some(Arc::new(|_, _| None)), Arc::new(|| true));
+        let park = |h: &Human| {
+            set_call(CallCtx { mrtr: true, binding: "click|{}".into(), ..Default::default() });
+            h.ask_kind("approve", "q", "t", json!({}));
+            take_call().request.unwrap()["requestState"].as_str().unwrap().to_string()
+        };
+        let allow = json!({"human": {"action": "accept", "content": {"decision": "allow"}}});
+        // a reset voids the request but the person is still answering: input stays frozen
+        let st = park(&h);
+        assert_eq!(h.pending.void_all(), 1);
+        assert!(h.person_answering(), "a reset must not withdraw the question");
+        assert!(matches!(h.pending.resolve(&st, "click|{}", Some(&allow)), Resolved::Invalid(_)), "voided: approves nothing");
+        assert!(!h.person_answering(), "the person's answer ends it");
+        // a call with another binding, or a retry without an answer, burns it but does not end it
+        let st = park(&h);
+        assert!(matches!(h.pending.resolve(&st, "click|{\"x\":1}", Some(&allow)), Resolved::Invalid(_)));
+        assert!(h.person_answering());
+        assert!(matches!(h.pending.resolve(&st, "click|{}", Some(&allow)), Resolved::Invalid(_)), "burnt");
+        assert!(!h.person_answering());
+        let st = park(&h);
+        assert!(matches!(h.pending.resolve(&st, "click|{}", None), Resolved::Invalid(_)));
+        assert!(matches!(h.pending.resolve(&st, "click|{}", None), Resolved::Invalid(_)));
+        assert!(h.person_answering(), "answer-less retries never end it");
+        assert!(matches!(h.pending.resolve(&st, "click|{}", Some(&allow)), Resolved::Invalid(_)));
+        assert!(!h.person_answering());
+        // a timed-out request is over by itself
+        let st = h.pending.park(Pending { binding: "b".into(), kind: "approve".into(), deadline: now() - MRTR_GRACE_S - 1.0, effect: String::new(), asked: now(), voided: false });
+        assert!(!h.person_answering());
+        assert!(matches!(h.pending.resolve(&st, "b", Some(&allow)), Resolved::Late(_, _)));
     }
 
     #[test]
