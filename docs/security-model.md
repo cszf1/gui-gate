@@ -188,6 +188,20 @@ instance、nonce 和绑定（工具 + 参数）。门重启后旧进程签发的
 - **未建模动作结果 unknown 后不盲目重发**：透传动作（launch_app、set_clipboard、新驱动工具）结果 unknown 后，同一工具 + 参数（忽略键顺序和投递方式）
   再次派发先被拒一次并附当前窗口列表，之后的有意重发重新决策（`Gate::pass_action`、`unmodelled_key`）。
 
+## v2（分支 v2-hum）：问人收尾、对话框默认按钮、agent 上下文
+
+- 桌面对话框默认按钮是拒绝的那个（zenity `--default-cancel`、osascript `default button` = 否、GTK 默认响应 = 拒绝、
+  WinForms `AcceptButton = $no`）：对话框抢焦点时的 Enter 不会批准。输入的文字走文本通道（`text:` / `typed`），不会被当成
+  allow / timeout 等按钮词（`human::dialog_result`）；助手进程失败记 `channel_unavailable`，不是“人拒绝”。
+- 对话框进程放在自己的进程组并登记到 `proc`：门退出（客户端关 stdin、信号）时随其它子进程一起被杀，待答 MRTR 请求作废并记录。
+- 审核模型拒绝的原话不回给 agent（只进日志 `risk_gate.reviewer`），`gate_report.reviewer` 只给 `configured|none`。
+- 应用 / 网页 / 终端 / 命令输出里以 `[gate]`、`[human via`、`[client`、`[gui-pi`、`[gui-gate]`、`[run_command]` 开头的行加
+  `(app text) ` 前缀（`util::defang`），不能冒充门的消息。
+- 与 v2-sec 合并后的语义：`gate_reset` 对每个新作废的请求记一条 `human_outcome`（`void`，why=reset），但不撤回、不解冻；
+  人回答（不批准任何东西）或超时才结束冻结，超时由扫描记 `timeout`（`no_retry`、`voided: true`）。门退出对未作废的请求记 `void`（why=gate_exit）。
+  冲突的 ask_help 表单（如 `{choice: "hint", done: true}`）仍是拒绝，不算“换个办法”。
+- 详见 docs/gate-design-v2.md。
+
 ## 已知限制
 
 - 只匹配门能解析的效果：任意脚本、编码过的命令、多步拼出来的效果、GUI 里没有文件路径的删除，靠审核模型和人，不靠解析。

@@ -385,8 +385,10 @@ class PersonActions(unittest.TestCase):
         c, r = self.stuck(p)
         try:
             self.assertTrue(r.get("isError"))
-            self.assertIn("No person took this step", txt(r))
+            # v2: "try another way" is the person's answer, not a refusal (outcome accepted, nothing executed)
+            self.assertIn("asked you to try another way", txt(r))
             self.assertIn("use Ctrl+S", txt(r))
+            self.assertEqual(r["structuredContent"]["human_outcome"], "accepted")
         finally:
             c.close()
 
