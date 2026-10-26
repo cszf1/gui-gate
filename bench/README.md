@@ -56,8 +56,12 @@ from " - LibreOffice" to " — LibreOffice". Nothing else in any task is changed
   restore, task-family split, offline dry run through the real gate. Not run on a desktop or with a model yet.
 - Value model v2 offline evaluation: `python3 bench/offline_v2.py RESULTS_DIR -o OUT --bin target/release/gui-gate`
   (exclusion audit, GUI vs command calibration, failure prediction at fixed budgets, costs from gate + Pi logs; read
-  only on RESULTS_DIR; never claims that an intervention avoided a failure). `python3 bench/online_plan.py
-  TASK_LIST -o plan.json` writes the frozen legacy-vs-v2 online plan and runs nothing. docs/value-model-v2.md.
+  only on RESULTS_DIR; never claims that an intervention avoided a failure). v0.10.3: task groups, cross-family /
+  cross-task / cross-run reported apart, L2 chosen on development groups only, post-hoc top-k wording, baselines,
+  incremental calibration (`--branches`), scroll-repeat label switch, `--boot 200`. `python3 bench/online_plan.py
+  TASK_LIST -o plan.json` writes the legacy-vs-v2 plan; `python3 bench/online_plan.py pilots TASK_LIST -o DIR --freeze
+  freeze.json` writes the policy pilot (108 runs) and the increment pilot (216 branches), "frozen" only with every
+  hash (else "draft"). Both run nothing. docs/value-model-v2.md sections 9-12.
 - `weights/costs-osworld-verified-v099.json`: option costs measured from the v0.9.9 run (`gui-gate costs`), usable as
   `VP_COSTS` / `GUI_GATE_COSTS`. `weights/value-observational-2026-10-25.json`: an observational treatment model for
   analysis only (not loaded by default).

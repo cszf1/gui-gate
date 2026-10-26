@@ -1,0 +1,2303 @@
+{
+ "kind": "offline_v2",
+ "results_dir": "results/osworld-verified-v099-ds41-2026-10-23",
+ "seed": 0,
+ "reps": 200,
+ "audit": {
+  "attempt_policy": "first_valid",
+  "files": {
+   "runs.jsonl": {
+    "rows": 360,
+    "corrupt": 0
+   },
+   "runs_scored.jsonl": {
+    "rows": 360,
+    "corrupt": 0
+   },
+   "retry/runs.before_retry.jsonl": {
+    "rows": 393,
+    "corrupt": 1
+   },
+   "retry/runs.infra_first.jsonl": {
+    "rows": 60,
+    "corrupt": 0
+   },
+   "retry/runs.retry_partial.jsonl": {
+    "rows": 333,
+    "corrupt": 1
+   }
+  },
+  "corrupt_lines": [
+   {
+    "line": 240,
+    "bytes": 380,
+    "prefix": "{\"tag\":\"multi_apps-48d05431-6cd5-4e76-82eb-12b60d823f7d-gate8-s0\",\"task\":\"multi_apps-48d05431-6cd5-4e76-82eb-12b60d823f7",
+    "tag": "multi_apps-48d05431-6cd5-4e76-82eb-12b60d823f7d-gate8-s0",
+    "file": "retry/runs.before_retry.jsonl"
+   },
+   {
+    "line": 199,
+    "bytes": 380,
+    "prefix": "{\"tag\":\"multi_apps-48d05431-6cd5-4e76-82eb-12b60d823f7d-gate8-s0\",\"task\":\"multi_apps-48d05431-6cd5-4e76-82eb-12b60d823f7",
+    "tag": "multi_apps-48d05431-6cd5-4e76-82eb-12b60d823f7d-gate8-s0",
+    "file": "retry/runs.retry_partial.jsonl"
+   }
+  ],
+  "counts": {
+   "expected": 361,
+   "used": 332,
+   "success_used": 185,
+   "excluded_by_reason": {
+    "infra:relay_error": 4,
+    "infra:setup_failed": 23,
+    "infra:eval_error": 1,
+    "no_result_row (runs.jsonl line truncated)": 1
+   },
+   "official_rate": 51.25,
+   "valid_rate": 55.72,
+   "excluded_attempt_rows": 25,
+   "report_json": {
+    "expected": 361,
+    "rows": 360,
+    "valid": 332,
+    "infra": 28,
+    "success": 185,
+    "rate_official": 51.25,
+    "rate_valid": 55.72,
+    "infra_kinds": {
+     "eval_error": 1,
+     "relay_error": 4,
+     "setup_failed": 23
+    }
+   }
+  }
+ },
+ "steps": {
+  "files": 332,
+  "missing_gate_logs": [],
+  "later_sessions_excluded_actions": 0,
+  "files_with_later_sessions": [],
+  "executed_gui": 7239,
+  "executed_cmd": 2480,
+  "multi_session_logs_all": [
+   {
+    "file": "multi_apps-98e8e339-5f91-4ed2-b2b2-12647cb134f4-gate8-s0.jsonl",
+    "actions_by_session": {
+     "8ca7eff5": 60,
+     "804622db": 41
+    }
+   }
+  ]
+ },
+ "interventions": {
+  "gui_actions": 7420,
+  "executed_gui": 7239,
+  "refused_gui": 181,
+  "refused_commands": 154,
+  "by_decision": {
+   "deny": {
+    "n": 8,
+    "value_option": "review",
+    "next_gui_step_ok": 7,
+    "next_gui_step_labelled": 7
+   },
+   "look_light": {
+    "n": 63,
+    "value_option": "look_light",
+    "next_gui_step_ok": 51,
+    "next_gui_step_labelled": 63
+   },
+   "look_full": {
+    "n": 96,
+    "value_option": "look_full",
+    "next_gui_step_ok": 79,
+    "next_gui_step_labelled": 91
+   },
+   "ask_human": {
+    "n": 8,
+    "value_option": null,
+    "next_gui_step_ok": 5,
+    "next_gui_step_labelled": 6
+   },
+   "handoff": {
+    "n": 5,
+    "value_option": null,
+    "next_gui_step_ok": 5,
+    "next_gui_step_labelled": 5
+   },
+   "stop_loop": {
+    "n": 1,
+    "value_option": null,
+    "next_gui_step_ok": 1,
+    "next_gui_step_labelled": 1
+   }
+  },
+  "note": "next_gui_step_ok is the outcome of the agent's NEXT executed GUI action after a refusal - observational: the agent may have changed the step, so it is neither the outcome the refused step would have had nor evidence that the refusal avoided a failure"
+ },
+ "claims": {
+  "predicted_execution_failure": {
+   "status": "measured",
+   "meaning": "an executed step that errored or was immediately redone had a low predicted success beforehand (AUC, precision/recall at an intervention budget)"
+  },
+  "flagging_budget": {
+   "status": "post_hoc_top_k_screen",
+   "meaning": "the share b of test steps with the lowest predicted success, counted afterwards: a post-hoc top-k screen; it cannot be read as 'intervening on b % avoids x % of failures'"
+  },
+  "incremental_value": {
+   "status": "needs_paired_branches",
+   "meaning": "E[Y(o) - Y(direct) | h] is checked by incremental calibration on paired branches (bench/online_plan.py increment pilot); not from logs"
+  },
+  "avoided_failure_after_intervention": {
+   "status": "not_estimable_from_logs",
+   "meaning": "whether an intervention made a step succeed that would otherwise have failed; the refused step's outcome under direct is unobserved and the agent's next step is a different action. Needs paired counterfactual branches or a randomized online comparison (bench/online_plan.py)"
+  }
+ },
+ "boot": 200,
+ "incremental_calibration": {
+  "status": "no paired branch data",
+  "bins": [],
+  "note": "needs paired branches from the same recoverable checkpoint (bench/online_plan.py increment pilot); logs cannot supply them"
+ },
+ "predictors": {
+  "builtin": {
+   "gui": {
+    "n": 7225,
+    "base_rate": 0.9331,
+    "mean_p": 0.8913,
+    "auc": 0.6941,
+    "ece_mass": 0.0427,
+    "brier": 0.0721,
+    "table": [
+     {
+      "n": 722,
+      "p_lo": 0.0,
+      "p_hi": 0.766,
+      "mean_p": 0.578,
+      "success": 0.881
+     },
+     {
+      "n": 723,
+      "p_lo": 0.766,
+      "p_hi": 0.852,
+      "mean_p": 0.817,
+      "success": 0.844
+     },
+     {
+      "n": 722,
+      "p_lo": 0.852,
+      "p_hi": 0.889,
+      "mean_p": 0.871,
+      "success": 0.898
+     },
+     {
+      "n": 723,
+      "p_lo": 0.889,
+      "p_hi": 0.913,
+      "mean_p": 0.901,
+      "success": 0.932
+     },
+     {
+      "n": 722,
+      "p_lo": 0.913,
+      "p_hi": 0.937,
+      "mean_p": 0.925,
+      "success": 0.921
+     },
+     {
+      "n": 723,
+      "p_lo": 0.937,
+      "p_hi": 0.953,
+      "mean_p": 0.945,
+      "success": 0.954
+     },
+     {
+      "n": 722,
+      "p_lo": 0.953,
+      "p_hi": 0.962,
+      "mean_p": 0.958,
+      "success": 0.964
+     },
+     {
+      "n": 723,
+      "p_lo": 0.962,
+      "p_hi": 0.969,
+      "mean_p": 0.965,
+      "success": 0.97
+     },
+     {
+      "n": 722,
+      "p_lo": 0.969,
+      "p_hi": 0.976,
+      "mean_p": 0.972,
+      "success": 0.983
+     },
+     {
+      "n": 723,
+      "p_lo": 0.976,
+      "p_hi": 0.993,
+      "mean_p": 0.981,
+      "success": 0.985
+     }
+    ],
+    "auc_ci95": [
+     0.6687,
+     0.7185
+    ],
+    "ece_mass_ci95": [
+     0.0368,
+     0.0509
+    ],
+    "brier_ci95": [
+     0.0659,
+     0.0781
+    ],
+    "bootstrap": {
+     "reps": 200,
+     "resample": "sessions"
+    }
+   },
+   "command": {
+    "n": 2443,
+    "base_rate": 0.9325,
+    "mean_p": 0.2585,
+    "auc": 0.543,
+    "ece_mass": 0.674,
+    "brier": 0.5189,
+    "table": [
+     {
+      "n": 244,
+      "p_lo": 0.02,
+      "p_hi": 0.25,
+      "mean_p": 0.138,
+      "success": 0.926
+     },
+     {
+      "n": 244,
+      "p_lo": 0.25,
+      "p_hi": 0.252,
+      "mean_p": 0.252,
+      "success": 0.893
+     },
+     {
+      "n": 244,
+      "p_lo": 0.252,
+      "p_hi": 0.256,
+      "mean_p": 0.255,
+      "success": 0.914
+     },
+     {
+      "n": 245,
+      "p_lo": 0.256,
+      "p_hi": 0.26,
+      "mean_p": 0.258,
+      "success": 0.947
+     },
+     {
+      "n": 244,
+      "p_lo": 0.26,
+      "p_hi": 0.262,
+      "mean_p": 0.261,
+      "success": 0.943
+     },
+     {
+      "n": 244,
+      "p_lo": 0.262,
+      "p_hi": 0.265,
+      "mean_p": 0.263,
+      "success": 0.939
+     },
+     {
+      "n": 245,
+      "p_lo": 0.265,
+      "p_hi": 0.268,
+      "mean_p": 0.266,
+      "success": 0.963
+     },
+     {
+      "n": 244,
+      "p_lo": 0.268,
+      "p_hi": 0.274,
+      "mean_p": 0.271,
+      "success": 0.918
+     },
+     {
+      "n": 244,
+      "p_lo": 0.274,
+      "p_hi": 0.318,
+      "mean_p": 0.296,
+      "success": 0.934
+     },
+     {
+      "n": 245,
+      "p_lo": 0.318,
+      "p_hi": 0.351,
+      "mean_p": 0.326,
+      "success": 0.947
+     }
+    ],
+    "auc_ci95": [
+     0.5011,
+     0.5839
+    ],
+    "ece_mass_ci95": [
+     0.6647,
+     0.6821
+    ],
+    "brier_ci95": [
+     0.5149,
+     0.5225
+    ],
+    "bootstrap": {
+     "reps": 200,
+     "resample": "sessions"
+    },
+    "no_obs_share": 1.0
+   },
+   "all": {
+    "n": 9668,
+    "base_rate": 0.933,
+    "mean_p": 0.7314,
+    "auc": 0.6168,
+    "ece_mass": 0.2016,
+    "brier": 0.185,
+    "table": [
+     {
+      "n": 966,
+      "p_lo": 0.0,
+      "p_hi": 0.259,
+      "mean_p": 0.22,
+      "success": 0.907
+     },
+     {
+      "n": 967,
+      "p_lo": 0.259,
+      "p_hi": 0.273,
+      "mean_p": 0.265,
+      "success": 0.94
+     },
+     {
+      "n": 967,
+      "p_lo": 0.273,
+      "p_hi": 0.686,
+      "mean_p": 0.399,
+      "success": 0.931
+     },
+     {
+      "n": 967,
+      "p_lo": 0.686,
+      "p_hi": 0.85,
+      "mean_p": 0.793,
+      "success": 0.846
+     },
+     {
+      "n": 967,
+      "p_lo": 0.85,
+      "p_hi": 0.897,
+      "mean_p": 0.876,
+      "success": 0.909
+     },
+     {
+      "n": 966,
+      "p_lo": 0.897,
+      "p_hi": 0.929,
+      "mean_p": 0.913,
+      "success": 0.925
+     },
+     {
+      "n": 967,
+      "p_lo": 0.929,
+      "p_hi": 0.952,
+      "mean_p": 0.942,
+      "success": 0.946
+     },
+     {
+      "n": 967,
+      "p_lo": 0.952,
+      "p_hi": 0.964,
+      "mean_p": 0.959,
+      "success": 0.964
+     },
+     {
+      "n": 967,
+      "p_lo": 0.964,
+      "p_hi": 0.973,
+      "mean_p": 0.969,
+      "success": 0.976
+     },
+     {
+      "n": 967,
+      "p_lo": 0.973,
+      "p_hi": 0.993,
+      "mean_p": 0.979,
+      "success": 0.986
+     }
+    ],
+    "auc_ci95": [
+     0.594,
+     0.6405
+    ],
+    "ece_mass_ci95": [
+     0.1821,
+     0.222
+    ],
+    "brier_ci95": [
+     0.1716,
+     0.1989
+    ],
+    "bootstrap": {
+     "reps": 200,
+     "resample": "sessions"
+    }
+   },
+   "note": "p_direct as logged live by gui-gate 0.9.9 (built-in osworld_v3, fitted on logs up to 2026-10-22, so this run is out-of-sample for it). 'all' mixes commands into the GUI predictor as the 2026-10-25 check did; commands are scored with no_obs=1 (weight -2.41) although they never have a window observation"
+  },
+  "split": "cross-family: leave-one-domain-out cross-fitting; cross-task: development task groups -> held-out test task groups; CIs: task-group bootstrap",
+  "groups": "a task and its layout variants are one group (bootstrap and splits)",
+  "scroll_repeat_label": "failure",
+  "hyperparameters": {
+   "gui_v1_refit": {
+    "l2": 0.1,
+    "inner_cv_nll": {
+     "0.1": 0.19503,
+     "1.0": 0.19665,
+     "10.0": 0.20902
+    },
+    "chosen_on": "development task groups only"
+   },
+   "gui_v2": {
+    "l2": 0.1,
+    "inner_cv_nll": {
+     "0.1": 0.1982,
+     "1.0": 0.19927,
+     "10.0": 0.20939
+    },
+    "chosen_on": "development task groups only"
+   }
+  },
+  "dev_test": {
+   "development_groups": 196,
+   "test_groups": 85,
+   "development_rows": 4765,
+   "test_rows": 2460,
+   "dev_frac": 0.7,
+   "seed": 0
+  },
+  "gui": {
+   "gui_v1_refit": {
+    "metrics": {
+     "n": 7225,
+     "base_rate": 0.9331,
+     "mean_p": 0.932,
+     "auc": 0.775,
+     "ece_mass": 0.021,
+     "brier": 0.0494,
+     "table": [
+      {
+       "n": 722,
+       "p_lo": 0.005,
+       "p_hi": 0.862,
+       "mean_p": 0.682,
+       "success": 0.655
+      },
+      {
+       "n": 723,
+       "p_lo": 0.862,
+       "p_hi": 0.902,
+       "mean_p": 0.884,
+       "success": 0.959
+      },
+      {
+       "n": 722,
+       "p_lo": 0.903,
+       "p_hi": 0.938,
+       "mean_p": 0.921,
+       "success": 0.92
+      },
+      {
+       "n": 723,
+       "p_lo": 0.938,
+       "p_hi": 0.955,
+       "mean_p": 0.948,
+       "success": 0.963
+      },
+      {
+       "n": 722,
+       "p_lo": 0.955,
+       "p_hi": 0.964,
+       "mean_p": 0.96,
+       "success": 0.974
+      },
+      {
+       "n": 723,
+       "p_lo": 0.964,
+       "p_hi": 0.977,
+       "mean_p": 0.97,
+       "success": 0.978
+      },
+      {
+       "n": 722,
+       "p_lo": 0.977,
+       "p_hi": 0.986,
+       "mean_p": 0.982,
+       "success": 0.95
+      },
+      {
+       "n": 723,
+       "p_lo": 0.986,
+       "p_hi": 0.99,
+       "mean_p": 0.988,
+       "success": 0.981
+      },
+      {
+       "n": 722,
+       "p_lo": 0.99,
+       "p_hi": 0.992,
+       "mean_p": 0.991,
+       "success": 0.981
+      },
+      {
+       "n": 723,
+       "p_lo": 0.992,
+       "p_hi": 0.999,
+       "mean_p": 0.994,
+       "success": 0.972
+      }
+     ],
+     "auc_ci95": [
+      0.7448,
+      0.8027
+     ],
+     "ece_mass_ci95": [
+      0.0168,
+      0.0274
+     ],
+     "brier_ci95": [
+      0.044,
+      0.0541
+     ],
+     "bootstrap": {
+      "reps": 200,
+      "resample": "sessions"
+     }
+    },
+    "flags": [
+     {
+      "budget": 0.05,
+      "flagged": 361,
+      "failed_flagged": 206,
+      "precision": 0.5706,
+      "recall": 0.4265,
+      "base_failure_rate": 0.0669
+     },
+     {
+      "budget": 0.1,
+      "flagged": 722,
+      "failed_flagged": 249,
+      "precision": 0.3449,
+      "recall": 0.5155,
+      "base_failure_rate": 0.0669
+     },
+     {
+      "budget": 0.2,
+      "flagged": 1445,
+      "failed_flagged": 279,
+      "precision": 0.1931,
+      "recall": 0.5776,
+      "base_failure_rate": 0.0669
+     },
+     {
+      "budget": 0.323,
+      "flagged": 2334,
+      "failed_flagged": 343,
+      "precision": 0.147,
+      "recall": 0.7101,
+      "base_failure_rate": 0.0669
+     }
+    ],
+    "cross_task_test": {
+     "metrics": {
+      "n": 2460,
+      "base_rate": 0.9289,
+      "mean_p": 0.9365,
+      "auc": 0.7987,
+      "ece_mass": 0.016,
+      "brier": 0.0525,
+      "table": [
+       {
+        "n": 246,
+        "p_lo": 0.021,
+        "p_hi": 0.863,
+        "mean_p": 0.702,
+        "success": 0.65
+       },
+       {
+        "n": 246,
+        "p_lo": 0.864,
+        "p_hi": 0.909,
+        "mean_p": 0.888,
+        "success": 0.927
+       },
+       {
+        "n": 246,
+        "p_lo": 0.909,
+        "p_hi": 0.94,
+        "mean_p": 0.926,
+        "success": 0.919
+       },
+       {
+        "n": 246,
+        "p_lo": 0.94,
+        "p_hi": 0.958,
+        "mean_p": 0.95,
+        "success": 0.947
+       },
+       {
+        "n": 246,
+        "p_lo": 0.958,
+        "p_hi": 0.971,
+        "mean_p": 0.965,
+        "success": 0.963
+       },
+       {
+        "n": 246,
+        "p_lo": 0.971,
+        "p_hi": 0.982,
+        "mean_p": 0.977,
+        "success": 0.98
+       },
+       {
+        "n": 246,
+        "p_lo": 0.982,
+        "p_hi": 0.986,
+        "mean_p": 0.984,
+        "success": 0.959
+       },
+       {
+        "n": 246,
+        "p_lo": 0.986,
+        "p_hi": 0.99,
+        "mean_p": 0.988,
+        "success": 0.972
+       },
+       {
+        "n": 246,
+        "p_lo": 0.99,
+        "p_hi": 0.992,
+        "mean_p": 0.991,
+        "success": 0.98
+       },
+       {
+        "n": 246,
+        "p_lo": 0.992,
+        "p_hi": 0.998,
+        "mean_p": 0.994,
+        "success": 0.992
+       }
+      ],
+      "auc_ci95": [
+       0.7559,
+       0.8473
+      ],
+      "ece_mass_ci95": [
+       0.0109,
+       0.03
+      ],
+      "brier_ci95": [
+       0.0435,
+       0.0629
+      ],
+      "bootstrap": {
+       "reps": 200,
+       "resample": "sessions"
+      }
+     },
+     "flags": [
+      {
+       "budget": 0.05,
+       "flagged": 123,
+       "failed_flagged": 70,
+       "precision": 0.5691,
+       "recall": 0.4,
+       "base_failure_rate": 0.0711
+      },
+      {
+       "budget": 0.1,
+       "flagged": 246,
+       "failed_flagged": 86,
+       "precision": 0.3496,
+       "recall": 0.4914,
+       "base_failure_rate": 0.0711
+      },
+      {
+       "budget": 0.2,
+       "flagged": 492,
+       "failed_flagged": 104,
+       "precision": 0.2114,
+       "recall": 0.5943,
+       "base_failure_rate": 0.0711
+      },
+      {
+       "budget": 0.323,
+       "flagged": 795,
+       "failed_flagged": 126,
+       "precision": 0.1585,
+       "recall": 0.72,
+       "base_failure_rate": 0.0711
+      }
+     ]
+    }
+   },
+   "gui_v2": {
+    "metrics": {
+     "n": 7225,
+     "base_rate": 0.9331,
+     "mean_p": 0.9325,
+     "auc": 0.7721,
+     "ece_mass": 0.0268,
+     "brier": 0.0497,
+     "table": [
+      {
+       "n": 722,
+       "p_lo": 0.009,
+       "p_hi": 0.852,
+       "mean_p": 0.688,
+       "success": 0.65
+      },
+      {
+       "n": 723,
+       "p_lo": 0.853,
+       "p_hi": 0.898,
+       "mean_p": 0.879,
+       "success": 0.95
+      },
+      {
+       "n": 722,
+       "p_lo": 0.898,
+       "p_hi": 0.936,
+       "mean_p": 0.921,
+       "success": 0.956
+      },
+      {
+       "n": 723,
+       "p_lo": 0.936,
+       "p_hi": 0.948,
+       "mean_p": 0.942,
+       "success": 0.974
+      },
+      {
+       "n": 722,
+       "p_lo": 0.948,
+       "p_hi": 0.965,
+       "mean_p": 0.955,
+       "success": 0.94
+      },
+      {
+       "n": 723,
+       "p_lo": 0.965,
+       "p_hi": 0.983,
+       "mean_p": 0.976,
+       "success": 0.964
+      },
+      {
+       "n": 722,
+       "p_lo": 0.983,
+       "p_hi": 0.987,
+       "mean_p": 0.986,
+       "success": 0.967
+      },
+      {
+       "n": 723,
+       "p_lo": 0.987,
+       "p_hi": 0.99,
+       "mean_p": 0.988,
+       "success": 0.976
+      },
+      {
+       "n": 722,
+       "p_lo": 0.99,
+       "p_hi": 0.995,
+       "mean_p": 0.992,
+       "success": 0.965
+      },
+      {
+       "n": 723,
+       "p_lo": 0.995,
+       "p_hi": 1.0,
+       "mean_p": 0.998,
+       "success": 0.989
+      }
+     ],
+     "auc_ci95": [
+      0.7393,
+      0.8106
+     ],
+     "ece_mass_ci95": [
+      0.0207,
+      0.0333
+     ],
+     "brier_ci95": [
+      0.0443,
+      0.0543
+     ],
+     "bootstrap": {
+      "reps": 200,
+      "resample": "sessions"
+     }
+    },
+    "flags": [
+     {
+      "budget": 0.05,
+      "flagged": 361,
+      "failed_flagged": 211,
+      "precision": 0.5845,
+      "recall": 0.4369,
+      "base_failure_rate": 0.0669
+     },
+     {
+      "budget": 0.1,
+      "flagged": 722,
+      "failed_flagged": 253,
+      "precision": 0.3504,
+      "recall": 0.5238,
+      "base_failure_rate": 0.0669
+     },
+     {
+      "budget": 0.2,
+      "flagged": 1445,
+      "failed_flagged": 289,
+      "precision": 0.2,
+      "recall": 0.5983,
+      "base_failure_rate": 0.0669
+     },
+     {
+      "budget": 0.323,
+      "flagged": 2334,
+      "failed_flagged": 327,
+      "precision": 0.1401,
+      "recall": 0.677,
+      "base_failure_rate": 0.0669
+     }
+    ],
+    "cross_task_test": {
+     "metrics": {
+      "n": 2460,
+      "base_rate": 0.9289,
+      "mean_p": 0.937,
+      "auc": 0.7822,
+      "ece_mass": 0.0274,
+      "brier": 0.0527,
+      "table": [
+       {
+        "n": 246,
+        "p_lo": 0.022,
+        "p_hi": 0.862,
+        "mean_p": 0.709,
+        "success": 0.638
+       },
+       {
+        "n": 246,
+        "p_lo": 0.862,
+        "p_hi": 0.901,
+        "mean_p": 0.882,
+        "success": 0.959
+       },
+       {
+        "n": 246,
+        "p_lo": 0.901,
+        "p_hi": 0.944,
+        "mean_p": 0.928,
+        "success": 0.947
+       },
+       {
+        "n": 246,
+        "p_lo": 0.944,
+        "p_hi": 0.957,
+        "mean_p": 0.951,
+        "success": 0.935
+       },
+       {
+        "n": 246,
+        "p_lo": 0.957,
+        "p_hi": 0.968,
+        "mean_p": 0.963,
+        "success": 0.931
+       },
+       {
+        "n": 246,
+        "p_lo": 0.968,
+        "p_hi": 0.983,
+        "mean_p": 0.976,
+        "success": 0.967
+       },
+       {
+        "n": 246,
+        "p_lo": 0.983,
+        "p_hi": 0.987,
+        "mean_p": 0.985,
+        "success": 0.963
+       },
+       {
+        "n": 246,
+        "p_lo": 0.987,
+        "p_hi": 0.989,
+        "mean_p": 0.988,
+        "success": 0.98
+       },
+       {
+        "n": 246,
+        "p_lo": 0.989,
+        "p_hi": 0.993,
+        "mean_p": 0.991,
+        "success": 0.972
+       },
+       {
+        "n": 246,
+        "p_lo": 0.993,
+        "p_hi": 0.999,
+        "mean_p": 0.996,
+        "success": 0.996
+       }
+      ],
+      "auc_ci95": [
+       0.7362,
+       0.8352
+      ],
+      "ece_mass_ci95": [
+       0.0196,
+       0.0391
+      ],
+      "brier_ci95": [
+       0.0427,
+       0.0635
+      ],
+      "bootstrap": {
+       "reps": 200,
+       "resample": "sessions"
+      }
+     },
+     "flags": [
+      {
+       "budget": 0.05,
+       "flagged": 123,
+       "failed_flagged": 72,
+       "precision": 0.5854,
+       "recall": 0.4114,
+       "base_failure_rate": 0.0711
+      },
+      {
+       "budget": 0.1,
+       "flagged": 246,
+       "failed_flagged": 89,
+       "precision": 0.3618,
+       "recall": 0.5086,
+       "base_failure_rate": 0.0711
+      },
+      {
+       "budget": 0.2,
+       "flagged": 492,
+       "failed_flagged": 99,
+       "precision": 0.2012,
+       "recall": 0.5657,
+       "base_failure_rate": 0.0711
+      },
+      {
+       "budget": 0.323,
+       "flagged": 795,
+       "failed_flagged": 115,
+       "precision": 0.1447,
+       "recall": 0.6571,
+       "base_failure_rate": 0.0711
+      }
+     ]
+    }
+   },
+   "gui_builtin": {
+    "metrics": {
+     "n": 7225,
+     "base_rate": 0.9331,
+     "mean_p": 0.8913,
+     "auc": 0.6941,
+     "ece_mass": 0.0427,
+     "brier": 0.0721,
+     "table": [
+      {
+       "n": 722,
+       "p_lo": 0.0,
+       "p_hi": 0.766,
+       "mean_p": 0.578,
+       "success": 0.881
+      },
+      {
+       "n": 723,
+       "p_lo": 0.766,
+       "p_hi": 0.852,
+       "mean_p": 0.817,
+       "success": 0.844
+      },
+      {
+       "n": 722,
+       "p_lo": 0.852,
+       "p_hi": 0.889,
+       "mean_p": 0.871,
+       "success": 0.898
+      },
+      {
+       "n": 723,
+       "p_lo": 0.889,
+       "p_hi": 0.913,
+       "mean_p": 0.901,
+       "success": 0.932
+      },
+      {
+       "n": 722,
+       "p_lo": 0.913,
+       "p_hi": 0.937,
+       "mean_p": 0.925,
+       "success": 0.921
+      },
+      {
+       "n": 723,
+       "p_lo": 0.937,
+       "p_hi": 0.953,
+       "mean_p": 0.945,
+       "success": 0.954
+      },
+      {
+       "n": 722,
+       "p_lo": 0.953,
+       "p_hi": 0.962,
+       "mean_p": 0.958,
+       "success": 0.964
+      },
+      {
+       "n": 723,
+       "p_lo": 0.962,
+       "p_hi": 0.969,
+       "mean_p": 0.965,
+       "success": 0.97
+      },
+      {
+       "n": 722,
+       "p_lo": 0.969,
+       "p_hi": 0.976,
+       "mean_p": 0.972,
+       "success": 0.983
+      },
+      {
+       "n": 723,
+       "p_lo": 0.976,
+       "p_hi": 0.993,
+       "mean_p": 0.981,
+       "success": 0.985
+      }
+     ],
+     "auc_ci95": [
+      0.6687,
+      0.7185
+     ],
+     "ece_mass_ci95": [
+      0.0368,
+      0.0509
+     ],
+     "brier_ci95": [
+      0.0659,
+      0.0781
+     ],
+     "bootstrap": {
+      "reps": 200,
+      "resample": "sessions"
+     }
+    },
+    "flags": [
+     {
+      "budget": 0.05,
+      "flagged": 361,
+      "failed_flagged": 41,
+      "precision": 0.1136,
+      "recall": 0.0849,
+      "base_failure_rate": 0.0669
+     },
+     {
+      "budget": 0.1,
+      "flagged": 722,
+      "failed_flagged": 86,
+      "precision": 0.1191,
+      "recall": 0.1781,
+      "base_failure_rate": 0.0669
+     },
+     {
+      "budget": 0.2,
+      "flagged": 1445,
+      "failed_flagged": 199,
+      "precision": 0.1377,
+      "recall": 0.412,
+      "base_failure_rate": 0.0669
+     },
+     {
+      "budget": 0.323,
+      "flagged": 2334,
+      "failed_flagged": 284,
+      "precision": 0.1217,
+      "recall": 0.588,
+      "base_failure_rate": 0.0669
+     }
+    ]
+   }
+  },
+  "baselines": {
+   "random_same_budget": [
+    {
+     "budget": 0.05,
+     "flagged": 361,
+     "failed_flagged": 25,
+     "precision": 0.0693,
+     "recall": 0.0518,
+     "base_failure_rate": 0.0669
+    },
+    {
+     "budget": 0.1,
+     "flagged": 722,
+     "failed_flagged": 48,
+     "precision": 0.0665,
+     "recall": 0.0994,
+     "base_failure_rate": 0.0669
+    },
+    {
+     "budget": 0.2,
+     "flagged": 1445,
+     "failed_flagged": 88,
+     "precision": 0.0609,
+     "recall": 0.1822,
+     "base_failure_rate": 0.0669
+    },
+    {
+     "budget": 0.323,
+     "flagged": 2334,
+     "failed_flagged": 137,
+     "precision": 0.0587,
+     "recall": 0.2836,
+     "base_failure_rate": 0.0669
+    }
+   ],
+   "heuristic": [
+    {
+     "budget": 0.05,
+     "flagged": 361,
+     "failed_flagged": 32,
+     "precision": 0.0886,
+     "recall": 0.0663,
+     "base_failure_rate": 0.0669
+    },
+    {
+     "budget": 0.1,
+     "flagged": 722,
+     "failed_flagged": 80,
+     "precision": 0.1108,
+     "recall": 0.1656,
+     "base_failure_rate": 0.0669
+    },
+    {
+     "budget": 0.2,
+     "flagged": 1445,
+     "failed_flagged": 111,
+     "precision": 0.0768,
+     "recall": 0.2298,
+     "base_failure_rate": 0.0669
+    },
+    {
+     "budget": 0.323,
+     "flagged": 2334,
+     "failed_flagged": 128,
+     "precision": 0.0548,
+     "recall": 0.265,
+     "base_failure_rate": 0.0669
+    }
+   ],
+   "online_only": {
+    "vp_direct": "safety and hard rules kept, value step always direct (GUI_GATE_VALUE_POLICY=direct)",
+    "fixed_observe": "observe_light / observe_full every step",
+    "fixed_reason": "extra_reason once per step",
+    "risk_threshold": "threshold on P(direct)",
+    "heuristic": "value.rs heuristic policy",
+    "random_same_budget": "random interventions at the same rate as the policy under test",
+    "equal_time_wait": "wait as long as the intervention takes (separates new information from the UI settling)"
+   }
+  },
+  "generalisation": {
+   "cross_family": "leave-one-domain-out (gui_v1_refit / gui_v2 metrics)",
+   "cross_task": "development -> test task groups (cross_task_test)",
+   "cross_run": "not available: one run in RESULTS_DIR (needs a second run of the same tasks)"
+  },
+  "label_sensitivity": {
+   "main": {
+    "failures": 483,
+    "failure_rate": 0.0669,
+    "scroll_n": 122,
+    "scroll_failures": 35
+   },
+   "alternate": {
+    "failures": 460,
+    "failure_rate": 0.0637,
+    "scroll_n": 122,
+    "scroll_failures": 12
+   },
+   "repeat_labelled_scrolls": 23,
+   "note": "main = the label the predictors use; alternate = the other reading of an immediately repeated scroll; manual review of these labels: pending (user)"
+  },
+  "gui_v2_minus_v1": {
+   "auc_diff": -0.0029,
+   "ci95": [
+    -0.017,
+    0.013
+   ],
+   "reps": 200
+  },
+  "gui_by_tool": {
+   "click": {
+    "n": 2682,
+    "failure_rate": 0.1107,
+    "auc_builtin": 0.5515,
+    "auc_v1_refit": 0.7987,
+    "auc_v2": 0.8109
+   },
+   "press_key": {
+    "n": 3376,
+    "failure_rate": 0.0427,
+    "auc_builtin": 0.6563,
+    "auc_v1_refit": 0.6347,
+    "auc_v2": 0.5526
+   },
+   "scroll": {
+    "n": 122,
+    "failure_rate": 0.2869,
+    "auc_builtin": 0.613,
+    "auc_v1_refit": 0.5921,
+    "auc_v2": 0.5849
+   },
+   "type_text": {
+    "n": 1023,
+    "failure_rate": 0.0059,
+    "auc_builtin": 0.8533,
+    "auc_v1_refit": 0.7525,
+    "auc_v2": 0.5618
+   }
+  },
+  "command": {
+   "command_model": {
+    "n": 2443,
+    "base_rate": 0.9325,
+    "mean_p": 0.93,
+    "auc": 0.6344,
+    "ece_mass": 0.0138,
+    "brier": 0.0619,
+    "table": [
+     {
+      "n": 244,
+      "p_lo": 0.65,
+      "p_hi": 0.868,
+      "mean_p": 0.822,
+      "success": 0.852
+     },
+     {
+      "n": 244,
+      "p_lo": 0.869,
+      "p_hi": 0.896,
+      "mean_p": 0.888,
+      "success": 0.898
+     },
+     {
+      "n": 244,
+      "p_lo": 0.896,
+      "p_hi": 0.912,
+      "mean_p": 0.905,
+      "success": 0.902
+     },
+     {
+      "n": 245,
+      "p_lo": 0.912,
+      "p_hi": 0.932,
+      "mean_p": 0.922,
+      "success": 0.931
+     },
+     {
+      "n": 244,
+      "p_lo": 0.933,
+      "p_hi": 0.946,
+      "mean_p": 0.942,
+      "success": 0.943
+     },
+     {
+      "n": 244,
+      "p_lo": 0.946,
+      "p_hi": 0.957,
+      "mean_p": 0.95,
+      "success": 0.955
+     },
+     {
+      "n": 245,
+      "p_lo": 0.957,
+      "p_hi": 0.963,
+      "mean_p": 0.96,
+      "success": 0.976
+     },
+     {
+      "n": 244,
+      "p_lo": 0.963,
+      "p_hi": 0.965,
+      "mean_p": 0.964,
+      "success": 0.975
+     },
+     {
+      "n": 244,
+      "p_lo": 0.965,
+      "p_hi": 0.972,
+      "mean_p": 0.967,
+      "success": 0.951
+     },
+     {
+      "n": 245,
+      "p_lo": 0.972,
+      "p_hi": 0.992,
+      "mean_p": 0.98,
+      "success": 0.943
+     }
+    ],
+    "auc_ci95": [
+     0.5816,
+     0.681
+    ],
+    "ece_mass_ci95": [
+     0.012,
+     0.0295
+    ],
+    "brier_ci95": [
+     0.0526,
+     0.0714
+    ],
+    "bootstrap": {
+     "reps": 200,
+     "resample": "sessions"
+    }
+   },
+   "constant_base_rate": {
+    "n": 2443,
+    "base_rate": 0.9325,
+    "mean_p": 0.9325,
+    "auc": 0.5,
+    "ece_mass": 0.0192,
+    "brier": 0.063,
+    "table": [
+     {
+      "n": 244,
+      "p_lo": 0.932,
+      "p_hi": 0.932,
+      "mean_p": 0.932,
+      "success": 0.939
+     },
+     {
+      "n": 244,
+      "p_lo": 0.932,
+      "p_hi": 0.932,
+      "mean_p": 0.932,
+      "success": 0.902
+     },
+     {
+      "n": 244,
+      "p_lo": 0.932,
+      "p_hi": 0.932,
+      "mean_p": 0.932,
+      "success": 0.971
+     },
+     {
+      "n": 245,
+      "p_lo": 0.932,
+      "p_hi": 0.932,
+      "mean_p": 0.932,
+      "success": 0.947
+     },
+     {
+      "n": 244,
+      "p_lo": 0.932,
+      "p_hi": 0.932,
+      "mean_p": 0.932,
+      "success": 0.939
+     },
+     {
+      "n": 244,
+      "p_lo": 0.932,
+      "p_hi": 0.932,
+      "mean_p": 0.932,
+      "success": 0.963
+     },
+     {
+      "n": 245,
+      "p_lo": 0.932,
+      "p_hi": 0.932,
+      "mean_p": 0.932,
+      "success": 0.922
+     },
+     {
+      "n": 244,
+      "p_lo": 0.932,
+      "p_hi": 0.932,
+      "mean_p": 0.932,
+      "success": 0.93
+     },
+     {
+      "n": 244,
+      "p_lo": 0.932,
+      "p_hi": 0.932,
+      "mean_p": 0.932,
+      "success": 0.906
+     },
+     {
+      "n": 245,
+      "p_lo": 0.932,
+      "p_hi": 0.932,
+      "mean_p": 0.932,
+      "success": 0.906
+     }
+    ],
+    "auc_ci95": [
+     0.5,
+     0.5
+    ],
+    "ece_mass_ci95": [
+     0.0078,
+     0.0197
+    ],
+    "brier_ci95": [
+     0.0535,
+     0.0734
+    ],
+    "bootstrap": {
+     "reps": 200,
+     "resample": "sessions"
+    }
+   },
+   "builtin_gui_predictor": {
+    "n": 2443,
+    "base_rate": 0.9325,
+    "mean_p": 0.2585,
+    "auc": 0.543,
+    "ece_mass": 0.674,
+    "brier": 0.5189,
+    "table": [
+     {
+      "n": 244,
+      "p_lo": 0.02,
+      "p_hi": 0.25,
+      "mean_p": 0.138,
+      "success": 0.926
+     },
+     {
+      "n": 244,
+      "p_lo": 0.25,
+      "p_hi": 0.252,
+      "mean_p": 0.252,
+      "success": 0.893
+     },
+     {
+      "n": 244,
+      "p_lo": 0.252,
+      "p_hi": 0.256,
+      "mean_p": 0.255,
+      "success": 0.914
+     },
+     {
+      "n": 245,
+      "p_lo": 0.256,
+      "p_hi": 0.26,
+      "mean_p": 0.258,
+      "success": 0.947
+     },
+     {
+      "n": 244,
+      "p_lo": 0.26,
+      "p_hi": 0.262,
+      "mean_p": 0.261,
+      "success": 0.943
+     },
+     {
+      "n": 244,
+      "p_lo": 0.262,
+      "p_hi": 0.265,
+      "mean_p": 0.263,
+      "success": 0.939
+     },
+     {
+      "n": 245,
+      "p_lo": 0.265,
+      "p_hi": 0.268,
+      "mean_p": 0.266,
+      "success": 0.963
+     },
+     {
+      "n": 244,
+      "p_lo": 0.268,
+      "p_hi": 0.274,
+      "mean_p": 0.271,
+      "success": 0.918
+     },
+     {
+      "n": 244,
+      "p_lo": 0.274,
+      "p_hi": 0.318,
+      "mean_p": 0.296,
+      "success": 0.934
+     },
+     {
+      "n": 245,
+      "p_lo": 0.318,
+      "p_hi": 0.351,
+      "mean_p": 0.326,
+      "success": 0.947
+     }
+    ],
+    "auc_ci95": [
+     0.5011,
+     0.5839
+    ],
+    "ece_mass_ci95": [
+     0.6647,
+     0.6821
+    ],
+    "brier_ci95": [
+     0.5149,
+     0.5225
+    ],
+    "bootstrap": {
+     "reps": 200,
+     "resample": "sessions"
+    },
+    "no_obs_share": 1.0
+   },
+   "label_note": "command label = exit status 0 (and not an immediate repeat); a non-zero exit is often intended (grep without a match, test -f), so it is a weak failure signal"
+  },
+  "gui_v2_weights_dev_rows": {
+   "bias": -2.2667,
+   "is_pixel": 2.8208,
+   "is_token": 3.8566,
+   "is_name": -3.8325,
+   "is_keyboard": 5.547,
+   "no_obs": 1.643,
+   "token_stale": 0.0,
+   "log_obs_age": -0.0288,
+   "acts_since_obs": 0.0886,
+   "obs_had_shot": 1.3685,
+   "last_err": -0.6037,
+   "last_unverif": 0.2557,
+   "last_popup": -0.3773,
+   "repeat": -0.3234,
+   "edge_close": 3.6615,
+   "small_target": 0.0,
+   "label_empty": 0.1033,
+   "label_dup": -0.1798,
+   "loading_cue": 0.189,
+   "window_changed": -3.2452,
+   "window_added": 3.2016,
+   "elem_unknown": -1.2223,
+   "check_pass": 2.3926,
+   "check_fail": 0.0,
+   "prev_none": -1.3842,
+   "sess_fail": -0.2243,
+   "consec_fail": 0.9109,
+   "sig_failed": -0.0968,
+   "role_menu": 1.6448,
+   "role_cell": -2.2672,
+   "role_toggle": 1.0234,
+   "tool_click": -0.5044,
+   "tool_scroll": 0.254,
+   "tool_type": 0.5024,
+   "tool_key": -0.9396,
+   "tool_set_value": 0.6876,
+   "scroll_pixel": -1.4244,
+   "role_button": 1.5294,
+   "role_text": 0.5328,
+   "role_link_tab": 1.5239,
+   "role_list_item": -0.3147,
+   "role_combo": 0.8777
+  }
+ },
+ "costs": {
+  "options": {
+   "ask_human": {
+    "n": 8,
+    "extra_s_mean": 44.268,
+    "extra_s_median": 31.959,
+    "extra_s_p90": 93.633,
+    "extra_s_p99": 110.179,
+    "censored_over_600s": 0,
+    "kind": "next_action_gap_upper_bound",
+    "tokens_input_mean": 1594.8,
+    "tokens_output_mean": 885.5,
+    "tokens_cache_read_mean": 82896.0,
+    "model_turns_mean": 1.88,
+    "person_s_mean": 0.0,
+    "src": "gate ts + pi turn_end usage"
+   },
+   "command:ask_human": {
+    "n": 101,
+    "extra_s_mean": 14.024,
+    "extra_s_median": 5.829,
+    "extra_s_p90": 38.282,
+    "extra_s_p99": 84.475,
+    "censored_over_600s": 0,
+    "kind": "next_action_gap_upper_bound",
+    "tokens_input_mean": 823.4,
+    "tokens_output_mean": 284.0,
+    "tokens_cache_read_mean": 32909.9,
+    "model_turns_mean": 1.01,
+    "person_s_mean": 0.0,
+    "src": "gate ts + pi turn_end usage"
+   },
+   "command:deny": {
+    "n": 14,
+    "extra_s_mean": 8.541,
+    "extra_s_median": 5.845,
+    "extra_s_p90": 11.994,
+    "extra_s_p99": 37.257,
+    "censored_over_600s": 0,
+    "kind": "next_action_gap_upper_bound",
+    "tokens_input_mean": 1077.8,
+    "tokens_output_mean": 658.5,
+    "tokens_cache_read_mean": 53494.9,
+    "model_turns_mean": 1.14,
+    "person_s_mean": 0.0,
+    "src": "gate ts + pi turn_end usage"
+   },
+   "command:review": {
+    "n": 36,
+    "extra_s_mean": 18.873,
+    "extra_s_median": 4.871,
+    "extra_s_p90": 46.296,
+    "extra_s_p99": 172.605,
+    "censored_over_600s": 0,
+    "kind": "next_action_gap_upper_bound",
+    "tokens_input_mean": 1018.7,
+    "tokens_output_mean": 655.7,
+    "tokens_cache_read_mean": 44099.6,
+    "model_turns_mean": 1.06,
+    "person_s_mean": 0.0,
+    "src": "gate ts + pi turn_end usage"
+   },
+   "deny": {
+    "n": 1,
+    "extra_s_mean": 6.26,
+    "extra_s_median": 6.26,
+    "extra_s_p90": 6.26,
+    "extra_s_p99": 6.26,
+    "censored_over_600s": 0,
+    "kind": "next_action_gap_upper_bound",
+    "tokens_input_mean": 1063.0,
+    "tokens_output_mean": 438.0,
+    "tokens_cache_read_mean": 23936.0,
+    "model_turns_mean": 1.0,
+    "person_s_mean": 0.0,
+    "src": "gate ts + pi turn_end usage"
+   },
+   "handoff": {
+    "n": 5,
+    "extra_s_mean": 7.617,
+    "extra_s_median": 7.519,
+    "extra_s_p90": 11.193,
+    "extra_s_p99": 11.654,
+    "censored_over_600s": 0,
+    "kind": "next_action_gap_upper_bound",
+    "tokens_input_mean": 1504.4,
+    "tokens_output_mean": 517.0,
+    "tokens_cache_read_mean": 20300.8,
+    "model_turns_mean": 1.6,
+    "person_s_mean": 0.0,
+    "src": "gate ts + pi turn_end usage"
+   },
+   "look_full": {
+    "n": 96,
+    "extra_s_mean": 26.445,
+    "extra_s_median": 9.837,
+    "extra_s_p90": 62.778,
+    "extra_s_p99": 217.369,
+    "censored_over_600s": 0,
+    "kind": "next_action_gap_upper_bound",
+    "tokens_input_mean": 2575.3,
+    "tokens_output_mean": 387.6,
+    "tokens_cache_read_mean": 57612.0,
+    "model_turns_mean": 1.57,
+    "person_s_mean": 0.0,
+    "src": "gate ts + pi turn_end usage"
+   },
+   "look_light": {
+    "n": 25,
+    "extra_s_mean": 8.011,
+    "extra_s_median": 5.32,
+    "extra_s_p90": 19.667,
+    "extra_s_p99": 21.303,
+    "censored_over_600s": 0,
+    "kind": "next_action_gap_upper_bound",
+    "tokens_input_mean": 2086.0,
+    "tokens_output_mean": 299.4,
+    "tokens_cache_read_mean": 49141.8,
+    "model_turns_mean": 1.36,
+    "person_s_mean": 0.0,
+    "src": "gate ts + pi turn_end usage"
+   },
+   "review": {
+    "n": 44,
+    "extra_s_mean": 22.249,
+    "extra_s_median": 7.097,
+    "extra_s_p90": 66.311,
+    "extra_s_p99": 136.015,
+    "censored_over_600s": 0,
+    "kind": "next_action_gap_upper_bound",
+    "tokens_input_mean": 1983.9,
+    "tokens_output_mean": 506.3,
+    "tokens_cache_read_mean": 57256.7,
+    "model_turns_mean": 1.32,
+    "person_s_mean": 0.0,
+    "src": "gate ts + pi turn_end usage"
+   },
+   "stop_loop": {
+    "n": 1,
+    "extra_s_mean": 25.957,
+    "extra_s_median": 25.957,
+    "extra_s_p90": 25.957,
+    "extra_s_p99": 25.957,
+    "censored_over_600s": 0,
+    "kind": "next_action_gap_upper_bound",
+    "tokens_input_mean": 447.0,
+    "tokens_output_mean": 118.0,
+    "tokens_cache_read_mean": 74752.0,
+    "model_turns_mean": 1.0,
+    "person_s_mean": 0.0,
+    "src": "gate ts + pi turn_end usage"
+   },
+   "check": {
+    "n": 21,
+    "extra_s_mean": 0.2785,
+    "tokens_input_mean": 0.0,
+    "tokens_output_mean": 0.0,
+    "src": "gate_ms over the median direct gate_ms"
+   },
+   "heal": {
+    "n": 38,
+    "extra_s_mean": 0.2291,
+    "tokens_input_mean": 0.0,
+    "tokens_output_mean": 0.0,
+    "src": "gate_ms over the median direct gate_ms"
+   },
+   "review_executed": {
+    "n": 19,
+    "extra_s_mean": 0.9352,
+    "tokens_input_mean": 0.0,
+    "tokens_output_mean": 0.0,
+    "src": "gate_ms over the median direct gate_ms"
+   },
+   "wait": {
+    "n": 294,
+    "extra_s_mean": 1.1668,
+    "tokens_input_mean": 0.0,
+    "tokens_output_mean": 0.0,
+    "src": "gate_ms over the median direct gate_ms"
+   },
+   "review_combined": {
+    "n": 63,
+    "extra_s_mean": 15.821,
+    "tokens_input_mean": 1385.6,
+    "tokens_output_mean": 353.6,
+    "src": "review refused (hand-back) and allowed (gate-side), weighted by their counts"
+   }
+  },
+  "direct_gate_ms_median": 2.6,
+  "direct_n": 6867,
+  "model_turn": {
+   "turns": 10299,
+   "duration_s_median": 4.91,
+   "duration_s_mean": 13.08,
+   "input_median": 1079.0,
+   "output_median": 188.0,
+   "cache_read_median": 31872.0
+  },
+  "costs_v1_for_gate": {
+   "kind": "costs_v1",
+   "costs": {
+    "direct": {
+     "extra_s": 0.0,
+     "tokens": 0.0,
+     "person_s": 0.0,
+     "n": 6867
+    },
+    "look_full": {
+     "extra_s": 26.445,
+     "tokens": 2962.9,
+     "person_s": 0.0,
+     "n": 96
+    },
+    "look_light": {
+     "extra_s": 8.011,
+     "tokens": 2385.4,
+     "person_s": 0.0,
+     "n": 25
+    },
+    "check": {
+     "extra_s": 0.2785,
+     "tokens": 0.0,
+     "person_s": 0.0,
+     "n": 21
+    },
+    "heal": {
+     "extra_s": 0.2291,
+     "tokens": 0.0,
+     "person_s": 0.0,
+     "n": 38
+    },
+    "wait": {
+     "extra_s": 1.1668,
+     "tokens": 0.0,
+     "person_s": 0.0,
+     "n": 294
+    },
+    "review": {
+     "extra_s": 15.821,
+     "tokens": 1739.1999999999998,
+     "person_s": 0.0,
+     "n": 63
+    }
+   }
+  },
+  "censored": {},
+  "interpretation": "these logs have no component timers: a hand-back's cost is the gap from the refusal to the session's next action of ANY kind, which includes everything the model did in between - an upper bound / correlated proxy of the option's extra cost, not a measurement of it. v0.10.3 logs time each component (chain, continues) and `gui-gate costs` uses those",
+  "note": "means are expected costs; hand-back tokens are the real tokens of the model turns that ended between the refusal and the next action (the prompt grows with the conversation, so input tokens include the whole context of that turn; cache_read is reported apart)"
+ },
+ "replay": {
+  "default": {
+   "model": "osworld_v3",
+   "human": "deny",
+   "reviewer": false,
+   "lambda": 1.0,
+   "actions": 7239.0,
+   "failed": 485.0,
+   "intervene_rate": 0.079,
+   "gate_side_rate": 0.068,
+   "failures_caught": 0.113,
+   "precision": 0.096,
+   "by_option": {
+    "direct": {
+     "n": 6665.0,
+     "actually_failed": 430.0
+    },
+    "look_light": {
+     "n": 65.0,
+     "actually_failed": 1.0
+    },
+    "check": {
+     "n": 126.0,
+     "actually_failed": 16.0
+    },
+    "wait": {
+     "n": 367.0,
+     "actually_failed": 26.0
+    },
+    "review": {
+     "n": 16.0,
+     "actually_failed": 12.0
+    }
+   },
+   "commands": {
+    "n": 2480.0,
+    "failed": 167.0,
+    "note": "run_command: executed directly by the live gate; not GUI actions, not in the rates above"
+   },
+   "note": "flagged = the gate would not have sent this executed GUI action blind; whether that would have AVOIDED the failure is not measurable from logs"
+  },
+  "with_reviewer": {
+   "model": "osworld_v3",
+   "human": "deny",
+   "reviewer": true,
+   "lambda": 1.0,
+   "actions": 7239.0,
+   "failed": 485.0,
+   "intervene_rate": 0.087,
+   "gate_side_rate": 0.076,
+   "failures_caught": 0.128,
+   "precision": 0.099,
+   "by_option": {
+    "direct": {
+     "n": 6610.0,
+     "actually_failed": 423.0
+    },
+    "look_light": {
+     "n": 65.0,
+     "actually_failed": 1.0
+    },
+    "check": {
+     "n": 181.0,
+     "actually_failed": 23.0
+    },
+    "wait": {
+     "n": 367.0,
+     "actually_failed": 26.0
+    },
+    "review": {
+     "n": 16.0,
+     "actually_failed": 12.0
+    }
+   },
+   "commands": {
+    "n": 2480.0,
+    "failed": 167.0,
+    "note": "run_command: executed directly by the live gate; not GUI actions, not in the rates above"
+   },
+   "note": "flagged = the gate would not have sent this executed GUI action blind; whether that would have AVOIDED the failure is not measurable from logs"
+  }
+ },
+ "treatment": {
+  "ipw": {
+   "split": {
+    "mode": "family",
+    "holdout": 0.3,
+    "seed": 0,
+    "held_out": [
+     {
+      "by": "family",
+      "distinct": 10,
+      "held_out": [
+       "libreoffice_impress",
+       "multi_apps",
+       "os"
+      ]
+     }
+    ],
+    "notes": [],
+    "train_rows": 3953,
+    "test_rows": 2946,
+    "dropped_crossing_rows": 0
+   },
+   "train_rows": 3953,
+   "test_rows": 2946,
+   "coverage": {
+    "rows_by_option": {
+     "direct": 3931,
+     "check": 0,
+     "heal": 0,
+     "wait": 0,
+     "look_light": 0,
+     "look_full": 9,
+     "review": 13,
+     "reason": 0,
+     "ask_help": 0
+    },
+    "counted_by_option": {
+     "direct": 3931,
+     "check": 0,
+     "heal": 0,
+     "wait": 0,
+     "look_light": 0,
+     "look_full": 0,
+     "review": 0,
+     "reason": 0,
+     "ask_help": 0
+    },
+    "min_rows": 30,
+    "min_support": 0.2,
+    "rule": "IPW: min(n, ESS), 0 when support < min_support"
+   },
+   "intervals": {
+    "bootstrap_replicates": 200,
+    "min_boot": 20,
+    "usable": true,
+    "refit_per_replicate": {
+     "outcome_iters": 1500,
+     "propensity_refit": true
+    },
+    "note": "percentile interval over session-bootstrap refits"
+   },
+   "load_opts": {
+    "commands": "exclude",
+    "all_sessions": false,
+    "features": "v2"
+   },
+   "ipw": {
+    "clip": 0.05,
+    "clipped_rows": 22,
+    "n": 3953,
+    "ess": 1518.3,
+    "max_weight": 17.93,
+    "by_option": {
+     "direct": {
+      "n": 3931,
+      "ess": 3930.7,
+      "mean_propensity": 0.99,
+      "support": 1.0,
+      "clipped_rows": 0
+     },
+     "look_full": {
+      "n": 9,
+      "ess": 9.0,
+      "mean_propensity": 0.023,
+      "support": 0.0,
+      "clipped_rows": 9
+     },
+     "review": {
+      "n": 13,
+      "ess": 13.0,
+      "mean_propensity": 0.031,
+      "support": 0.002,
+      "clipped_rows": 13
+     }
+    },
+    "post_decision_features_excluded": [
+     "check_pass",
+     "check_fail"
+    ],
+    "note": "propensities estimated from the logged policy (softmax logistic on the decision-time features, probe results excluded); a near-deterministic policy gives tiny overlap and a small ESS; support = share of all states with p(o|x) >= clip"
+   },
+   "load": {
+    "files": 332,
+    "executed_rows": 6881,
+    "intervention_rows": 18,
+    "interventions_unlabelled_dropped": 97,
+    "safety_outcomes_excluded": 16,
+    "risky_steps_excluded": 20,
+    "environment_labels": 0,
+    "files_without_task_label": 0,
+    "commands_excluded": 2634,
+    "later_sessions_excluded": 0,
+    "pre_decision_state_unrecoverable": 388,
+    "rows_with_x_pre": 0,
+    "handback_attributed": 24,
+    "handback_unattributable": 133,
+    "by_option": {
+     "direct": 6863,
+     "look_full": 16,
+     "review": 20
+    },
+    "by_tier": {
+     "model": 6312,
+     "rule": 567,
+     "review": 20
+    }
+   },
+   "state_coverage": {
+    "propensity_saved": true,
+    "clip": 0.05,
+    "rule": "an option is considered at state x only when e_o(x) >= clip and e_direct(x) >= clip and it has min_rows effective rows; otherwise: no estimate basis (legacy heuristic fallback, logged)",
+    "train_states_supported": {
+     "direct": 1.0,
+     "look_full": 0.0,
+     "review": 0.0018
+    }
+   },
+   "dr": null,
+   "treatment_on_test": {
+    "n": 2946,
+    "groups": 105,
+    "base_rate": 0.927,
+    "brier": 0.0646,
+    "brier_ci95": [
+     0.0569,
+     0.0734
+    ],
+    "nll": 0.2422,
+    "nll_ci95": [
+     0.2156,
+     0.2719
+    ],
+    "ece_mass": 0.03,
+    "ece_mass_ci95": [
+     0.0217,
+     0.0387
+    ],
+    "ece_width": 0.0124,
+    "auc": 0.708,
+    "auc_ci95": [
+     0.6499,
+     0.7521
+    ],
+    "bootstrap": {
+     "reps": 50,
+     "resample": "sessions"
+    }
+   },
+   "by_option": {
+    "direct": {
+     "n": 2932,
+     "base_rate": 0.928,
+     "brier": 0.064,
+     "ece_mass": 0.0296,
+     "auc": 0.704
+    },
+    "look_full": {
+     "n": 7,
+     "base_rate": 1.0,
+     "brier": 0.0052,
+     "ece_mass": 0.0652,
+     "auc": null
+    },
+    "review": {
+     "n": 7,
+     "base_rate": 0.429,
+     "brier": 0.3646,
+     "ece_mass": 0.5158,
+     "auc": 0.333
+    }
+   }
+  },
+  "unweighted": {
+   "split": {
+    "mode": "family",
+    "holdout": 0.3,
+    "seed": 0,
+    "held_out": [
+     {
+      "by": "family",
+      "distinct": 10,
+      "held_out": [
+       "libreoffice_impress",
+       "multi_apps",
+       "os"
+      ]
+     }
+    ],
+    "notes": [],
+    "train_rows": 3953,
+    "test_rows": 2946,
+    "dropped_crossing_rows": 0
+   },
+   "train_rows": 3953,
+   "test_rows": 2946,
+   "coverage": {
+    "rows_by_option": {
+     "direct": 3931,
+     "check": 0,
+     "heal": 0,
+     "wait": 0,
+     "look_light": 0,
+     "look_full": 9,
+     "review": 13,
+     "reason": 0,
+     "ask_help": 0
+    },
+    "counted_by_option": {
+     "direct": 3931,
+     "check": 0,
+     "heal": 0,
+     "wait": 0,
+     "look_light": 0,
+     "look_full": 9,
+     "review": 13,
+     "reason": 0,
+     "ask_help": 0
+    },
+    "min_rows": 30,
+    "min_support": 0.2,
+    "rule": "rows (no IPW)"
+   },
+   "intervals": {
+    "bootstrap_replicates": 200,
+    "min_boot": 20,
+    "usable": true,
+    "refit_per_replicate": {
+     "outcome_iters": 1500,
+     "propensity_refit": false
+    },
+    "note": "percentile interval over session-bootstrap refits"
+   },
+   "load_opts": {
+    "commands": "exclude",
+    "all_sessions": false,
+    "features": "v2"
+   },
+   "ipw": null,
+   "load": {
+    "files": 332,
+    "executed_rows": 6881,
+    "intervention_rows": 18,
+    "interventions_unlabelled_dropped": 97,
+    "safety_outcomes_excluded": 16,
+    "risky_steps_excluded": 20,
+    "environment_labels": 0,
+    "files_without_task_label": 0,
+    "commands_excluded": 2634,
+    "later_sessions_excluded": 0,
+    "pre_decision_state_unrecoverable": 388,
+    "rows_with_x_pre": 0,
+    "handback_attributed": 24,
+    "handback_unattributable": 133,
+    "by_option": {
+     "direct": 6863,
+     "look_full": 16,
+     "review": 20
+    },
+    "by_tier": {
+     "model": 6312,
+     "rule": 567,
+     "review": 20
+    }
+   },
+   "state_coverage": {
+    "propensity_saved": true,
+    "clip": 0.05,
+    "rule": "an option is considered at state x only when e_o(x) >= clip and e_direct(x) >= clip and it has min_rows effective rows; otherwise: no estimate basis (legacy heuristic fallback, logged)",
+    "train_states_supported": {
+     "direct": 1.0,
+     "look_full": 0.0,
+     "review": 0.0018
+    }
+   },
+   "dr": null,
+   "treatment_on_test": {
+    "n": 2946,
+    "groups": 105,
+    "base_rate": 0.927,
+    "brier": 0.0632,
+    "brier_ci95": [
+     0.0557,
+     0.0721
+    ],
+    "nll": 0.2354,
+    "nll_ci95": [
+     0.2093,
+     0.266
+    ],
+    "ece_mass": 0.0296,
+    "ece_mass_ci95": [
+     0.0225,
+     0.0412
+    ],
+    "ece_width": 0.0141,
+    "auc": 0.738,
+    "auc_ci95": [
+     0.6773,
+     0.7829
+    ],
+    "bootstrap": {
+     "reps": 50,
+     "resample": "sessions"
+    }
+   },
+   "by_option": {
+    "direct": {
+     "n": 2932,
+     "base_rate": 0.928,
+     "brier": 0.0627,
+     "ece_mass": 0.0301,
+     "auc": 0.735
+    },
+    "look_full": {
+     "n": 7,
+     "base_rate": 1.0,
+     "brier": 0.0148,
+     "ece_mass": 0.1071,
+     "auc": null
+    },
+    "review": {
+     "n": 7,
+     "base_rate": 0.429,
+     "brier": 0.3205,
+     "ece_mass": 0.514,
+     "auc": 0.75
+    }
+   }
+  }
+ }
+}

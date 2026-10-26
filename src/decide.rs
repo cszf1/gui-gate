@@ -88,6 +88,9 @@ pub fn is_nav_key(ctx: &ActionCtx) -> bool {
 }
 
 /// scaled by how hard the step is to undo and by how stuck the run already is (consecutive known failures).
+/// This is a PRIOR, not an estimate: 2 × turn_cost + side_cost, × severity (scroll / nav key 0.5, plain 1, typing 1.5,
+/// commit 2, risky 3), × (1 + consec_fail)^fail_exp. Logs can estimate recovery time only as a correlated proxy; the
+/// product loss of a failed task (L in docs/value-model-v2.md section 9) has to be set, not learned.
 pub fn fail_cost(ctx: &ActionCtx, f: &Feats, cfg: &GateConfig) -> f64 {
     let base = 2.0 * cfg.turn_cost + cfg.side_cost;
     let tool = ctx.tool.as_str();
@@ -158,6 +161,12 @@ pub struct GateConfig {
     pub value_threshold: f64,
     pub value_random_rate: f64,
     pub value_seed: u64,
+    /// weight of a person's active second against a wall second in the local net gain G_o (GUI_GATE_GAMMA, default 1;
+    /// treatment model only - the legacy prior folds person seconds into its cost as before)
+    pub gamma: f64,
+    /// price of one optional intervention in seconds, the intervention-budget control, separate from lam
+    /// (GUI_GATE_ETA, default 0; treatment model only). lam trades time; eta caps how often the gate intervenes.
+    pub eta: f64,
     /// how check is valued: voi (value of information) | legacy (forced probe before a hand-back)
     pub check_model: String,
     /// the operator's task file (--task-file / GUI_GATE_TASK_FILE): re-read when it changes; the newest version is used
@@ -173,7 +182,7 @@ impl Default for GateConfig {
             batch: "auto".into(), deny_consecutive: 3, deny_total: 8, costs: default_costs(), weights: prior_weights(),
             gains: prior_gains(), calib: Some(PRIOR_CALIB), model_name: "osworld_v3".into(), fail_exp: 1.0, tree_diff: true, text_only: false,
             value_model_req: "legacy".into(), value_v2: false, value_model: "legacy".into(), treatment: None, cost_table: None,
-            value_policy: "learned".into(), value_threshold: 0.7, value_random_rate: 0.1, value_seed: 0, check_model: "legacy".into(),
+            value_policy: "learned".into(), value_threshold: 0.7, value_random_rate: 0.1, value_seed: 0, gamma: 1.0, eta: 0.0, check_model: "legacy".into(),
             task_file: None,
         }
     }
@@ -243,6 +252,8 @@ impl GateConfig {
         if let Some(v) = env("GUI_GATE_VALUE_THRESHOLD").and_then(|v| v.parse().ok()) { c.value_threshold = v; }
         if let Some(v) = env("GUI_GATE_VALUE_RANDOM_RATE").and_then(|v| v.parse().ok()) { c.value_random_rate = v; }
         if let Some(v) = env("GUI_GATE_VALUE_SEED").and_then(|v| v.parse().ok()) { c.value_seed = v; }
+        if let Some(v) = env("GUI_GATE_GAMMA").and_then(|v| v.parse::<f64>().ok()).filter(|v| *v >= 0.0) { c.gamma = v; }
+        if let Some(v) = env("GUI_GATE_ETA").and_then(|v| v.parse::<f64>().ok()).filter(|v| *v >= 0.0) { c.eta = v; }
         if let Some(v) = env("GUI_GATE_VALUE_MODEL") {
             let v = v.to_lowercase();
             if crate::value::VALUE_MODELS.contains(&v.as_str()) { c.value_model_req = v; } else { log_err(&format!("unknown GUI_GATE_VALUE_MODEL {v}; using legacy")); }

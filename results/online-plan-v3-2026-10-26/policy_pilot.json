@@ -1,0 +1,878 @@
+{
+ "kind": "policy_pilot_v1",
+ "dry": true,
+ "seed": 20261026,
+ "task_list": "task_list_ovf.txt",
+ "selection": {
+  "rule": "3 tasks per domain, random.Random('policy:20261026').sample over the sorted domain list",
+  "tasks": {
+   "Chrome": [
+    "chrome-2ad9387a-65d8-4e33-ad5b-7580065a27ca",
+    "chrome-7a5a7856-f1b6-42a4-ade9-1ca81ca0f263",
+    "chrome-99146c54-4f37-4ab8-9327-5f3291665e1e"
+   ],
+   "Impress": [
+    "libreoffice_impress-0f84bef9-9790-432e-92b7-eece357603fb",
+    "libreoffice_impress-550ce7e7-747b-495f-b122-acdc4d0b8e54",
+    "libreoffice_impress-ef9d12bd-bcee-4ba0-a40e-918400f43ddf"
+   ],
+   "Calc": [
+    "libreoffice_calc-0326d92d-d218-48a8-9ca1-981cd6d064c7",
+    "libreoffice_calc-1334ca3e-f9e3-4db8-9ca7-b4c653be7d17",
+    "libreoffice_calc-4172ea6e-6b77-4edb-a9cc-c0014bd1603b"
+   ],
+   "multi_apps": [
+    "multi_apps-2c1ebcd7-9c6d-4c9a-afad-900e381ecd5e",
+    "multi_apps-3a93cae4-ad3e-403e-8c12-65303b271818",
+    "multi_apps-f7dfbef3-7697-431c-883a-db8583a4e4f9"
+   ]
+  }
+ },
+ "conditions": {
+  "direct_with_safety": {
+   "GUI_GATE_VALUE_POLICY": "direct",
+   "GUI_GATE_VALUE_MODEL": "legacy",
+   "GUI_GATE_POLICY": "gate"
+  },
+  "legacy": {
+   "GUI_GATE_VALUE_POLICY": "learned",
+   "GUI_GATE_VALUE_MODEL": "legacy",
+   "GUI_GATE_POLICY": "gate"
+  },
+  "frozen_new": {
+   "GUI_GATE_VALUE_POLICY": "learned",
+   "GUI_GATE_VALUE_MODEL": "v2",
+   "GUI_GATE_POLICY": "gate"
+  }
+ },
+ "conditions_note": "identical safety rules, hard rules, reviewer, person channel and budgets in every condition; only the value step differs",
+ "seeds": [
+  0,
+  1,
+  2
+ ],
+ "runs": 108,
+ "schedule": [
+  {
+   "slot": 0,
+   "task": "chrome-2ad9387a-65d8-4e33-ad5b-7580065a27ca",
+   "condition": "frozen_new",
+   "repeat": 2,
+   "tag": "chrome-2ad9387a-65d8-4e33-ad5b-7580065a27ca-frozen_new-s2"
+  },
+  {
+   "slot": 1,
+   "task": "chrome-2ad9387a-65d8-4e33-ad5b-7580065a27ca",
+   "condition": "legacy",
+   "repeat": 2,
+   "tag": "chrome-2ad9387a-65d8-4e33-ad5b-7580065a27ca-legacy-s2"
+  },
+  {
+   "slot": 2,
+   "task": "chrome-2ad9387a-65d8-4e33-ad5b-7580065a27ca",
+   "condition": "direct_with_safety",
+   "repeat": 2,
+   "tag": "chrome-2ad9387a-65d8-4e33-ad5b-7580065a27ca-direct_with_safety-s2"
+  },
+  {
+   "slot": 3,
+   "task": "multi_apps-f7dfbef3-7697-431c-883a-db8583a4e4f9",
+   "condition": "legacy",
+   "repeat": 2,
+   "tag": "multi_apps-f7dfbef3-7697-431c-883a-db8583a4e4f9-legacy-s2"
+  },
+  {
+   "slot": 4,
+   "task": "multi_apps-f7dfbef3-7697-431c-883a-db8583a4e4f9",
+   "condition": "frozen_new",
+   "repeat": 2,
+   "tag": "multi_apps-f7dfbef3-7697-431c-883a-db8583a4e4f9-frozen_new-s2"
+  },
+  {
+   "slot": 5,
+   "task": "multi_apps-f7dfbef3-7697-431c-883a-db8583a4e4f9",
+   "condition": "direct_with_safety",
+   "repeat": 2,
+   "tag": "multi_apps-f7dfbef3-7697-431c-883a-db8583a4e4f9-direct_with_safety-s2"
+  },
+  {
+   "slot": 6,
+   "task": "libreoffice_impress-ef9d12bd-bcee-4ba0-a40e-918400f43ddf",
+   "condition": "direct_with_safety",
+   "repeat": 0,
+   "tag": "libreoffice_impress-ef9d12bd-bcee-4ba0-a40e-918400f43ddf-direct_with_safety-s0"
+  },
+  {
+   "slot": 7,
+   "task": "libreoffice_impress-ef9d12bd-bcee-4ba0-a40e-918400f43ddf",
+   "condition": "legacy",
+   "repeat": 0,
+   "tag": "libreoffice_impress-ef9d12bd-bcee-4ba0-a40e-918400f43ddf-legacy-s0"
+  },
+  {
+   "slot": 8,
+   "task": "libreoffice_impress-ef9d12bd-bcee-4ba0-a40e-918400f43ddf",
+   "condition": "frozen_new",
+   "repeat": 0,
+   "tag": "libreoffice_impress-ef9d12bd-bcee-4ba0-a40e-918400f43ddf-frozen_new-s0"
+  },
+  {
+   "slot": 9,
+   "task": "libreoffice_calc-0326d92d-d218-48a8-9ca1-981cd6d064c7",
+   "condition": "frozen_new",
+   "repeat": 0,
+   "tag": "libreoffice_calc-0326d92d-d218-48a8-9ca1-981cd6d064c7-frozen_new-s0"
+  },
+  {
+   "slot": 10,
+   "task": "libreoffice_calc-0326d92d-d218-48a8-9ca1-981cd6d064c7",
+   "condition": "direct_with_safety",
+   "repeat": 0,
+   "tag": "libreoffice_calc-0326d92d-d218-48a8-9ca1-981cd6d064c7-direct_with_safety-s0"
+  },
+  {
+   "slot": 11,
+   "task": "libreoffice_calc-0326d92d-d218-48a8-9ca1-981cd6d064c7",
+   "condition": "legacy",
+   "repeat": 0,
+   "tag": "libreoffice_calc-0326d92d-d218-48a8-9ca1-981cd6d064c7-legacy-s0"
+  },
+  {
+   "slot": 12,
+   "task": "chrome-7a5a7856-f1b6-42a4-ade9-1ca81ca0f263",
+   "condition": "frozen_new",
+   "repeat": 0,
+   "tag": "chrome-7a5a7856-f1b6-42a4-ade9-1ca81ca0f263-frozen_new-s0"
+  },
+  {
+   "slot": 13,
+   "task": "chrome-7a5a7856-f1b6-42a4-ade9-1ca81ca0f263",
+   "condition": "direct_with_safety",
+   "repeat": 0,
+   "tag": "chrome-7a5a7856-f1b6-42a4-ade9-1ca81ca0f263-direct_with_safety-s0"
+  },
+  {
+   "slot": 14,
+   "task": "chrome-7a5a7856-f1b6-42a4-ade9-1ca81ca0f263",
+   "condition": "legacy",
+   "repeat": 0,
+   "tag": "chrome-7a5a7856-f1b6-42a4-ade9-1ca81ca0f263-legacy-s0"
+  },
+  {
+   "slot": 15,
+   "task": "multi_apps-f7dfbef3-7697-431c-883a-db8583a4e4f9",
+   "condition": "frozen_new",
+   "repeat": 1,
+   "tag": "multi_apps-f7dfbef3-7697-431c-883a-db8583a4e4f9-frozen_new-s1"
+  },
+  {
+   "slot": 16,
+   "task": "multi_apps-f7dfbef3-7697-431c-883a-db8583a4e4f9",
+   "condition": "direct_with_safety",
+   "repeat": 1,
+   "tag": "multi_apps-f7dfbef3-7697-431c-883a-db8583a4e4f9-direct_with_safety-s1"
+  },
+  {
+   "slot": 17,
+   "task": "multi_apps-f7dfbef3-7697-431c-883a-db8583a4e4f9",
+   "condition": "legacy",
+   "repeat": 1,
+   "tag": "multi_apps-f7dfbef3-7697-431c-883a-db8583a4e4f9-legacy-s1"
+  },
+  {
+   "slot": 18,
+   "task": "chrome-99146c54-4f37-4ab8-9327-5f3291665e1e",
+   "condition": "frozen_new",
+   "repeat": 1,
+   "tag": "chrome-99146c54-4f37-4ab8-9327-5f3291665e1e-frozen_new-s1"
+  },
+  {
+   "slot": 19,
+   "task": "chrome-99146c54-4f37-4ab8-9327-5f3291665e1e",
+   "condition": "direct_with_safety",
+   "repeat": 1,
+   "tag": "chrome-99146c54-4f37-4ab8-9327-5f3291665e1e-direct_with_safety-s1"
+  },
+  {
+   "slot": 20,
+   "task": "chrome-99146c54-4f37-4ab8-9327-5f3291665e1e",
+   "condition": "legacy",
+   "repeat": 1,
+   "tag": "chrome-99146c54-4f37-4ab8-9327-5f3291665e1e-legacy-s1"
+  },
+  {
+   "slot": 21,
+   "task": "multi_apps-3a93cae4-ad3e-403e-8c12-65303b271818",
+   "condition": "legacy",
+   "repeat": 0,
+   "tag": "multi_apps-3a93cae4-ad3e-403e-8c12-65303b271818-legacy-s0"
+  },
+  {
+   "slot": 22,
+   "task": "multi_apps-3a93cae4-ad3e-403e-8c12-65303b271818",
+   "condition": "frozen_new",
+   "repeat": 0,
+   "tag": "multi_apps-3a93cae4-ad3e-403e-8c12-65303b271818-frozen_new-s0"
+  },
+  {
+   "slot": 23,
+   "task": "multi_apps-3a93cae4-ad3e-403e-8c12-65303b271818",
+   "condition": "direct_with_safety",
+   "repeat": 0,
+   "tag": "multi_apps-3a93cae4-ad3e-403e-8c12-65303b271818-direct_with_safety-s0"
+  },
+  {
+   "slot": 24,
+   "task": "libreoffice_calc-4172ea6e-6b77-4edb-a9cc-c0014bd1603b",
+   "condition": "direct_with_safety",
+   "repeat": 0,
+   "tag": "libreoffice_calc-4172ea6e-6b77-4edb-a9cc-c0014bd1603b-direct_with_safety-s0"
+  },
+  {
+   "slot": 25,
+   "task": "libreoffice_calc-4172ea6e-6b77-4edb-a9cc-c0014bd1603b",
+   "condition": "frozen_new",
+   "repeat": 0,
+   "tag": "libreoffice_calc-4172ea6e-6b77-4edb-a9cc-c0014bd1603b-frozen_new-s0"
+  },
+  {
+   "slot": 26,
+   "task": "libreoffice_calc-4172ea6e-6b77-4edb-a9cc-c0014bd1603b",
+   "condition": "legacy",
+   "repeat": 0,
+   "tag": "libreoffice_calc-4172ea6e-6b77-4edb-a9cc-c0014bd1603b-legacy-s0"
+  },
+  {
+   "slot": 27,
+   "task": "libreoffice_impress-550ce7e7-747b-495f-b122-acdc4d0b8e54",
+   "condition": "legacy",
+   "repeat": 0,
+   "tag": "libreoffice_impress-550ce7e7-747b-495f-b122-acdc4d0b8e54-legacy-s0"
+  },
+  {
+   "slot": 28,
+   "task": "libreoffice_impress-550ce7e7-747b-495f-b122-acdc4d0b8e54",
+   "condition": "direct_with_safety",
+   "repeat": 0,
+   "tag": "libreoffice_impress-550ce7e7-747b-495f-b122-acdc4d0b8e54-direct_with_safety-s0"
+  },
+  {
+   "slot": 29,
+   "task": "libreoffice_impress-550ce7e7-747b-495f-b122-acdc4d0b8e54",
+   "condition": "frozen_new",
+   "repeat": 0,
+   "tag": "libreoffice_impress-550ce7e7-747b-495f-b122-acdc4d0b8e54-frozen_new-s0"
+  },
+  {
+   "slot": 30,
+   "task": "libreoffice_impress-550ce7e7-747b-495f-b122-acdc4d0b8e54",
+   "condition": "legacy",
+   "repeat": 1,
+   "tag": "libreoffice_impress-550ce7e7-747b-495f-b122-acdc4d0b8e54-legacy-s1"
+  },
+  {
+   "slot": 31,
+   "task": "libreoffice_impress-550ce7e7-747b-495f-b122-acdc4d0b8e54",
+   "condition": "direct_with_safety",
+   "repeat": 1,
+   "tag": "libreoffice_impress-550ce7e7-747b-495f-b122-acdc4d0b8e54-direct_with_safety-s1"
+  },
+  {
+   "slot": 32,
+   "task": "libreoffice_impress-550ce7e7-747b-495f-b122-acdc4d0b8e54",
+   "condition": "frozen_new",
+   "repeat": 1,
+   "tag": "libreoffice_impress-550ce7e7-747b-495f-b122-acdc4d0b8e54-frozen_new-s1"
+  },
+  {
+   "slot": 33,
+   "task": "libreoffice_calc-1334ca3e-f9e3-4db8-9ca7-b4c653be7d17",
+   "condition": "direct_with_safety",
+   "repeat": 2,
+   "tag": "libreoffice_calc-1334ca3e-f9e3-4db8-9ca7-b4c653be7d17-direct_with_safety-s2"
+  },
+  {
+   "slot": 34,
+   "task": "libreoffice_calc-1334ca3e-f9e3-4db8-9ca7-b4c653be7d17",
+   "condition": "frozen_new",
+   "repeat": 2,
+   "tag": "libreoffice_calc-1334ca3e-f9e3-4db8-9ca7-b4c653be7d17-frozen_new-s2"
+  },
+  {
+   "slot": 35,
+   "task": "libreoffice_calc-1334ca3e-f9e3-4db8-9ca7-b4c653be7d17",
+   "condition": "legacy",
+   "repeat": 2,
+   "tag": "libreoffice_calc-1334ca3e-f9e3-4db8-9ca7-b4c653be7d17-legacy-s2"
+  },
+  {
+   "slot": 36,
+   "task": "libreoffice_impress-ef9d12bd-bcee-4ba0-a40e-918400f43ddf",
+   "condition": "frozen_new",
+   "repeat": 2,
+   "tag": "libreoffice_impress-ef9d12bd-bcee-4ba0-a40e-918400f43ddf-frozen_new-s2"
+  },
+  {
+   "slot": 37,
+   "task": "libreoffice_impress-ef9d12bd-bcee-4ba0-a40e-918400f43ddf",
+   "condition": "direct_with_safety",
+   "repeat": 2,
+   "tag": "libreoffice_impress-ef9d12bd-bcee-4ba0-a40e-918400f43ddf-direct_with_safety-s2"
+  },
+  {
+   "slot": 38,
+   "task": "libreoffice_impress-ef9d12bd-bcee-4ba0-a40e-918400f43ddf",
+   "condition": "legacy",
+   "repeat": 2,
+   "tag": "libreoffice_impress-ef9d12bd-bcee-4ba0-a40e-918400f43ddf-legacy-s2"
+  },
+  {
+   "slot": 39,
+   "task": "libreoffice_calc-0326d92d-d218-48a8-9ca1-981cd6d064c7",
+   "condition": "direct_with_safety",
+   "repeat": 1,
+   "tag": "libreoffice_calc-0326d92d-d218-48a8-9ca1-981cd6d064c7-direct_with_safety-s1"
+  },
+  {
+   "slot": 40,
+   "task": "libreoffice_calc-0326d92d-d218-48a8-9ca1-981cd6d064c7",
+   "condition": "legacy",
+   "repeat": 1,
+   "tag": "libreoffice_calc-0326d92d-d218-48a8-9ca1-981cd6d064c7-legacy-s1"
+  },
+  {
+   "slot": 41,
+   "task": "libreoffice_calc-0326d92d-d218-48a8-9ca1-981cd6d064c7",
+   "condition": "frozen_new",
+   "repeat": 1,
+   "tag": "libreoffice_calc-0326d92d-d218-48a8-9ca1-981cd6d064c7-frozen_new-s1"
+  },
+  {
+   "slot": 42,
+   "task": "libreoffice_calc-4172ea6e-6b77-4edb-a9cc-c0014bd1603b",
+   "condition": "legacy",
+   "repeat": 1,
+   "tag": "libreoffice_calc-4172ea6e-6b77-4edb-a9cc-c0014bd1603b-legacy-s1"
+  },
+  {
+   "slot": 43,
+   "task": "libreoffice_calc-4172ea6e-6b77-4edb-a9cc-c0014bd1603b",
+   "condition": "frozen_new",
+   "repeat": 1,
+   "tag": "libreoffice_calc-4172ea6e-6b77-4edb-a9cc-c0014bd1603b-frozen_new-s1"
+  },
+  {
+   "slot": 44,
+   "task": "libreoffice_calc-4172ea6e-6b77-4edb-a9cc-c0014bd1603b",
+   "condition": "direct_with_safety",
+   "repeat": 1,
+   "tag": "libreoffice_calc-4172ea6e-6b77-4edb-a9cc-c0014bd1603b-direct_with_safety-s1"
+  },
+  {
+   "slot": 45,
+   "task": "multi_apps-f7dfbef3-7697-431c-883a-db8583a4e4f9",
+   "condition": "frozen_new",
+   "repeat": 0,
+   "tag": "multi_apps-f7dfbef3-7697-431c-883a-db8583a4e4f9-frozen_new-s0"
+  },
+  {
+   "slot": 46,
+   "task": "multi_apps-f7dfbef3-7697-431c-883a-db8583a4e4f9",
+   "condition": "direct_with_safety",
+   "repeat": 0,
+   "tag": "multi_apps-f7dfbef3-7697-431c-883a-db8583a4e4f9-direct_with_safety-s0"
+  },
+  {
+   "slot": 47,
+   "task": "multi_apps-f7dfbef3-7697-431c-883a-db8583a4e4f9",
+   "condition": "legacy",
+   "repeat": 0,
+   "tag": "multi_apps-f7dfbef3-7697-431c-883a-db8583a4e4f9-legacy-s0"
+  },
+  {
+   "slot": 48,
+   "task": "libreoffice_impress-0f84bef9-9790-432e-92b7-eece357603fb",
+   "condition": "direct_with_safety",
+   "repeat": 1,
+   "tag": "libreoffice_impress-0f84bef9-9790-432e-92b7-eece357603fb-direct_with_safety-s1"
+  },
+  {
+   "slot": 49,
+   "task": "libreoffice_impress-0f84bef9-9790-432e-92b7-eece357603fb",
+   "condition": "legacy",
+   "repeat": 1,
+   "tag": "libreoffice_impress-0f84bef9-9790-432e-92b7-eece357603fb-legacy-s1"
+  },
+  {
+   "slot": 50,
+   "task": "libreoffice_impress-0f84bef9-9790-432e-92b7-eece357603fb",
+   "condition": "frozen_new",
+   "repeat": 1,
+   "tag": "libreoffice_impress-0f84bef9-9790-432e-92b7-eece357603fb-frozen_new-s1"
+  },
+  {
+   "slot": 51,
+   "task": "chrome-7a5a7856-f1b6-42a4-ade9-1ca81ca0f263",
+   "condition": "legacy",
+   "repeat": 2,
+   "tag": "chrome-7a5a7856-f1b6-42a4-ade9-1ca81ca0f263-legacy-s2"
+  },
+  {
+   "slot": 52,
+   "task": "chrome-7a5a7856-f1b6-42a4-ade9-1ca81ca0f263",
+   "condition": "frozen_new",
+   "repeat": 2,
+   "tag": "chrome-7a5a7856-f1b6-42a4-ade9-1ca81ca0f263-frozen_new-s2"
+  },
+  {
+   "slot": 53,
+   "task": "chrome-7a5a7856-f1b6-42a4-ade9-1ca81ca0f263",
+   "condition": "direct_with_safety",
+   "repeat": 2,
+   "tag": "chrome-7a5a7856-f1b6-42a4-ade9-1ca81ca0f263-direct_with_safety-s2"
+  },
+  {
+   "slot": 54,
+   "task": "chrome-99146c54-4f37-4ab8-9327-5f3291665e1e",
+   "condition": "frozen_new",
+   "repeat": 2,
+   "tag": "chrome-99146c54-4f37-4ab8-9327-5f3291665e1e-frozen_new-s2"
+  },
+  {
+   "slot": 55,
+   "task": "chrome-99146c54-4f37-4ab8-9327-5f3291665e1e",
+   "condition": "legacy",
+   "repeat": 2,
+   "tag": "chrome-99146c54-4f37-4ab8-9327-5f3291665e1e-legacy-s2"
+  },
+  {
+   "slot": 56,
+   "task": "chrome-99146c54-4f37-4ab8-9327-5f3291665e1e",
+   "condition": "direct_with_safety",
+   "repeat": 2,
+   "tag": "chrome-99146c54-4f37-4ab8-9327-5f3291665e1e-direct_with_safety-s2"
+  },
+  {
+   "slot": 57,
+   "task": "multi_apps-2c1ebcd7-9c6d-4c9a-afad-900e381ecd5e",
+   "condition": "legacy",
+   "repeat": 1,
+   "tag": "multi_apps-2c1ebcd7-9c6d-4c9a-afad-900e381ecd5e-legacy-s1"
+  },
+  {
+   "slot": 58,
+   "task": "multi_apps-2c1ebcd7-9c6d-4c9a-afad-900e381ecd5e",
+   "condition": "frozen_new",
+   "repeat": 1,
+   "tag": "multi_apps-2c1ebcd7-9c6d-4c9a-afad-900e381ecd5e-frozen_new-s1"
+  },
+  {
+   "slot": 59,
+   "task": "multi_apps-2c1ebcd7-9c6d-4c9a-afad-900e381ecd5e",
+   "condition": "direct_with_safety",
+   "repeat": 1,
+   "tag": "multi_apps-2c1ebcd7-9c6d-4c9a-afad-900e381ecd5e-direct_with_safety-s1"
+  },
+  {
+   "slot": 60,
+   "task": "multi_apps-2c1ebcd7-9c6d-4c9a-afad-900e381ecd5e",
+   "condition": "legacy",
+   "repeat": 0,
+   "tag": "multi_apps-2c1ebcd7-9c6d-4c9a-afad-900e381ecd5e-legacy-s0"
+  },
+  {
+   "slot": 61,
+   "task": "multi_apps-2c1ebcd7-9c6d-4c9a-afad-900e381ecd5e",
+   "condition": "frozen_new",
+   "repeat": 0,
+   "tag": "multi_apps-2c1ebcd7-9c6d-4c9a-afad-900e381ecd5e-frozen_new-s0"
+  },
+  {
+   "slot": 62,
+   "task": "multi_apps-2c1ebcd7-9c6d-4c9a-afad-900e381ecd5e",
+   "condition": "direct_with_safety",
+   "repeat": 0,
+   "tag": "multi_apps-2c1ebcd7-9c6d-4c9a-afad-900e381ecd5e-direct_with_safety-s0"
+  },
+  {
+   "slot": 63,
+   "task": "multi_apps-2c1ebcd7-9c6d-4c9a-afad-900e381ecd5e",
+   "condition": "frozen_new",
+   "repeat": 2,
+   "tag": "multi_apps-2c1ebcd7-9c6d-4c9a-afad-900e381ecd5e-frozen_new-s2"
+  },
+  {
+   "slot": 64,
+   "task": "multi_apps-2c1ebcd7-9c6d-4c9a-afad-900e381ecd5e",
+   "condition": "direct_with_safety",
+   "repeat": 2,
+   "tag": "multi_apps-2c1ebcd7-9c6d-4c9a-afad-900e381ecd5e-direct_with_safety-s2"
+  },
+  {
+   "slot": 65,
+   "task": "multi_apps-2c1ebcd7-9c6d-4c9a-afad-900e381ecd5e",
+   "condition": "legacy",
+   "repeat": 2,
+   "tag": "multi_apps-2c1ebcd7-9c6d-4c9a-afad-900e381ecd5e-legacy-s2"
+  },
+  {
+   "slot": 66,
+   "task": "multi_apps-3a93cae4-ad3e-403e-8c12-65303b271818",
+   "condition": "frozen_new",
+   "repeat": 2,
+   "tag": "multi_apps-3a93cae4-ad3e-403e-8c12-65303b271818-frozen_new-s2"
+  },
+  {
+   "slot": 67,
+   "task": "multi_apps-3a93cae4-ad3e-403e-8c12-65303b271818",
+   "condition": "legacy",
+   "repeat": 2,
+   "tag": "multi_apps-3a93cae4-ad3e-403e-8c12-65303b271818-legacy-s2"
+  },
+  {
+   "slot": 68,
+   "task": "multi_apps-3a93cae4-ad3e-403e-8c12-65303b271818",
+   "condition": "direct_with_safety",
+   "repeat": 2,
+   "tag": "multi_apps-3a93cae4-ad3e-403e-8c12-65303b271818-direct_with_safety-s2"
+  },
+  {
+   "slot": 69,
+   "task": "libreoffice_calc-1334ca3e-f9e3-4db8-9ca7-b4c653be7d17",
+   "condition": "frozen_new",
+   "repeat": 0,
+   "tag": "libreoffice_calc-1334ca3e-f9e3-4db8-9ca7-b4c653be7d17-frozen_new-s0"
+  },
+  {
+   "slot": 70,
+   "task": "libreoffice_calc-1334ca3e-f9e3-4db8-9ca7-b4c653be7d17",
+   "condition": "legacy",
+   "repeat": 0,
+   "tag": "libreoffice_calc-1334ca3e-f9e3-4db8-9ca7-b4c653be7d17-legacy-s0"
+  },
+  {
+   "slot": 71,
+   "task": "libreoffice_calc-1334ca3e-f9e3-4db8-9ca7-b4c653be7d17",
+   "condition": "direct_with_safety",
+   "repeat": 0,
+   "tag": "libreoffice_calc-1334ca3e-f9e3-4db8-9ca7-b4c653be7d17-direct_with_safety-s0"
+  },
+  {
+   "slot": 72,
+   "task": "chrome-2ad9387a-65d8-4e33-ad5b-7580065a27ca",
+   "condition": "frozen_new",
+   "repeat": 0,
+   "tag": "chrome-2ad9387a-65d8-4e33-ad5b-7580065a27ca-frozen_new-s0"
+  },
+  {
+   "slot": 73,
+   "task": "chrome-2ad9387a-65d8-4e33-ad5b-7580065a27ca",
+   "condition": "direct_with_safety",
+   "repeat": 0,
+   "tag": "chrome-2ad9387a-65d8-4e33-ad5b-7580065a27ca-direct_with_safety-s0"
+  },
+  {
+   "slot": 74,
+   "task": "chrome-2ad9387a-65d8-4e33-ad5b-7580065a27ca",
+   "condition": "legacy",
+   "repeat": 0,
+   "tag": "chrome-2ad9387a-65d8-4e33-ad5b-7580065a27ca-legacy-s0"
+  },
+  {
+   "slot": 75,
+   "task": "libreoffice_calc-0326d92d-d218-48a8-9ca1-981cd6d064c7",
+   "condition": "direct_with_safety",
+   "repeat": 2,
+   "tag": "libreoffice_calc-0326d92d-d218-48a8-9ca1-981cd6d064c7-direct_with_safety-s2"
+  },
+  {
+   "slot": 76,
+   "task": "libreoffice_calc-0326d92d-d218-48a8-9ca1-981cd6d064c7",
+   "condition": "frozen_new",
+   "repeat": 2,
+   "tag": "libreoffice_calc-0326d92d-d218-48a8-9ca1-981cd6d064c7-frozen_new-s2"
+  },
+  {
+   "slot": 77,
+   "task": "libreoffice_calc-0326d92d-d218-48a8-9ca1-981cd6d064c7",
+   "condition": "legacy",
+   "repeat": 2,
+   "tag": "libreoffice_calc-0326d92d-d218-48a8-9ca1-981cd6d064c7-legacy-s2"
+  },
+  {
+   "slot": 78,
+   "task": "multi_apps-3a93cae4-ad3e-403e-8c12-65303b271818",
+   "condition": "legacy",
+   "repeat": 1,
+   "tag": "multi_apps-3a93cae4-ad3e-403e-8c12-65303b271818-legacy-s1"
+  },
+  {
+   "slot": 79,
+   "task": "multi_apps-3a93cae4-ad3e-403e-8c12-65303b271818",
+   "condition": "frozen_new",
+   "repeat": 1,
+   "tag": "multi_apps-3a93cae4-ad3e-403e-8c12-65303b271818-frozen_new-s1"
+  },
+  {
+   "slot": 80,
+   "task": "multi_apps-3a93cae4-ad3e-403e-8c12-65303b271818",
+   "condition": "direct_with_safety",
+   "repeat": 1,
+   "tag": "multi_apps-3a93cae4-ad3e-403e-8c12-65303b271818-direct_with_safety-s1"
+  },
+  {
+   "slot": 81,
+   "task": "libreoffice_impress-0f84bef9-9790-432e-92b7-eece357603fb",
+   "condition": "direct_with_safety",
+   "repeat": 2,
+   "tag": "libreoffice_impress-0f84bef9-9790-432e-92b7-eece357603fb-direct_with_safety-s2"
+  },
+  {
+   "slot": 82,
+   "task": "libreoffice_impress-0f84bef9-9790-432e-92b7-eece357603fb",
+   "condition": "legacy",
+   "repeat": 2,
+   "tag": "libreoffice_impress-0f84bef9-9790-432e-92b7-eece357603fb-legacy-s2"
+  },
+  {
+   "slot": 83,
+   "task": "libreoffice_impress-0f84bef9-9790-432e-92b7-eece357603fb",
+   "condition": "frozen_new",
+   "repeat": 2,
+   "tag": "libreoffice_impress-0f84bef9-9790-432e-92b7-eece357603fb-frozen_new-s2"
+  },
+  {
+   "slot": 84,
+   "task": "libreoffice_calc-4172ea6e-6b77-4edb-a9cc-c0014bd1603b",
+   "condition": "frozen_new",
+   "repeat": 2,
+   "tag": "libreoffice_calc-4172ea6e-6b77-4edb-a9cc-c0014bd1603b-frozen_new-s2"
+  },
+  {
+   "slot": 85,
+   "task": "libreoffice_calc-4172ea6e-6b77-4edb-a9cc-c0014bd1603b",
+   "condition": "direct_with_safety",
+   "repeat": 2,
+   "tag": "libreoffice_calc-4172ea6e-6b77-4edb-a9cc-c0014bd1603b-direct_with_safety-s2"
+  },
+  {
+   "slot": 86,
+   "task": "libreoffice_calc-4172ea6e-6b77-4edb-a9cc-c0014bd1603b",
+   "condition": "legacy",
+   "repeat": 2,
+   "tag": "libreoffice_calc-4172ea6e-6b77-4edb-a9cc-c0014bd1603b-legacy-s2"
+  },
+  {
+   "slot": 87,
+   "task": "chrome-7a5a7856-f1b6-42a4-ade9-1ca81ca0f263",
+   "condition": "frozen_new",
+   "repeat": 1,
+   "tag": "chrome-7a5a7856-f1b6-42a4-ade9-1ca81ca0f263-frozen_new-s1"
+  },
+  {
+   "slot": 88,
+   "task": "chrome-7a5a7856-f1b6-42a4-ade9-1ca81ca0f263",
+   "condition": "legacy",
+   "repeat": 1,
+   "tag": "chrome-7a5a7856-f1b6-42a4-ade9-1ca81ca0f263-legacy-s1"
+  },
+  {
+   "slot": 89,
+   "task": "chrome-7a5a7856-f1b6-42a4-ade9-1ca81ca0f263",
+   "condition": "direct_with_safety",
+   "repeat": 1,
+   "tag": "chrome-7a5a7856-f1b6-42a4-ade9-1ca81ca0f263-direct_with_safety-s1"
+  },
+  {
+   "slot": 90,
+   "task": "chrome-99146c54-4f37-4ab8-9327-5f3291665e1e",
+   "condition": "legacy",
+   "repeat": 0,
+   "tag": "chrome-99146c54-4f37-4ab8-9327-5f3291665e1e-legacy-s0"
+  },
+  {
+   "slot": 91,
+   "task": "chrome-99146c54-4f37-4ab8-9327-5f3291665e1e",
+   "condition": "frozen_new",
+   "repeat": 0,
+   "tag": "chrome-99146c54-4f37-4ab8-9327-5f3291665e1e-frozen_new-s0"
+  },
+  {
+   "slot": 92,
+   "task": "chrome-99146c54-4f37-4ab8-9327-5f3291665e1e",
+   "condition": "direct_with_safety",
+   "repeat": 0,
+   "tag": "chrome-99146c54-4f37-4ab8-9327-5f3291665e1e-direct_with_safety-s0"
+  },
+  {
+   "slot": 93,
+   "task": "libreoffice_calc-1334ca3e-f9e3-4db8-9ca7-b4c653be7d17",
+   "condition": "legacy",
+   "repeat": 1,
+   "tag": "libreoffice_calc-1334ca3e-f9e3-4db8-9ca7-b4c653be7d17-legacy-s1"
+  },
+  {
+   "slot": 94,
+   "task": "libreoffice_calc-1334ca3e-f9e3-4db8-9ca7-b4c653be7d17",
+   "condition": "frozen_new",
+   "repeat": 1,
+   "tag": "libreoffice_calc-1334ca3e-f9e3-4db8-9ca7-b4c653be7d17-frozen_new-s1"
+  },
+  {
+   "slot": 95,
+   "task": "libreoffice_calc-1334ca3e-f9e3-4db8-9ca7-b4c653be7d17",
+   "condition": "direct_with_safety",
+   "repeat": 1,
+   "tag": "libreoffice_calc-1334ca3e-f9e3-4db8-9ca7-b4c653be7d17-direct_with_safety-s1"
+  },
+  {
+   "slot": 96,
+   "task": "libreoffice_impress-ef9d12bd-bcee-4ba0-a40e-918400f43ddf",
+   "condition": "frozen_new",
+   "repeat": 1,
+   "tag": "libreoffice_impress-ef9d12bd-bcee-4ba0-a40e-918400f43ddf-frozen_new-s1"
+  },
+  {
+   "slot": 97,
+   "task": "libreoffice_impress-ef9d12bd-bcee-4ba0-a40e-918400f43ddf",
+   "condition": "legacy",
+   "repeat": 1,
+   "tag": "libreoffice_impress-ef9d12bd-bcee-4ba0-a40e-918400f43ddf-legacy-s1"
+  },
+  {
+   "slot": 98,
+   "task": "libreoffice_impress-ef9d12bd-bcee-4ba0-a40e-918400f43ddf",
+   "condition": "direct_with_safety",
+   "repeat": 1,
+   "tag": "libreoffice_impress-ef9d12bd-bcee-4ba0-a40e-918400f43ddf-direct_with_safety-s1"
+  },
+  {
+   "slot": 99,
+   "task": "libreoffice_impress-0f84bef9-9790-432e-92b7-eece357603fb",
+   "condition": "frozen_new",
+   "repeat": 0,
+   "tag": "libreoffice_impress-0f84bef9-9790-432e-92b7-eece357603fb-frozen_new-s0"
+  },
+  {
+   "slot": 100,
+   "task": "libreoffice_impress-0f84bef9-9790-432e-92b7-eece357603fb",
+   "condition": "direct_with_safety",
+   "repeat": 0,
+   "tag": "libreoffice_impress-0f84bef9-9790-432e-92b7-eece357603fb-direct_with_safety-s0"
+  },
+  {
+   "slot": 101,
+   "task": "libreoffice_impress-0f84bef9-9790-432e-92b7-eece357603fb",
+   "condition": "legacy",
+   "repeat": 0,
+   "tag": "libreoffice_impress-0f84bef9-9790-432e-92b7-eece357603fb-legacy-s0"
+  },
+  {
+   "slot": 102,
+   "task": "libreoffice_impress-550ce7e7-747b-495f-b122-acdc4d0b8e54",
+   "condition": "direct_with_safety",
+   "repeat": 2,
+   "tag": "libreoffice_impress-550ce7e7-747b-495f-b122-acdc4d0b8e54-direct_with_safety-s2"
+  },
+  {
+   "slot": 103,
+   "task": "libreoffice_impress-550ce7e7-747b-495f-b122-acdc4d0b8e54",
+   "condition": "legacy",
+   "repeat": 2,
+   "tag": "libreoffice_impress-550ce7e7-747b-495f-b122-acdc4d0b8e54-legacy-s2"
+  },
+  {
+   "slot": 104,
+   "task": "libreoffice_impress-550ce7e7-747b-495f-b122-acdc4d0b8e54",
+   "condition": "frozen_new",
+   "repeat": 2,
+   "tag": "libreoffice_impress-550ce7e7-747b-495f-b122-acdc4d0b8e54-frozen_new-s2"
+  },
+  {
+   "slot": 105,
+   "task": "chrome-2ad9387a-65d8-4e33-ad5b-7580065a27ca",
+   "condition": "frozen_new",
+   "repeat": 1,
+   "tag": "chrome-2ad9387a-65d8-4e33-ad5b-7580065a27ca-frozen_new-s1"
+  },
+  {
+   "slot": 106,
+   "task": "chrome-2ad9387a-65d8-4e33-ad5b-7580065a27ca",
+   "condition": "direct_with_safety",
+   "repeat": 1,
+   "tag": "chrome-2ad9387a-65d8-4e33-ad5b-7580065a27ca-direct_with_safety-s1"
+  },
+  {
+   "slot": 107,
+   "task": "chrome-2ad9387a-65d8-4e33-ad5b-7580065a27ca",
+   "condition": "legacy",
+   "repeat": 1,
+   "tag": "chrome-2ad9387a-65d8-4e33-ad5b-7580065a27ca-legacy-s1"
+  }
+ ],
+ "analysis": {
+  "unit": "task (paired across conditions)",
+  "aggregation": "repeats (seeds) are averaged WITHIN each task first; each task then contributes one paired difference",
+  "tests": [
+   "paired bootstrap over tasks of the mean difference (95% CI)",
+   "sign-flip permutation test over tasks"
+  ],
+  "not_used": "McNemar on repeat averages (it assumes one binary outcome per pair; only valid with exactly one run per task and condition)",
+  "secondary": [
+   "total wall seconds and its tail (p90)",
+   "interventions per GUI action (budget)",
+   "model tokens",
+   "person requests"
+  ],
+  "comparisons": [
+   "frozen_new vs legacy",
+   "frozen_new vs direct_with_safety",
+   "legacy vs direct_with_safety"
+  ],
+  "power": "12 tasks: for direction and variance only; cannot detect a few percentage points"
+ },
+ "infra": {
+  "primary": "keep every planned unit; a unit that is still infra after the allowed re-run counts as a failure in its condition",
+  "rerun": "external infra only (box setup failure, relay/API outage, evaluator crash with a logged external cause): at most one re-run, same rule in every condition, decided before looking at outcomes",
+  "valid_pairs": "reported separately: tasks with a valid run in every condition",
+  "not_infra": "algorithm hangs (gate, Pi loop, model loop, check_done or role deadline) are failures of the condition, never infra",
+  "never": "no retry until success"
+ },
+ "note": "plan only: this generator never starts a box, a gate, a model or a benchmark",
+ "status": "draft",
+ "frozen": {
+  "complete": false,
+  "hashes": {
+   "gate_commit": "acaba69"
+  },
+  "missing": [
+   "pi",
+   "main_model",
+   "main_thinking",
+   "reviewer_model",
+   "roles",
+   "prompts",
+   "driver",
+   "app_env",
+   "timeouts",
+   "cost_config",
+   "value_weights"
+  ],
+  "required": [
+   "pi",
+   "main_model",
+   "main_thinking",
+   "reviewer_model",
+   "roles",
+   "prompts",
+   "driver",
+   "app_env",
+   "timeouts",
+   "cost_config",
+   "gate_commit",
+   "value_weights"
+  ]
+ },
+ "note_draft": "DRAFT: not frozen (missing: pi, main_model, main_thinking, reviewer_model, roles, prompts, driver, app_env, timeouts, cost_config, value_weights); it must not be run as the pre-registered experiment",
+ "plan_sha256": "0f8fc05f9c1ec217815604a8930263c9a4de851512a7d2a625ed2d8f80c20801"
+}

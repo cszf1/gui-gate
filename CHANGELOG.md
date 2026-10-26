@@ -1,6 +1,16 @@
 # Changelog
 
-## 0.10.3 (unreleased) - security / person / roles (branch v3-sec)
+## 0.10.3 (2026-10-26) - the final release of gui-gate as a standalone MCP
+
+Both halves of the external review of 2026-10-26 (v2), developed on separate branches and merged here. Development
+continues inside cszf1/gui-pi-desktop; this repository receives no further feature releases.
+
+Also in this release:
+- bench/human_pilot.py reads the `gui-pi-human/2` record format (`wait_s` / `active_s`, `active_s` may be null);
+  `gui-pi-human/1` records are still accepted and their `secs` is read as `wait_s`.
+- Version 0.10.3; README states that v0.10.3 is the last standalone release.
+
+### Security, person requests, roles (branch v3-sec)
 
 From the external review of 2026-10-26 (v2), sections 3, 4, 7 and the state-machine note at the end of section 1;
 checklist with the status of every item: docs/review-v3-checklist-sec.md. Every fix has a regression test in
@@ -67,6 +77,52 @@ Roles (section 7):
 Tests changed to the new semantics (the old expectation relied on a reviewer-down fallback to direct, or on a read by
 the agent not counting as a re-observation): test_actions_e2e grey-zone check, test_v097 loop / verifier tests,
 test_security_e2e unknown outcome; status "executed" -> "done" in three tests.
+
+### Research, predictor, evaluation (branch v3-res)
+
+Checklist with the status of every review item: docs/review-v3-checklist-res.md. The default decision is unchanged
+(golden test `value::tests::default_path_output_is_unchanged` passes unmodified); everything below either only adds
+log fields, or changes opt-in paths (treatment / v2 value model), the trainers and the offline / online tooling.
+
+- **Decision data contract** (src/research.rs, `contract: decision_v1` on every action event): immutable `x_pre`
+  (features before any gate-side option) next to `x_post` (= `features`); after a wait the observed values and the
+  keys cleared by assumption (`x_post_observed`, `assumed_resets`) and a separate `waited` flag; `decision_id`,
+  `proposed` vs final decision, candidate with a structural `effect_id`, the processing `chain` with start / end times,
+  driver `exec_t0_ms`, `continues` (hand-back -> next action: same candidate / same effect / model switched /
+  attributable) and three label layers `labels.exec` / `labels.local` / `labels.task` (always null in the gate).
+- **Trainers use x_pre only**; older rows whose trail ran wait / check / heal have no recoverable pre-decision state
+  and are out of the causal rows (counted, `--include-post` for description). Hand-back labels only for the same
+  candidate (and effect / decision where logged); otherwise "cannot be attributed" (counted). `--label task` is refused
+  for the treatment model (a task result copied onto every action is not an action-value label).
+- **Coverage per state**: the trainer saves the logged policy's propensity; at run time an option is considered only
+  where e_o(x) and e_direct(x) reach the clip (`TreatmentModel::covered_at`); otherwise `no_estimate_basis`. With no
+  covered option the legacy prior decides and the log says `fallback: "legacy_heuristic"`, `learned: false`.
+- **Choice on the conservative lower bound** of the local net gain G_o = C_recover·Δp − λ·Δt − γ·ΔH − η·1[o≠direct]
+  for every option (check included), instead of "point argmin, then check its interval". New `GUI_GATE_GAMMA`
+  (person seconds) and `GUI_GATE_ETA` (intervention-budget price, separate from λ); both default to the old behaviour.
+- **Bootstrap**: every replicate refits the propensity (under `--ipw`) and runs the full iteration count; `--boot`
+  default 200 (30 = pipeline check). Optional cross-fitted doubly robust estimate `--dr` (formula and assumptions in
+  the report).
+- **check**: no more P(pass) by flipping features without a probe model; without probe data it is a "cheap
+  verification heuristic" with no estimate basis; with a probe model its VOI interval enters the same rule; a re-binding
+  check is marked `includes_repair`.
+- **Costs**: `C_fail` documented as a prior; `gui-gate costs` uses component timers when logged (censored hand-backs
+  counted, not averaged), reports median / p90 / p99 / censored, and labels next-action gaps of older logs as an upper
+  bound.
+- **gate_next_step** no longer calls the action value model with a fictitious token click: own freshness rule
+  (`research::next_step_rule`) sharing auto-observe's duplicate-read test, plus advisory escalation
+  (switch strategy -> ask for help -> stop; never changes a decision, never touches safety asks).
+- **bench/offline_v2.py**: task + layout variants grouped; cross-family and cross-task reported apart, cross-run "not
+  available"; L2 chosen on development groups only (the 0.10.2 "AUC 0.795 with weaker L2" was tried on the test split
+  and is withdrawn as post hoc); same-budget random and heuristic baselines, online-only baseline list; incremental
+  calibration code (`--branches`; empty and marked without paired data); "post-hoc top-k screen" wording; scroll-repeat
+  label switch with both readings; cost quantiles and censoring; `--boot` (default 200).
+- **bench/online_plan.py pilots**: policy pilot (4 domains × 3 tasks, seed 20261026, direct-with-safety / legacy /
+  frozen-new × seeds 0/1/2 = 108 runs) and increment pilot (24 checkpoints × direct / look_full / matched wait × 3 = 216
+  branches); "frozen" only with a hash for every one of 12 items, else "draft" (`--require-frozen` refuses); analysis
+  aggregates repeats within the task first, no McNemar on averages; pre-registered infra rule. Plans only.
+- Docs: docs/value-model-v2.md sections 9-12 (two objectives, contract, label layers, three evidence chains); result
+  wording 185/361 = 51.25 %, 185/332 = 55.72 %, 28 infra, 1 not run, custom environment.
 
 ## 0.10.2 (2026-10-26) - last release of gui-gate as a standalone MCP
 

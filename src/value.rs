@@ -130,6 +130,45 @@ pub fn quantile(xs: &[f64], q: f64) -> f64 {
     if i + 1 < v.len() { v[i] * (1.0 - frac) + v[i + 1] * frac } else { v[i] }
 }
 
+/// The logged policy's propensity e_o(x) = P(option o | x) (softmax logistic, decision-time features only), saved with a
+/// treatment model so the gate can check overlap PER STATE: an option is covered at x only when both e_o(x) and
+/// e_direct(x) reach `clip` (and the option has `min_rows` effective rows overall). Without it, coverage per state is
+/// unknown and no option but direct is covered.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct PropensityModel {
+    pub opts: Vec<String>,
+    /// per option (same order as opts), weights over ALL_FEATURES; the first option is the reference (all zero)
+    pub w: Vec<IndexMap<String, f64>>,
+    pub clip: f64,
+}
+
+impl PropensityModel {
+    pub fn probs(&self, f: &Feats) -> Vec<f64> {
+        let z: Vec<f64> = self.w.iter().map(|wc| ALL_FEATURES.iter().map(|k| wc.get(*k).copied().unwrap_or(0.0) * fget(f, k)).sum::<f64>()).collect();
+        let m = z.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
+        let e: Vec<f64> = z.iter().map(|x| (x - m).exp()).collect();
+        let s: f64 = e.iter().sum();
+        e.iter().map(|x| x / s).collect()
+    }
+    pub fn p(&self, f: &Feats, o: &str) -> f64 {
+        let ps = self.probs(f);
+        self.opts.iter().position(|x| x == o).map(|i| ps[i]).unwrap_or(0.0)
+    }
+    pub fn to_json(&self) -> Value {
+        json!({"opts": self.opts, "clip": self.clip,
+               "w": self.w.iter().map(|m| Value::Object(m.iter().filter(|(_, v)| **v != 0.0).map(|(k, v)| (k.clone(), json!(round_to(*v, 5)))).collect())).collect::<Vec<_>>()})
+    }
+    pub fn from_json(v: &Value) -> Option<PropensityModel> {
+        let opts: Vec<String> = v.get("opts")?.as_array()?.iter().filter_map(|x| x.as_str().map(String::from)).collect();
+        let w: Vec<IndexMap<String, f64>> = v.get("w")?.as_array()?.iter()
+            .map(|m| m.as_object().map(|o| o.iter().filter_map(|(k, x)| x.as_f64().map(|f| (k.clone(), f))).collect()).unwrap_or_default()).collect();
+        if opts.is_empty() || opts.len() != w.len() {
+            return None;
+        }
+        Some(PropensityModel { opts, w, clip: as_f64(v.get("clip")).unwrap_or(0.05) })
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct TreatmentModel {
     pub name: String,
@@ -144,11 +183,13 @@ pub struct TreatmentModel {
     pub probe: Option<IndexMap<String, f64>>,
     pub level: f64,
     pub min_rows: usize,
+    /// state-level overlap (None: unknown, so only direct is covered)
+    pub propensity: Option<PropensityModel>,
 }
 
 impl Default for TreatmentModel {
     fn default() -> Self {
-        TreatmentModel { name: "treatment".into(), coef: Coefs::default(), boot: vec![], kind: "treatment_v1".into(), n_by_option: IndexMap::new(), probe: None, level: 0.9, min_rows: 30 }
+        TreatmentModel { name: "treatment".into(), coef: Coefs::default(), boot: vec![], kind: "treatment_v1".into(), n_by_option: IndexMap::new(), probe: None, level: 0.9, min_rows: 30, propensity: None }
     }
 }
 
@@ -156,8 +197,26 @@ impl TreatmentModel {
     pub fn q(&self, f: &Feats, o: &str) -> f64 {
         sigmoid(self.coef.logit(f, o))
     }
+    /// Option-level row count only (a necessary condition; the gate uses `covered_at`).
     pub fn covered(&self, o: &str) -> bool {
         o == "direct" || self.n_by_option.get(o).copied().unwrap_or(0) >= self.min_rows
+    }
+    /// State-level coverage: Ok(()) when this state has support for BOTH direct and o (e_o(x) >= clip and
+    /// e_direct(x) >= clip under the saved propensity of the logged policy) and o has min_rows effective rows; otherwise
+    /// Err(why) - "no estimate basis" for o here.
+    pub fn covered_at(&self, f: &Feats, o: &str) -> Result<(), String> {
+        if o == "direct" {
+            return Ok(());
+        }
+        if !self.covered(o) {
+            return Err(format!("{} effective training rows (< {})", self.n_by_option.get(o).copied().unwrap_or(0), self.min_rows));
+        }
+        let Some(p) = &self.propensity else { return Err("no propensity model: overlap at this state unknown".into()) };
+        let (eo, ed) = (p.p(f, o), p.p(f, "direct"));
+        if eo < p.clip || ed < p.clip {
+            return Err(format!("no overlap at this state: e_{o}(x)={eo:.3}, e_direct(x)={ed:.3} (clip {})", p.clip));
+        }
+        Ok(())
     }
     /// Enough bootstrap replicates for a percentile interval at `level`.
     pub fn has_intervals(&self) -> bool {
@@ -189,7 +248,8 @@ impl TreatmentModel {
         json!({"kind": self.kind, "name": self.name, "level": self.level, "min_rows": self.min_rows,
                "coef": self.coef.to_json(), "boot": self.boot.iter().map(|c| c.to_json()).collect::<Vec<_>>(),
                "n_by_option": Value::Object(self.n_by_option.iter().map(|(k, n)| (k.clone(), json!(n))).collect()),
-               "probe": self.probe.as_ref().map(|p| Value::Object(p.iter().map(|(k, x)| (k.clone(), json!(x))).collect()))})
+               "probe": self.probe.as_ref().map(|p| Value::Object(p.iter().map(|(k, x)| (k.clone(), json!(x))).collect())),
+               "propensity": self.propensity.as_ref().map(|p| p.to_json())})
     }
     pub fn from_json(v: &Value) -> Result<TreatmentModel, String> {
         let kind = s(v, "kind").to_string();
@@ -208,6 +268,7 @@ impl TreatmentModel {
             probe: v.get("probe").and_then(|p| p.as_object()).map(|o| o.iter().filter_map(|(k, x)| x.as_f64().map(|f| (k.clone(), f))).collect()),
             level: as_f64(v.get("level")).unwrap_or(0.9),
             min_rows: v.get("min_rows").and_then(|n| n.as_u64()).unwrap_or(30) as usize,
+            propensity: v.get("propensity").and_then(PropensityModel::from_json),
         })
     }
     pub fn load(path: &str) -> Result<TreatmentModel, String> {
@@ -274,6 +335,30 @@ impl CostTable {
     }
 }
 
+impl CostTable {
+    /// (extra wall seconds before the step, person seconds, "measured" | "prior") for the local net gain G_o: time and
+    /// person time are priced apart (lam, gamma).
+    pub fn split(&self, o: &str, prior: &IndexMap<String, f64>) -> (f64, f64, &'static str) {
+        match self.measured.get(o) {
+            Some(m) if m.n >= self.min_n => (m.extra_s + m.tokens / 1000.0 * self.token_s_per_k, m.person_s, "measured"),
+            _ => prior_split(o, prior),
+        }
+    }
+}
+
+fn prior_split(o: &str, prior: &IndexMap<String, f64>) -> (f64, f64, &'static str) {
+    let c = prior.get(o).copied().unwrap_or(0.0);
+    if matches!(o, "ask_help" | "ask_human") { (0.0, c, "prior") } else { (c, 0.0, "prior") }
+}
+
+/// (Δt extra seconds, ΔH person seconds, source) of an option, for G_o.
+pub fn cost_split(cfg: &GateConfig, o: &str) -> (f64, f64, &'static str) {
+    match &cfg.cost_table {
+        Some(t) => t.split(o, &cfg.costs),
+        None => prior_split(o, &cfg.costs),
+    }
+}
+
 pub fn cost_of(cfg: &GateConfig, o: &str) -> (f64, &'static str) {
     match &cfg.cost_table {
         Some(t) => t.cost(o, &cfg.costs),
@@ -330,20 +415,17 @@ pub fn legacy_po(f: &Feats, o: &str, pixel: bool, cfg: &GateConfig) -> f64 {
 
 // ---------------------------------------------------------------- check as value of information
 
-/// P(the tree probe confirms the target | x). With a fitted probe model, that model; otherwise the probability that
-/// makes the predictor coherent: q(x) = P(pass)·q(x, pass) + (1 − P(pass))·q(x, fail).
-pub fn check_pass_prob(f: &Feats, q_direct: &dyn Fn(&Feats) -> f64, probe: Option<&IndexMap<String, f64>>) -> f64 {
-    if let Some(w) = probe {
-        let z: f64 = ALL_FEATURES.iter().filter(|k| !matches!(**k, "check_pass" | "check_fail")).map(|k| w.get(*k).copied().unwrap_or(0.0) * fget(f, k)).sum();
-        return sigmoid(z).clamp(0.01, 0.99);
-    }
-    let (fp, ff) = probe_states(f);
-    let (q, qp, qf) = (q_direct(f), q_direct(&fp), q_direct(&ff));
-    if (qp - qf).abs() < 1e-9 {
-        return 0.5;
-    }
-    ((q - qf) / (qp - qf)).clamp(0.01, 0.99)
+/// P(the tree probe confirms the target | x) from a fitted probe model. v0.10.3: without a probe model there is NO
+/// estimate (None). 0.10.2 flipped the check features and solved q(x) = P(pass)·q(x, pass) + (1 − P(pass))·q(x, fail)
+/// for P(pass); that inverts the direct predictor, it does not measure the probe. Without probe data `check` is only a
+/// "cheap verification heuristic" (the legacy grey-zone rule), never a valued option.
+pub fn check_pass_prob(f: &Feats, probe: Option<&IndexMap<String, f64>>) -> Option<f64> {
+    let w = probe?;
+    let z: f64 = ALL_FEATURES.iter().filter(|k| !matches!(**k, "check_pass" | "check_fail")).map(|k| w.get(*k).copied().unwrap_or(0.0) * fget(f, k)).sum();
+    Some(sigmoid(z).clamp(0.01, 0.99))
 }
+
+pub const CHECK_HEURISTIC_NOTE: &str = "no probe model: check is a cheap verification heuristic (value of information not estimated); if it re-binds the target it also repairs it";
 
 /// The two states a probe can leave: confirmed (check_pass) or not (check_fail).
 pub fn probe_states(f: &Feats) -> (Feats, Feats) {
@@ -533,7 +615,9 @@ pub fn choose(ctx: &ActionCtx, f: &Feats, cfg: &GateConfig, check_available: boo
             let d = legacy_choose(ctx, f, &lc, &avail, p, cf, check_available, check_done);
             LAST.with(|l| {
                 if let Some(o) = l.borrow_mut().as_object_mut() {
-                    o.insert("fallback".into(), json!(format!("treatment model {} has {} bootstrap replicates (< {MIN_BOOT}): interval unknown, legacy prior used", m.name, m.boot.len())));
+                    o.insert("fallback".into(), json!("legacy_heuristic"));
+                    o.insert("learned".into(), json!(false));
+                    o.insert("fallback_reason".into(), json!(format!("treatment model {} has {} bootstrap replicates (< {MIN_BOOT}): interval unknown, legacy prior used", m.name, m.boot.len())));
                 }
             });
             d
@@ -571,13 +655,13 @@ fn legacy_choose(ctx: &ActionCtx, f: &Feats, cfg: &GateConfig, avail: &[&str], p
     if cfg.check_model == "voi" && avail.contains(&"check") {
         let no_check: IndexMap<String, f64> = scores.iter().filter(|(k, _)| k.as_str() != "check").map(|(k, v)| (k.clone(), *v)).collect();
         best = argmin(&no_check);
-        let pp = check_pass_prob(f, &|g| p_direct(g, cfg), None);
-        let v = check_voi(f, avail, &score, pp, cfg.lam * cost_of(cfg, "check").0);
-        if v.gain() > 1e-9 {
+        // the legacy prior has no probe model: check is not valued (0.10.2 inverted the predictor here); the grey-zone
+        // heuristic below applies instead
+        voi = json!({"status": CHECK_HEURISTIC_NOTE});
+        if check_available && !check_done && ["look_light", "look_full", "review"].contains(&best.as_str()) {
             best = "check".into();
-            tier = "voi";
+            tier = "grey";
         }
-        voi = v.json();
     } else if check_available && !check_done && ["look_light", "look_full", "review"].contains(&best.as_str()) {
         // legacy: before handing the step back to the model (a whole turn), try the cheap gate-side probe once
         best = "check".into();
@@ -588,47 +672,95 @@ fn legacy_choose(ctx: &ActionCtx, f: &Feats, cfg: &GateConfig, avail: &[&str], p
     Decision::new(&best, p, reason_line(p, f, &scores), tier).with_scores(&scores)
 }
 
+/// The learned choice (GUI_GATE_VALUE_MODEL=treatment|auto|v2 with weights). v0.10.3:
+/// * an option is considered only where the state supports BOTH direct and it (`covered_at`: saved propensity of the
+///   logged policy, e_o(x) >= clip and e_direct(x) >= clip, plus min_rows effective rows); elsewhere it has "no
+///   estimate basis" and is listed as such;
+/// * every option is compared on the conservative lower bound of its local net gain over direct,
+///   G_o = C_recover·Δp_o − λ·Δt_o − γ·ΔH_o − η·1[o≠direct] (research::local_gain), the `level` percentile interval
+///   over the bootstrap replicates; the option with the largest lower bound is taken when that bound is > 0, else
+///   direct. The same rule holds for check (valued as information only with a probe model; otherwise it has no
+///   estimate basis);
+/// * when no option but direct is covered here, the model has nothing to compare: the legacy prior decides and the log
+///   says fallback = "legacy_heuristic", learned = false.
 fn treatment_choose(ctx: &ActionCtx, f: &Feats, cfg: &GateConfig, m: &TreatmentModel, avail: &[&str], p: f64, cf: f64) -> Decision {
-    let uncovered: Vec<&str> = avail.iter().filter(|o| !m.covered(o)).cloned().collect();
-    let opts: Vec<&str> = avail.iter().filter(|o| m.covered(o)).cloned().collect();
-    let score = |g: &Feats, o: &str| cfg.lam * cost_of(cfg, o).0 + (1.0 - m.q(g, o)) * cf;
-    // acting options (check is information, valued separately)
-    let scores: IndexMap<String, f64> = opts.iter().filter(|o| **o != "check").map(|o| (o.to_string(), score(f, o))).collect();
-    let mut best = argmin(&scores);
-    let mut tier = "model";
-    let deltas: serde_json::Map<String, Value> = opts.iter().filter(|o| **o != "direct" && **o != "check")
-        .map(|o| (o.to_string(), m.delta(f, o).json())).collect();
-    // uncertainty: when the net benefit of the chosen option over the cheapest one may be <= 0 and the step is low
-    // risk, take the cheaper option (model doubt is not turned into a pop-up or an extra turn)
-    let cheapest = scores.keys().fold((String::from("direct"), f64::INFINITY), |a, k| {
-        let c = cost_of(cfg, k).0;
-        if c < a.1 { (k.clone(), c) } else { a }
-    }).0;
-    let mut nb_log = Value::Null;
-    if best != cheapest {
-        let nb = m.net_benefit(f, &best, &cheapest, cf, cfg.lam * (cost_of(cfg, &best).0 - cost_of(cfg, &cheapest).0));
-        let low_risk = ctx.risk_level.is_none() && ctx.handoff.is_none();
-        nb_log = json!({"option": best, "vs": cheapest, "net_s": nb.json(), "crosses_zero": nb.lo <= 0.0, "low_risk": low_risk});
-        if nb.lo <= 0.0 && low_risk {
-            best = cheapest.clone();
-            tier = "model_ci";
+    let prices = crate::research::Prices { lam: cfg.lam, gamma: cfg.gamma, eta: cfg.eta };
+    let mut no_basis = serde_json::Map::new();
+    let mut covered: Vec<&str> = vec![];
+    for o in avail.iter().filter(|o| **o != "direct") {
+        let r = if *o == "check" && m.probe.is_none() { Err(CHECK_HEURISTIC_NOTE.to_string()) } else { m.covered_at(f, o) };
+        match r {
+            Ok(()) => covered.push(o),
+            Err(why) => { no_basis.insert(o.to_string(), json!(why)); }
         }
     }
+    let uncovered: Vec<&str> = no_basis.keys().map(|k| avail.iter().find(|o| **o == k.as_str()).copied().unwrap_or("?")).collect();
+    if covered.is_empty() {
+        // no estimate basis for any option here: the learned model cannot back a choice
+        let mut lc = cfg.clone();
+        lc.check_model = "legacy".into();
+        let d = legacy_choose(ctx, f, &lc, avail, p, cf, avail.contains(&"check"), !avail.contains(&"check"));
+        LAST.with(|l| {
+            if let Some(o) = l.borrow_mut().as_object_mut() {
+                o.insert("fallback".into(), json!("legacy_heuristic"));
+                o.insert("learned".into(), json!(false));
+                o.insert("fallback_reason".into(), json!(format!("treatment model {}: no estimate basis at this state for any option but direct", m.name)));
+                o.insert("no_estimate_basis".into(), Value::Object(no_basis.clone()));
+            }
+        });
+        return d;
+    }
+    let al = (1.0 - m.level) / 2.0;
+    // G_o under one coefficient set
+    let g_of = |c: &Coefs, g: &Feats, o: &str| -> f64 {
+        let (dt, dh, _) = cost_split(cfg, o);
+        let dp = sigmoid(c.logit(g, o)) - sigmoid(c.logit(g, "direct"));
+        crate::research::local_gain(o, cf, dp, dt, dh, prices)
+    };
+    let interval = |xs: Vec<f64>, mean: f64| Interval { mean, lo: quantile(&xs, al), hi: quantile(&xs, 1.0 - al) };
+    let mut gains: IndexMap<String, Interval> = IndexMap::new();
     let mut voi = Value::Null;
-    if opts.contains(&"check") {
-        let pp = check_pass_prob(f, &|g| m.q(g, "direct"), m.probe.as_ref());
-        let v = check_voi(f, &opts, &score, pp, cfg.lam * cost_of(cfg, "check").0);
-        if v.gain() > 1e-9 {
-            best = "check".into();
-            tier = "voi";
+    for o in &covered {
+        if *o == "check" {
+            // value of information with the probe model, per replicate: best G after seeing the probe minus best G now
+            let acts: Vec<&str> = covered.iter().filter(|x| **x != "check").copied().collect();
+            let probe = m.probe.as_ref();
+            let voi_g = |c: &Coefs| -> f64 {
+                let best = |g: &Feats| acts.iter().map(|a| g_of(c, g, a)).fold(0.0_f64, f64::max); // direct = 0
+                let pp = check_pass_prob(f, probe).unwrap_or(0.5);
+                let (fp, ff) = probe_states(f);
+                let (dt, dh, _) = cost_split(cfg, "check");
+                pp * best(&fp) + (1.0 - pp) * best(&ff) - best(f) - prices.lam * dt - prices.gamma * dh - prices.eta
+            };
+            let iv = interval(m.boot.iter().map(voi_g).collect(), voi_g(&m.coef));
+            voi = json!({"gain_s": iv.json(), "p_pass": check_pass_prob(f, probe).map(|x| round_to(x, 3)), "note": "includes a repair when the probe re-binds the target"});
+            gains.insert("check".into(), iv);
+        } else {
+            let iv = interval(m.boot.iter().map(|c| g_of(c, f, o)).collect(), g_of(&m.coef, f, o));
+            gains.insert(o.to_string(), iv);
         }
-        voi = v.json();
     }
+    // the same conservative rule for every option: the largest lower bound, only when it is above zero
+    let (mut best, mut best_lb) = ("direct".to_string(), 0.0_f64);
+    for (o, iv) in &gains {
+        if iv.lo > best_lb {
+            best = o.clone();
+            best_lb = iv.lo;
+        }
+    }
+    let best_mean = gains.iter().fold(("direct".to_string(), 0.0_f64), |a, (o, iv)| if iv.mean > a.1 { (o.clone(), iv.mean) } else { a }).0;
+    let tier = if best == "direct" && best_mean != "direct" { "model_lb" } else if best == "check" { "voi" } else { "model" };
+    // expected costs for the decision's scores (cost(o) − G_o-style view kept for the log and the reason line)
+    let scores: IndexMap<String, f64> = std::iter::once("direct").chain(covered.iter().copied()).filter(|o| *o != "check")
+        .map(|o| (o.to_string(), cfg.lam * cost_of(cfg, o).0 + (1.0 - m.q(f, o)) * cf)).collect();
     let qd = m.q(f, "direct");
-    set_last(json!({"policy": cfg.value_policy, "model": m.name, "kind": m.kind, "p_direct": round_to(p, 4), "q_direct": round_to(qd, 4),
-        "fail_cost_s": round_to(cf, 2), "delta": deltas, "level": m.level, "net": nb_log, "uncovered": uncovered,
-        "costs": costs_json(cfg, &opts), "voi": voi, "chosen": best}));
-    let mut d = Decision::new(&best, p, reason_line(qd, f, &scores), tier).with_scores(&scores);
+    let deltas: serde_json::Map<String, Value> = covered.iter().filter(|o| **o != "check").map(|o| (o.to_string(), m.delta(f, o).json())).collect();
+    set_last(json!({"policy": cfg.value_policy, "model": m.name, "kind": m.kind, "learned": true, "p_direct": round_to(p, 4), "q_direct": round_to(qd, 4),
+        "fail_cost_s": round_to(cf, 2), "fail_cost_kind": "prior (2·turn_cost + side_cost, by severity and stuck factor)",
+        "delta": deltas, "level": m.level, "gain": Value::Object(gains.iter().map(|(o, iv)| (o.clone(), iv.json())).collect()),
+        "rule": "max lower bound of G_o over direct, > 0", "point_best": best_mean, "prices": {"lam": prices.lam, "gamma": prices.gamma, "eta": prices.eta},
+        "uncovered": uncovered, "no_estimate_basis": Value::Object(no_basis), "costs": costs_json(cfg, avail), "voi": voi, "chosen": best}));
+    let mut d = Decision::new(&best, p, format!("{}; lower bound of the net gain {best_lb:.1}s", reason_line(qd, f, &scores)), tier).with_scores(&scores);
     if best == "reason" {
         d.reason = format!("{}; {REASON_TEXT}", d.reason);
     }
@@ -660,7 +792,12 @@ mod tests {
         inter.insert("look_light".to_string(), w(&[("bias", -1.5)]));
         inter.insert("look_full".to_string(), w(&[("bias", -0.2), ("label_dup", 2.5)]));
         let n: IndexMap<String, usize> = ["direct", "look_light", "look_full", "check", "review", "wait", "reason"].iter().map(|o| (o.to_string(), 100)).collect();
-        TreatmentModel { coef: Coefs { base, inter }, n_by_option: n, ..Default::default() }
+        TreatmentModel { coef: Coefs { base, inter }, n_by_option: n, propensity: Some(uniform_prop()), ..Default::default() }
+    }
+    /// a logged policy that could take every option everywhere (1/7 each >= clip 0.05)
+    fn uniform_prop() -> PropensityModel {
+        let opts: Vec<String> = ["direct", "look_light", "look_full", "check", "review", "wait", "reason"].iter().map(|o| o.to_string()).collect();
+        PropensityModel { w: opts.iter().map(|_| IndexMap::new()).collect(), opts, clip: 0.05 }
     }
     fn cfg_with(m: TreatmentModel) -> GateConfig {
         let mut c = GateConfig::default();
@@ -709,7 +846,9 @@ mod tests {
         assert_eq!(d.scores, legacy.scores);
         let log = take_last();
         assert_eq!(log["model"], "legacy_prior");
-        assert!(log["fallback"].as_str().unwrap_or("").contains("bootstrap"), "{log}");
+        assert_eq!(log["fallback"], "legacy_heuristic");
+        assert_eq!(log["learned"], false);
+        assert!(log["fallback_reason"].as_str().unwrap_or("").contains("bootstrap"), "{log}");
     }
 
     #[test]
@@ -806,14 +945,15 @@ mod tests {
         let cfg = cfg_with(m.clone());
         let c = choose(&ctx("click", "token", "Save"), &f, &cfg, false, false);
         assert_eq!(c.option, "direct", "{}", c.reason);
-        assert_eq!(c.tier, "model_ci");
+        assert_eq!(c.tier, "model_lb");
         let log = take_last();
-        assert_eq!(log["net"]["crosses_zero"], true);
-        assert_eq!(log["net"]["option"], "look_full");
-        // a risky step does not take the cheap way out on model doubt
+        assert_eq!(log["point_best"], "look_full", "the point estimate alone would have picked the look: {log}");
+        assert!(log["gain"]["look_full"][0].as_f64().unwrap() <= 0.0, "{log}");
+        // v0.10.3: the same conservative rule for every option and every step (a risky step's safety asks are rules,
+        // decided before the value model; its higher fail cost is already in C_recover)
         let mut risky = ctx("click", "token", "Save");
         risky.risk_level = Some("medium".into());
-        assert_eq!(choose(&risky, &f, &cfg, false, false).option, "look_full");
+        assert_eq!(choose(&risky, &f, &cfg, false, false).option, "direct");
         // with confident replicates the option stays
         let mut m2 = model();
         for _ in 0..20 { m2.boot.push(m2.coef.clone()); }
@@ -865,7 +1005,8 @@ mod tests {
         let mut inter = IndexMap::new();
         inter.insert("look_full".to_string(), w(&[("bias", 1.0), ("check_fail", 4.0)]));
         let n: IndexMap<String, usize> = ["direct", "look_full", "check"].iter().map(|o| (o.to_string(), 100)).collect();
-        let m = TreatmentModel { coef: Coefs { base: base.clone(), inter: inter.clone() }, n_by_option: n.clone(), ..Default::default() };
+        let m = TreatmentModel { coef: Coefs { base: base.clone(), inter: inter.clone() }, n_by_option: n.clone(), propensity: Some(uniform_prop()),
+                                 probe: Some(w(&[("bias", 0.0)])), ..Default::default() };
         let cfg = cfg_with(with_boot(m.clone()));
         let f = feats();
         let score = |g: &Feats, o: &str| cfg.lam * cost_of(&cfg, o).0 + (1.0 - m.q(g, o)) * 19.0;
@@ -880,13 +1021,19 @@ mod tests {
         base.insert("check_pass".into(), 0.0);
         base.insert("check_fail".into(), 0.0);
         inter.get_mut("look_full").unwrap().insert("check_fail".into(), 0.0);
-        let m2 = TreatmentModel { coef: Coefs { base, inter }, n_by_option: n, ..Default::default() };
+        let m2 = TreatmentModel { coef: Coefs { base, inter }, n_by_option: n.clone(), propensity: Some(uniform_prop()), probe: Some(w(&[("bias", 0.0)])), ..Default::default() };
         let c2 = choose(&ctx("click", "token", "Bold"), &f, &cfg_with(with_boot(m2)), true, false);
         assert_ne!(c2.option, "check");
-        assert!(take_last()["voi"]["gain_s"].as_f64().unwrap() <= 0.0);
-        // coherent P(pass) without a probe model
-        let pp = check_pass_prob(&f, &|g| m.q(g, "direct"), None);
-        assert!((pp - 0.5).abs() < 1e-6);
+        assert!(take_last()["voi"]["gain_s"][1].as_f64().unwrap() <= 0.0);
+        // without a probe model there is no P(pass) estimate (0.10.2 inverted the predictor) and check is not valued
+        assert!(check_pass_prob(&f, None).is_none());
+        assert_eq!(check_pass_prob(&f, Some(&w(&[("bias", 0.0)]))), Some(0.5));
+        let mut m3 = m.clone();
+        m3.probe = None;
+        let c3 = choose(&ctx("click", "token", "Bold"), &f, &cfg_with(with_boot(m3)), true, false);
+        assert_ne!(c3.option, "check");
+        let log = take_last();
+        assert!(log["no_estimate_basis"]["check"].as_str().unwrap().contains("heuristic"), "{log}");
     }
 
     #[test]
@@ -1007,11 +1154,70 @@ mod tests {
     }
 
     #[test]
+    fn coverage_is_checked_per_state_and_no_basis_falls_back_to_the_legacy_heuristic() {
+        let mut f = feats();
+        f["label_dup"] = 1.0;
+        // the logged policy took look_full only when label_dup = 0: at this state (label_dup = 1) there is no overlap
+        let mut m = with_boot(model());
+        let mut p = uniform_prop();
+        let i = p.opts.iter().position(|o| o == "look_full").unwrap();
+        p.w[i].insert("label_dup".into(), -12.0);
+        m.propensity = Some(p);
+        assert!(m.covered("look_full"), "enough rows overall");
+        assert!(m.covered_at(&f, "look_full").is_err(), "but no support at this state");
+        let mut f0 = feats();
+        f0["label_dup"] = 0.0;
+        assert!(m.covered_at(&f0, "look_full").is_ok());
+        let c = choose(&ctx("click", "token", "Save"), &f, &cfg_with(m.clone()), false, false);
+        assert_ne!(c.option, "look_full", "{}", c.reason);
+        let log = take_last();
+        assert!(log["no_estimate_basis"]["look_full"].as_str().unwrap().contains("no overlap"), "{log}");
+        // no propensity saved: overlap per state unknown -> nothing but direct is covered -> legacy fallback, not learned
+        let mut m2 = with_boot(model());
+        m2.propensity = None;
+        let legacy = choose(&ctx("click", "token", "Save"), &f, &GateConfig::default(), false, false);
+        let _ = take_last();
+        let d = choose(&ctx("click", "token", "Save"), &f, &cfg_with(m2), false, false);
+        assert_eq!(d.option, legacy.option);
+        let log = take_last();
+        assert_eq!(log["fallback"], "legacy_heuristic");
+        assert_eq!(log["learned"], false);
+        assert_eq!(log["model"], "legacy_prior");
+        assert!(log["no_estimate_basis"]["look_full"].as_str().unwrap().contains("propensity"), "{log}");
+    }
+
+    #[test]
+    fn options_are_compared_on_the_lower_bound_not_the_point_estimate() {
+        let mut f = feats();
+        f["label_dup"] = 1.0;
+        // look_full: large mean gain but very uncertain; review: smaller mean, tight -> review wins on the lower bound
+        let mut m = model();
+        m.coef.inter.insert("review".to_string(), w(&[("label_dup", 1.2)]));
+        for i in 0..20 {
+            let mut c = m.coef.clone();
+            c.inter.get_mut("look_full").unwrap().insert("label_dup".into(), if i % 2 == 0 { 6.0 } else { -1.0 });
+            m.boot.push(c);
+        }
+        let mut cfg = cfg_with(m);
+        cfg.reviewer = true;
+        let d = choose(&ctx("click", "token", "Save"), &f, &cfg, false, false);
+        let log = take_last();
+        assert_eq!(log["point_best"], "look_full", "{log}");
+        assert_eq!(d.option, "review", "{log}");
+        assert_eq!(log["rule"], "max lower bound of G_o over direct, > 0");
+        // eta (intervention-budget price) moves the choice back to direct without touching lambda
+        cfg.eta = 50.0;
+        assert_eq!(choose(&ctx("click", "token", "Save"), &f, &cfg, false, false).option, "direct");
+        assert_eq!(take_last()["prices"]["lam"], 1.0);
+    }
+
+    #[test]
     fn model_json_roundtrip() {
         let mut m = model();
         m.boot.push(m.coef.clone());
         m.probe = Some(w(&[("bias", 1.0)]));
         let back = TreatmentModel::from_json(&m.to_json()).unwrap();
+        assert_eq!(back.propensity.as_ref().map(|p| p.opts.len()), Some(7));
         assert_eq!(back.coef, m.coef);
         assert_eq!(back.boot.len(), 1);
         assert_eq!(back.n_by_option, m.n_by_option);
