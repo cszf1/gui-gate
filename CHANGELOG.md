@@ -2,6 +2,28 @@
 
 ## Unreleased (goes into 0.10.2)
 
+Security regressions (branch v2-sec; tests/test_sec_regressions.py drives each one against tests/fake_driver.py):
+- Person answers fail closed on conflict: an accepted form that says yes and no at once (`{allow: true, decision:
+  "deny"}`, `done: true` next to `decision: "deny"`, `choice: "did_it"` next to `done: false`), a non-boolean `allow`,
+  or a `decision` that is not exactly `allow` / `deny` is a refusal (`human::map_accepted` / `conflicting_form`).
+  Before, `allow: true` won over `decision: "deny"`. A native yes/no dialog's output that is none of its buttons is a
+  refusal too (`human::map_desktop`; before it was recorded as "accepted").
+- A person's answer is bound to the task it was asked under: the MRTR answer carries the operator task version and the
+  reset epoch (`task_binding`); after the user wrote again (new task-file version) the person is asked again instead of
+  the old yes being used. A synchronous answer (dialog / legacy elicitation) given while the task changed approves
+  nothing (`human_outcome: "task_changed"`). Permits carry the version the approval was given under (`approval_tv`).
+- A read never writes: a read-only tool called with a destination (`screenshot_out_file`, `output_path`, `save_to`, a
+  path-valued argument ...) and any tool with a capture-to-file argument is refused at the call and at the dispatch
+  point; nothing is sent (`features::write_args`, `tier: "write_args"`).
+- Nobody but the person or the timeout ends a question: `gate_reset` (which the agent can call) voids parked requests
+  but no longer withdraws them, so input stays frozen until the person answers or it times out; a retry for another
+  call or without an answer burns the approval but does not end the freeze either (`PendingTable::resolve` / `void_all`).
+- An unmodelled (pass-through) action whose outcome was unknown is not re-sent blind: the same tool + arguments (key
+  order and delivery mode ignored) is refused once with a fresh window list; a deliberate re-send after that is
+  decided afresh (`Gate::pass_action`, `unmodelled_key`). Before, only gated GUI tools had this rule.
+- results/osworld-verified-v099-ds41-2026-10-23 README / report: the custom-environment wording and Wilson intervals
+  dropped by the final 361/361 refresh are restored with the final numbers (185/332 valid, 185/361 planned).
+
 Fixes from the gui-pi-desktop 0.3.0 live test on a Linux desktop (2026-10-25).
 - Person results: a declined / cancelled form now keeps the client's reason (`_meta["io.github.cszf1/gui-gate"].reason`
   or a top-level `reason`): `timed_out` -> `human_outcome: "timeout"`, `expired` (the client never showed it: another
