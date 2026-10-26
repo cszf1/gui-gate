@@ -98,7 +98,7 @@ impl Jobs {
             Some(None) => if stop { "stopped".to_string() } else { "killed".to_string() },
         };
         let t = format!("[run_command job {id}] {status} (cwd {}): {}\n{}", j.cwd, crate::util::trunc(&j.command, 120),
-                        crate::command::tail_cap(&out, tail_chars));
+                        crate::util::defang(&crate::command::tail_cap(&out, tail_chars)));
         Ok((t, json!({"job": id, "running": j.exit.is_none(), "exit_code": j.exit.flatten(), "seconds": (el * 10.0).round() / 10.0})))
     }
 

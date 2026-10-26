@@ -175,6 +175,17 @@ instance、nonce 和绑定（工具 + 参数）。门重启后旧进程签发的
 - Python（真门二进制 + tests/fake_driver.py）：`tests/test_security_e2e.py` 的绕过测试，`tests/test_remaining.py`（0.10.1：透传动作、launch_app、冻结、自己的对话框、gate_reset、签名 requestState、任务文件版本、严格回答类型、不再问、脱敏），`tests/test_actions_e2e.py`、`tests/test_gate.py`、
   `tests/test_v04.py`、`tests/test_commands.py` 中的边界测试。
 
+## v2（分支 v2-hum）：问人收尾、对话框默认按钮、agent 上下文
+
+- 桌面对话框默认按钮是拒绝的那个（zenity `--default-cancel`、osascript `default button` = 否、GTK 默认响应 = 拒绝、
+  WinForms `AcceptButton = $no`）：对话框抢焦点时的 Enter 不会批准。输入的文字走文本通道（`text:` / `typed`），不会被当成
+  allow / timeout 等按钮词（`human::dialog_result`）；助手进程失败记 `channel_unavailable`，不是“人拒绝”。
+- 对话框进程放在自己的进程组并登记到 `proc`：门退出（客户端关 stdin、信号）时随其它子进程一起被杀，待答 MRTR 请求作废并记录。
+- 审核模型拒绝的原话不回给 agent（只进日志 `risk_gate.reviewer`），`gate_report.reviewer` 只给 `configured|none`。
+- 应用 / 网页 / 终端 / 命令输出里以 `[gate]`、`[human via`、`[client`、`[gui-pi`、`[gui-gate]`、`[run_command]` 开头的行加
+  `(app text) ` 前缀（`util::defang`），不能冒充门的消息。
+- 详见 docs/gate-design-v2.md。
+
 ## 已知限制
 
 - 只匹配门能解析的效果：任意脚本、编码过的命令、多步拼出来的效果、GUI 里没有文件路径的删除，靠审核模型和人，不靠解析。

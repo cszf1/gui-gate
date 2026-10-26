@@ -134,7 +134,9 @@ class GateTests(unittest.TestCase):
         r2 = self.c.call("click", element_token=f"{s}:1", gate_ack=True)  # ignored
         self.assertTrue(r2.get("isError"))
         rep = self.c.call("gate_report")["structuredContent"]
-        self.assertEqual(rep["reviewer"], "api:chat:fake-reviewer")
+        # v2: the agent learns that a reviewer is configured, never which model / endpoint (it is in the gate's log)
+        self.assertEqual(rep["reviewer"], "configured")
+        self.assertNotIn("fake-reviewer", json.dumps(rep))
         self.assertNotIn("decider", rep)
 
     def test_second_read_omits_screenshot(self):
