@@ -152,8 +152,12 @@ class ValueGateActions(unittest.TestCase):
     def test_check_probes_in_the_grey_zone(self):
         # the same click failed once: before sending the step back to the model the gate probes the tree (check);
         # the target is still there, so the step goes on without a model turn
+        # (v0.10.3: the doubtful re-send goes to the gate's reviewer, here one that allows; a reviewer that does not
+        # answer no longer falls back to another scored option - see test_v3_sec.ReviewFailureNeverDirect)
         self.c.close()
-        self.c = Modern("--no-auto-observe")
+        self.rev = _Rev("allow")
+        self.c = Modern("--no-auto-observe", reviewer_url=self.rev.url)
+        self.addCleanup(self.rev.close)
         self.c.call("fake_mutate", fail_next=1)
         s = self.c.read()
         self.c.call("click", element_token=f"{s}:0")
@@ -517,7 +521,7 @@ class BoundaryTests(unittest.TestCase):
         c = Modern("--human", "deny")
         try:
             s = c.read()
-            self.assertEqual(c.call("click", element_token=f"{s}:0")["structuredContent"]["status"], "executed")
+            self.assertEqual(c.call("click", element_token=f"{s}:0")["structuredContent"]["status"], "done")
             s = c.read()
             self.assertEqual(c.call("click", element_token=f"{s}:1")["structuredContent"]["status"], "blocked")
             s = c.read()

@@ -333,7 +333,12 @@ class FinalDispatchCheck(unittest.TestCase):
 
 class UnknownOutcomes(unittest.TestCase):
     def test_driver_dying_mid_click_is_unknown_and_not_resent(self):
-        c = Modern()
+        # (v0.10.3: no auto-observe, so nothing has read the window since the unknown outcome; a reviewer that allows,
+        # so the fresh decision after the read is not held by an unanswered review)
+        from test_v04 import _Rev
+        rev = _Rev("allow")
+        self.addCleanup(rev.close)
+        c = Modern("--no-auto-observe", reviewer_url=rev.url)
         try:
             s = c.read()
             c.call("fake_mutate", crash_on="click")
@@ -342,8 +347,7 @@ class UnknownOutcomes(unittest.TestCase):
             self.assertEqual(r["structuredContent"]["status"], "unknown", r)
             self.assertIn("Outcome unknown", txt(r))
             self.assertEqual(c.clicked(), [])  # the restarted driver never got the click again
-            # the agent sends the same click again: the gate reads the window instead of re-sending it blind
-            s = c.read()
+            # the agent sends the same click again without reading: the gate does not re-send it blind
             r2 = c.call("click", element_token=f"{s}:0")
             self.assertTrue(r2.get("isError"))
             self.assertEqual(gate(r2)["decision"], "look_light")

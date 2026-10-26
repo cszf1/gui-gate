@@ -1,5 +1,73 @@
 # Changelog
 
+## 0.10.3 (unreleased) - security / person / roles (branch v3-sec)
+
+From the external review of 2026-10-26 (v2), sections 3, 4, 7 and the state-machine note at the end of section 1;
+checklist with the status of every item: docs/review-v3-checklist-sec.md. Every fix has a regression test in
+tests/test_v3_sec.py that runs the real gate binary against tests/fake_driver.py and asserts what the DRIVER received
+(new `FAKE_ACTION_LOG`, written before the fake acts or dies, so it survives driver restarts; `FAKE_CTL` / `FAKE_BOOT` /
+`FAKE_ON_BGFAIL` play a person or the desktop changing things). 19 of the 20 fail on the v0.10.2 binary (acaba69); the
+20th (a failed GUI re-read) was already held there by the "identical action just failed -> look_full" rule. Security tests are
+reported separately from task success; a passing attack set does not mean "no bypass" (docs/security-model.md).
+
+Security (section 3):
+- One send loop: every real send - first send, background -> foreground retry, focus / occlusion heals, batch steps -
+  passes the same `send_checks` (freeze, own dialog, final dispatch check) right before it goes out (`send_check` log
+  event per send). An automatic retry only after the driver said plainly nothing was delivered (`not_delivered`); the
+  permit the undelivered send used is handed back and the whole check runs again. Before: the background fallback
+  re-sent through `tool_raw` with no check (a task change between the two sends did not stop it).
+- Unknown outcomes are a ledger (`ledger::UnknownEntry`), not a one-shot hint: cleared only by a SUCCESSFUL read of the
+  same window after it (a failed read clears nothing); a non-idempotent effect (risk label or hand-off target: send,
+  delete, pay, submit ...) is not unlocked by a read at all - a person must confirm it did not happen (unattended: held,
+  `unknown_hold`). Survives gate_reset. Unmodelled actions: unlocked after one successful window list, if idempotent.
+- Approvals are bound to their business premise (`ledger::Premise`): the target window's value rows (recipient, amount,
+  body, form fields), the read's snapshot id and the versions of the files the effect names; shown to the person
+  (`_meta.premise`, part of the answer binding) and re-read in the final dispatch check. Changed -> the approval is void
+  (`tier: premise`, `premise_changed`), the re-send is decided / asked again; token / index targets are re-bound to the
+  fresh read. Unreadable premise -> `premise.readable: false` ("unverifiable"): said in the form, 10 s permit instead of
+  30 s, and a model reviewer's yes is not enough while a person is reachable.
+- Effect payload / command digests are SHA-256 (`effect::digest`, the in-tree pure-Rust SHA-256 already used for the
+  requestState HMAC, checked against NIST vectors; no new crate). v0.10.2 logs (16-hex FNV-1a) still read via
+  `EffectKey::from_json`, marked legacy, never equal to a new key.
+- A review the value model chose that gets no answer never falls back to another scored option (it could be direct):
+  a person decides when one is reachable, otherwise refused (`review_unavailable`). An MRTR retry that carries a
+  person's no / no-answer to an approval of the same call is refused even if a fresh decision would take another route.
+- Docs: requestState's HMAC proves the state was issued by this gate process, not that the "allow" came from a person;
+  the extension / shell that carries states and answers is part of the trusted computing base. Threat model is a
+  cooperative-but-fallible agent; keyword rules and the reviewer are not a sandbox for malicious code. The basename
+  fallback and "same app + same label" matching are conservative approximations used only for denial coverage.
+
+Person requests (section 4):
+- Burden: `wait_s` (popup to answer) and `active_s` are separate; active time only with the client's interaction
+  evidence (`_meta["io.github.cszf1/gui-gate"].active_ms` in the answer), otherwise missing (`active_s: null`) with an
+  upper bound `active_upper_s`; totals add `active_measured` / `active_missing` / `person_active_upper_s`.
+- One record per request (`person_request`: req, kind, task version, effect, deadline) and exactly one end
+  (`person_request_end`, terminal answered / no_answer / expired_no_retry / late / void / disconnected / unused) through
+  one function (`req_end`); duplicates are ignored. An MRTR request that expired without a retry now goes into
+  `unanswered`: the same effect is not asked again in that task version. The expiry sweep runs after a call's own
+  requestState is resolved (a late retry is a late answer, not an expiry).
+- After a takeover / "I did it": permits and approvals cleared, reads from before it are not acted on
+  (`takeover_stale`), the gate re-reads the target window, the window list (focused window) and the files changed under
+  $HOME meanwhile (`structuredContent.reread`); the same step sent again goes into the unknown ledger. Never replayed.
+
+Roles (section 7):
+- `role_enabled`: an explicit `GUI_GATE_ROLE_<NAME>_ENABLE=0` wins over the group switch and a configured endpoint, for
+  all seven roles (before, feasibility / verifier / judge / grounder could not be switched off). planner / search /
+  compact stay off by default (they belong in the client).
+- Total deadline per role call across all model calls and probes: `GUI_GATE_ROLE_DEADLINE_S` (default 120 s,
+  per role `GUI_GATE_ROLE_<NAME>_DEADLINE_S`); each HTTP request gets min(its timeout, time left); check_done returns
+  `verifier: {"status": "timeout"}` instead of hanging (one check_done took 1938 s). The verifier only runs on explicit
+  postconditions (plan milestones), else `{"status": "no_postconditions"}`.
+- Structured status for every tool: `status` in done / partial / unknown / input_required / done_by_person / blocked
+  (`executed` is renamed `done`; action results add `executed` true/false/"unknown", `postcondition`
+  {status: verified | unverifiable | reread | none}, batch `completed_steps` / `next_step`, `continuation_id`, and
+  `loop_state` normal / switch_strategy / blocked_repeat / help_or_stop - the loop breaker's levels as an explicit
+  fail -> switch -> help -> stop state machine, thresholds unchanged).
+
+Tests changed to the new semantics (the old expectation relied on a reviewer-down fallback to direct, or on a read by
+the agent not counting as a re-observation): test_actions_e2e grey-zone check, test_v097 loop / verifier tests,
+test_security_e2e unknown outcome; status "executed" -> "done" in three tests.
+
 ## 0.10.2 (2026-10-26) - last release of gui-gate as a standalone MCP
 
 **This is the last release of gui-gate as an independent MCP server.** Development moves to

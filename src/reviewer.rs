@@ -187,6 +187,26 @@ pub fn step_questions(action: &Value) -> &'static [(&'static str, &'static str)]
     }
 }
 
+thread_local! {
+    static DEADLINE: std::cell::Cell<Option<Instant>> = const { std::cell::Cell::new(None) };
+}
+
+/// Run `f` with an overall deadline: every HTTP request this thread makes inside it gets at most the time left
+/// (min of the configured per-request timeout and the deadline). Role calls use it (roles::probe_agent).
+pub fn with_deadline<T>(d: Instant, f: impl FnOnce() -> T) -> T {
+    let prev = DEADLINE.with(|c| c.replace(Some(d)));
+    let out = f();
+    DEADLINE.with(|c| c.set(prev));
+    out
+}
+
+/// Per-request timeout: the configured one (default 15 s), capped by the thread's deadline if one is set.
+pub fn request_timeout(configured: Option<f64>) -> Duration {
+    let base = configured.filter(|t| t.is_finite() && *t > 0.0).unwrap_or(15.0);
+    let left = DEADLINE.with(|c| c.get()).map(|d| d.saturating_duration_since(Instant::now()).as_secs_f64());
+    Duration::from_secs_f64(match left { Some(l) => base.min(l).max(0.01), None => base })
+}
+
 pub struct Reviewer {
     http: Option<Http>,
     timeout: Option<f64>,
@@ -363,7 +383,8 @@ impl Reviewer {
     fn post(&self, url: &str, body: Value, headers: &[(&str, String)]) -> Option<Value> {
         let h = self.http.as_ref()?;
         let local = ["127.0.0.1", "localhost", "[::1]"].iter().any(|x| url.contains(&format!("//{x}")));
-        let mut b = ureq::AgentBuilder::new().timeout(Duration::from_secs_f64(self.timeout.unwrap_or(15.0)));
+        // one timeout for the whole request (connect + send + the full answer), never unbounded
+        let mut b = ureq::AgentBuilder::new().timeout(request_timeout(self.timeout));
         if !local {
             if let Some(p) = env("HTTPS_PROXY").or_else(|| env("https_proxy")) {
                 if let Ok(px) = ureq::Proxy::new(p) {
@@ -550,6 +571,19 @@ pub fn parse(txt: &str) -> Option<Value> {
         return None;
     }
     Some(json!({"decision": dec, "reason": trunc(&pystr(d.get("reason")), 300)}))
+}
+
+#[cfg(test)]
+mod deadline_tests {
+    use super::*;
+    #[test]
+    fn request_timeout_is_capped_by_the_deadline() {
+        assert_eq!(request_timeout(None), Duration::from_secs(15));
+        assert_eq!(request_timeout(Some(60.0)), Duration::from_secs(60));
+        let t = with_deadline(Instant::now() + Duration::from_secs(2), || request_timeout(Some(60.0)));
+        assert!(t <= Duration::from_secs(2) && t > Duration::from_millis(1500), "{t:?}");
+        assert_eq!(request_timeout(Some(60.0)), Duration::from_secs(60), "the deadline ends with the closure");
+    }
 }
 
 #[cfg(test)]

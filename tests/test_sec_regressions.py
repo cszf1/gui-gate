@@ -206,7 +206,7 @@ class UnknownOutcomeNotReSent(unittest.TestCase):
             self.assertEqual(state(c)["passed"], [], "an action with an unknown outcome was re-sent blind")
             # after the gate made the agent look, a deliberate re-send is decided afresh
             r = c.call("set_clipboard", text="pay 100")
-            self.assertEqual(r["structuredContent"]["status"], "executed", txt(r))
+            self.assertEqual(r["structuredContent"]["status"], "done", txt(r))
             self.assertEqual(len(state(c)["passed"]), 1)
         finally:
             c.close()

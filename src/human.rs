@@ -64,6 +64,10 @@ pub struct CallCtx {
     pub used: bool,
     /// why the carried answer was dropped without being used ("effect_changed"), when it was
     pub dropped: Option<&'static str>,
+    /// v0.10.3: what a request parked by this call is about (gated() sets it before asking): the "kind|effect" key
+    /// the person is not asked again about after no answer, and the operator task version it was asked under
+    pub ask_key: String,
+    pub task_version: u64,
 }
 
 thread_local! {
@@ -95,6 +99,26 @@ pub fn answer_note() -> String {
     CALL.with(|x| x.borrow().answer.as_ref().map(|a| a.2.clone()).unwrap_or_default())
 }
 
+/// gated() names what the next person request of this call is about (kept with the parked request so its end -
+/// also an expiry without retry - is recorded against the same effect and task version).
+pub fn set_ask_ctx(ask_key: &str, task_version: u64) {
+    CALL.with(|x| { let mut c = x.borrow_mut(); c.ask_key = ask_key.to_string(); c.task_version = task_version; });
+}
+
+/// The person's answer this MRTR retry carries, when it is NOT an approval: (kind, answer, outcome, request id).
+pub fn carried_non_allow() -> Option<(String, String, String, String)> {
+    CALL.with(|x| { let c = x.borrow(); c.answer.as_ref().filter(|a| a.1 != "allow").map(|a| (a.0.clone(), a.1.clone(), a.4.clone(), c.req.clone())) })
+}
+
+/// The kind of the person answer this retry carries, if any.
+pub fn carried_kind() -> Option<String> {
+    CALL.with(|x| x.borrow().answer.as_ref().map(|a| a.0.clone()))
+}
+
+pub fn mark_used() {
+    CALL.with(|x| x.borrow_mut().used = true);
+}
+
 /// Tool name + arguments without the gate's own keys: what a pending person request is bound to.
 pub fn binding_of(tool: &str, args: &Value) -> String {
     let mut a = args.clone();
@@ -110,7 +134,11 @@ pub fn binding_of(tool: &str, args: &Value) -> String {
 /// passes it, the task context it was asked under (`task_binding`: operator task version + reset epoch). An answer
 /// whose binding differs from the request being decided now is never reused.
 pub fn answer_binding(meta: &Value) -> String {
-    let eff = meta.get("effect").map(|e| e.to_string()).unwrap_or_default();
+    let mut eff = meta.get("effect").map(|e| e.to_string()).unwrap_or_default();
+    // v0.10.3: and the business premise shown with it (an approve form): other rows now = another question
+    if let Some(d) = meta.get("premise").and_then(|p| p.get("digest")).and_then(|d| d.as_str()) {
+        eff.push_str(&format!("#premise={d}"));
+    }
     match meta.get("task_binding").and_then(|v| v.as_str()) {
         Some(tb) if !tb.is_empty() => format!("{eff}#task={tb}"),
         _ => eff,
@@ -132,6 +160,9 @@ pub struct Pending {
     pub voided: bool,
     /// its expiry without a retry was already logged (sweep_expired)
     pub reported: bool,
+    /// v0.10.3: "kind|effect" (not asked again after no answer) and the task version it was asked under
+    pub ask_key: String,
+    pub task_version: u64,
 }
 
 /// The request id of a requestState: its nonce (logged with every person event, never the signed state itself).
@@ -141,6 +172,19 @@ pub fn req_id(state: &str) -> String {
 
 thread_local! {
     static WAITED: RefCell<f64> = const { RefCell::new(0.0) };
+    static ACTIVE: RefCell<Option<f64>> = const { RefCell::new(None) };
+    static VOIDED: RefCell<Option<(String, Pending)>> = const { RefCell::new(None) };
+}
+
+/// Interaction seconds the CLIENT measured for the answer this retry carries (`_meta[META_KEY].active_ms` of the
+/// ElicitResult): evidence of active time. None = no evidence (the waiting time is only an upper bound).
+pub fn active_s() -> Option<f64> {
+    ACTIVE.with(|a| *a.borrow())
+}
+
+/// A voided request (reset) that a retry just consumed: (request id, request) - its single end is "void".
+pub fn take_voided() -> Option<(String, Pending)> {
+    VOIDED.with(|v| v.borrow_mut().take())
 }
 
 /// Seconds the person took on the MRTR request this call's retry answered (0 when none).
@@ -229,9 +273,13 @@ impl PendingTable {
             m.remove(state).unwrap()
         };
         if p.voided {
+            VOIDED.with(|v| *v.borrow_mut() = Some((req_id(state), p.clone())));
             return Resolved::Invalid("this request was voided (gate_reset, or a wrong / answer-less retry); the answer approves nothing");
         }
         WAITED.with(|w| *w.borrow_mut() = (now() - p.asked).max(0.0));
+        let act = responses.and_then(|r| r.get("human")).and_then(|h| h.get("_meta")).and_then(|m| m.get(META_KEY))
+            .and_then(|m| m.get("active_ms")).and_then(|v| v.as_f64()).filter(|v| v.is_finite() && *v >= 0.0).map(|ms| ms / 1000.0);
+        ACTIVE.with(|a| *a.borrow_mut() = act);
         if now() > p.deadline + MRTR_GRACE_S {
             return Resolved::Late(p.kind, p.effect);
         }
@@ -804,7 +852,8 @@ impl Human {
                 if let Some((k, a, _, eff, outcome)) = CALL.with(|x| x.borrow().answer.clone()) {
                     if k == kind && eff == effect_now {
                         let req = CALL.with(|x| { let mut c = x.borrow_mut(); c.used = true; c.req.clone() });
-                        return json!({"answer": a, "channel": "elicit", "mrtr": true, "ms": round_to(waited_s() * 1000.0, 1), "outcome": outcome, "kind": kind, "req": req});
+                        return json!({"answer": a, "channel": "elicit", "mrtr": true, "ms": round_to(waited_s() * 1000.0, 1), "outcome": outcome, "kind": kind, "req": req,
+                                      "active_ms": active_s().map(|x| round_to(x * 1000.0, 1))});
                     }
                     if k == kind {
                         // the target / window / payload changed since the person answered: that answer is not reused
@@ -816,9 +865,9 @@ impl Human {
                     // a batch would be re-run from its first step on retry: the step must be sent on its own
                     return json!({"answer": "batch", "channel": "elicit", "mrtr": true, "ms": 0.0});
                 }
-                let binding = CALL.with(|x| x.borrow().binding.clone());
+                let (binding, ask_key, task_version) = CALL.with(|x| { let c = x.borrow(); (c.binding.clone(), c.ask_key.clone(), c.task_version) });
                 let deadline = now() + self.timeout;
-                let state = self.pending.park(Pending { binding, kind: kind.into(), deadline, effect: effect_now, asked: now(), voided: false, reported: false });
+                let state = self.pending.park(Pending { binding, kind: kind.into(), deadline, effect: effect_now, asked: now(), voided: false, reported: false, ask_key, task_version });
                 let mut m = if meta.is_object() { meta } else { json!({}) };
                 if stale {
                     m["asked_again"] = json!("the action's target, or the task it was asked under, changed since the earlier answer");
@@ -924,7 +973,7 @@ mod tests {
     #[test]
     fn late_answer_is_a_timeout() {
         let h = Human::new("elicit", 0.0, Some(Arc::new(|_, _| None)), Arc::new(|| true));
-        let st = h.pending.park(Pending { binding: "b".into(), kind: "approve".into(), deadline: now() - MRTR_GRACE_S - 1.0, effect: String::new(), asked: now(), voided: false, reported: false });
+        let st = h.pending.park(Pending { binding: "b".into(), kind: "approve".into(), deadline: now() - MRTR_GRACE_S - 1.0, effect: String::new(), asked: now(), voided: false, reported: false, ask_key: String::new(), task_version: 0 });
         let resp = json!({"human": {"action": "accept", "content": {"decision": "allow"}}});
         assert!(matches!(h.pending.resolve(&st, "b", Some(&resp)), Resolved::Late(_, _)));
     }
@@ -1081,7 +1130,7 @@ mod tests {
         assert!(matches!(h.pending.resolve(&st, "click|{}", Some(&allow)), Resolved::Invalid(_)));
         assert!(!h.person_answering());
         // a timed-out request is over by itself
-        let st = h.pending.park(Pending { binding: "b".into(), kind: "approve".into(), deadline: now() - MRTR_GRACE_S - 1.0, effect: String::new(), asked: now(), voided: false, reported: false });
+        let st = h.pending.park(Pending { binding: "b".into(), kind: "approve".into(), deadline: now() - MRTR_GRACE_S - 1.0, effect: String::new(), asked: now(), voided: false, reported: false, ask_key: String::new(), task_version: 0 });
         assert!(!h.person_answering());
         assert!(matches!(h.pending.resolve(&st, "b", Some(&allow)), Resolved::Late(_, _)));
     }
@@ -1131,8 +1180,8 @@ mod tests {
     #[test]
     fn expired_requests_are_reported_once_and_still_resolve_late() {
         let h = Human::new("elicit", 30.0, Some(Arc::new(|_, _| None)), Arc::new(|| true));
-        let dead = h.pending.park(Pending { binding: "b".into(), kind: "approve".into(), deadline: now() - MRTR_GRACE_S - 1.0, effect: String::new(), asked: now() - 40.0, voided: false, reported: false });
-        let live = h.pending.park(Pending { binding: "c".into(), kind: "takeover".into(), deadline: now() + 60.0, effect: String::new(), asked: now(), voided: false, reported: false });
+        let dead = h.pending.park(Pending { binding: "b".into(), kind: "approve".into(), deadline: now() - MRTR_GRACE_S - 1.0, effect: String::new(), asked: now() - 40.0, voided: false, reported: false, ask_key: String::new(), task_version: 0 });
+        let live = h.pending.park(Pending { binding: "c".into(), kind: "takeover".into(), deadline: now() + 60.0, effect: String::new(), asked: now(), voided: false, reported: false, ask_key: String::new(), task_version: 0 });
         let ex = h.pending.sweep_expired();
         assert_eq!(ex.len(), 1);
         assert_eq!(ex[0].0, req_id(&dead));
@@ -1163,7 +1212,7 @@ mod tests {
     #[test]
     fn a_voided_request_keeps_the_freeze_until_its_timeout_is_swept() {
         let h = Human::new("elicit", 30.0, Some(Arc::new(|_, _| None)), Arc::new(|| true));
-        let live = h.pending.park(Pending { binding: "c".into(), kind: "approve".into(), deadline: now() + 60.0, effect: String::new(), asked: now(), voided: false, reported: false });
+        let live = h.pending.park(Pending { binding: "c".into(), kind: "approve".into(), deadline: now() + 60.0, effect: String::new(), asked: now(), voided: false, reported: false, ask_key: String::new(), task_version: 0 });
         let (n, v) = h.pending.void_live();
         assert_eq!((n, v.len()), (1, 1));
         assert_eq!(v[0].0, req_id(&live));
@@ -1171,7 +1220,7 @@ mod tests {
         assert!(h.pending.void_live().1.is_empty(), "a second reset does not void (or log) it again");
         assert!(h.pending.sweep_expired().is_empty(), "not expired yet");
         // expired: swept once (logged as its timeout) and the freeze is over
-        let dead = h.pending.park(Pending { binding: "d".into(), kind: "approve".into(), deadline: now() - MRTR_GRACE_S - 1.0, effect: String::new(), asked: now() - 40.0, voided: true, reported: false });
+        let dead = h.pending.park(Pending { binding: "d".into(), kind: "approve".into(), deadline: now() - MRTR_GRACE_S - 1.0, effect: String::new(), asked: now() - 40.0, voided: true, reported: false, ask_key: String::new(), task_version: 0 });
         let ex = h.pending.sweep_expired();
         assert_eq!(ex.len(), 1);
         assert!(ex[0].1.voided);
