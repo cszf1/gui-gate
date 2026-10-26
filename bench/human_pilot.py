@@ -7,10 +7,14 @@
                  [--out SESSIONS.jsonl]
 
 from-logs builds SESSIONS.jsonl from what the systems log, so nobody re-types the numbers:
-  * the gui-pi desktop client's `<data>/logs/human.jsonl` (schema `gui-pi-human/1`, desktop design 0.3 section 6.1):
-    one `human_q` line per question {task, type: approve|clarify|takeover|help, outcome, refused, secs, repeated,
-    takeover_steps} and one `human_summary` line per task {asks, by_type, repeated, person_active_s, person_wait_s,
-    agent_blocked_s, takeover_steps, cancelled, timed_out, declined, unavailable, task_s};
+  * the gui-pi desktop client's `<data>/logs/human.jsonl` (schema `gui-pi-human/2` since desktop 0.3.2, `/1` before;
+    desktop design section 6.1): one `human_q` line per question {task, type: approve|clarify|takeover|help, outcome,
+    refused, wait_s, active_s, evidence, repeated, takeover_steps} and one `human_summary` line per task {asks, by_type,
+    repeated, person_active_s, person_active_missing, person_active_upper_s, question_wait_s, no_question_s,
+    agent_blocked_s, takeover_steps, cancelled, timed_out, declined, unavailable, task_s}.
+    /2 separates the popup time (`wait_s`, never operating time) from the person's evidenced input time (`active_s`,
+    null = not measured; the summary adds how many are missing and an upper bound). /1 lines have only `secs` (read as
+    wait_s) and a summary `person_active_s` that was really popup time, and `person_wait_s` (= /2 no_question_s);
   * the gate's `person_burden` events (gui-gate >= 0.10.1 log: kind, outcome, repeat, wait_s, active_s, totals), used
     as a cross-check, or as the source when a task has no human.jsonl lines. The gate only sees the time a question was
     open (its person_wait_s is the desktop's agent_blocked_s), never the time a person spent watching between
@@ -28,6 +32,8 @@ burden went down. This script analyses a real pilot. One JSON line per (particip
              "timeout_reason": "...",                      # timeouts: recorded, never read as "the user refused"
              "approval_correct": true|false|null}],         # approvals only: was approving right (ground truth)?
    "active_s": 41.0, "waiting_s": 63.0, "takeover_steps": 3, "cancelled": false, "timed_out": false,
+   # from gui-pi-human/2 / gate >= 0.10.3 logs also: "active_missing": 2 (questions with no input evidence),
+   # "active_upper_s": 30.0 (their popup seconds: an upper bound on their unmeasured active time), "question_wait_s"
    "success": true, "total_s": 312.0, "interruption_rating": 2}     # 1 (not disruptive) .. 7 (very disruptive)
 
 Per condition: asks per task, repeated-question ratio (a question whose normalised text was already asked in the same
@@ -76,6 +82,8 @@ def session_metrics(s):
     timeouts = [a for a in asks if a.get("outcome") == "timeout"]
     return {"asks": len(asks), "repeated": rep, "repeated_ratio": rep / len(asks) if asks else 0.0,
             "active_s": float(s.get("active_s") or 0.0),
+            # gui-pi-human/2 / gate >= 0.10.3: questions whose active time was not measured, and its upper bound
+            "active_missing": int(s.get("active_missing") or 0), "active_upper_s": float(s.get("active_upper_s") or 0.0),
             "waiting_s": None if s.get("waiting_s") is None and "waiting_s" in s else float(s.get("waiting_s") or 0.0),
             "takeover_steps": int(s.get("takeover_steps") or 0), "cancelled": 1.0 if s.get("cancelled") else 0.0,
             "timed_out": 1.0 if (s.get("timed_out") or timeouts) else 0.0, "success": 1.0 if s.get("success") else 0.0,
@@ -103,6 +111,8 @@ def per_condition(sessions):
         out[c] = {"sessions": n, "asks_per_task": tot_asks / n if n else None,
                   "repeated_question_ratio": sum(m["repeated"] for m in ms) / tot_asks if tot_asks else 0.0,
                   "active_s": sum(m["active_s"] for m in ms) / n,
+                  "active_missing": sum(m["active_missing"] for m in ms),
+                  "active_upper_s": sum(m["active_upper_s"] for m in ms) / n,
                   "waiting_s": (sum(w) / len(w)) if (w := [m["waiting_s"] for m in ms if m["waiting_s"] is not None]) else None,
                   "waiting_s_sessions": len(w),
                   "takeover_steps": sum(m["takeover_steps"] for m in ms) / n,
@@ -203,7 +213,8 @@ def assign(participants, tasks, seed=0):
 
 
 # ---------------------------------------------------------------- from-logs: gui-pi-human/1 + gate person_burden
-HUMAN_SCHEMA = "gui-pi-human/1"
+HUMAN_SCHEMA = "gui-pi-human/2"
+HUMAN_SCHEMAS = ("gui-pi-human/1", "gui-pi-human/2")
 DESKTOP_KIND = {"approve": "approve", "clarify": "answer", "takeover": "takeover", "help": "help"}
 GATE_KIND = {"approve": "approve", "answer": "answer", "takeover": "takeover", "ask_help": "help", "help": "help"}
 NO_ANSWER = {"timeout": "timeout", "timed out": "timeout", "expired": "timeout", "cancelled": "cancel", "window closed": "cancel",
@@ -254,19 +265,26 @@ def read_jsonl(path):
 
 def desktop_sessions(paths):
     """{log_task: {"asks": [...], "summary": {...} | None}} from the desktop client's human.jsonl files."""
-    by = defaultdict(lambda: {"asks": [], "summary": None})
+    by = defaultdict(lambda: {"asks": [], "summary": None, "schema": None})
     for p in paths:
         for e in read_jsonl(p):
-            if e.get("schema") != HUMAN_SCHEMA:
+            sch = e.get("schema")
+            if sch not in HUMAN_SCHEMAS:
                 continue
             t = str(e.get("task") or "")
             if e.get("ev") == "human_q":
                 k = DESKTOP_KIND.get(e.get("type"), e.get("type") or "answer")
-                by[t]["asks"].append({"kind": k, "outcome": desktop_outcome(k, e.get("outcome")), "secs": float(e.get("secs") or 0.0),
+                # /2: wait_s (popup open) and active_s (evidenced input, null = not measured); /1: secs = wait_s
+                wait = e.get("wait_s") if "wait_s" in e else e.get("secs")
+                wait = float(wait or 0.0)
+                act = e.get("active_s") if sch != "gui-pi-human/1" else None
+                by[t]["asks"].append({"kind": k, "outcome": desktop_outcome(k, e.get("outcome")), "secs": wait, "wait_s": wait,
+                                      "active_s": None if act is None else float(act), "evidence": e.get("evidence"),
                                       "repeated": bool(e.get("repeated")), "refused": bool(e.get("refused")),
                                       "takeover_steps": int(e.get("takeover_steps") or 0), "raw_outcome": e.get("outcome")})
             elif e.get("ev") == "human_summary":
                 by[t]["summary"] = e
+            by[t]["schema"] = sch
     return dict(by)
 
 
@@ -277,7 +295,9 @@ def gate_burden(path):
         if e.get("ev") != "person_burden":
             continue
         k = GATE_KIND.get(e.get("kind"), e.get("kind") or "answer")
+        act = e.get("active_s")
         asks.append({"kind": k, "outcome": gate_outcome(k, e.get("outcome")), "secs": float(e.get("wait_s") or 0.0),
+                     "wait_s": float(e.get("wait_s") or 0.0), "active_s": None if act is None else float(act),
                      "repeated": bool(e.get("repeat")), "label": e.get("label"), "raw_outcome": e.get("outcome")})
         totals = e.get("totals") or totals
     return asks, (totals or {})
@@ -300,10 +320,18 @@ def from_logs(meta, human_paths=(), gate_logs=None):
             sm = d["summary"]
             asks = d["asks"]
             s["asks"] = asks
-            s["source"] = HUMAN_SCHEMA
+            v2 = d.get("schema") != "gui-pi-human/1"
+            s["source"] = d.get("schema") or HUMAN_SCHEMA
             if sm:
                 s["active_s"] = float(sm.get("person_active_s") or 0.0)
-                s["waiting_s"] = float(sm.get("person_wait_s") or 0.0)
+                if v2:
+                    # person_active_s = evidenced input only; the rest is missing with an upper bound
+                    s["waiting_s"] = float(sm.get("no_question_s") or 0.0)
+                    s["question_wait_s"] = float(sm.get("question_wait_s") or 0.0)
+                    s["active_missing"] = int(sm.get("person_active_missing") or 0)
+                    s["active_upper_s"] = float(sm.get("person_active_upper_s") or 0.0)
+                else:  # /1: person_active_s was popup time, person_wait_s the time with no question open
+                    s["waiting_s"] = float(sm.get("person_wait_s") or 0.0)
                 s["agent_blocked_s"] = float(sm.get("agent_blocked_s") or 0.0)
                 s["takeover_steps"] = int(sm.get("takeover_steps") or 0)
                 s["cancelled"] = int(sm.get("cancelled") or 0) > 0
@@ -312,7 +340,13 @@ def from_logs(meta, human_paths=(), gate_logs=None):
                 if int(sm.get("asks") or 0) != len(asks):
                     s["warning"] = f"human_summary says {sm.get('asks')} asks, {len(asks)} human_q lines"
             else:  # the task did not end cleanly: rebuild what the questions give, no waiting time
-                s["active_s"] = sum(a["secs"] for a in asks if a["outcome"] not in ("timeout", "cancel", "unavailable", "no_response"))
+                if v2:  # evidenced active time only; missing ones bounded by their popup time
+                    s["active_s"] = sum(a["active_s"] for a in asks if a["active_s"] is not None)
+                    s["active_missing"] = sum(1 for a in asks if a["active_s"] is None)
+                    s["active_upper_s"] = sum(a["wait_s"] for a in asks if a["active_s"] is None)
+                    s["question_wait_s"] = sum(a["wait_s"] for a in asks)
+                else:
+                    s["active_s"] = sum(a["secs"] for a in asks if a["outcome"] not in ("timeout", "cancel", "unavailable", "no_response"))
                 s["waiting_s"] = None
                 s["agent_blocked_s"] = sum(a["secs"] for a in asks)
                 s["takeover_steps"] = sum(a["takeover_steps"] for a in asks)
@@ -327,6 +361,11 @@ def from_logs(meta, human_paths=(), gate_logs=None):
             s["asks"] = asks
             s["source"] = "gate person_burden"
             s["active_s"] = float(tot.get("person_active_s") or 0.0)
+            if "active_missing" in tot or "person_active_upper_s" in tot:  # gate >= 0.10.3: evidenced active time only
+                s["active_missing"] = int(tot.get("active_missing") or 0)
+                # the gate's person_active_upper_s bounds ALL active time (measured + missing); the session field
+                # bounds only the missing questions (the desktop's convention)
+                s["active_upper_s"] = max(0.0, float(tot.get("person_active_upper_s") or 0.0) - s["active_s"])
             s["waiting_s"] = None  # the gate cannot see the time a person spent watching between questions
             s["agent_blocked_s"] = float(tot.get("person_wait_s") or 0.0)
             s["takeover_steps"] = int(tot.get("takeover_steps") or 0)
