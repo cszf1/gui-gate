@@ -1,0 +1,1 @@
+DONE — Opened Thunderbird's in-app profile management page as a tab: Help menu → Troubleshooting Information → clicked the `about:profiles` link, which opened the "About Profiles" tab inside the Thunderbird main window (no profile chooser dialog).

@@ -1,0 +1,3 @@
+DONE — Switched Thunderbird's Folder Pane to **Unified Folders** (Folder pane options (☰) › Folder Modes › Unified Folders; same as View › Folders › Unified Folders), turned off the separate "All Folders" section so only the combined view remains, and selected the Unified **Inbox** — the window now reads "Inbox - Unified Folders" and lists combined Inbox/Drafts/Sent/Archives/Junk/Trash across all accounts (mode saved in the profile, so it persists).
+
+How you do it again: in Thunderbird, click the folder-pane menu (☰ at the top-left of the folder list) › **Folder Modes** › check **Unified Folders** (optionally uncheck **All Folders**), then click the **Inbox** entry at the top — every account's mail lands in that one list.

@@ -1,0 +1,1 @@
+DONE — In GIMP 3.0.4 I hid the left dock: dismissed the Welcome dialog, then enabled **Windows ▸ Hide Docks** (Tab shortcut), so only the canvas area remains and GIMP stays running.

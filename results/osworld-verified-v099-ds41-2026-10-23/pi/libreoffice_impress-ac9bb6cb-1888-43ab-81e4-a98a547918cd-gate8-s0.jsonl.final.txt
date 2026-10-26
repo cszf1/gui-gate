@@ -1,0 +1,1 @@
+DONE — In the open `saa-format-guide.pptx`, I set the slide-number text (the `<number>` slide-number field, previously near-white F3F3F3) to red (FF0000) on all 15 slides and on the master/layout placeholders, then saved with Ctrl+S in PowerPoint format; a headless render of the saved file confirms the numbers now show in red (e.g. "1" and "3" bottom-right).

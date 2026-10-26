@@ -1,0 +1,1 @@
+DONE — Switched the session to Do Not Disturb by disabling notification banners via `gsettings set org.gnome.desktop.notifications show-banners false` (verified it reads back `false` and persisted in `/home/user/.config/dconf/user`); note this box runs Xfce with no xfce4-notifyd daemon, so that schema key is the only available DND state.

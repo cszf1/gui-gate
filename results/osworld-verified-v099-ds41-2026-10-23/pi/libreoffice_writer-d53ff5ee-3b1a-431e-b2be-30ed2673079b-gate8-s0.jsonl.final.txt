@@ -1,0 +1,1 @@
+DONE — Selected the entire document in LibreOffice Writer and applied Format ▸ Text ▸ lowercase, then saved it (Ctrl+S) in place as /data/home/Desktop/presentation_instruction_2023_Feb.docx; the on-disk .docx now contains no uppercase text.

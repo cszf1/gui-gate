@@ -1,0 +1,1 @@
+FAIL — "Python 4" does not exist and cannot be installed: the machine (Debian 13, not Ubuntu) has only Python 3.13.5 (`/usr/bin/python3.13`, with `/usr/bin/python3` → `python3.13`); there is no `python4*` binary or package anywhere, and `update-alternatives --list python` reports no python alternatives group at all, so no default-version switch to "Python 4" is possible.

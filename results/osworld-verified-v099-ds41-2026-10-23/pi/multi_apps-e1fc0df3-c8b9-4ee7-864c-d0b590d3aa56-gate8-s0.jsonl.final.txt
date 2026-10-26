@@ -1,0 +1,1 @@
+Java support in this LibreOffice is incomplete (the `classes/` dir with the UNO bridge jars is empty — that needs `libreoffice-java-common` + root). Let me verify the extension itself is registered in the Extension Manager.
