@@ -1,0 +1,1 @@
+DONE — Exported the Personal Address Book (30 contacts, 37 fields) from Thunderbird to `~/Desktop/contacts.csv`, opened it in LibreOffice Calc via the Text Import dialog (comma-separated) and saved it as `~/Desktop/contacts.xlsx` (Excel 2007–365 format).
